@@ -24,7 +24,7 @@ Two files are required in `~/.combocurve`:
 - `combocurve.json`
 
 These are given by ComboCurve when configuring API access. Example files are provided
-in `./config-examples/assets` to demonstrate the expected file structures.
+in `./config-examples/` to demonstrate the expected file structures.
 
 <br>
 
