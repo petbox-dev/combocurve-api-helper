@@ -46,10 +46,6 @@ class APIBase:
         self.auth = combocurve_auth()
 
 
-    def clear_oneliners(self) -> None:
-        self.onelines = dict()
-
-
     def _get_items(self, url: str,
                    params: Optional[Mapping[str, Union[str, int, float]]] = None) -> List[Dict[str, Any]]:
         """
@@ -105,7 +101,7 @@ class APIBase:
 
         headers = self.auth.get_auth_headers()
 
-        items: List[Dict[str, Any]] = list()
+        items: ItemList = list()
 
         if chunksize is None:
             chunksize = len(data)
@@ -170,7 +166,7 @@ class APIBase:
     @staticmethod
     def extract_id(items: Union[Item, ItemList],
                    name: str, name_key: str = 'name', id_key: str = 'id') -> Optional[str]:
-        _id: Optional[str] = None
+        id_: Optional[str] = None
 
         if not isinstance(items, (dict, list)):
             warnings.warn( # type: ignore
@@ -178,15 +174,15 @@ class APIBase:
             return
 
         elif isinstance(items, dict):
-            _id = str(items.get(id_key))
+            id_ = str(items.get(id_key))
 
         elif isinstance(items, list):
             # iterate over the list of dict until name is found, and extract id
             for item in items:
                 if item.get(name_key) == name:
-                    _id = str(item.get(id_key))
+                    id_ = str(item.get(id_key))
                     break
 
-        if _id is None:
+        if id_ is None:
             warnings.warn(f'Could not find `id` for {name}', UserWarning)
-        return _id
+        return id_
