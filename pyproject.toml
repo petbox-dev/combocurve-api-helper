@@ -61,6 +61,10 @@ version = {attr = "combocurve_api_helper.__version__"}
 where = ['src']
 
 
+[tool.setuptools.package-data]
+combocurve_api_helper = ['**/*']
+
+
 [project.urls]
 Homepage = "https://github.com/petbox-dev/combocurve-api-helper.git"
 Repository = "https://github.com/petbox-dev/combocurve-api-helper.git"
