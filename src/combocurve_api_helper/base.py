@@ -28,8 +28,11 @@ class APIBase:
         account = ServiceAccount.from_file(str(config.COMBOCURVE_JSON))
         self.auth = ComboCurveAuth(account, config.cfg.apikey)
 
-        ref_wells_json = json.loads(Path(config.REFRENCE_WELLS_JSON).read_text())
-        self.ref_wells: Dict[str, Union[str, int, float]] = {k.lower(): k for k in ref_wells_json.keys()}
+        self.reference_wellheader: Dict[str, Union[str, int, float]] = {
+            k.lower(): k for k in config.REFRENCE_WELLHEADER.keys()
+        }
+
+        self.econ_model_types: List[str] = config.ECON_MODEL_TYPES
 
 
     @classmethod

@@ -58,31 +58,10 @@ class Scenarios(APIBase):
         base_url = self.get_scenario_by_id_url(project_id, scenario_id)
         url = f'{base_url}/qualifiers'
 
-        VALID_ECON_NAMES = (
-            'capex',
-            'dates',
-            'depreciations',
-            'escalation',
-            'expenses',
-            'forecast',
-            'pSeries',
-            'network',
-            'ownershipReversion',
-            'pricing',
-            'differentials',
-            'productionTaxes',
-            'actualOrForecast',
-            'reservesCategory',
-            'risking',
-            'schedule',
-            'streamProperties',
-            'emission'
-        )
-
         if econ_name is None:
             return url
-        elif econ_name.casefold() not in (n.casefold() for n in VALID_ECON_NAMES):
-            warnings.warn(f'Econ name is not in list of valid econ names:\n{VALID_ECON_NAMES}')
+        elif econ_name.casefold() not in (n.casefold() for n in self.econ_model_types):
+            warnings.warn(f'`econ_name` is not in list of valid names:\n{self.econ_model_types}')
 
         return f'{url}?econName={econ_name}'
 

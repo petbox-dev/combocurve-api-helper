@@ -9,7 +9,11 @@ PACKAGE_ROOT = Path(__file__).parent.resolve()
 
 COMBOCURVE_JSON = USER_HOME / '.combocurve' / 'combocurve.json'
 CC_API_CONFIG_JSON = USER_HOME / '.combocurve' / 'cc-api.config.json'
-REFRENCE_WELLS_JSON = PACKAGE_ROOT / 'assets' / 'ref_wells.json'
+
+REFRENCE_WELLHEADER = json.loads(
+    (PACKAGE_ROOT / 'assets' / 'wellHeader.json').read_text())
+ECON_MODEL_TYPES = json.loads(
+    (PACKAGE_ROOT / 'assets' / 'econModelTypes.json').read_text())
 
 
 class Configuration(NamedTuple):

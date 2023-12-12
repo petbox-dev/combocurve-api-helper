@@ -2,7 +2,7 @@ __version__ = '1.0.5'
 
 from .root import Root
 from .projects import Projects
-from .scenarios import Scenarios, VALID_ECON_MODEL_TYPES
+from .scenarios import Scenarios
 from .econ_runs import EconRuns
 from .wells import Wells
 from .models import Models
@@ -24,5 +24,10 @@ class ComboCurveAPI(
     TypeCurves,
     Directional
 ):
-    # all API calls should be made through this class
+    """
+    This class is the primary interface for interacting with the Combo Curve
+    API. It inherits all of the API endpoints from the other classes in this
+    module. It is intended to be used as a single entrypoint for interacting
+    with the ComboCurve API.
+    """
     pass
