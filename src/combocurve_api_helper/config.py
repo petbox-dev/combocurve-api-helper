@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, Union
 from typing_extensions import Self
 
 
@@ -16,10 +16,13 @@ class Configuration(NamedTuple):
     apikey: str
 
     @classmethod
-    def from_path(cls, path: Path) -> Self:
+    def from_file(cls, path: Union[str, Path]) -> Self:
         """
-        Parse the contents of a `ccfs.config.json` file from a path.
+        Parse the contents of a `cc-api.config.json` file from a path.
         """
+        if isinstance(path, str):
+            path = Path(path)
+
         doc = json.loads(path.read_text())
 
         return cls(
@@ -27,4 +30,4 @@ class Configuration(NamedTuple):
         )
 
 # default to the configuration file bundled with the package
-cfg = Configuration.from_path(CC_API_CONFIG_JSON)
+cfg = Configuration.from_file(CC_API_CONFIG_JSON)
