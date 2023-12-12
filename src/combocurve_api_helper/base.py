@@ -1,30 +1,23 @@
 import warnings
 from pathlib import Path
-from functools import cache
 import json
+from itertools import chain
 from more_itertools import chunked
-from typing import List, Dict, Optional, Union, Any, Iterator, Mapping, Sequence, cast
+from typing import List, Dict, Optional, Union, Any, Iterable, Iterator, Mapping
+from typing_extensions import Self
 
-import requests # type: ignore
+import requests  # type: ignore
+from requests import Response
 from combocurve_api_v1 import ServiceAccount, ComboCurveAuth  # type: ignore
 from combocurve_api_v1.pagination import get_next_page_url  # type: ignore
 
 from . import config
 
 
-Item = Dict[str, Union[str, int, float, bool, List[str], List[int], List[float], List[bool]]]
+PrimativeValue = Union[str, int, float, bool]
+IterableValue = Union[List[str], List[int], List[float], List[bool], Dict[str, Union[PrimativeValue, 'IterableValue']]]
+Item = Dict[str, Union[PrimativeValue, IterableValue]]
 ItemList = List[Item]
-
-
-@cache
-def combocurve_auth() -> ComboCurveAuth:
-    """
-    Returns an instance of the ComboCurve authorization object.
-    """
-    account = ServiceAccount.from_file(str(config.COMBOCURVE_JSON))
-    auth = ComboCurveAuth(account, config.cfg.apikey)
-
-    return auth
 
 
 class APIBase:
@@ -32,102 +25,314 @@ class APIBase:
 
 
     def __init__(self) -> None:
-        self.auth: ComboCurveAuth = combocurve_auth()
-        self.onelines: Dict[str, ItemList] = dict()
+        account = ServiceAccount.from_file(str(config.COMBOCURVE_JSON))
+        self.auth = ComboCurveAuth(account, config.cfg.apikey)
 
         ref_wells_json = json.loads(Path(config.REFRENCE_WELLS_JSON).read_text())
         self.ref_wells: Dict[str, Union[str, int, float]] = {k.lower(): k for k in ref_wells_json.keys()}
 
 
-    def authenticate(self) -> None:
-        """
-        Force re-authentication with the API
-        """
-        self.auth = combocurve_auth()
+    @classmethod
+    def from_alternate_config(
+            cls,
+            combocurve_json_path: Union[str, Path],
+            cc_api_config_json_path: Union[str, Path]) -> Self:
+        api_base = cls.__new__(cls)
+        super(APIBase, api_base).__init__()
+
+        cfg = config.Configuration.from_file(cc_api_config_json_path)
+
+        if isinstance(combocurve_json_path, str):
+            account = ServiceAccount.from_file(combocurve_json_path)
+        elif isinstance(combocurve_json_path, Path):
+            account = ServiceAccount.from_file(combocurve_json_path.absolute())
+
+        api_base.auth = ComboCurveAuth(account, cfg.apikey)
+
+        return api_base
 
 
-    def _get_items(self, url: str,
-                   params: Optional[Mapping[str, Union[str, int, float]]] = None) -> List[Dict[str, Any]]:
+    def _extract_json(self, response: requests.Response) -> ItemList:
+        """
+        Ensure returned JSON is a list of objects
+        """
+        json_ = response.json()
+        if isinstance(json_, dict):
+            json_ = [json_]
+        elif not isinstance(json_, list):
+            json_ = list(json_)
+
+        return json_
+
+
+    def _request_items_pages(
+            self, method: str, url: str,
+            params: Optional[Mapping[str, Union[str, int, float]]] = None) -> Iterator[Response]:
+        """
+        Generic method for dispatching GET requests for the given `url` yielding
+        response of each page
+        """
+        # keep fetching while there are more records to be returned
+        while True:
+            headers = self.auth.get_auth_headers()
+            response = requests.request(method, url, headers=headers, params=params)
+            try:
+                response.raise_for_status()
+            except Exception as e:
+                print(f'\nURL: {url}\nParams: {params}\n')
+                raise e
+
+            yield response
+
+            next_page_url: Optional[str] = get_next_page_url(response.headers)
+            if next_page_url is None:
+                # no more pages to process
+                break
+            else:
+                url = next_page_url
+
+            params = None
+
+
+    def _request_items_pages_chunks(
+            self, method: str, url: str, data: ItemList, chunksize: Optional[int] = None,
+            params: Optional[Mapping[str, Union[str, int, float]]] = None) -> ItemList:
+        """
+        Generic method for dispatching POST/PATCH/PUT requests for the given
+        `url` yielding response of each page
+        """
+        if chunksize is None:
+            chunksize = len(data)
+
+        if chunksize == 0:
+            yield from self._request_items_pages(method, url, params=params)
+
+        for chunk in chunked(data, chunksize):
+            # keep fetching while there are more records to be returned
+            params_ = params
+            while True:
+                headers = self.auth.get_auth_headers()
+                response = requests.request(method, url, headers=headers, json=chunk, params=params_)
+                try:
+                    response.raise_for_status()
+                except Exception as e:
+                    print(f'\nURL: {url}\n')
+                    raise e
+
+                yield response
+
+                next_page_url: Optional[str] = get_next_page_url(response.headers)
+                if next_page_url is None:
+                    # no more pages to process
+                    break
+                else:
+                    url = next_page_url
+
+                params_ = None
+
+
+    def _get_responses_iterator(
+            self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None) -> Iterator[Response]:
+        """
+        Generic method for dispatching GET requests for the given `url`
+        strictly returning a generator of requests.Response
+        """
+        yield from self._request_items_pages('get', url, params)
+
+
+    def _get_responses(
+            self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None) -> List[Response]:
+        """
+        Generic method for dispatching GET requests for the given `url`
+        strictly returning a list of requests.Response
+        """
+        return list(self._request_items_pages('get', url, params))
+
+
+    def _get_items_iterator(
+            self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None) -> Iterator[ItemList]:
+        """
+        Generic method for dispatching GET requests for the given `url`
+        strictly returning a generator of JSON of type: list of objects
+        """
+        for response in self._request_items_pages('get', url, params):
+            yield self._extract_json(response)
+
+
+    def _get_items(
+            self, url: str,
+            params: Optional[Mapping[str, Union[str, int, float]]] = None) -> ItemList:
         """
         Generic method for dispatching GET requests for the given `url`
         strictly returning JSON of type: list of objects
         """
-        _url: Optional[str] = url
-        # dumb shit to keep mypy happy
-        if _url is None:
-            raise ValueError('url is None')
-
-        headers = self.auth.get_auth_headers()
-
-        items: List[Dict[str, Any]] = list()
-
-        # keep fetching while there are more records to be returned
-        while True:
-            response = requests.get(_url, headers=headers, params=params)
-            try:
-                response.raise_for_status()
-            except Exception as e:
-                print(f'URL: {url}')
-                raise e
-
-            json = response.json()
-            if isinstance(json, dict):
-                json = [json]
-            elif not isinstance(json, list):
-                json = list(json)
-
-            items.extend(json)
-
-            _url = get_next_page_url(response.headers)
-            if _url is None:
-                # no more pages to process
-                break
-
-            if params is not None and 'take' in params.keys():
-                _ = params.pop('take')  # type: ignore
+        items: ItemList = []
+        for response in self._request_items_pages('get', url, params):
+            items.extend(self._extract_json(response))
 
         return items
 
 
-    def _patch_items(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> ItemList:
+    def _post_responses_iterator(
+            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[Response]:
+        """
+        Generic method for dispatching POST requests for the given `url`
+        strictly returning a generator of requests.Response
+        """
+        yield from self._request_items_pages_chunks('post', url, data, chunksize)
+
+
+    def _post_responses(
+            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> List[Response]:
+        """
+        Generic method for dispatching POST requests for the given `url`
+        strictly returning a list of requests.Response
+        """
+        return list(self._request_items_pages_chunks('post', url, data, chunksize))
+
+
+    def _post_items_iterator(
+            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[ItemList]:
+        """
+        Generic method for dispatching POST requests for the given `url`
+        strictly returning a generator of JSON of type: list of objects
+        """
+        for response in self._request_items_pages_chunks('post', url, data, chunksize):
+            yield self._extract_json(response)
+
+
+    def _post_items(
+            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> ItemList:
+        """
+        Generic method for dispatching POST requests for the given `url`
+        strictly returning JSON of type: list of objects
+        """
+        items: ItemList = []
+        for response in self._request_items_pages_chunks('post', url, data, chunksize):
+            items.extend(self._extract_json(response))
+
+        return items
+
+
+    def _patch_responses_iterator(
+            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[Response]:
+        """
+        Generic method for dispatching PATCH requests for the given `url`
+        strictly returning a generator of requests.Response
+        """
+        yield from self._request_items_pages_chunks('patch', url, data, chunksize)
+
+
+    def _patch_responses(
+            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> List[Response]:
+        """
+        Generic method for dispatching PATCH requests for the given `url`
+        strictly returning a list of requests.Response
+        """
+        return list(self._request_items_pages_chunks('patch', url, data, chunksize))
+
+
+    def _patch_items_iterator(
+            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[ItemList]:
+        """
+        Generic method for dispatching PATCH requests for the given `url`
+        strictly returning a generator of JSON of type: list of objects
+        """
+        for response in self._request_items_pages_chunks('patch', url, data, chunksize):
+            yield self._extract_json(response)
+
+
+    def _patch_items(
+            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> ItemList:
         """
         Generic method for dispatching PATCH requests for the given `url`
         strictly returning JSON of type: list of objects
         """
-        _url: Optional[str] = url
-        # dumb shit to keep mypy happy
-        if _url is None:
-            raise ValueError('url is None')
+        items: ItemList = []
+        for response in self._request_items_pages_chunks('patch', url, data, chunksize):
+            items.extend(self._extract_json(response))
 
-        headers = self.auth.get_auth_headers()
+        return items
 
-        items: ItemList = list()
 
-        if chunksize is None:
-            chunksize = len(data)
+    def _put_responses_iterator(
+            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[Response]:
+        """
+        Generic method for dispatching PUT requests for the given `url`
+        strictly returning a generator of requests.Response
+        """
+        yield from self._request_items_pages_chunks('put', url, data, chunksize)
 
-        for chunk in chunked(data, chunksize):
-            # keep fetching while there are more records to be returned
-            while True:
-                response = requests.patch(_url, headers=headers, json=chunk)
-                try:
-                    response.raise_for_status()
-                except Exception as e:
-                    print(f'URL: {url}')
-                    raise e
 
-                json = response.json()
-                if isinstance(json, dict):
-                    json = [json]
-                elif not isinstance(json, list):
-                    json = list(json)
+    def _put_responses(
+            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> List[Response]:
+        """
+        Generic method for dispatching PUT requests for the given `url`
+        strictly returning a list of requests.Response
+        """
+        return list(self._request_items_pages_chunks('put', url, data, chunksize))
 
-                items.extend(json)
 
-                _url = get_next_page_url(response.headers)
-                if _url is None:
-                    # no more pages to process
-                    break
+    def _put_items_iterator(
+            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[ItemList]:
+        """
+        Generic method for dispatching PUT requests for the given `url`
+        strictly returning a generator of JSON of type: list of objects
+        """
+        for response in self._request_items_pages_chunks('put', url, data, chunksize):
+            yield self._extract_json(response)
+
+
+    def _put_items(
+            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> ItemList:
+        """
+        Generic method for dispatching PUT requests for the given `url`
+        strictly returning JSON of type: list of objects
+        """
+        items: ItemList = []
+        for response in self._request_items_pages_chunks('put', url, data, chunksize):
+            items.extend(self._extract_json(response))
+
+        return items
+
+
+    def _delete_responses_iterator(
+            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[Response]:
+        """
+        Generic method for dispatching DELETE requests for the given `url`
+        strictly returning a generator of requests.Response
+        """
+        yield from self._request_items_pages_chunks('delete', url, data, chunksize)
+
+
+    def _delete_responses(
+            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> List[Response]:
+        """
+        Generic method for dispatching DELETE requests for the given `url`
+        strictly returning a list of requests.Response
+        """
+        return list(self._request_items_pages_chunks('delete', url, data, chunksize))
+
+
+    def _delete_items_iterator(
+            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[ItemList]:
+        """
+        Generic method for dispatching DELETE requests for the given `url`
+        strictly returning a generator of JSON of type: list of objects
+        """
+        for response in self._request_items_pages_chunks('delete', url, data, chunksize):
+            yield self._extract_json(response)
+
+
+    def _delete_items(
+            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> ItemList:
+        """
+        Generic method for dispatching DELETE requests for the given `url`
+        strictly returning JSON of type: list of objects
+        """
+        items: ItemList = []
+        for response in self._request_items_pages_chunks('delete', url, data, chunksize):
+            items.extend(self._extract_json(response))
 
         return items
 
@@ -169,7 +374,7 @@ class APIBase:
         id_: Optional[str] = None
 
         if not isinstance(items, (dict, list)):
-            warnings.warn( # type: ignore
+            warnings.warn(  # type: ignore
                 f'Expected items to be a dict or list, got {type(items)}', RuntimeWarning)
             return
 
