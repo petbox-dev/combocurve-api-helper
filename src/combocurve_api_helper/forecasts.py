@@ -32,15 +32,25 @@ class Forecasts(APIBase):
         """
         Returns the API url for a specific forecast from its forecast id.
         """
-        return f'{self.API_BASE_URL}/projects/{project_id}/forecasts/{forecast_id}'
+        base_url = self.get_forecasts_url(project_id)
+        return f'{base_url}/{forecast_id}'
 
 
-    def get_forecast_aries_url(self, project_id: str, forecast_id: str,
-                               filters: Optional[Dict[str, str]] = None) -> str:
+    def get_forecast_wells_url(self, project_id: str, forecast_id: str) -> str:
+        """
+        Returns the API url for a specific forecast's wells from its forecast id.
+        """
+        base_url = self.get_forecast_by_id_url(project_id, forecast_id)
+        return f'{base_url}/wells'
+
+
+    def get_forecast_aries_url(
+            self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
         Returns the API url for a specific forecast's ARIES parameters from its forecast id.
         """
-        url = f'{self.API_BASE_URL}/projects/{project_id}/forecasts/{forecast_id}/aries'
+        base_url = self.get_forecast_by_id_url(project_id, forecast_id)
+        url = f'{base_url}/aries'
         if filters is None:
             return url
 
@@ -52,12 +62,13 @@ class Forecasts(APIBase):
         return url
 
 
-    def get_forecast_outputs_url(self, project_id: str, forecast_id: str,
-                                 filters: Optional[Dict[str, str]] = None) -> str:
+    def get_forecast_outputs_url(
+            self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
         Returns the API url for a specific forecast outputs from its forecast id.
         """
-        url = f'{self.API_BASE_URL}/projects/{project_id}/forecasts/{forecast_id}/outputs'
+        base_url = self.get_forecast_by_id_url(project_id, forecast_id)
+        url = f'{base_url}/outputs'
         if filters is None:
             return url
 
@@ -73,15 +84,17 @@ class Forecasts(APIBase):
         """
         Returns the API url for a specific forecast output from its forecast id and output id.
         """
-        return f'{self.API_BASE_URL}/projects/{project_id}/forecasts/{forecast_id}/outputs/{output_id}'
+        base_url = self.get_forecast_outputs_url(project_id, forecast_id)
+        return f'{base_url}/{output_id}'
 
 
-    def get_forecast_daily_volumes_url(self, project_id: str, forecast_id: str,
-                                       filters: Optional[Dict[str, str]] = None) -> str:
+    def get_forecast_daily_volumes_url(
+            self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
         Returns the API url for daily volumes for a specific project id and forecast id.
         """
-        url = f'{self.API_BASE_URL}/projects/{project_id}/forecasts/{forecast_id}/daily-volumes'
+        base_url = self.get_forecast_by_id_url(project_id, forecast_id)
+        url = f'{base_url}/daily-volumes'
         if filters is None:
             return url
 
@@ -93,12 +106,13 @@ class Forecasts(APIBase):
         return url
 
 
-    def get_forecast_monthly_volumes_url(self, project_id: str, forecast_id: str,
-                                         filters: Optional[Dict[str, str]] = None) -> str:
+    def get_forecast_monthly_volumes_url(
+            self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
         Returns the API url for monthly volumes for a specific project id and forecast id.
         """
-        url = f'{self.API_BASE_URL}/projects/{project_id}/forecasts/{forecast_id}/monthly-volumes'
+        base_url = self.get_forecast_by_id_url(project_id, forecast_id)
+        url = f'{base_url}/monthly-volumes'
         if filters is None:
             return url
 
@@ -143,8 +157,8 @@ class Forecasts(APIBase):
         return forecasts[0]
 
 
-    def get_forecast_aries(self, project_id: str, forecast_id: str,
-                           filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_forecast_aries(
+            self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
         Returns a list of ARIES parameters for a specific project id and forecast id.
         """
@@ -153,8 +167,8 @@ class Forecasts(APIBase):
         return self._get_items(url, params)
 
 
-    def get_forecast_outputs(self, project_id: str, forecast_id: str,
-                             filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_forecast_outputs(
+            self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
         Returns a list of outputs for a specific project id and forecast id.
         """
@@ -174,8 +188,8 @@ class Forecasts(APIBase):
         return outputs[0]
 
 
-    def get_forecast_daily_volumes(self, project_id: str, forecast_id: str,
-                                   filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_forecast_daily_volumes(
+            self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
         Returns a list of daily volumes for a specific project id and forecast id.
         """
@@ -190,8 +204,8 @@ class Forecasts(APIBase):
         return self._keysort(daily_volumes, order)
 
 
-    def get_forecast_monthly_volumes(self, project_id: str, forecast_id: str,
-                                     filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_forecast_monthly_volumes(
+            self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
         Returns a list of monthly volumes for a specific project id and forecast id.
         """

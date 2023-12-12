@@ -27,11 +27,12 @@ class Projects(APIBase):
         return url
 
 
-    def get_project_by_id_url(self, id: str) -> str:
+    def get_project_by_id_url(self, project_id: str) -> str:
         """
         Returns the API url for a specific project from its project id.
         """
-        return f'{self.API_BASE_URL}/projects/{id}'
+        base_url = self.get_projects_url()
+        return f'{base_url}/{project_id}'
 
 
     ###########

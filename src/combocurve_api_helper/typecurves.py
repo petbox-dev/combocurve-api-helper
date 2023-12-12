@@ -31,28 +31,35 @@ class TypeCurves(APIBase):
         """
         Returns the API url for a specific type curve from its type curve id.
         """
-        return f'{self.API_BASE_URL}/projects/{project_id}/type-curves/{type_curve_id}'
+        base_url = self.get_type_curves_url(project_id)
+        return f'{base_url}/{type_curve_id}'
 
 
     def get_type_curve_representative_wells_url(self, project_id: str, type_curve_id: str) -> str:
         """
-        Returns the API url for representative wells for a specific project id and type curve id.
+        Returns the API url for representative wells for a specific project id
+        and type curve id.
         """
-        return f'{self.API_BASE_URL}/projects/{project_id}/type-curves/{type_curve_id}/representative-wells'
+        base_url = self.get_type_curve_by_id_url(project_id, type_curve_id)
+        return f'{base_url}/representative-wells'
 
 
     def get_type_curve_daily_fits_url(self, project_id: str, type_curve_id: str) -> str:
         """
-        Returns the API url for daily fits for a specific project id and type curve id.
+        Returns the API url for daily fits for a specific project id and
+        type curve id.
         """
-        return f'{self.API_BASE_URL}/projects/{project_id}/type-curves/{type_curve_id}/daily-fits'
+        base_url = self.get_type_curve_by_id_url(project_id, type_curve_id)
+        return f'{base_url}/daily-fits'
 
 
     def get_type_curve_monthly_fits_url(self, project_id: str, type_curve_id: str) -> str:
         """
-        Returns the API url for monthly fits for a specific project id and type curve id.
+        Returns the API url for monthly fits for a specific project id and
+        type curve id.
         """
-        return f'{self.API_BASE_URL}/projects/{project_id}/type-curves/{type_curve_id}/monthly-fits'
+        base_url = self.get_type_curve_by_id_url(project_id, type_curve_id)
+        return f'{base_url}/monthly-fits'
 
 
     ###########
@@ -90,7 +97,8 @@ class TypeCurves(APIBase):
 
     def get_type_curve_representative_fits(self, project_id: str, type_curve_id: str) -> ItemList:
         """
-        Returns a list of representative wells for a specific project id and type curve id.
+        Returns a list of representative wells for a specific project id and
+        type curve id.
         """
         url = self.get_type_curve_representative_wells_url(project_id, type_curve_id)
         params = {'take': GET_LIMIT}
@@ -105,7 +113,8 @@ class TypeCurves(APIBase):
 
     def get_type_curve_daily_fits(self, project_id: str, type_curve_id: str) -> ItemList:
         """
-        Returns a list of daily fits for a specific project id and type curve id.
+        Returns a list of daily fits for a specific project id and
+        type curve id.
         """
         url = self.get_type_curve_daily_fits_url(project_id, type_curve_id)
         params = {'take': GET_LIMIT}
@@ -115,7 +124,8 @@ class TypeCurves(APIBase):
 
     def get_type_curve_monthly_fits(self, project_id: str, type_curve_id: str) -> ItemList:
         """
-        Returns a list of monthly fits for a specific project id and type curve id.
+        Returns a list of monthly fits for a specific project id and
+        type curve id.
         """
         url = self.get_type_curve_monthly_fits_url(project_id, type_curve_id)
         params = {'take': GET_LIMIT}

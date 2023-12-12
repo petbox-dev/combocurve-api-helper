@@ -37,7 +37,8 @@ class Wells(APIBase):
 
     def get_project_company_wells_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
-        Returns the API url for project company wells scoped from the project's id.
+        Returns the API url for project company wells scoped from the
+        project's id.
         """
         url = f'{self.API_BASE_URL}/projects/{project_id}/company-wells'
         if filters is None:
@@ -53,7 +54,8 @@ class Wells(APIBase):
 
     def get_project_company_well_by_id_url(self, project_id: str, id: str) -> str:
         """
-        Returns the API url for a specific project company well from its well id.
+        Returns the API url for a specific project company well from its
+        well id.
         """
         return f'{self.API_BASE_URL}/projects/{project_id}/company-wells/{id}'
 
