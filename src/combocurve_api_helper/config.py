@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import NamedTuple, Union
+from typing import List, Dict, NamedTuple, Union
 from typing_extensions import Self
 
 
@@ -10,10 +10,11 @@ PACKAGE_ROOT = Path(__file__).parent.resolve()
 COMBOCURVE_JSON = USER_HOME / '.combocurve' / 'combocurve.json'
 CC_API_CONFIG_JSON = USER_HOME / '.combocurve' / 'cc-api.config.json'
 
-REFRENCE_WELLHEADER = json.loads(
+REFRENCE_WELLHEADER: Dict[str, Union[str, int, float, bool]] = json.loads(
     (PACKAGE_ROOT / 'assets' / 'wellHeader.json').read_text())
-ECON_MODEL_TYPES = json.loads(
-    (PACKAGE_ROOT / 'assets' / 'econModelTypes.json').read_text())
+
+ECON_MODELS: List[Dict[str, str]] = json.loads(
+    (PACKAGE_ROOT / 'assets' / 'econModels.json').read_text())
 
 
 class Configuration(NamedTuple):

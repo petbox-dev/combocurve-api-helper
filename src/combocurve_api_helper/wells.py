@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional, Union, Any, Iterator, Mapping, Optional
+from typing import List, Dict, Optional, Union, Any, Iterator, Mapping
 
 from .base import APIBase, Item, ItemList
 
@@ -392,7 +392,7 @@ class Wells(APIBase):
             well_id: Optional[str] = None) -> ItemList:
         """
         Deletes a list of project wells scoped from the project's id.
-
+F
         https://docs.api.combocurve.com/#1b535f9f-2ace-4a90-bf95-791a23a90977
 
         Returns the headers from the delete response where 'X-Delete-Count' is
@@ -401,7 +401,7 @@ class Wells(APIBase):
         if (chosen_id or data_source or well_id) is None:
             raise ValueError('Must provide at least one of chosen_id, data_source, or well_id')
 
-        filtefilters: Dict[str, str]rs = {}
+        filters: Dict[str, str] = {}
         if chosen_id is not None:
             filters['chosenID'] = chosen_id
 

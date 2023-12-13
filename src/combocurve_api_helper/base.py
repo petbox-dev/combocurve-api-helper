@@ -30,11 +30,9 @@ class APIBase:
         account = ServiceAccount.from_file(str(config.COMBOCURVE_JSON))
         self.auth = ComboCurveAuth(account, config.cfg.apikey)
 
-        self.reference_wellheader: Dict[str, Union[str, int, float]] = {
-            k.lower(): k for k in config.REFRENCE_WELLHEADER.keys()
-        }
-
-        self.econ_model_types: List[str] = config.ECON_MODEL_TYPES
+        self.REFRENCE_WELLHEADER = config.REFRENCE_WELLHEADER
+        self.WELLHEADER_COLUMNS = {k.lower(): k for k in config.REFRENCE_WELLHEADER.keys()}
+        self.ECON_MODELS = config.ECON_MODELS
 
 
     @classmethod

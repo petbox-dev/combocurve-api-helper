@@ -71,13 +71,14 @@ class Scenarios(APIBase):
         base_url = self.get_scenario_by_id_url(project_id, scenario_id)
         url = f'{base_url}/qualifiers'
 
-        if econ_name is None and filters is None:
-            return url
-        elif econ_name.casefold() not in (n.casefold() for n in self.econ_model_types):
-            warnings.warn(f'`econ_name` is not in list of valid names:\n{self.econ_model_types}')
-
         if filters is None:
-            filters = {'econName': econ_name}
+            filters = {}
+
+        if econ_name is not None:
+            if econ_name.casefold() not in (n.casefold() for n in self.econ_model_types):
+                warnings.warn(f'`econ_name` is not in list of valid names:\n{self.econ_model_types}')
+
+            filters['econName'] = econ_name
 
         parameters: List[str] = []
         for key, value in filters.items():
@@ -267,7 +268,7 @@ class Scenarios(APIBase):
     # Qualifiers
 
 
-    def get_scenario_qualifiers(self, project_id: str, scenario_id: str, econ_name: Optional[str]) -> ItemList:
+    def get_scenario_qualifiers(self, project_id: str, scenario_id: str, econ_name: Optional[str] = None) -> Item:
         """
         Returns a list of qualifiers for a specific project id, scenario id and
         econ name.
@@ -275,7 +276,9 @@ class Scenarios(APIBase):
         https://docs.api.combocurve.com/#76132581-aefd-4efa-ae82-2af8596340de
         """
         url = self.get_scenario_qualifiers_url(project_id, scenario_id, econ_name)
-        return self._get_items(url)
+        qualifiers = self._get_items(url)
+
+        return qualifiers[0]
 
 
     def post_scenario_qualifiers(self, project_id: str, scenario_id: str, data: ItemList) -> ItemList:
@@ -313,9 +316,7 @@ class Scenarios(APIBase):
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
         """
-        filters: Dict[str, str] = {}
-        filters['econNames'] = econ_names
-        filters['qualifierNames'] = qualifier_names
+        filters: Dict[str, str] = {'qualifierNames': qualifier_names}
 
         url = self.get_scenario_qualifiers_url(project_id, scenario_id, econ_names, filters)
         scenarios = self._delete_responses(url, data=[])
@@ -362,7 +363,7 @@ class Scenarios(APIBase):
         return scenarios
 
 
-    def delete_scenario_wells( self, project_id: str, scenario_id: str, wells: str) -> ItemList:
+    def delete_scenario_wells(self, project_id: str, scenario_id: str, wells: str) -> ItemList:
         """
         Deletes scenario well assignments for a specific project id and scenario id.
 
@@ -380,6 +381,7 @@ class Scenarios(APIBase):
         headers = scenarios[0].headers
 
         return headers
+
 
 post_put_scenarios_response = """
         Example data:

@@ -1,0 +1,102 @@
+[
+    {
+        "econModelType": "actualOrForecast",
+        "qualifier": "ActualOrForecast",
+        "route": "actual-forecast"
+    },
+    {
+        "econModelType": "capex",
+        "qualifier": "Capex",
+        "route": "capex"
+    },
+    {
+        "econModelType": "dates",
+        "qualifier": "Dates",
+        "route": "date-settings"
+    },
+    {
+        "econModelType": "differentials",
+        "qualifier": "Differentials",
+        "route": "differentials"
+    },
+    {
+        "econModelType": "depreciation",
+        "qualifier": null,
+        "route": "depreciation"
+    },
+    {
+        "econModelType": "emission",
+        "qualifier": "Emission",
+        "route": "emissions"
+    },
+    {
+        "econModelType": "escalation",
+        "qualifier": "Escalation",
+        "route": "escalations"
+    },
+    {
+        "econModelType": "expenses",
+        "qualifier": "Expenses",
+        "route": "expenses"
+    },
+    {
+        "econModelType": "forecast",
+        "qualifier": null,
+        "route": "forecast"
+    },
+    {
+        "econModelType": "fluidModel",
+        "qualifier": null,
+        "route": "fluid-models"
+    },
+    {
+        "econModelType": "generalOptions",
+        "qualifier": "GeneralOptions",
+        "route": "general-options"
+    },
+    {
+        "econModelType": "network",
+        "qualifier": "Network",
+        "route": "network"
+    },
+    {
+        "econModelType": "ownershipReversion",
+        "qualifier": "OwnershipReversion",
+        "route": "ownership-reversions"
+    },
+    {
+        "econModelType": "pricing",
+        "qualifier": "Pricing",
+        "route": "pricing"
+    },
+    {
+        "econModelType": "productionTaxes",
+        "qualifier": "ProductionTaxes",
+        "route": "production-taxes"
+    },
+    {
+        "econModelType": "pSeries",
+        "qualifier": null,
+        "route": null
+    },
+    {
+        "econModelType": "reservesCategory",
+        "qualifier": "ReservesCategory",
+        "route": "reserves-categories"
+    },
+    {
+        "econModelType": "risking",
+        "qualifier": "Risking",
+        "route": "riskings"
+    },
+    {
+        "econModelType": "schedule",
+        "qualifier": null,
+        "route": null
+    },
+    {
+        "econModelType": "streamProperties",
+        "qualifier": "StreamProperties",
+        "route": "stream-properties"
+    }
+]

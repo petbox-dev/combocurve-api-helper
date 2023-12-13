@@ -8,16 +8,94 @@ POST_LIMIT = 500
 PUT_LIMIT = 500
 
 
+def _get_route(econ_model_type: str) -> Union[str, None]:
+    for model in APIBase.ECON_MODELS:
+        if model['econModelType'] == econ_model_type:
+            return model['route']
+
+    return None
+
+
 class Models(APIBase):
     ######
     # URLs
     ######
+
 
     def get_econ_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
         Returns the API url of econ models for a specific project id.
         """
         url = f'{self.API_BASE_URL}/projects/{project_id}/econ-models'
+        if filters is None:
+            return url
+
+        parameters: List[str] = []
+        for key, value in filters.items():
+            parameters.append(f'{key}={value}')
+
+        url += '?' + '&'.join(parameters)
+        return url
+
+
+    def get_econ_models_by_type_url(
+            self, project_id: str, econ_model_type: str, filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url of econ models for a specific project id and model
+        type. Allows `econModelType` passed as a parameter rather than calling
+        a different function for each model type.
+        """
+        route = _get_route(econ_model_type)
+        if route is None:
+            raise ValueError(
+                f'Invalid econ model type: {econ_model_type}\n'
+                f'Valid types are: {", ".join(m["econModelType"] for m in APIBase.ECON_MODELS)}'
+            )
+
+
+        url = f'{self.API_BASE_URL}/projects/{project_id}/econ-models/{route}'
+        if filters is None:
+            return url
+
+        parameters: List[str] = []
+        for key, value in filters.items():
+            parameters.append(f'{key}={value}')
+
+        url += '?' + '&'.join(parameters)
+        return url
+
+
+    def get_econ_model_by_type_by_id_url(
+            self, project_id: str, econ_model_type: str, model_id: str,
+            filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url of a sepcific econ model for a specific project id
+        and model type. Allows `econModelType` passed as a parameter rather
+        than calling a different function for each model type.
+        """
+        base_url = self.get_econ_models_by_type_url(project_id, econ_model_type)
+        url = f'{base_url}/{model_id}'
+        if filters is None:
+            return url
+
+        parameters: List[str] = []
+        for key, value in filters.items():
+            parameters.append(f'{key}={value}')
+
+        url += '?' + '&'.join(parameters)
+        return url
+
+
+    def get_econ_model_assignments_by_type_by_id_url(
+            self, project_id: str, econ_model_type: str, model_id: str,
+            filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url for assignments of a sepcific econ model for a
+        specific project id and model type. Allows `econModelType` passed as a
+        parameter rather than calling a different function for each model type.
+        """
+        base_url = self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
+        url = f'{base_url}/assignments'
         if filters is None:
             return url
 
@@ -604,6 +682,52 @@ class Models(APIBase):
             'updatedAt': 1,
         }
         return self._keysort(econ_models, order)
+
+
+    def get_econ_models_by_type(
+            self, project_id: str, econ_model_type: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+        """
+        Returns a list of econ models by type. Allows `econModelType` passed as
+        a parameter rather than calling a different function for each model
+        type.
+        """
+        url = self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
+        params = {'take': GET_LIMIT}
+        econ_models = self._get_items(url, params)
+
+        order = {
+            'name': 0,
+            'id': 3,
+            'createdAt': 2,
+            'updatedAt': 1,
+        }
+        return self._keysort(econ_models, order)
+
+
+    def get_econ_model_by_type_by_id(
+            self, project_id: str, econ_model_type: str, model_id: str) -> Item:
+        """
+        Returns a specific econ model from its type and id. Allows
+        `econModelType` passed as a parameter rather than calling a different
+        function for each model type.
+        """
+        url = self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
+        econ_models = self._get_items(url)
+
+        return econ_models[0]
+
+
+    def get_econ_model_assignments_by_type_by_id(
+            self, project_id: str, econ_model_type: str, model_id: str) -> Item:
+        """
+        Returns a specific econ model assignment from its type and id. Allows
+        `econModelType` passed as a parameter rather than calling a different
+        function for each model type.
+        """
+        url = self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+        econ_models = self._get_items(url)
+
+        return econ_models[0]
 
 
     def get_general_options_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
