@@ -3,6 +3,7 @@ __version__ = '1.0.5'
 from .root import Root
 from .projects import Projects
 from .scenarios import Scenarios
+from .production import Production
 from .econ_runs import EconRuns
 from .wells import Wells
 from .models import Models
@@ -17,6 +18,7 @@ class ComboCurveAPI(
     Root,
     Projects,
     Scenarios,
+    Production,
     EconRuns,
     Wells,
     Models,

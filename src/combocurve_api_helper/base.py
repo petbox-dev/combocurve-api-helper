@@ -4,7 +4,7 @@ import json
 from itertools import chain
 from more_itertools import chunked
 from typing import List, Dict, Optional, Union, Any, Iterable, Iterator, Mapping
-from typing_extensions import Self
+from typing_extensions import Self, TypeAlias
 
 import requests  # type: ignore
 from requests import Response
@@ -14,10 +14,12 @@ from combocurve_api_v1.pagination import get_next_page_url  # type: ignore
 from . import config
 
 
-PrimativeValue = Union[str, int, float, bool]
-IterableValue = Union[List[str], List[int], List[float], List[bool], Dict[str, Union[PrimativeValue, 'IterableValue']]]
-Item = Dict[str, Union[PrimativeValue, IterableValue]]
-ItemList = List[Item]
+PrimativeValue: TypeAlias = Union[str, int, float, bool]
+IterableValue: TypeAlias = Union[
+    List[str], List[int], List[float], List[bool],
+    Dict[str, Union[PrimativeValue, 'IterableValue']]]
+Item: TypeAlias = Dict[str, Union[PrimativeValue, IterableValue]]
+ItemList: TypeAlias = List[Item]
 
 
 class APIBase:
@@ -82,7 +84,7 @@ class APIBase:
             try:
                 response.raise_for_status()
             except Exception as e:
-                print(f'\nURL: {url}\nParams: {params}\n')
+                print(f'\nException occured during request:\nURL: {url}\nParams: {params}\n')
                 raise e
 
             yield response
@@ -119,7 +121,7 @@ class APIBase:
                 try:
                     response.raise_for_status()
                 except Exception as e:
-                    print(f'\nURL: {url}\n')
+                    print(f'\nException occured during request:\nURL: {url}\n')
                     raise e
 
                 yield response
