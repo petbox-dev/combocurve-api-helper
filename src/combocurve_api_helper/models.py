@@ -7,13 +7,12 @@ GET_LIMIT = 200
 POST_LIMIT = 500
 PUT_LIMIT = 500
 
-
-def _get_route(econ_model_type: str) -> Union[str, None]:
-    for model in APIBase.ECON_MODELS:
-        if model['econModelType'] == econ_model_type:
-            return model['route']
-
-    return None
+SORT_ORDER = {
+    'name': 0,
+    'id': 3,
+    'createdAt': 2,
+    'updatedAt': 1,
+}
 
 
 class Models(APIBase):
@@ -45,14 +44,15 @@ class Models(APIBase):
         type. Allows `econModelType` passed as a parameter rather than calling
         a different function for each model type.
         """
-        route = _get_route(econ_model_type)
-        if route is None:
-            raise ValueError(
-                f'Invalid econ model type: {econ_model_type}\n'
-                f'Valid types are: {", ".join(m["econModelType"] for m in APIBase.ECON_MODELS)}'
-            )
+        def _get_route_for_model(econ_model_type: str) -> Union[str, None]:
+            for model in APIBase.ECON_MODELS:
+                if model['econModelType'].casefold() == econ_model_type.casefold():
+                    return model['route']
 
+            return None
 
+        route = _get_route_for_model(econ_model_type)
+        assert route is not None, f'Invalid econ model type: {econ_model_type}'
         url = f'{self.API_BASE_URL}/projects/{project_id}/econ-models/{route}'
         if filters is None:
             return url
@@ -94,8 +94,16 @@ class Models(APIBase):
         specific project id and model type. Allows `econModelType` passed as a
         parameter rather than calling a different function for each model type.
         """
-        base_url = self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
-        url = f'{base_url}/assignments'
+        def _get_route_for_assignment(econ_model_type: str) -> Union[str, None]:
+            for model in APIBase.ECON_MODELS:
+                if model['econModelType'].casefold() == econ_model_type.casefold():
+                    return model['econModelType']
+
+            return None
+
+        route = _get_route_for_assignment(econ_model_type)
+        assert route is not None, f'Invalid econ model type: {econ_model_type}'
+        url = f'{self.API_BASE_URL}/projects/{project_id}/econ-models/{route}/{model_id}/assignments'
         if filters is None:
             return url
 
@@ -111,17 +119,8 @@ class Models(APIBase):
         """
         Returns the API url of general options models for a specific project id.
         """
-        base_url = self.get_econ_models_url(project_id)
-        url = f'{base_url}/general-options'
-        if filters is None:
-            return url
-
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
-        return url
+        econ_model_type = 'GeneralOptions'
+        return self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
 
 
     def get_general_options_model_by_id_url(self, project_id: str, model_id: str) -> str:
@@ -129,25 +128,16 @@ class Models(APIBase):
         Returns the API url of a specific general options model for a specific
         project id.
         """
-        base_url = self.get_general_options_models_url(project_id)
-        return f'{base_url}/{model_id}'
+        econ_model_type = 'GeneralOptions'
+        return self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
 
 
     def get_actual_forecast_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
         Returns the API url of actual-forecast models for a specific project id.
         """
-        base_url = self.get_econ_models_url(project_id)
-        url = f'{base_url}/actual-forecast'
-        if filters is None:
-            return url
-
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
-        return url
+        econ_model_type = 'ActualOrForecast'
+        return self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
 
 
     def get_actual_forecast_model_by_id_url(self, project_id: str, model_id: str) -> str:
@@ -155,8 +145,8 @@ class Models(APIBase):
         Returns the API url of a specific actual-forecast model for a specific
         project id.
         """
-        base_url = self.get_actual_forecast_models_url(project_id)
-        return f'{base_url}/{model_id}'
+        econ_model_type = 'ActualOrForecast'
+        return self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
 
 
     def get_actual_forecast_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
@@ -164,414 +154,16 @@ class Models(APIBase):
         Returns the API url of a specific actual-forecast model assignment for
         a specific project id.
         """
-        base_url = self.get_actual_forecast_model_by_id_url(project_id, model_id)
-        return f'{base_url}/assignments'
-
-
-    def get_reserves_categories_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
-        """
-        Returns the API url of reserves categories models for a specific
-        project id.
-        """
-        base_url = self.get_econ_models_url(project_id)
-        url = f'{base_url}/reserves-categories'
-        if filters is None:
-            return url
-
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
-        return url
-
-
-    def get_reserves_categories_model_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific reserves categories model for a
-        specific project id.
-        """
-        base_url = self.get_reserves_categories_models_url(project_id)
-        return f'{base_url}/{model_id}'
-
-
-    def get_reserves_categories_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific reserves categories model assignment
-        for a specific project id.
-        """
-        base_url = self.get_reserves_categories_model_by_id_url(project_id, model_id)
-        return f'{base_url}/assignments'
-
-
-    def get_escalations_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
-        """
-        Returns the API url of escalations models for a specific project id.
-        """
-        base_url = self.get_econ_models_url(project_id)
-        url = f'{base_url}/escalations'
-        if filters is None:
-            return url
-
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
-        return url
-
-
-    def get_escalations_model_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific escalations model for a specific
-        project id.
-        """
-        base_url = self.get_escalations_models_url(project_id)
-        return f'{base_url}/{model_id}'
-
-
-    def get_escalations_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific escalations model assignment for a
-        specific project id.
-        """
-        base_url = self.get_escalations_model_by_id_url(project_id, model_id)
-        return f'{base_url}/assignments'
-
-
-    def get_differentials_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
-        """
-        Returns the API url of differentials models for a specific project id.
-        """
-        base_url = self.get_econ_models_url(project_id)
-        url = f'{base_url}/differentials'
-        if filters is None:
-            return url
-
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
-        return url
-
-
-    def get_differentials_model_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific differentials model for a specific
-        project id.
-        """
-        base_url = self.get_differentials_models_url(project_id)
-        return f'{base_url}/{model_id}'
-
-
-    def get_differentials_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific differentials model assignment for a
-        specific project id.
-        """
-        base_url = self.get_differentials_model_by_id_url(project_id, model_id)
-        return f'{base_url}/assignments'
-
-
-    def get_pricing_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
-        """
-        Returns the API url of pricing models for a specific project id.
-        """
-        base_url = self.get_econ_models_url(project_id)
-        url = f'{base_url}/pricing'
-        if filters is None:
-            return url
-
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
-        return url
-
-
-    def get_pricing_model_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific pricing model for a specific
-        project id.
-        """
-        base_url = self.get_pricing_models_url(project_id)
-        return f'{base_url}/{model_id}'
-
-
-    def get_pricing_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific pricing model assignment for a
-        specific project id.
-        """
-        base_url = self.get_pricing_model_by_id_url(project_id, model_id)
-        return f'{base_url}/assignments'
-
-
-    def get_ownership_reversions_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
-        """
-        Returns the API url of ownership reversions models for a specific
-        project id.
-        """
-        base_url = self.get_econ_models_url(project_id)
-        url = f'{base_url}/ownership-reversions'
-        if filters is None:
-            return url
-
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
-        return url
-
-
-    def get_ownership_reversions_model_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific ownership reversions model for a
-        specific project id.
-        """
-        base_url = self.get_ownership_reversions_models_url(project_id)
-        return f'{base_url}/{model_id}'
-
-
-    def get_ownership_reversions_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific ownership reversions model assignment
-        for a specific project id.
-        """
-        base_url = self.get_ownership_reversions_model_by_id_url(project_id, model_id)
-        return f'{base_url}/assignments'
-
-
-    def get_production_taxes_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
-        """
-        Returns the API url of production taxes models for a specific
-        project id.
-        """
-        base_url = self.get_econ_models_url(project_id)
-        url = f'{base_url}/production-taxes'
-        if filters is None:
-            return url
-
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
-        return url
-
-
-    def get_production_taxes_model_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific production taxes model for a specific
-        project id.
-        """
-        base_url = self.get_production_taxes_models_url(project_id)
-        return f'{base_url}/{model_id}'
-
-
-    def get_production_taxes_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific production taxes model assignment for
-        a specific project id.
-        """
-        base_url = self.get_production_taxes_model_by_id_url(project_id, model_id)
-        return f'{base_url}/assignments'
-
-
-    def get_riskings_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
-        """
-        Returns the API url of riskings models for a specific project id.
-        """
-        base_url = self.get_econ_models_url(project_id)
-        url = f'{base_url}/riskings'
-        if filters is None:
-            return url
-
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
-        return url
-
-
-    def get_riskings_model_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific riskings model for a specific
-        project id.
-        """
-        base_url = self.get_riskings_models_url(project_id)
-        return f'{base_url}/{model_id}'
-
-
-    def get_riskings_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific riskings model assignment for a
-        specific project id.
-        """
-        base_url = self.get_riskings_model_by_id_url(project_id, model_id)
-        return f'{base_url}/assignments'
-
-
-    def get_stream_properties_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
-        """
-        Returns the API url of stream properties models for a specific
-        project id.
-        """
-        base_url = self.get_econ_models_url(project_id)
-        url = f'{base_url}/stream-properties'
-        if filters is None:
-            return url
-
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
-        return url
-
-
-    def get_stream_properties_model_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific stream properties model for a
-        specific project id.
-        """
-        base_url = self.get_stream_properties_models_url(project_id)
-        return f'{base_url}/{model_id}'
-
-
-    def get_stream_properties_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific stream properties model assignment
-        for a specific project id.
-        """
-        base_url = self.get_stream_properties_model_by_id_url(project_id, model_id)
-        return f'{base_url}/assignments'
-
-
-    def get_expenses_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
-        """
-        Returns the API url of expenses models for a specific project id.
-        """
-        base_url = self.get_econ_models_url(project_id)
-        url = f'{base_url}/expenses'
-        if filters is None:
-            return url
-
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
-        return url
-
-
-    def get_expenses_model_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific expenses model for a specific
-        project id.
-        """
-        base_url = self.get_expenses_models_url(project_id)
-        return f'{base_url}/{model_id}'
-
-
-    def get_expenses_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific expenses model assignment for a
-        specific project id.
-        """
-        base_url = self.get_expenses_model_by_id_url(project_id, model_id)
-        return f'{base_url}/assignments'
-
-
-    def get_emissions_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
-        """
-        Returns the API url of emissions models for a specific project id.
-        """
-        base_url = self.get_econ_models_url(project_id)
-        url = f'{base_url}/emissions'
-        if filters is None:
-            return url
-
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
-        return url
-
-
-    def get_emissions_model_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific emissions model for a specific
-        project id.
-        """
-        base_url = self.get_emissions_models_url(project_id)
-        return f'{base_url}/{model_id}'
-
-
-    def get_emissions_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific emissions model assignment for a
-        specific project id.
-        """
-        base_url = self.get_emissions_model_by_id_url(project_id, model_id)
-        return f'{base_url}/assignments'
-
-
-    def get_fluid_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
-        """
-        Returns the API url of fluid models for a specific project id.
-        """
-        base_url = self.get_econ_models_url(project_id)
-        url = f'{base_url}/fluid-models'
-        if filters is None:
-            return url
-
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
-        return url
-
-
-    def get_fluid_models_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific fluid model for a specific
-        project id.
-        """
-        base_url = self.get_fluid_models_url(project_id)
-        return f'{base_url}/{model_id}'
-
-
-    def get_fluid_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
-        """
-        Returns the API url of a specific fluid model assignment for a specific
-        project id.
-        """
-        base_url = self.get_fluid_models_by_id_url(project_id, model_id)
-        return f'{base_url}/assignments'
+        econ_model_type = 'ActualOrForecast'
+        return self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
 
 
     def get_capex_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
         Returns the API url of capex models for a specific project id.
         """
-        base_url = self.get_econ_models_url(project_id)
-        url = f'{base_url}/capex'
-        if filters is None:
-            return url
-
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
-        return url
+        econ_model_type = 'Capex'
+        return self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
 
 
     def get_capex_model_by_id_url(self, project_id: str, model_id: str) -> str:
@@ -579,8 +171,8 @@ class Models(APIBase):
         Returns the API url of a specific capex model for a specific
         project id.
         """
-        base_url = self.get_capex_models_url(project_id)
-        return f'{base_url}/{model_id}'
+        econ_model_type = 'Capex'
+        return self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
 
 
     def get_capex_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
@@ -588,34 +180,24 @@ class Models(APIBase):
         Returns the API url of a specific capex model assignment for a specific
         project id.
         """
-        base_url = self.get_capex_model_by_id_url(project_id, model_id)
-        return f'{base_url}/assignments'
+        econ_model_type = 'Capex'
+        return self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
 
 
     def get_date_settings_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
         Returns the API url of date settings models for a specific project id.
         """
-        base_url = self.get_econ_models_url(project_id)
-        url = f'{base_url}/date-settings'
-        if filters is None:
-            return url
-
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
-        return url
-
+        econ_model_type = 'Dates'
+        return self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
 
     def get_date_settings_model_by_id_url(self, project_id: str, model_id: str) -> str:
         """
         Returns the API url of a specific date settings model for a specific
         project id.
         """
-        base_url = self.get_date_settings_models_url(project_id)
-        return f'{base_url}/{model_id}'
+        econ_model_type = 'Dates'
+        return self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
 
 
     def get_date_settings_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
@@ -623,25 +205,16 @@ class Models(APIBase):
         Returns the API url of a specific date settings model assignment for a
         specific project id.
         """
-        base_url = self.get_date_settings_model_by_id_url(project_id, model_id)
-        return f'{base_url}/assignments'
+        econ_model_type = 'Dates'
+        return self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
 
 
     def get_depreciation_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
         Returns the API url of depreciation models for a specific project id.
         """
-        base_url = self.get_econ_models_url(project_id)
-        url = f'{base_url}/depreciation'
-        if filters is None:
-            return url
-
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
-        return url
+        econ_model_type = 'Depreciation'
+        return self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
 
 
     def get_depreciation_model_by_id_url(self, project_id: str, model_id: str) -> str:
@@ -649,8 +222,8 @@ class Models(APIBase):
         Returns the API url of a specific depreciation model for a specific
         project id.
         """
-        base_url = self.get_depreciation_models_url(project_id)
-        return f'{base_url}/{model_id}'
+        econ_model_type = 'Depreciation'
+        return self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
 
 
     def get_depreciation_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
@@ -658,8 +231,297 @@ class Models(APIBase):
         Returns the API url of a specific depreciation model assignment for a
         specific project id.
         """
-        base_url = self.get_depreciation_model_by_id_url(project_id, model_id)
-        return f'{base_url}/assignments'
+        econ_model_type = 'Depreciation'
+        return self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_differentials_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url of differentials models for a specific project id.
+        """
+        econ_model_type = 'Differentials'
+        return self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
+
+
+    def get_differentials_model_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific differentials model for a specific
+        project id.
+        """
+        econ_model_type = 'Differentials'
+        return self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_differentials_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific differentials model assignment for a
+        specific project id.
+        """
+        econ_model_type = 'Differentials'
+        return self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_emissions_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url of emissions models for a specific project id.
+        """
+        econ_model_type = 'Emission'
+        return self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
+
+
+    def get_emissions_model_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific emissions model for a specific
+        project id.
+        """
+        econ_model_type = 'Emission'
+        return self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_emissions_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific emissions model assignment for a
+        specific project id.
+        """
+        econ_model_type = 'Emission'
+        return self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_escalations_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url of escalations models for a specific project id.
+        """
+        econ_model_type = 'Escalation'
+        return self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
+
+
+    def get_escalations_model_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific escalations model for a specific
+        project id.
+        """
+        econ_model_type = 'Escalation'
+        return self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+    def get_escalations_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific escalations model assignment for a
+        specific project id.
+        """
+        econ_model_type = 'Escalation'
+        return self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_expenses_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url of expenses models for a specific project id.
+        """
+        econ_model_type = 'Expenses'
+        return self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
+
+
+    def get_expenses_model_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific expenses model for a specific
+        project id.
+        """
+        econ_model_type = 'Expenses'
+        return self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_expenses_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific expenses model assignment for a
+        specific project id.
+        """
+        econ_model_type = 'Expenses'
+        return self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_fluid_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url of fluid models for a specific project id.
+        """
+        econ_model_type = 'FluidModel'
+        return self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
+
+
+    def get_fluid_models_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific fluid model for a specific
+        project id.
+        """
+        econ_model_type = 'FluidModel'
+        return self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_fluid_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific fluid model assignment for a specific
+        project id.
+        """
+        econ_model_type = 'FluidModel'
+        return self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_ownership_reversions_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url of ownership reversions models for a specific
+        project id.
+        """
+        econ_model_type = 'OwnershipReversion'
+        return self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
+
+
+    def get_ownership_reversions_model_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific ownership reversions model for a
+        specific project id.
+        """
+        econ_model_type = 'OwnershipReversion'
+        return self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_ownership_reversions_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific ownership reversions model assignment
+        for a specific project id.
+        """
+        econ_model_type = 'OwnershipReversion'
+        return self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_pricing_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url of pricing models for a specific project id.
+        """
+        econ_model_type = 'Pricing'
+        return self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
+
+
+    def get_pricing_model_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific pricing model for a specific
+        project id.
+        """
+        econ_model_type = 'Pricing'
+        return self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_pricing_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific pricing model assignment for a
+        specific project id.
+        """
+        econ_model_type = 'Pricing'
+        return self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_production_taxes_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url of production taxes models for a specific
+        project id.
+        """
+        econ_model_type = 'ProductionTaxes'
+        return self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
+
+
+    def get_production_taxes_model_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific production taxes model for a specific
+        project id.
+        """
+        econ_model_type = 'ProductionTaxes'
+        return self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+    def get_production_taxes_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific production taxes model assignment for
+        a specific project id.
+        """
+        econ_model_type = 'ProductionTaxes'
+        return self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_reserves_categories_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url of reserves categories models for a specific
+        project id.
+        """
+        econ_model_type = 'ReservesCategory'
+        return self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
+
+
+    def get_reserves_categories_model_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific reserves categories model for a
+        specific project id.
+        """
+        econ_model_type = 'ReservesCategory'
+        return self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_reserves_categories_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific reserves categories model assignment
+        for a specific project id.
+        """
+        econ_model_type = 'ReservesCategory'
+        return self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_riskings_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url of riskings models for a specific project id.
+        """
+        econ_model_type = 'Risking'
+        return self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
+
+
+    def get_riskings_model_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific riskings model for a specific
+        project id.
+        """
+        econ_model_type = 'Risking'
+        return self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_riskings_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific riskings model assignment for a
+        specific project id.
+        """
+        econ_model_type = 'Risking'
+        return self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_stream_properties_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url of stream properties models for a specific
+        project id.
+        """
+        econ_model_type = 'StreamProperties'
+        return self.get_econ_models_by_type_url(project_id, econ_model_type, filters)
+
+
+    def get_stream_properties_model_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific stream properties model for a
+        specific project id.
+        """
+        econ_model_type = 'StreamProperties'
+        return self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
+
+
+    def get_stream_properties_assignments_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of a specific stream properties model assignment
+        for a specific project id.
+        """
+        econ_model_type = 'StreamProperties'
+        return self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+
 
 
     ###########
@@ -675,13 +537,7 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         econ_models = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(econ_models, order)
+        return self._keysort(econ_models, SORT_ORDER)
 
 
     def get_econ_models_by_type(
@@ -695,39 +551,36 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         econ_models = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(econ_models, order)
+        return self._keysort(econ_models, SORT_ORDER)
 
 
     def get_econ_model_by_type_by_id(
-            self, project_id: str, econ_model_type: str, model_id: str) -> Item:
+            self, project_id: str, econ_model_type: str, model_id: str) -> Union[Item, None]:
         """
         Returns a specific econ model from its type and id. Allows
         `econModelType` passed as a parameter rather than calling a different
         function for each model type.
         """
         url = self.get_econ_model_by_type_by_id_url(project_id, econ_model_type, model_id)
-        econ_models = self._get_items(url)
+        econ_model = self._get_items(url)
 
-        return econ_models[0]
+        return econ_model[0]
 
 
     def get_econ_model_assignments_by_type_by_id(
-            self, project_id: str, econ_model_type: str, model_id: str) -> Item:
+            self, project_id: str, econ_model_type: str, model_id: str) -> Union[Item, None]:
         """
         Returns a specific econ model assignment from its type and id. Allows
         `econModelType` passed as a parameter rather than calling a different
         function for each model type.
         """
         url = self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
-        econ_models = self._get_items(url)
+        assignments = self._get_items(url)
 
-        return econ_models[0]
+        if len(assignments) == 0:
+            return None
+
+        return assignments[0]
 
 
     def get_general_options_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -738,13 +591,7 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         general_options = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(general_options, order)
+        return self._keysort(general_options, SORT_ORDER)
 
 
     def get_general_options_model_by_id(self, project_id: str, model_id: str) -> Item:
@@ -765,13 +612,7 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         actual_forecast = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(actual_forecast, order)
+        return self._keysort(actual_forecast, SORT_ORDER)
 
 
     def get_actual_forecast_model_by_id(self, project_id: str, model_id: str) -> Item:
@@ -784,14 +625,17 @@ class Models(APIBase):
         return actual_forecast[0]
 
 
-    def get_actual_forecast_assignments_by_id(self, project_id: str, model_id: str) -> Item:
+    def get_actual_forecast_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         """
         Returns a specific actual-forecast model assignment from its id.
         """
         url = self.get_actual_forecast_assignments_by_id_url(project_id, model_id)
-        actual_forecast = self._get_items(url)
+        assignments = self._get_items(url)
 
-        return actual_forecast[0]
+        if len(assignments) == 0:
+            return None
+
+        return assignments[0]
 
 
     def get_reserves_categories_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -802,13 +646,7 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         reserves_categories = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(reserves_categories, order)
+        return self._keysort(reserves_categories, SORT_ORDER)
 
 
     def get_reserves_categories_by_id(self, project_id: str, model_id: str) -> Item:
@@ -821,14 +659,17 @@ class Models(APIBase):
         return reserves_categories[0]
 
 
-    def get_reserves_categories_assignments_by_id(self, project_id: str, model_id: str) -> Item:
+    def get_reserves_categories_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         """
         Returns a specific reserves categories model assignment from its id.
         """
         url = self.get_reserves_categories_assignments_by_id_url(project_id, model_id)
-        reserves_categories = self._get_items(url)
+        assignments = self._get_items(url)
 
-        return reserves_categories[0]
+        if len(assignments) == 0:
+            return None
+
+        return assignments[0]
 
 
     def get_escalation_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -839,13 +680,7 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         escalations = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(escalations, order)
+        return self._keysort(escalations, SORT_ORDER)
 
 
     def get_escalations_model_by_id(self, project_id: str, model_id: str) -> Item:
@@ -858,14 +693,17 @@ class Models(APIBase):
         return escalations[0]
 
 
-    def get_escalations_assignments_by_id(self, project_id: str, model_id: str) -> Item:
+    def get_escalations_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         """
         Returns a specific escalations model assignment from its id.
         """
         url = self.get_escalations_assignments_by_id_url(project_id, model_id)
-        escalations = self._get_items(url)
+        assignments = self._get_items(url)
 
-        return escalations[0]
+        if len(assignments) == 0:
+            return None
+
+        return assignments[0]
 
 
     def get_differential_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -876,13 +714,7 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         differentials = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(differentials, order)
+        return self._keysort(differentials, SORT_ORDER)
 
 
     def get_differentials_model_by_id(self, project_id: str, model_id: str) -> Item:
@@ -895,14 +727,17 @@ class Models(APIBase):
         return differentials[0]
 
 
-    def get_differentials_assignments_by_id(self, project_id: str, model_id: str) -> Item:
+    def get_differentials_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         """
         Returns a specific differentials model assignment from its id.
         """
         url = self.get_differentials_assignments_by_id_url(project_id, model_id)
-        differentials = self._get_items(url)
+        assignments = self._get_items(url)
 
-        return differentials[0]
+        if len(assignments) == 0:
+            return None
+
+        return assignments[0]
 
 
     def get_pricing_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -913,13 +748,7 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         pricing = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(pricing, order)
+        return self._keysort(pricing, SORT_ORDER)
 
 
     def get_pricing_model_by_id(self, project_id: str, model_id: str) -> Item:
@@ -932,14 +761,17 @@ class Models(APIBase):
         return pricing[0]
 
 
-    def get_pricing_assignments_by_id(self, project_id: str, model_id: str) -> Item:
+    def get_pricing_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         """
         Returns a specific pricing model assignment from its id.
         """
         url = self.get_pricing_assignments_by_id_url(project_id, model_id)
-        pricing = self._get_items(url)
+        assignments = self._get_items(url)
 
-        return pricing[0]
+        if len(assignments) == 0:
+            return None
+
+        return assignments[0]
 
 
     def get_ownership_reversions(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -950,13 +782,7 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         ownership_reversions = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(ownership_reversions, order)
+        return self._keysort(ownership_reversions, SORT_ORDER)
 
 
     def get_ownership_reversions_model_by_id(self, project_id: str, model_id: str) -> Item:
@@ -969,17 +795,20 @@ class Models(APIBase):
         return ownership_reversions[0]
 
 
-    def get_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str) -> Item:
+    def get_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         """
         Returns a specific ownership reversions model assignment from its id.
         """
         url = self.get_ownership_reversions_assignments_by_id_url(project_id, model_id)
-        ownership_reversions = self._get_items(url)
+        assignments = self._get_items(url)
 
-        return ownership_reversions[0]
+        if len(assignments) == 0:
+            return None
+
+        return assignments[0]
 
 
-    def get_production_taxe_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_production_taxes_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
         Returns a list of production taxes models.
         """
@@ -987,13 +816,7 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         production_taxes = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1
-        }
-        return self._keysort(production_taxes, order)
+        return self._keysort(production_taxes, SORT_ORDER)
 
 
     def get_production_taxes_model_by_id(self, project_id: str, model_id: str) -> Item:
@@ -1006,14 +829,17 @@ class Models(APIBase):
         return production_taxes[0]
 
 
-    def get_production_taxes_assignments_by_id(self, project_id: str, model_id: str) -> Item:
+    def get_production_taxes_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         """
         Returns a specific production taxes model assignment from its id.
         """
         url = self.get_production_taxes_assignments_by_id_url(project_id, model_id)
-        production_taxes = self._get_items(url)
+        assignments = self._get_items(url)
 
-        return production_taxes[0]
+        if len(assignments) == 0:
+            return None
+
+        return assignments[0]
 
 
     def get_risking_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -1024,13 +850,7 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         riskings = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1
-        }
-        return self._keysort(riskings, order)
+        return self._keysort(riskings, SORT_ORDER)
 
 
     def get_riskings_model_by_id(self, project_id: str, model_id: str) -> Item:
@@ -1043,14 +863,17 @@ class Models(APIBase):
         return riskings[0]
 
 
-    def get_riskings_assignments_by_id(self, project_id: str, model_id: str) -> Item:
+    def get_riskings_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         """
         Returns a specific riskings model assignment from its id.
         """
         url = self.get_riskings_assignments_by_id_url(project_id, model_id)
-        riskings = self._get_items(url)
+        assignments = self._get_items(url)
 
-        return riskings[0]
+        if len(assignments) == 0:
+            return None
+
+        return assignments[0]
 
 
     def get_stream_propertie_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -1061,13 +884,7 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         stream_properties = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1
-        }
-        return self._keysort(stream_properties, order)
+        return self._keysort(stream_properties, SORT_ORDER)
 
 
     def get_stream_properties_model_by_id(self, project_id: str, model_id: str) -> Item:
@@ -1080,14 +897,17 @@ class Models(APIBase):
         return stream_properties[0]
 
 
-    def get_stream_properties_assignments_by_id(self, project_id: str, model_id: str) -> Item:
+    def get_stream_properties_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         """
         Returns a specific stream properties model assignment from its id.
         """
         url = self.get_stream_properties_assignments_by_id_url(project_id, model_id)
-        stream_properties = self._get_items(url)
+        assignments = self._get_items(url)
 
-        return stream_properties[0]
+        if len(assignments) == 0:
+            return None
+
+        return assignments[0]
 
 
     def get_expense_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -1098,13 +918,7 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         expenses = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(expenses, order)
+        return self._keysort(expenses, SORT_ORDER)
 
 
     def get_expenses_model_by_id(self, project_id: str, model_id: str) -> Item:
@@ -1117,14 +931,11 @@ class Models(APIBase):
         return expenses[0]
 
 
-    def get_expenses_assignments_by_id(self, project_id: str, model_id: str) -> Item:
+    def get_expenses_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         """
         Returns a specific expenses model assignment from its id.
         """
-        url = self.get_expenses_assignments_by_id_url(project_id, model_id)
-        expenses = self._get_items(url)
-
-        return expenses[0]
+        return self.get_econ_model_assignments_by_type_by_id(project_id, 'expenses', model_id)
 
 
     def get_emission_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -1135,13 +946,8 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         emissions = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(emissions, order)
+
+        return self._keysort(emissions, SORT_ORDER)
 
 
     def get_emissions_model_by_id(self, project_id: str, model_id: str) -> Item:
@@ -1172,13 +978,7 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         fluid_models = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(fluid_models, order)
+        return self._keysort(fluid_models, SORT_ORDER)
 
 
     def get_fluid_model_by_id(self, project_id: str, model_id: str) -> Item:
@@ -1209,13 +1009,7 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         capex = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1
-        }
-        return self._keysort(capex, order)
+        return self._keysort(capex, SORT_ORDER)
 
 
     def get_capex_model_by_id(self, project_id: str, model_id: str) -> Item:
@@ -1246,13 +1040,7 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         date_settings = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1
-        }
-        return self._keysort(date_settings, order)
+        return self._keysort(date_settings, SORT_ORDER)
 
 
     def get_date_settings_model_by_id(self, project_id: str, model_id: str) -> Item:
@@ -1283,13 +1071,7 @@ class Models(APIBase):
         params = {'take': GET_LIMIT}
         depreciation = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1
-        }
-        return self._keysort(depreciation, order)
+        return self._keysort(depreciation, SORT_ORDER)
 
 
     def get_depreciation_model_by_id(self, project_id: str, model_id: str) -> Item:

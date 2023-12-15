@@ -24,15 +24,14 @@ ItemList: TypeAlias = List[Item]
 
 class APIBase:
     API_BASE_URL = 'https://api.combocurve.com/v1'
+    REFRENCE_WELLHEADER = config.REFRENCE_WELLHEADER
+    WELLHEADER_COLUMNS = {k.lower(): k for k in config.REFRENCE_WELLHEADER.keys()}
+    ECON_MODELS = config.ECON_MODELS
 
 
     def __init__(self) -> None:
         account = ServiceAccount.from_file(str(config.COMBOCURVE_JSON))
         self.auth = ComboCurveAuth(account, config.cfg.apikey)
-
-        self.REFRENCE_WELLHEADER = config.REFRENCE_WELLHEADER
-        self.WELLHEADER_COLUMNS = {k.lower(): k for k in config.REFRENCE_WELLHEADER.keys()}
-        self.ECON_MODELS = config.ECON_MODELS
 
 
     @classmethod
