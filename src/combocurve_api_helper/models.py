@@ -568,7 +568,7 @@ class Models(APIBase):
 
 
     def get_econ_model_assignments_by_type_by_id(
-            self, project_id: str, econ_model_type: str, model_id: str) -> Union[Item, None]:
+            self, project_id: str, econ_model_type: str, model_id: str) -> Union[ItemList, None]:
         """
         Returns a specific econ model assignment from its type and id. Allows
         `econModelType` passed as a parameter rather than calling a different
@@ -580,7 +580,7 @@ class Models(APIBase):
         if len(assignments) == 0:
             return None
 
-        return assignments[0]
+        return assignments
 
 
     def get_general_options_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -625,7 +625,7 @@ class Models(APIBase):
         return actual_forecast[0]
 
 
-    def get_actual_forecast_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
+    def get_actual_forecast_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         """
         Returns a specific actual-forecast model assignment from its id.
         """
@@ -635,7 +635,7 @@ class Models(APIBase):
         if len(assignments) == 0:
             return None
 
-        return assignments[0]
+        return assignments
 
 
     def get_reserves_categories_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -659,7 +659,7 @@ class Models(APIBase):
         return reserves_categories[0]
 
 
-    def get_reserves_categories_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
+    def get_reserves_categories_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         """
         Returns a specific reserves categories model assignment from its id.
         """
@@ -669,7 +669,7 @@ class Models(APIBase):
         if len(assignments) == 0:
             return None
 
-        return assignments[0]
+        return assignments
 
 
     def get_escalation_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -693,18 +693,17 @@ class Models(APIBase):
         return escalations[0]
 
 
-    def get_escalations_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
+    def get_escalations_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         """
         Returns a specific escalations model assignment from its id.
         """
-        url = self.get_escalations_assignments_by_id_url(project_id, model_id)
+        url = self.get_actual_forecast_assignments_by_id_url(project_id, model_id)
         assignments = self._get_items(url)
 
         if len(assignments) == 0:
             return None
 
-        return assignments[0]
-
+        return assignments
 
     def get_differential_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -727,7 +726,7 @@ class Models(APIBase):
         return differentials[0]
 
 
-    def get_differentials_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
+    def get_differentials_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         """
         Returns a specific differentials model assignment from its id.
         """
@@ -737,7 +736,7 @@ class Models(APIBase):
         if len(assignments) == 0:
             return None
 
-        return assignments[0]
+        return assignments
 
 
     def get_pricing_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -761,7 +760,7 @@ class Models(APIBase):
         return pricing[0]
 
 
-    def get_pricing_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
+    def get_pricing_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         """
         Returns a specific pricing model assignment from its id.
         """
@@ -771,7 +770,7 @@ class Models(APIBase):
         if len(assignments) == 0:
             return None
 
-        return assignments[0]
+        return assignments
 
 
     def get_ownership_reversions(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -795,7 +794,7 @@ class Models(APIBase):
         return ownership_reversions[0]
 
 
-    def get_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
+    def get_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         """
         Returns a specific ownership reversions model assignment from its id.
         """
@@ -805,7 +804,7 @@ class Models(APIBase):
         if len(assignments) == 0:
             return None
 
-        return assignments[0]
+        return assignments
 
 
     def get_production_taxes_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -829,7 +828,7 @@ class Models(APIBase):
         return production_taxes[0]
 
 
-    def get_production_taxes_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
+    def get_production_taxes_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         """
         Returns a specific production taxes model assignment from its id.
         """
@@ -839,7 +838,7 @@ class Models(APIBase):
         if len(assignments) == 0:
             return None
 
-        return assignments[0]
+        return assignments
 
 
     def get_risking_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -863,7 +862,7 @@ class Models(APIBase):
         return riskings[0]
 
 
-    def get_riskings_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
+    def get_riskings_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         """
         Returns a specific riskings model assignment from its id.
         """
@@ -873,8 +872,7 @@ class Models(APIBase):
         if len(assignments) == 0:
             return None
 
-        return assignments[0]
-
+        return assignments
 
     def get_stream_propertie_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -897,7 +895,7 @@ class Models(APIBase):
         return stream_properties[0]
 
 
-    def get_stream_properties_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
+    def get_stream_properties_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         """
         Returns a specific stream properties model assignment from its id.
         """
@@ -907,8 +905,7 @@ class Models(APIBase):
         if len(assignments) == 0:
             return None
 
-        return assignments[0]
-
+        return assignments
 
     def get_expense_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -931,11 +928,17 @@ class Models(APIBase):
         return expenses[0]
 
 
-    def get_expenses_assignments_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
+    def get_expenses_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         """
         Returns a specific expenses model assignment from its id.
         """
-        return self.get_econ_model_assignments_by_type_by_id(project_id, 'expenses', model_id)
+        url = self.get_expenses_assignments_by_id_url(project_id, model_id)
+        assignments = self._get_items(url)
+
+        if len(assignments) == 0:
+            return None
+
+        return assignments
 
 
     def get_emission_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -960,14 +963,17 @@ class Models(APIBase):
         return emissions[0]
 
 
-    def get_emissions_assignments_by_id(self, project_id: str, model_id: str) -> Item:
+    def get_emissions_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         """
         Returns a specific emissions model assignment from its id.
         """
         url = self.get_emissions_assignments_by_id_url(project_id, model_id)
-        emissions = self._get_items(url)
+        assignments = self._get_items(url)
 
-        return emissions[0]
+        if len(assignments) == 0:
+            return None
+
+        return assignments
 
 
     def get_fluid_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -991,14 +997,17 @@ class Models(APIBase):
         return fluid_models[0]
 
 
-    def get_fluid_assignments_by_id(self, project_id: str, model_id: str) -> Item:
+    def get_fluid_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         """
         Returns a specific fluid model assignment from its id.
         """
         url = self.get_fluid_assignments_by_id_url(project_id, model_id)
-        fluid_models = self._get_items(url)
+        assignments = self._get_items(url)
 
-        return fluid_models[0]
+        if len(assignments) == 0:
+            return None
+
+        return assignments
 
 
     def get_capex(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -1022,14 +1031,17 @@ class Models(APIBase):
         return capex[0]
 
 
-    def get_capex_assignments_by_id(self, project_id: str, model_id: str) -> Item:
+    def get_capex_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         """
         Returns a specific capex model assignment from its id.
         """
         url = self.get_capex_assignments_by_id_url(project_id, model_id)
-        capex = self._get_items(url)
+        assignments = self._get_items(url)
 
-        return capex[0]
+        if len(assignments) == 0:
+            return None
+
+        return assignments
 
 
     def get_date_settings(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -1053,14 +1065,17 @@ class Models(APIBase):
         return date_settings[0]
 
 
-    def get_date_settings_assignments_by_id(self, project_id: str, model_id: str) -> Item:
+    def get_date_settings_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         """
         Returns a specific date settings model assignment from its id.
         """
         url = self.get_date_settings_assignments_by_id_url(project_id, model_id)
-        date_settings = self._get_items(url)
+        assignments = self._get_items(url)
 
-        return date_settings[0]
+        if len(assignments) == 0:
+            return None
+
+        return assignments
 
 
     def get_depreciation(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
@@ -1084,11 +1099,14 @@ class Models(APIBase):
         return depreciation[0]
 
 
-    def get_depreciation_assignments_by_id(self, project_id: str, model_id: str) -> Item:
+    def get_depreciation_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         """
         Returns a specific depreciation model assignment from its id.
         """
         url = self.get_depreciation_assignments_by_id_url(project_id, model_id)
-        depreciation = self._get_items(url)
+        assignments = self._get_items(url)
 
-        return depreciation[0]
+        if len(assignments) == 0:
+            return None
+
+        return assignments
