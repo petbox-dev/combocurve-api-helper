@@ -19,11 +19,7 @@ class TypeCurves(APIBase):
         if filters is None:
             return url
 
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
+        url += self._build_params_string(filters)
         return url
 
 

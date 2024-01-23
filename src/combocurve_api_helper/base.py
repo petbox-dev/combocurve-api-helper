@@ -340,6 +340,18 @@ class APIBase:
 
 
     @staticmethod
+    def _build_params_string(filters: Optional[Dict[str, str]] = None) -> str:
+        if filters is None or len(filters) == 0:
+            return ''
+
+        parameters: List[str] = []
+        for key, value in filters.items():
+            parameters.append(f'{key}={value}')
+
+        return '?' + '&'.join(parameters)
+
+
+    @staticmethod
     def _keysort(items: ItemList, order: Dict[str, int], reverse: bool = False
                  ) -> ItemList:
         """

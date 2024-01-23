@@ -24,11 +24,7 @@ class Scenarios(APIBase):
         if filters is None:
             return url
 
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
+        url += self._build_params_string(filters)
         return url
 
 
@@ -52,11 +48,7 @@ class Scenarios(APIBase):
         if filters is None:
             return url
 
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
+        url += self._build_params_string(filters)
         return url
 
 
@@ -75,16 +67,17 @@ class Scenarios(APIBase):
             filters = {}
 
         if econ_name is not None:
-            if econ_name.casefold() not in (n.casefold() for n in self.econ_model_types):
-                warnings.warn(f'`econ_name` is not in list of valid names:\n{self.econ_model_types}')
+            for model in self.ECON_MODELS:
+                if econ_name.casefold() == model['econModelType'].casefold():
+                    filters['econName'] = econ_name
+                    break
 
-            filters['econName'] = econ_name
+            else:
+                model_names = [m['econModelType'] for m in self.ECON_MODELS]
+                warnings.warn(
+                    f'`econ_name` is not in list of valid names:\n{model_names}. All qualifiers will be returned.')
 
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
+        url += self._build_params_string(filters)
         return url
 
 
@@ -99,11 +92,7 @@ class Scenarios(APIBase):
         if filters is None:
             return url
 
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
+        url += self._build_params_string(filters)
         return url
 
 
