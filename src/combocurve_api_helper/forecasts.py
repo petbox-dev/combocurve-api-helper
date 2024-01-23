@@ -184,8 +184,7 @@ class Forecasts(APIBase):
         daily_volumes = self._get_items(url, params)
 
         order = {
-            'date': 0,
-            'volume': 1,
+            'well': 0,
         }
         return self._keysort(daily_volumes, order)
 
@@ -200,7 +199,6 @@ class Forecasts(APIBase):
         monthly_volumes = self._get_items(url, params)
 
         order = {
-            'date': 0,
-            'volume': 1,
+            'well': 0,
         }
         return self._keysort(monthly_volumes, order)
