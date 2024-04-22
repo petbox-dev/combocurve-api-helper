@@ -54,11 +54,11 @@ class Root(APIBase):
         return url
 
 
-    def get_root_econ_run_by_id_url(self, id: str) -> str:
+    def get_root_econ_run_by_id_url(self, econrun_id: str) -> str:
         """
         Returns the API url for a specific econ run from its econ run id.
         """
-        return f'{self.API_BASE_URL}/econ-runs/{id}'
+        return f'{self.API_BASE_URL}/econ-runs/{econrun_id}'
 
 
     def get_root_forecast_daily_volumes_url(self, filters: Optional[Dict[str, str]] = None) -> str:

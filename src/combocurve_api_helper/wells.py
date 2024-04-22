@@ -28,7 +28,7 @@ class Wells(APIBase):
         """
         Returns the API url for a specific company well from its well id.
         """
-        return f'{self.API_BASE_URL}/wells/{id}'
+        return f'{self.API_BASE_URL}/wells/{well_id}'
 
 
     def get_project_company_wells_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
@@ -49,7 +49,7 @@ class Wells(APIBase):
         Returns the API url for a specific project company well from its
         well id.
         """
-        return f'{self.API_BASE_URL}/projects/{project_id}/company-wells/{id}'
+        return f'{self.API_BASE_URL}/projects/{project_id}/company-wells/{well_id}'
 
 
     def get_project_wells_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
@@ -68,7 +68,7 @@ class Wells(APIBase):
         """
         Returns the API url for a specific project well from its well id.
         """
-        return f'{self.API_BASE_URL}/projects/{project_id}/wells/{id}'
+        return f'{self.API_BASE_URL}/projects/{project_id}/wells/{well_id}'
 
 
     def get_well_comments_url(self, filters: Optional[Dict[str, str]] = None) -> str:
