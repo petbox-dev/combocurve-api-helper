@@ -9,7 +9,6 @@ from .base import APIBase, Item, ItemList
 
 
 GET_LIMIT = 200
-GET_LIMIT_MONTHLY_EXPORTS = 100
 
 
 class Scenarios(APIBase):
@@ -17,8 +16,7 @@ class Scenarios(APIBase):
     # URLs
     ######
 
-    def get_scenarios_url(self, project_id: str,
-                          filters: Optional[Dict[str, str]] = None) -> str:
+    def get_scenarios_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
         Returns the API url for project scenarios scoped from the project's id.
         """
@@ -26,108 +24,76 @@ class Scenarios(APIBase):
         if filters is None:
             return url
 
-        parameters: List[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
-
-        url += '?' + '&'.join(parameters)
+        url += self._build_params_string(filters)
         return url
 
 
-    def get_scenario_by_id_url(self, project_id: str, id: str) -> str:
+    def get_scenario_by_id_url(self, project_id: str, scenario_id: str) -> str:
         """
-        Returns the API url for a specific project scenario from its scenario id.
+        Returns the API url for a specific project scenario from its
+        scenario id.
         """
-        return f'{self.API_BASE_URL}/projects/{project_id}/scenarios/{id}'
+        base_url = self.get_scenarios_url(project_id)
+        return f'{base_url}/{scenario_id}'
 
 
-    def get_scenario_combos_url(self, project_id: str, scenario_id: str) -> str:
+    def get_scenario_combos_url(
+            self, project_id: str, scenario_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
-        Returns the API url for combos for a specific project id, scenario id, and econ run id.
+        Returns the API url for combos for a specific project id, scenario id,
+        and econ run id.
         """
-        return f'{self.API_BASE_URL}/projects/{project_id}/scenarios/{scenario_id}/combos'
-
-
-    def get_scenario_qualifiers_url(self, project_id: str, scenario_id: str, econ_name: Optional[str]) -> str:
-        """
-        Returns the API url for qualifiers for a specific project id, scenario id, and optionally, econ name.
-        """
-        url = f'{self.API_BASE_URL}/projects/{project_id}/scenarios/{scenario_id}/qualifiers'
-
-        VALID_ECON_NAMES = (
-            'capex',
-            'dates',
-            'depreciations',
-            'escalation',
-            'expenses',
-            'forecast',
-            'pSeries',
-            'network',
-            'ownershipReversion',
-            'pricing',
-            'differentials',
-            'productionTaxes',
-            'actualOrForecast',
-            'reservesCategory',
-            'risking',
-            'schedule',
-            'streamProperties',
-            'emission'
-        )
-
-        if econ_name is None:
+        base_url = self.get_scenario_by_id_url(project_id, scenario_id)
+        url = f'{base_url}/combos'
+        if filters is None:
             return url
-        elif econ_name.casefold() not in (n.casefold() for n in VALID_ECON_NAMES):
-            warnings.warn(f'Econ name is not in list of valid econ names:\n{VALID_ECON_NAMES}')
 
-        return f'{url}?econName={econ_name}'
+        url += self._build_params_string(filters)
+        return url
 
 
-    def get_econ_runs_url(self, project_id: str, scenario_id: str) -> str:
+
+    def get_scenario_qualifiers_url(
+            self, project_id: str, scenario_id: str, econ_name: Optional[str] = None,
+            filters: Optional[Dict[str, str]] = None) -> str:
         """
-        Returns the API url of econ runs for a specific project id and scenario id.
+        Returns the API url for qualifiers for a specific project id,
+        scenario id, and optionally, econ name.
         """
-        return f'{self.API_BASE_URL}/projects/{project_id}/scenarios/{scenario_id}/econ-runs'
+        base_url = self.get_scenario_by_id_url(project_id, scenario_id)
+        url = f'{base_url}/qualifiers'
+
+        if filters is None:
+            filters = {}
+
+        if econ_name is not None:
+            for model in self.ECON_MODELS:
+                if econ_name.casefold() == model['econModelType'].casefold():
+                    filters['econName'] = econ_name
+                    break
+
+            else:
+                model_names = [m['econModelType'] for m in self.ECON_MODELS]
+                warnings.warn(
+                    f'`econ_name` is not in list of valid names:\n{model_names}. All qualifiers will be returned.')
+
+        url += self._build_params_string(filters)
+        return url
 
 
-    def get_econ_run_by_id_url(self, project_id: str, scenario_id: str, econ_run_id: str) -> str:
+    def get_scenario_wells_url(
+            self, project_id: str, scenario_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
-        Returns the API url for a specific econ run from its econ run id.
+        Returns the API url for well assignments for a specific project id and
+        scenario id.
         """
-        return f'{self.API_BASE_URL}/projects/{project_id}/scenarios/{scenario_id}/econ-runs/{econ_run_id}'
+        base_url = self.get_scenario_by_id_url(project_id, scenario_id)
+        url = f'{self.API_BASE_URL}/projects/{project_id}/scenarios/{scenario_id}/well-assignments'
+        if filters is None:
+            return url
 
-
-    def get_econ_run_combo_names_url(self, project_id: str, scenario_id: str, econ_run_id: str) -> str:
-        """
-        Returns the API url for onelines for a specific project id, scenario id, and econ run id.
-        """
-        return (f'{self.API_BASE_URL}/projects/{project_id}/scenarios/{scenario_id}/econ-runs/{econ_run_id}/'
-                'one-liners/combo-names')
-
-
-    def get_econ_run_onelines_url(self, project_id: str, scenario_id: str, econ_run_id: str) -> str:
-        """
-        Returns the API url for onelines for a specific project id, scenario id, and econ run id.
-        """
-        return f'{self.API_BASE_URL}/projects/{project_id}/scenarios/{scenario_id}/econ-runs/{econ_run_id}/one-liners'
-
-
-    def get_econ_run_monthly_export_id_url(self, project_id: str, scenario_id: str, econ_run_id: str) -> str:
-        """
-        Returns the API url for monthly exports for a specific project id, scenario id, and econ run id.
-        """
-        return (f'{self.API_BASE_URL}/projects/{project_id}/scenarios/{scenario_id}/econ-runs/{econ_run_id}/'
-                'monthly-exports')
-
-
-    def get_econ_run_monthly_export_url(self, project_id: str, scenario_id: str, econ_run_id: str,
-                                        monthly_export_id: str) -> str:
-        """
-        Returns the API url for monthly exports for a specific project id, scenario id, econ run id,
-        and monthly export id.
-        """
-        return (f'{self.API_BASE_URL}/projects/{project_id}/scenarios/{scenario_id}/econ-runs/{econ_run_id}/'
-                f'monthly-exports/{monthly_export_id}')
+        url += self._build_params_string(filters)
+        return url
 
 
     ###########
@@ -135,9 +101,14 @@ class Scenarios(APIBase):
     ###########
 
 
+    # Scenarios
+
+
     def get_scenarios(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
-        Returns a list of project scenarios scoped from the project's id.
+        Returns a list of scenarios scoped from the project's id.
+
+        https://docs.api.combocurve.com/#e7de7ef5-228b-4de6-bd67-89c8ef14a4bc
         """
         url = self.get_scenarios_url(project_id, filters)
         params = {'take': GET_LIMIT}
@@ -152,191 +123,469 @@ class Scenarios(APIBase):
         return self._keysort(scenarios, order)
 
 
-    def get_scenario_by_id(self, project_id: str, id: str) -> Item:
+    def post_scenarios(self, project_id: str, data: ItemList) -> ItemList:
         """
-        Returns a specific project scenario from its scenario id.
+        Creates scenarios for a specific project id.
+
+        https://docs.api.combocurve.com/#52df57aa-af96-4e86-976c-8d4aff3125f7
         """
-        url = self.get_scenario_by_id_url(project_id, id)
+        url = self.get_scenarios_url(project_id)
+        scenarios = self._post_items(url, data)
+
+        return scenarios
+
+
+    def put_scenarios(self, project_id: str, data: ItemList) -> ItemList:
+        """
+        Upserts scenarios for a specific project id.
+
+        https://docs.api.combocurve.com/#94b372d8-6696-4f65-b1b7-6c0576b3f75b
+        """
+        url = self.get_scenarios_url(project_id)
+        scenarios = self._put_items(url, data)
+
+        return scenarios
+
+
+    def delete_scenarios(self, project_id: str, scenario_name: Optional[str], scenario_id: Optional[str]) -> ItemList:
+        """
+        Deletes scenarios for a specific project id.
+
+        https://docs.api.combocurve.com/#7429717e-51f2-48de-ad22-6c4bc5bf1bb1
+
+        Returns the headers from the delete response where 'X-Delete-Count' is
+        the number of wells deleted.
+        """
+        if (scenario_name or scenario_id) is None:
+            raise ValueError('Must provide at least one of scenario_name or scenario_id')
+
+        filters: Dict[str, str] = {}
+        if scenario_name is not None:
+            filters['name'] = scenario_name
+
+        if scenario_id is not None:
+            filters['id'] = scenario_id
+
+        url = self.get_scenarios_url(project_id, filters)
+        scenarios = self._delete_responses(url, data=[])
+
+        headers = scenarios[0].headers
+
+        return headers
+
+
+    def get_scenario_by_id(self, project_id: str, scenario_id: str) -> Item:
+        """
+        Returns a specific scenario from its scenario id.
+
+        https://docs.api.combocurve.com/#e7de7ef5-228b-4de6-bd67-89c8ef14a4bc
+
+        Example response:
+        [
+            {
+                "createdAt": "2020-01-21T16:58:08.986Z",
+                "id": "5e5981b9e23dae0012624d72",
+                "name": "Test scenario",
+                "updatedAt": "2020-01-21T17:58:08.986Z"
+            }
+        ]
+        """
+        url = self.get_scenario_by_id_url(project_id, scenario_id)
         scenarios = self._get_items(url)
 
         return scenarios[0]
 
 
+    # Combos
+
+
     def get_scenario_combos(self, project_id: str, scenario_id: str) -> ItemList:
         """
         Returns a list of combos for a specific project id and scenario id.
+
+        https://docs.api.combocurve.com/#844e5b66-d20f-48ab-a186-380a1cc49630
         """
         url = self.get_scenario_combos_url(project_id, scenario_id)
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
 
 
-    def get_scenario_qualifiers(self, project_id: str, scenario_id: str, econ_name: Optional[str]) -> ItemList:
+    def post_scenario_combos(self, project_id: str, scenario_id: str, data: ItemList) -> ItemList:
         """
-        Returns a list of qualifiers for a specific project id, scenario id and econ name.
+        Creates scenario combos for a specific project id and scenario id.
+
+        https://docs.api.combocurve.com/#e14969da-bd78-4747-9f19-e0277836dfee
+        """
+        url = self.get_scenario_combos_url(project_id, scenario_id)
+        scenarios = self._post_items(url, data)
+
+        return scenarios
+
+
+    def put_scenario_combos(self, project_id: str, scenario_id: str, data: ItemList) -> ItemList:
+        """
+        Upserts scenario combos for a specific project id and scenario id.
+
+        https://docs.api.combocurve.com/#2e47dad1-c176-4628-b97f-8ace00c6ad0d
+        """
+        url = self.get_scenario_combos_url(project_id, scenario_id)
+        scenarios = self._put_items(url, data)
+
+        return scenarios
+
+
+    def delete_scenario_combo(self, project_id: str, scenario_id: str, saved_name: str) -> ItemList:
+        """
+        Deletes scenario combos for a specific project id and scenario id.
+
+        https://docs.api.combocurve.com/#881f45fd-287f-4f6c-a805-2e690d675a7a
+
+        Returns the headers from the delete response where 'X-Delete-Count' is
+        the number of wells deleted.
+        """
+        filters: Dict[str, str] = {}
+        filters['savedName'] = saved_name
+
+        url = self.get_scenario_combos_url(project_id, scenario_id, filters)
+        scenarios = self._delete_responses(url, data=[])
+
+        headers = scenarios[0].headers
+
+        return headers
+
+
+    # Qualifiers
+
+
+    def get_scenario_qualifiers(self, project_id: str, scenario_id: str, econ_name: Optional[str] = None) -> Item:
+        """
+        Returns a list of qualifiers for a specific project id, scenario id and
+        econ name.
+
+        https://docs.api.combocurve.com/#76132581-aefd-4efa-ae82-2af8596340de
         """
         url = self.get_scenario_qualifiers_url(project_id, scenario_id, econ_name)
-        params = {'take': GET_LIMIT}
-        return self._get_items(url, params)
+        qualifiers = self._get_items(url)
+
+        return qualifiers[0]
 
 
-    def get_econ_runs(self, project_id: str, scenario_id: str, add_combo_names: bool = True) -> ItemList:
+    def post_scenario_qualifiers(self, project_id: str, scenario_id: str, data: ItemList) -> ItemList:
         """
-        Returns a list of econ runs for a specific project id and scenario id.
+        Creates scenario qualifiers for a specific project id and scenario id.
 
-        `add_combo_names` will add the list of combo names to each econ run.
+        https://docs.api.combocurve.com/#b917f0ea-9bf2-4fea-8c16-d780ade2ac2d
         """
-        url = self.get_econ_runs_url(project_id, scenario_id)
-        params = {'take': GET_LIMIT}
-        econruns = self._get_items(url, params)
+        url = self.get_scenario_qualifiers_url(project_id, scenario_id)
+        scenarios = self._post_items(url, data)
 
-        if add_combo_names:
-            self.update_econ_run_combo_names(econruns, project_id, scenario_id)
-
-        order = {
-            'id': 2,
-            'status': 1,
-            'runDate': 0,
-        }
-        return self._keysort(econruns, order, reverse=True)
+        return scenarios
 
 
-    def get_econ_run_by_id(self, project_id: str, scenario_id: str, econ_run_id: str,
-                           add_combo_names: bool = True) -> Item:
+    def put_scenario_qualifiers(self, project_id: str, scenario_id: str, data: ItemList) -> ItemList:
         """
-        Returns a specific econ run from its econ run id.
+        Upserts scenario qualifiers for a specific project id and scenario id.
 
-        `add_combo_names` will add the list of combo names to the econ run.
+        https://docs.api.combocurve.com/#f2d33571-1d1b-4f7b-b8a7-02d437dd4f02
         """
-        url = self.get_econ_run_by_id_url(project_id, scenario_id, econ_run_id)
-        params = {'take': GET_LIMIT}
-        econruns = self._get_items(url, params)
+        url = self.get_scenario_qualifiers_url(project_id, scenario_id)
+        scenarios = self._put_items(url, data)
 
-        if add_combo_names:
-            self.update_econ_run_combo_names(econruns, project_id, scenario_id)
-
-        order = {
-            'id': 2,
-            'status': 1,
-            'runDate': 0,
-        }
-        return self._keysort(econruns, order, reverse=True)[0]
+        return scenarios
 
 
-    def get_econ_run_combo_names(self, project_id: str, scenario_id: str, econ_run_id: str) -> List[str]:
+    def delete_scenario_qualifiers(
+            self, project_id: str, scenario_id: str,
+            econ_names: str, qualifier_names: str) -> ItemList:
         """
-        Returns a list of combo names for a specific project id, scenario id, and econ run id.
+        Deletes scenario qualifiers for a specific project id and scenario id.
+
+        https://docs.api.combocurve.com/#75353547-a52c-444d-953f-219a0a006a51
+
+        Returns the headers from the delete response where 'X-Delete-Count' is
+        the number of wells deleted.
         """
-        url = self.get_econ_run_combo_names_url(project_id, scenario_id, econ_run_id)
-        params = {'take': GET_LIMIT}
-        data = self._get_items(url, params)
+        filters: Dict[str, str] = {'qualifierNames': qualifier_names}
 
-        return cast(List[str], sorted(set(data)))
+        url = self.get_scenario_qualifiers_url(project_id, scenario_id, econ_names, filters)
+        scenarios = self._delete_responses(url, data=[])
+
+        headers = scenarios[0].headers
+
+        return headers
+
+    # Scenario Wells
 
 
-    def get_econ_run_onelines(self, project_id: str, scenario_id: str, econ_run_id: str) -> ItemList:
+    def get_scenario_wells(self, project_id: str, scenario_id: str) -> ItemList:
         """
-        Returns a list of onelines for a specific project id, scenario id, and econ run id.
+        Returns a list of well assignments for a specific project id and
+        scenario id.
+
+        https://docs.api.combocurve.com/#7849574f-3530-4751-a21a-485e694609e6
         """
-        url = self.get_econ_run_onelines_url(project_id, scenario_id, econ_run_id)
-
-        # in this specific case we do some post-processing to "flatten" the results
-        # into the expected type of: ItemList
-        params = {'take': GET_LIMIT}
-        items = self._get_items(url, params)
-
-        def flatten(item: Dict[str, Union[str, Dict[str, Any]]]) -> Item:
-            output = item.pop('output')
-            if output is None:
-                return None  # type: ignore
-
-            if not isinstance(output, dict):
-                raise TypeError(f'Expected output to be a dict, got {type(output)}')
-
-            out = {k: str(v) for k, v in output.items()}
-            return {**item, **out}  # type: ignore
-
-        onelines = [i for i in (flatten(item) for item in items) if i is not None]
-
-        return onelines
+        url = self.get_scenario_wells_url(project_id, scenario_id)
+        return self._get_items(url)
 
 
-    def update_econ_run_combo_names(self, econruns: ItemList, project_id: str, scenario_id: str) -> None:
+    def post_scenario_wells(self, project_id: str, scenario_id: str, data: ItemList) -> ItemList:
         """
-        Add combo names to the econ run data.
+        Creates scenario well assignments for a specific project id and scenario id.
+
+        https://docs.api.combocurve.com/#538885a6-3b78-44aa-9852-5b5574bd60f3
         """
-        for i, run in enumerate(econruns):
-            econ_run_id = str(run['id'])
-            combo_names = self.get_econ_run_combo_names(project_id, scenario_id, econ_run_id)
-            run['comboNames'] = combo_names
-            # _ = run.pop('outputParams')
-            econruns[i] = run
+        url = self.get_scenario_wells_url(project_id, scenario_id)
+        scenarios = self._post_items(url, data)
 
-        return
+        return scenarios
 
 
-    def post_econ_run_monthly_export(self, project_id: str, scenario_id: str, econ_run_id: str) -> str:
+    def put_scenario_wells(self, project_id: str, scenario_id: str, data: ItemList) -> ItemList:
         """
-        Create a monthly export for a specific project id, scenario id,
-        econ run id, and returns a monthly export id to get the results.
+        Upserts scenario well assignments for a specific project id and scenario id.
+
+        https://docs.api.combocurve.com/#b4f4a676-b3aa-4207-ae06-69b282da36fd
         """
-        url = self.get_econ_run_monthly_export_id_url(project_id, scenario_id, econ_run_id)
-        headers = self.auth.get_auth_headers()
+        url = self.get_scenario_wells_url(project_id, scenario_id)
+        scenarios = self._put_items(url, data)
 
-        response = requests.post(url, headers=headers)
-        response.raise_for_status()
-        body = response.json()
-        _id: str = body['id']
-
-        return _id
+        return scenarios
 
 
-    def get_stream_econ_run_monthly_export(self, project_id: str, scenario_id: str, econ_run_id: str,
-                                           monthly_export_id: str) -> Iterator[ItemList]:
+    def delete_scenario_wells(self, project_id: str, scenario_id: str, wells: str) -> ItemList:
         """
-        Similar to `get_econ_run_monthly_export` but instead streams the
-        data yielding chunks of 100 items at a time, where each item is
-        a list of monthly exports for a specific project id, scenario id,
-        econ run id, and monthly export id.
+        Deletes scenario well assignments for a specific project id and scenario id.
+
+        https://docs.api.combocurve.com/#96bc7d64-831c-44ff-a707-4f0b31bb6c34
+
+        Returns the headers from the delete response where 'X-Delete-Count' is
+        the number of wells deleted.
         """
-        url: Optional[str] = self.get_econ_run_monthly_export_url(
-            project_id, scenario_id, econ_run_id, monthly_export_id)
+        filters: Dict[str, str] = {}
+        filters['wells'] = wells
 
-        # keep mypy happy
-        if url is None:
-            raise ValueError('url is None')
+        url = self.get_scenario_wells_url(project_id, scenario_id, filters)
+        scenarios = self._delete_responses(url, data=[])
 
-        def flatten(item: Dict[str, Union[str, Dict[str, Any]]]) -> Item:
-            output = item.pop('output')
-            if output is None:
-                return None # type: ignore
+        headers = scenarios[0].headers
 
-            if not isinstance(output, dict):
-                raise TypeError(f'Expected output to be a dict, got {type(output)}')
+        return headers
 
-            out = {k: v for k, v in output.items()}
-            return {**item, **out}  # type: ignore
 
-        params = {'take': GET_LIMIT_MONTHLY_EXPORTS}
+post_put_scenarios_response = """
+        Example data:
+        [
+            {
+                "id": "<string>",
+                "name": "<string>"
+            },
+            {
+                "id": "<string>",
+                "name": "<string>"
+            }
+        ]
 
-        # keep fetching while there are more records to be returned
-        while True:
-            # get a new JWT token for each request
-            headers = self.auth.get_auth_headers()
-            response = requests.get(url, headers=headers, params=params)
-            response.raise_for_status()
+        Example response:
+        [
+            {
+                "generalErrors": [
+                    {
+                        "name": "ValidationError",
+                        "message": "The field 'name' is required.",
+                        "location": "[0]"
+                    },
+                    {
+                        "name": "ValidationError",
+                        "message": "The field 'unique' is required.",
+                        "location": "[2]"
+                    }
+                ],
+                "results": [
+                    {
+                        "status": "Success",
+                        "code": 200,
+                        "chosenID": "5e5981b9e23dae0012624d72"
+                    }
+                ],
+                "failedCount": 2,
+                "successCount": 2
+            }
+        ]
+"""
 
-            data = response.json()
-            results = [
-                item for item in
-                (flatten(item) for item in data['results'])
-                if item is not None
-            ]
-            yield results
+post_put_scenario_combos_response = """
+        Example data:
+        [
+            {
+                "savedName": "<string>",
+                "combos": [
+                    {
+                        "comboName": "<string>",
+                        "qualifiers": [
+                            {
+                                "assumption": "<string>",
+                                "qualifierName": "<string>"
+                            },
+                            {
+                                "assumption": "<string>",
+                                "qualifierName": "<string>"
+                            }
+                        ],
+                        "selected": "<boolean>"
+                    },
+                    {
+                        "comboName": "<string>",
+                        "qualifiers": [
+                            {
+                                "assumption": "<string>",
+                                "qualifierName": "<string>"
+                            },
+                            {
+                                "assumption": "<string>",
+                                "qualifierName": "<string>"
+                            }
+                        ],
+                        "selected": "<boolean>"
+                    }
+                ]
+            },
+            {
+                "savedName": "<string>",
+                "combos": [
+                    {
+                        "comboName": "<string>",
+                        "qualifiers": [
+                            {
+                                "assumption": "<string>",
+                                "qualifierName": "<string>"
+                            },
+                            {
+                                "assumption": "<string>",
+                                "qualifierName": "<string>"
+                            }
+                        ],
+                        "selected": "<boolean>"
+                    },
+                    {
+                        "comboName": "<string>",
+                        "qualifiers": [
+                            {
+                                "assumption": "<string>",
+                                "qualifierName": "<string>"
+                            },
+                            {
+                                "assumption": "<string>",
+                                "qualifierName": "<string>"
+                            }
+                        ],
+                        "selected": "<boolean>"
+                    }
+                ]
+            }
+        ]
 
-            url = get_next_page_url(response.headers)
-            if url is None:
-                # no more pages to process
-                break
+        Example response:
+        [
+            {
+                "failedCount": 1,
+                "generalErrors": [
+                    {
+                        "chosenID": "chosen_id",
+                        "location": ".person.name",
+                        "message": "The field name is required",
+                        "name": "ValidationError"
+                    }
+                ],
+                "results": [
+                    {
+                        "chosenID": "chosen_id",
+                        "code": 201,
+                        "status": "created"
+                    }
+                ],
+                "successCount": 1
+            }
+        ]
+"""
 
-            _ = params.pop('take')
+post_put_scenario_qualifiers_response = """
+        Example data:
+        [
+            {
+                "econModel": "<string>",
+                "name": "<string>",
+                "newName": "<string>"
+            },
+            {
+                "econModel": "<string>",
+                "name": "<string>",
+                "newName": "<string>"
+            }
+        ]
+
+        Example response:
+        [
+            {
+                "failedCount": 1,
+                "generalErrors": [
+                    {
+                        "chosenID": "chosen_id",
+                        "location": ".person.name",
+                        "message": "The field name is required",
+                        "name": "ValidationError"
+                    }
+                ],
+                "results": [
+                    {
+                        "chosenID": "chosen_id",
+                        "code": 201,
+                        "status": "created"
+                    }
+                ],
+                "successCount": 1
+            }
+        ]
+"""
+
+post_put_scenario_wells_response = """
+        Example data:
+        [
+            "<string>",
+            "<string>"
+        ]
+
+        Example response:
+        [
+            {
+                "failedCount": 1,
+                "generalErrors": [
+                    {
+                        "chosenID": "chosen_id",
+                        "location": ".person.name",
+                        "message": "The field name is required",
+                        "name": "ValidationError"
+                    }
+                ],
+                "results": [
+                    {
+                        "chosenID": "chosen_id",
+                        "code": 201,
+                        "status": "created"
+                    }
+                ],
+                "successCount": 1
+            }
+        ]
+"""
+
+Scenarios.post_scenarios.__doc__ += post_put_scenarios_response  # type: ignore [operator]
+Scenarios.put_scenarios.__doc__ += post_put_scenarios_response  # type: ignore [operator]
+
+Scenarios.post_scenario_combos.__doc__ += post_put_scenario_combos_response  # type: ignore [operator]
+Scenarios.put_scenario_combos.__doc__ += post_put_scenario_combos_response  # type: ignore [operator]
+
+Scenarios.post_scenario_qualifiers.__doc__ += post_put_scenario_qualifiers_response  # type: ignore [operator]
+Scenarios.put_scenario_qualifiers.__doc__ += post_put_scenario_qualifiers_response  # type: ignore [operator]
+
+Scenarios.post_scenario_wells.__doc__ += post_put_scenario_wells_response  # type: ignore [operator]
+Scenarios.put_scenario_wells.__doc__ += post_put_scenario_wells_response  # type: ignore [operator]
