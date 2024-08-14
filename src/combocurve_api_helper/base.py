@@ -98,7 +98,7 @@ class APIBase:
 
     def _request_items_pages_chunks(
             self, method: str, url: str, data: ItemList, chunksize: Optional[int] = None,
-            params: Optional[Mapping[str, Union[str, int, float]]] = None) -> ItemList:
+            params: Optional[Mapping[str, Union[str, int, float]]] = None) -> Iterator[Response]:
         """
         Generic method for dispatching POST/PATCH/PUT requests for the given
         `url` yielding response of each page
@@ -359,15 +359,21 @@ class APIBase:
         its keys sorted by the given `order`. The `order` is a mapping
         that defines the key => integer index to order by.
         """
-        def sort_by_key(kv: Item) -> List[str]:
+        def sort_by_key(item: Item) -> List[str]:
             """
             Returns a sort order for a dictionary key.
             """
-            keys, values = zip(*((k, v) for k, v in kv.items() if k in order))
+            keys, values = zip(*((k, v) for k, v in item.items() if k in order))
 
             for k in order.keys():
                 if k not in keys:
-                    raise KeyError(f'Order Key `{k}` not found in response: {kv.keys()}')
+                    try:
+                        raise KeyError(f'Order Key `{k}` not found in response: {item.keys()}')
+                    except KeyError as e:
+                        chosen_id = item.get('chosenId')
+                        print(f'Error for Chosen Id `{chosen_id}`:', e)
+                        item.setdefault(k, None)  # type: ignore[arg-type]
+
 
             values_pre: List[str] = []
             for value in values:
