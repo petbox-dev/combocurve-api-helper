@@ -1,8 +1,16 @@
-# combocurve-api-helper
+# ComboCurve API Helper `combocurve-api-helper`
 
 A utility library mapped to ComboCurve's API.
 
-## Installation
+## Petroleum Engineering Toolbox
+
+---
+
+ [![PyPi Version](https://img.shields.io/pypi/v/combocurve-api-helper.svg "PyPi Version")](https://github.com/petbox-dev/combocurve-api-helper)
+
+ [Open in Visual Studio Code](https://open.vscode.dev/petbox-dev/combocurve-api-helper)
+
+### Installation
 
 Install from Python package repository:
 
@@ -16,7 +24,7 @@ or install directly from GitHub:
 python -m pip install git+https://github.com/petbox-dev/combocurve-api-helper.git@main
 ```
 
-## Setup
+### Setup
 
 Two files are required in `~/.combocurve`:
 
