@@ -19,6 +19,12 @@ def flatten_outputs(result: Item) -> Optional[Item]:
 
     output = result.pop('output')
 
+    # this happens is a well has no economic output, i.e. no forecast or
+    # ownership model. In this case some basic header information exists,
+    # but the 'output' key is None. We return only the header data.
+    if output is None:
+        return {**result}  # type: ignore[unreachable]
+
     if not isinstance(output, dict):
         raise TypeError(f'Expected output to be a dict, got {type(output)}')
 
@@ -119,8 +125,7 @@ class EconRuns(APIBase):
         `add_combo_names` will add the list of combo names to the econ run.
         """
         url = self.get_econ_run_by_id_url(project_id, scenario_id, econ_run_id)
-        params = {'take': GET_LIMIT}
-        econruns = self._get_items(url, params)
+        econruns = self._get_items(url)
 
         if add_combo_names:
             self.update_econ_run_combo_names(econruns, project_id, scenario_id)
@@ -160,7 +165,7 @@ class EconRuns(APIBase):
         onelines = [
             item for item in
             (flatten_outputs(item) for item in items)
-            if item is not None
+            # if item is not None
         ]
 
         return onelines
