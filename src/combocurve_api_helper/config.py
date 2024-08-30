@@ -10,7 +10,7 @@ PACKAGE_ROOT = Path(__file__).parent.resolve()
 COMBOCURVE_JSON = USER_HOME / '.combocurve' / 'combocurve.json'
 CC_API_CONFIG_JSON = USER_HOME / '.combocurve' / 'cc-api.config.json'
 
-REFRENCE_WELLHEADER: Dict[str, Union[str, int, float, bool]] = json.loads(
+REFERENCE_WELLHEADER: Dict[str, Union[str, int, float, bool]] = json.loads(
     (PACKAGE_ROOT / 'assets' / 'wellHeader.json').read_text())
 
 ECON_MODELS: List[Dict[str, str]] = json.loads(
