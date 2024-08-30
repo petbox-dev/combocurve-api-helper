@@ -1,4 +1,4 @@
-__version__ = '1.1.3'
+__version__ = '1.1.4'
 
 from .root import Root
 from .projects import Projects
