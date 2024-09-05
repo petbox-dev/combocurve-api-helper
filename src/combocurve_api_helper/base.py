@@ -371,14 +371,19 @@ class APIBase:
                         raise KeyError(f'Order Key `{k}` not found in response: {item.keys()}')
                     except KeyError as e:
                         chosen_id = item.get('chosenId')
-                        print(f'Error for Chosen Id `{chosen_id}`:', e)
+                        # print(f'Error for Chosen Id `{chosen_id}`:', e)
                         item.setdefault(k, None)  # type: ignore[arg-type]
+                        keys += (k,)
+                        values += (None,)
 
 
             values_pre: List[str] = []
             for value in values:
-                if not isinstance(value, str):
-                    continue
+                if value is None:
+                    values_pre.append('')
+
+                elif not isinstance(value, str):
+                    values_pre.append(str(value))
 
                 values_pre.append(value)
 
