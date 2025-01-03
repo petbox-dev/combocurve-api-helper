@@ -8,8 +8,8 @@ from typing_extensions import Self, TypeAlias
 
 import requests
 from requests import Response
-from combocurve_api_v1 import ServiceAccount, ComboCurveAuth  # type: ignore
-from combocurve_api_v1.pagination import get_next_page_url  # type: ignore
+from combocurve_api_v1 import ServiceAccount, ComboCurveAuth
+from combocurve_api_v1.pagination import get_next_page_url
 
 from . import config
 
@@ -416,3 +416,29 @@ class APIBase:
         if id_ is None:
             warnings.warn(f'Could not find `id` for {name}', UserWarning)
         return id_
+
+
+    @staticmethod
+    def index_of(items: ItemList, value: str, key: str = 'id') -> Union[int, None]:
+        id_: Optional[str] = None
+
+        if not isinstance(items, list):
+            warnings.warn(  # type: ignore
+                f'Expected items to be a list, got {type(items)}', RuntimeWarning)
+            return
+
+        # iterate over the list of dict until value is found, return index
+        key_exists = False
+        for i, item in enumerate(items):
+            if key in item:
+                key_exists = True
+
+                if item[key] == value:
+                    return i
+
+        if not key_exists:
+            warnings.warn(f'Key `{key}` does not exist in items', UserWarning)
+        else:
+            warnings.warn(f'Could not find {value} for {key}', UserWarning)
+
+        return None

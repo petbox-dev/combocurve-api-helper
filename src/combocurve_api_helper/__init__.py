@@ -7,6 +7,7 @@ from .production import Production
 from .econ_runs import EconRuns
 from .wells import Wells
 from .models import Models
+from .company_models import CompanyModels
 from .forecasts import Forecasts
 from .typecurves import TypeCurves
 from .directional import Directional
@@ -22,6 +23,7 @@ class ComboCurveAPI(
     EconRuns,
     Wells,
     Models,
+    CompanyModels,
     Forecasts,
     TypeCurves,
     Directional
