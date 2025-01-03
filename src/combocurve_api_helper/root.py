@@ -90,14 +90,42 @@ class Root(APIBase):
     ###########
 
 
-    def get_custom_columns(self, collection: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_custom_columns(self, collection: str, filters: Optional[Dict[str, str]] = None) -> Item:
         """
-        Returns a list of custom columns.
+        Returns a list of custom columns. See other convenience methods for specific collections.
 
         https://docs.api.combocurve.com/#3c047d2a-db2c-419f-9187-1a4db81215eb
         """
         url = self.get_custom_columns_url(collection, filters)
-        return self._get_items(url)
+        columns = self._get_items(url)
+        return columns[0]
+
+
+    def get_custom_columns_wells(self, filters: Optional[Dict[str, str]] = None) -> Item:
+        """
+        Returns a list of custom columns for Wells.
+
+        https://docs.api.combocurve.com/#3c047d2a-db2c-419f-9187-1a4db81215eb
+        """
+        return self.get_custom_columns('wells', filters)
+
+
+    def get_custom_columns_daily_production(self, filters: Optional[Dict[str, str]] = None) -> Item:
+        """
+        Returns a list of custom columns for Daily Production.
+
+        https://docs.api.combocurve.com/#3c047d2a-db2c-419f-9187-1a4db81215eb
+        """
+        return self.get_custom_columns('daily-productions', filters)
+
+
+    def get_custom_columns_monthly_production(self, filters: Optional[Dict[str, str]] = None) -> Item:
+        """
+        Returns a list of custom columns for Monthly Production.
+
+        https://docs.api.combocurve.com/#3c047d2a-db2c-419f-9187-1a4db81215eb
+        """
+        return self.get_custom_columns('monthly-productions', filters)
 
 
     def patch_well_identifiers(self, data: ItemList) -> ItemList:

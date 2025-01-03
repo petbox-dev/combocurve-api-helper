@@ -757,7 +757,7 @@ class Models(APIBase):
         return assignments
 
 
-    def get_ownership_reversions(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_ownership_reversions_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
         Returns a list of ownership reversions models.
         """
@@ -858,7 +858,7 @@ class Models(APIBase):
 
         return assignments
 
-    def get_stream_propertie_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_stream_properties_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
         Returns a list of stream properties models.
         """
@@ -994,7 +994,7 @@ class Models(APIBase):
         return assignments
 
 
-    def get_capex(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_capex_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
         Returns a list of capex models.
         """
@@ -1028,7 +1028,7 @@ class Models(APIBase):
         return assignments
 
 
-    def get_date_settings(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_date_settings_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
         Returns a list of date settings models.
         """
@@ -1062,7 +1062,7 @@ class Models(APIBase):
         return assignments
 
 
-    def get_depreciation(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_depreciation_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
         Returns a list of depreciation models.
         """
