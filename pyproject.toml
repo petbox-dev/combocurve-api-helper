@@ -58,6 +58,7 @@ dev = [
     "flake8>=5.0.4",
     "flake8-pyproject>=1.2.3",
     "mypy>=1.7.0",
+    "types-requests>=2.32.0.20241016",
 ]
 
 
