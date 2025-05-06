@@ -1,6 +1,8 @@
 import warnings
 from typing import List, Dict, Optional, Union, Any, Iterator, Mapping
 
+import requests
+
 from .base import APIBase, Item, ItemList
 
 
@@ -219,6 +221,29 @@ class Forecasts(APIBase):
         forecasts = self._post_items(url, data)
 
         return forecasts
+
+    def post_forecast_wells(
+        self,
+        project_id: str,
+        forecast_id: str,
+        well_ids: List[str],
+    ) -> ItemList:
+        """
+        Scope a list of well id's to a specific forecast, for a given project.
+
+        https://docs.api.combocurve.com/#8cd55b04-67a2-4534-bace-10504ac5ccd4
+        """
+        # NOTE: we can't use `self._post_items` since it expects the base data to be a list
+        # whereas this particular endpoint receives an object
+
+        headers = self.auth.get_auth_headers()
+        url = self.get_forecast_wells_url(project_id, forecast_id)
+        data = {"wellIds": well_ids}
+
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()
+
+        return self._extract_json(response)
 
 
     def get_forecast_by_id(self, project_id: str, forecast_id: str) -> Item:
