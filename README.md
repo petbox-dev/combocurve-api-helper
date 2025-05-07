@@ -62,6 +62,56 @@ in `./config-examples/` to demonstrate the expected file structures.
 
  ```
 
+## Contributing
+
+1. Fork the repository:
+    - On this GitHub page, click "Fork" to create a copy under your own account.
+
+2. CLone the forked repo onto on your machine:
+    ```sh
+    git clone https://github.com/<your-username>/combocurve-api-helper.git
+    cd combocurve-api-helper
+    ```
+
+3. Set the upstream remote:
+    - This allows you to fetch updates from the original repository:
+
+    ```sh
+    git remote add upstream https://github.com/petbox-dev/combocurve-api-helper.git
+    ```
+
+4. Create a new branch:
+    - Always create a new branch for your feature or fix
+    - A common convention is to name the branch your GitHub username, a forward slash, and a brief description of the work you're doing
+
+    ```sh
+    git checkout -b <your-username>/<your-branch-name>
+    ```
+
+5. Make your changes, and commit:
+    - After adding your files, or making edits, ensure typechecking succeeds, then commit your changes
+
+    ```sh
+    mypy --package combocurve_api_helper
+
+    git add .
+    git commit -m "<description of changes>"
+    ```
+
+6. Push to your fork:
+
+    ```sh
+    git push origin <the-name-of-your-branch>
+    ```
+
+7. Create a pull request:
+
+    - Go to ["Pull Requests" tab](https://github.com/petbox-dev/combocurve-api-helper/compare) in this repo, and click "compare across forks"
+    - Choose your branch as the source and keep the default `main` branch as the target
+        - ie: `petbox-dev/combocurve-api-helper` (`main`) `<-` `your-username/combocurve-api-helper` (`your-branch-name`)
+    - Fill the title and description with a summary of the proposed changes
+    - Request a review from `@dsfulf`
+
 ## Authors
 
 - David Fulford
