@@ -1,4 +1,4 @@
-import requests  # type: ignore
+import requests
 import warnings
 
 from combocurve_api_v1.pagination import get_next_page_url  # type: ignore
