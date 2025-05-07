@@ -6,7 +6,7 @@ from more_itertools import chunked
 from typing import List, Dict, Optional, Union, Any, Iterable, Iterator, Mapping
 from typing_extensions import Self, TypeAlias
 
-import requests  # type: ignore
+import requests
 from requests import Response
 from combocurve_api_v1 import ServiceAccount, ComboCurveAuth  # type: ignore
 from combocurve_api_v1.pagination import get_next_page_url  # type: ignore

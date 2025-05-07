@@ -1,6 +1,9 @@
 import warnings
 from typing import List, Dict, Optional, Union, Any, Iterator, Mapping
 
+import requests
+from more_itertools import chunked
+
 from .base import APIBase, Item, ItemList
 
 
@@ -220,6 +223,38 @@ class Forecasts(APIBase):
 
         return forecasts
 
+    def post_forecast_wells(
+        self,
+        project_id: str,
+        forecast_id: str,
+        well_ids: List[str],
+        *,
+        chunksize: int = 100,
+    ) -> ItemList:
+        """
+        Scope a list of well id's to a specific forecast, for a given project.
+
+        Optionally, specify the `chunksize` to control how many wells are posted
+        per request to avoid HTTP 413 Content Too Large or 504 Gateway Timeout errors
+        when making requests to the ComboCurve API.
+
+        https://docs.api.combocurve.com/#8cd55b04-67a2-4534-bace-10504ac5ccd4
+        """
+        # NOTE: we can't use `self._post_items` since it expects the base data to be a list
+        # whereas this particular endpoint receives an object
+
+        headers = self.auth.get_auth_headers()
+        url = self.get_forecast_wells_url(project_id, forecast_id)
+
+        items: ItemList = []
+        for well_ids_chunk in chunked(well_ids, chunksize):
+            data = {"wellIds": well_ids_chunk}
+            response = requests.post(url, headers=headers, json=data)
+            response.raise_for_status()
+
+            items.extend(self._extract_json(response))
+
+        return items
 
     def get_forecast_by_id(self, project_id: str, forecast_id: str) -> Item:
         """

@@ -38,6 +38,9 @@ classifiers = [
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
     'Topic :: Scientific/Engineering',
     'Topic :: Scientific/Engineering :: Mathematics',
     'Topic :: Software Development :: Libraries',
@@ -45,11 +48,17 @@ classifiers = [
 ]
 
 
-[project.optional-dependencies]
+# Optional dependencies specified in pyproject.toml should be only for end-user runtime installation behavior
+# and they are not intended for build/development time for the developer. instead this is the responsibility
+# of the build tool itself, or should be manually provided.
+# For dev dependencies required by developers working on the project we define: [dependency-groups]
+
+[dependency-groups]
 dev = [
-    'flake8>=6.1.0',
-    'flake8-pyproject>=1.2.3',
-    'mypy>=1.7.0',
+    "flake8>=5.0.4",
+    "flake8-pyproject>=1.2.3",
+    "mypy>=1.7.0",
+    "types-requests>=2.32.0.20241016",
 ]
 
 
