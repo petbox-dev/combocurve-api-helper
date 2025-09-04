@@ -1,7 +1,7 @@
 import requests
 import warnings
 
-from combocurve_api_v1.pagination import get_next_page_url  # type: ignore
+from combocurve_api_v1.pagination import get_next_page_url
 
 from typing import List, Dict, Optional, Union, Any, Iterator, Mapping, cast
 

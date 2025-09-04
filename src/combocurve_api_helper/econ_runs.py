@@ -1,7 +1,7 @@
 import requests
 import warnings
 
-from combocurve_api_v1.pagination import get_next_page_url  # type: ignore
+from combocurve_api_v1.pagination import get_next_page_url
 
 from typing import List, Dict, Optional, Union, Any, Iterator, Mapping, cast
 
@@ -168,7 +168,7 @@ class EconRuns(APIBase):
             # if item is not None
         ]
 
-        return onelines
+        return onelines  # type: ignore[return-value]
 
 
     def update_econ_run_combo_names(self, econruns: ItemList, project_id: str, scenario_id: str) -> None:

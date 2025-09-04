@@ -656,7 +656,7 @@ class Models(APIBase):
         return assignments
 
 
-    def get_escalation_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_escalations_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
         Returns a list of escalations models.
         """
