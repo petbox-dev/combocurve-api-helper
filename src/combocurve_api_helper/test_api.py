@@ -16,4 +16,5 @@ def api() -> ComboCurveAPI:
 
 class TestRoot:
     def test_custom_columns(self, api: ComboCurveAPI) -> None:
-        result = api.get_custom_columns()
+        result = api.get_custom_columns('wells')
+        assert isinstance(result, dict)

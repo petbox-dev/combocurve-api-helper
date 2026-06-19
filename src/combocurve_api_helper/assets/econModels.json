@@ -60,6 +60,11 @@
         "route": null
     },
     {
+        "qualifier": "operations",
+        "econModelType": "Operations",
+        "route": "operations"
+    },
+    {
         "qualifier": "ownershipReversion",
         "econModelType": "OwnershipReversion",
         "route": "ownership-reversions"

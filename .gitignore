@@ -145,5 +145,8 @@ cython_debug/
 # vscode settings
 .vscode
 
+# Claude Code (never commit settings/state; CLAUDE.md guidance file is fine)
+.claude/
+
 # ignore temporary files used for debugging
 tmp/
