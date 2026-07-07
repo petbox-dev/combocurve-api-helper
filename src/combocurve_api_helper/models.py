@@ -567,6 +567,28 @@ class Models(APIBase):
         return assignments
 
 
+    def post_econ_model_assignments_by_type_by_id(
+            self, project_id: str, econ_model_type: str, model_id: str, data: ItemList) -> ItemList:
+        """Create assignments for a specific econ model (by type + id)."""
+        url = self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+        return self._post_items(url, data)
+
+    def put_econ_model_assignments_by_type_by_id(
+            self, project_id: str, econ_model_type: str, model_id: str, data: ItemList) -> ItemList:
+        """Upsert assignments for a specific econ model (by type + id)."""
+        url = self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+        return self._put_items(url, data)
+
+    def delete_econ_model_assignments_by_type_by_id(
+            self, project_id: str, econ_model_type: str, model_id: str, data: ItemList) -> ItemList:
+        """Delete assignments for a specific econ model (by type + id).
+
+        NOTE: the delete request body/filters for this route are confirmed by
+        the live dev test in Task 6; adjust here if the live response shows a
+        different shape (e.g. query filters instead of a JSON body)."""
+        url = self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+        return self._delete_responses(url, data)  # type: ignore[return-value]
+
     def get_general_options_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
         Returns a list of general options models.
