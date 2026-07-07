@@ -96,6 +96,21 @@ class Scenarios(APIBase):
         return url
 
 
+    def get_scenario_econ_model_assignments_url(
+            self, project_id: str, scenario_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url for the scenario's econ-model assignment grid
+        (per-well assignments across every econ column / qualifier).
+        """
+        base_url = self.get_scenario_by_id_url(project_id, scenario_id)
+        url = f'{base_url}/assignments/econ-models'
+        if filters is None:
+            return url
+
+        url += self._build_params_string(filters)
+        return url
+
+
     ###########
     # API calls
     ###########
@@ -325,6 +340,23 @@ class Scenarios(APIBase):
         https://docs.api.combocurve.com/#7849574f-3530-4751-a21a-485e694609e6
         """
         url = self.get_scenario_wells_url(project_id, scenario_id)
+        return self._get_items(url)
+
+
+    def get_scenario_econ_model_assignments(self, project_id: str, scenario_id: str) -> ItemList:
+        """
+        Returns the scenario's econ-model assignment grid: one entry per well,
+        each listing its assumption columns and, per column, the
+        qualifierName -> assigned econModelId mapping.
+
+        Distinct from `get_scenario_wells` (well *membership*, the
+        `/well-assignments` route) and from
+        `get_econ_model_assignments_by_type_by_id` (assignments *of one* econ
+        model, the `/econ-models/{type}/{id}/assignments` route). This is the
+        scenario-wide grid at `/scenarios/{id}/assignments/econ-models`. Uses
+        cursor pagination (skip/take are ignored by this route).
+        """
+        url = self.get_scenario_econ_model_assignments_url(project_id, scenario_id)
         return self._get_items(url)
 
 
