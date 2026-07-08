@@ -952,14 +952,23 @@ class Forecasts(APIBase):
         base_url = self.get_forecast_by_id_url(project_id, forecast_id)
         return f'{base_url}/parameters'
 
-    def put_forecast_parameters(self, project_id: str, forecast_id: str, data: ItemList) -> ItemList:
+    def put_forecast_parameters(
+        self, project_id: str, forecast_id: str, data: ItemList, *, chunksize: int = 25
+    ) -> ItemList:
         """
-        Upserts forecast parameters in bulk for a specific forecast. Each item is
-        a per-well/phase/series parameter object (see `put_forecast_segment_parameters`
-        for the single-well variant).
+        Upserts forecast parameters in bulk for a specific forecast. Each item in
+        `data` is one well x phase record ({well, phase, series, forecastType,
+        segments, ...}); see `put_forecast_segment_parameters` for the
+        single-well variant.
+
+        The endpoint accepts at most 25 well x phase records per PUT, so `data`
+        is chunked into groups of `chunksize` (default 25) and each chunk is sent
+        as a separate request. A record is one well x phase (not one decline
+        segment), so 25 records is e.g. ~8 wells across oil/gas/water; there is
+        no separate per-segment limit.
         """
         url = self.get_forecast_parameters_url(project_id, forecast_id)
-        return self._put_items(url, data)
+        return self._put_items(url, data, chunksize)
 
     def get_forecast_run_url(self, project_id: str, forecast_id: str) -> str:
         """
