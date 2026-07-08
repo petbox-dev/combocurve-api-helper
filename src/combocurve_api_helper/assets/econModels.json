@@ -2,106 +2,169 @@
     {
         "qualifier": "generalOptions",
         "econModelType": "GeneralOptions",
-        "route": "general-options"
+        "route": "general-options",
+        "methodBase": "general_options",
+        "hasCrud": true,
+        "assignable": false
     },
     {
         "qualifier": "actualOrForecast",
         "econModelType": "ActualOrForecast",
-        "route": "actual-forecast"
+        "route": "actual-forecast",
+        "methodBase": "actual_forecast",
+        "hasCrud": true,
+        "assignable": true
     },
     {
         "qualifier": "capex",
         "econModelType": "Capex",
-        "route": "capex"
+        "route": "capex",
+        "methodBase": "capex",
+        "hasCrud": true,
+        "assignable": true
     },
     {
         "qualifier": "dates",
         "econModelType": "Dates",
-        "route": "date-settings"
+        "route": "date-settings",
+        "methodBase": "date_settings",
+        "hasCrud": true,
+        "assignable": true
     },
     {
         "qualifier": "depreciation",
         "econModelType": "Depreciation",
-        "route": "depreciation"
+        "route": "depreciation",
+        "methodBase": "depreciation",
+        "hasCrud": true,
+        "assignable": true
     },
     {
         "qualifier": "differentials",
         "econModelType": "Differentials",
-        "route": "differentials"
+        "route": "differentials",
+        "methodBase": "differentials",
+        "hasCrud": true,
+        "assignable": true
     },
     {
         "qualifier": "emission",
         "econModelType": "Emission",
-        "route": "emissions"
+        "route": "emissions",
+        "methodBase": "emissions",
+        "hasCrud": true,
+        "assignable": true
     },
     {
         "qualifier": "escalation",
         "econModelType": "Escalation",
-        "route": "escalations"
+        "route": "escalations",
+        "methodBase": "escalations",
+        "hasCrud": true,
+        "assignable": true
     },
     {
         "qualifier": "expenses",
         "econModelType": "Expenses",
-        "route": "expenses"
+        "route": "expenses",
+        "methodBase": "expenses",
+        "hasCrud": true,
+        "assignable": true
     },
     {
         "qualifier": "forecast",
         "econModelType": "Forecast",
-        "route": null
+        "route": null,
+        "methodBase": null,
+        "hasCrud": false,
+        "assignable": false
     },
     {
         "qualifier": "fluidModel",
         "econModelType": "FluidModel",
-        "route": "fluid-models"
+        "route": "fluid-models",
+        "methodBase": "fluid",
+        "hasCrud": true,
+        "assignable": true
     },
     {
         "qualifier": "network",
         "econModelType": "Network",
-        "route": null
+        "route": null,
+        "methodBase": null,
+        "hasCrud": false,
+        "assignable": false
     },
     {
         "qualifier": "operations",
         "econModelType": "Operations",
-        "route": "operations"
+        "route": "operations",
+        "methodBase": "operations",
+        "hasCrud": true,
+        "assignable": true
     },
     {
         "qualifier": "ownershipReversion",
         "econModelType": "OwnershipReversion",
-        "route": "ownership-reversions"
+        "route": "ownership-reversions",
+        "methodBase": "ownership_reversions",
+        "hasCrud": true,
+        "assignable": true
     },
     {
         "qualifier": "pricing",
         "econModelType": "Pricing",
-        "route": "pricing"
+        "route": "pricing",
+        "methodBase": "pricing",
+        "hasCrud": true,
+        "assignable": true
     },
     {
         "qualifier": "productionTaxes",
         "econModelType": "ProductionTaxes",
-        "route": "production-taxes"
+        "route": "production-taxes",
+        "methodBase": "production_taxes",
+        "hasCrud": true,
+        "assignable": true
     },
     {
         "qualifier": "pSeries",
         "econModelType": "PSeries",
-        "route": null
+        "route": null,
+        "methodBase": null,
+        "hasCrud": false,
+        "assignable": false
     },
     {
         "qualifier": "reservesCategory",
         "econModelType": "ReservesCategory",
-        "route": "reserves-categories"
+        "route": "reserves-categories",
+        "methodBase": "reserves_categories",
+        "hasCrud": true,
+        "assignable": true
     },
     {
         "qualifier": "risking",
         "econModelType": "Risking",
-        "route": "riskings"
+        "route": "riskings",
+        "methodBase": "riskings",
+        "hasCrud": true,
+        "assignable": true
     },
     {
         "qualifier": "schedule",
         "econModelType": "Schedule",
-        "route": null
+        "route": null,
+        "methodBase": null,
+        "hasCrud": false,
+        "assignable": false
     },
     {
         "qualifier": "streamProperties",
         "econModelType": "StreamProperties",
-        "route": "stream-properties"
+        "route": "stream-properties",
+        "methodBase": "stream_properties",
+        "hasCrud": true,
+        "assignable": true
     }
 ]

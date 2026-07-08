@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import List, Dict, NamedTuple, Union
+from typing import List, Dict, NamedTuple, Optional, TypedDict, Union
 from typing_extensions import Self
 
 
@@ -13,7 +13,18 @@ CC_API_CONFIG_JSON = USER_HOME / '.combocurve' / 'cc-api.config.json'
 REFERENCE_WELLHEADER: Dict[str, Union[str, int, float, bool]] = json.loads(
     (PACKAGE_ROOT / 'assets' / 'wellHeader.json').read_text())
 
-ECON_MODELS: List[Dict[str, str]] = json.loads(
+
+class EconModelEntry(TypedDict):
+    """Shape of each entry in `assets/econModels.json`."""
+    qualifier: str
+    econModelType: str
+    route: Optional[str]  # API path segment; None when hasCrud and assignable are both False
+    methodBase: Optional[str]  # generated method-name stem; None when hasCrud and assignable are both False
+    hasCrud: bool
+    assignable: bool
+
+
+ECON_MODELS: List[EconModelEntry] = json.loads(
     (PACKAGE_ROOT / 'assets' / 'econModels.json').read_text())
 
 

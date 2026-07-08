@@ -9,6 +9,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 it and drive it through the single `ComboCurveAPI` class. There is no application or service here —
 just the library and its type/lint/test tooling.
 
+## CRITICAL: econ-model names differ by API surface
+
+`assets/econModels.json` exists for exactly one reason: **an econ model is named
+DIFFERENTLY on different API surfaces, and the forms do NOT reliably match.**
+Each entry maps the forms for one model. When you touch econ-model / assignment /
+qualifier / combo code, resolve the correct form from `econModels.json` for the
+specific surface — never assume one form works everywhere.
+
+| API surface | Form (`econModels.json` field) | Example |
+|---|---|---|
+| Scenario `/qualifiers` `econModel`, combo `qualifiers[].assumption`, `assignments/econ-models` grid `model` key | **camelCase** (`qualifier`) | `ownershipReversion`, `fluidModel` |
+| Type filter (`get_econ_models_by_type`) | **PascalCase** (`econModelType`) | `OwnershipReversion`, `FluidModel` |
+| Econ-model CRUD route **and assignment route `{econName}`** | **kebab** (`route`) | `ownership-reversions`, `fluid-models` |
+
+**The assignment route's `{econName}` is the kebab `route`, NOT the PascalCase
+`econModelType`.** The server tolerates PascalCase for most types by coincidental
+normalization, but REJECTS it for `FluidModel` (`InvalidEconName: fluidmodel`) —
+only the kebab `route` resolves, for all 16 assignable types (verified live; the
+data dictionary's "Econ Model Assignment" example also uses the kebab form).
+`_get_route_for_assignment` therefore returns `route`, like the CRUD builder.
+
+Single-word models (`capex`, `pricing`) collapse all three forms to one lowercase
+string and HIDE the distinction — that is the trap that hides bugs. **`FluidModel`
+is the canary: test the multi-word / FluidModel case whenever you touch
+assignment/qualifier code.** Diagnosis: a bad `econName` → `InvalidEconName`; a
+valid `econName` with a nonexistent id → `EconTypeMismatch` — use that to tell a
+name error from an id error.
+
+(Related but separate: **forecast documents** are NOT assignable via the
+assignment route — it returns `EconTypeMismatch: not 'forecast'`. Forecast→
+qualifier wiring is a CC-UI operation; the grid is read-only.)
+
 ## Commands
 
 Run from the repo root:
