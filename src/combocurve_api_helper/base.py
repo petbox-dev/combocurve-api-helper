@@ -2,9 +2,10 @@ import warnings
 from pathlib import Path
 import json
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from itertools import chain
 from more_itertools import chunked
-from typing import List, Dict, Optional, Union, Any, Iterable, Iterator, Mapping
+from typing import Callable, List, Dict, Optional, Tuple, Union, Any, Iterable, Iterator, Mapping
 from typing_extensions import Self, TypeAlias
 
 import requests
@@ -13,6 +14,7 @@ from combocurve_api_v1 import ServiceAccount, ComboCurveAuth
 from combocurve_api_v1.pagination import get_next_page_url
 
 from . import config
+from ._batch import BatchChunk, BatchWriteResult, _RateLimitState
 
 
 PrimativeValue: TypeAlias = Union[str, int, float, bool]
@@ -174,6 +176,141 @@ class APIBase:
                     url = next_page_url
 
                 params_ = None
+
+    def _send_one_chunk(
+        self,
+        method: str,
+        url: str,
+        headers: Mapping[str, str],
+        index: int,
+        offset: int,
+        chunk: ItemList,
+        rate_limit: _RateLimitState,
+    ) -> BatchChunk:
+        """Send one batch chunk with coordinated 429 backoff; parse its 207 body.
+
+        Runs on a worker thread and uses pre-fetched `headers` (shared across
+        workers) rather than re-authenticating per request. A 429 pauses every
+        worker via `rate_limit` and retries up to `_RATE_LIMIT_MAX_RETRIES`;
+        4xx/5xx and exhausted retries are recorded as whole-chunk failures.
+        """
+        count = len(chunk)
+        for _attempt in range(_RATE_LIMIT_MAX_RETRIES + 1):
+            rate_limit.wait_if_limited()
+            response = requests.request(method, url, headers=dict(headers), json=chunk)
+            status = response.status_code
+
+            if status == 429:
+                rate_limit.set_limited()
+                continue
+
+            if status >= 400:
+                try:
+                    detail: Any = response.json()
+                except ValueError:
+                    detail = response.text
+                return BatchChunk(
+                    index=index,
+                    offset=offset,
+                    count=count,
+                    http_status=status,
+                    failed_count=count,
+                    error_message=str(detail),
+                )
+
+            try:
+                body: Any = response.json()
+            except ValueError:
+                body = {}
+            if not isinstance(body, dict):
+                body = {}
+            results_raw = body.get('results') or []
+            general_raw = body.get('generalErrors') or []
+            return BatchChunk(
+                index=index,
+                offset=offset,
+                count=count,
+                http_status=status,
+                success_count=int(body.get('successCount', 0) or 0),
+                failed_count=int(body.get('failedCount', 0) or 0),
+                results=[r for r in results_raw if isinstance(r, dict)],
+                general_errors=[e for e in general_raw if isinstance(e, dict)],
+            )
+
+        return BatchChunk(
+            index=index,
+            offset=offset,
+            count=count,
+            http_status=429,
+            failed_count=count,
+            error_message=f'Exhausted {_RATE_LIMIT_MAX_RETRIES} retries (HTTP 429)',
+        )
+
+    def _request_batched(
+        self,
+        method: str,
+        url: str,
+        data: ItemList,
+        *,
+        chunksize: int,
+        max_workers: int = 10,
+        on_progress: Optional[Callable[[BatchChunk], None]] = None,
+    ) -> BatchWriteResult:
+        """Send `data` to `url` in parallel chunks, returning the stitched 207 envelope.
+
+        Each chunk is one `method` request of up to `chunksize` records, sent
+        across a `max_workers` thread pool with coordinated 429 backoff. Unlike
+        `_post_items` / `_put_items` (which flatten to `ItemList`), this preserves
+        per-record success/failure: ``BatchWriteResult.results[i]`` corresponds to
+        ``data[i]`` (results are stitched back into input order across chunks).
+        ``on_progress``, if given, is invoked once per completed chunk from the
+        calling thread.
+
+        Auth headers are fetched once up front and shared across workers (avoids
+        concurrent token refreshes); a batch is expected to finish well within a
+        token's lifetime.
+        """
+        chunk_specs: List[Tuple[int, int, ItemList]] = []
+        offset = 0
+        for index, chunk in enumerate(chunked(data, chunksize)):
+            chunk_list: ItemList = list(chunk)
+            chunk_specs.append((index, offset, chunk_list))
+            offset += len(chunk_list)
+
+        headers = self.auth.get_auth_headers()
+        rate_limit = _RateLimitState(pause_seconds=_RATE_LIMIT_DEFAULT_PAUSE_SECONDS)
+        completed: List[BatchChunk] = []
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [
+                executor.submit(self._send_one_chunk, method, url, headers, index, off, chunk_list, rate_limit)
+                for index, off, chunk_list in chunk_specs
+            ]
+            for future in as_completed(futures):
+                chunk_result = future.result()
+                completed.append(chunk_result)
+                if on_progress is not None:
+                    on_progress(chunk_result)
+
+        completed.sort(key=lambda c: c.index)
+
+        results: ItemList = []
+        general_errors: ItemList = []
+        success_count = 0
+        failed_count = 0
+        for chunk_result in completed:
+            results.extend(chunk_result.results)
+            general_errors.extend(chunk_result.general_errors)
+            success_count += chunk_result.success_count
+            failed_count += chunk_result.failed_count
+
+        return BatchWriteResult(
+            success_count=success_count,
+            failed_count=failed_count,
+            results=results,
+            general_errors=general_errors,
+            chunks=completed,
+        )
 
     def _get_responses_iterator(
         self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None

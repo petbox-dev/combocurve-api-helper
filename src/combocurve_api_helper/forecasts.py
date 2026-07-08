@@ -1,10 +1,11 @@
 import warnings
-from typing import List, Dict, Optional, Union, Any, Iterator, Mapping
+from typing import Callable, List, Dict, Optional, Union, Any, Iterator, Mapping
 
 import requests
 from more_itertools import chunked
 
 from .base import APIBase, Item, ItemList
+from ._batch import BatchChunk, BatchWriteResult
 
 
 GET_LIMIT = 200
@@ -969,6 +970,32 @@ class Forecasts(APIBase):
         """
         url = self.get_forecast_parameters_url(project_id, forecast_id)
         return self._put_items(url, data, chunksize)
+
+    def put_forecast_parameters_batched(
+        self,
+        project_id: str,
+        forecast_id: str,
+        data: ItemList,
+        *,
+        chunksize: int = 25,
+        max_workers: int = 10,
+        on_progress: Optional[Callable[[BatchChunk], None]] = None,
+    ) -> BatchWriteResult:
+        """Upsert forecast parameters in parallel chunks, returning the 207 envelope.
+
+        Like `put_forecast_parameters`, but sends the (max 25 well x phase
+        record) chunks concurrently and returns a `BatchWriteResult` instead of a
+        flattened `ItemList`. The endpoint replies 207 Multi-Status, so
+        ``result.results[i]`` corresponds to ``data[i]`` and per-record failures
+        are preserved (``result.failed_count`` / ``result.ok``) rather than
+        silently dropped. Prefer this when you need to detect partial failures or
+        want parallel throughput; `on_progress` is called once per completed
+        chunk (from the calling thread) for progress reporting.
+        """
+        url = self.get_forecast_parameters_url(project_id, forecast_id)
+        return self._request_batched(
+            'put', url, data, chunksize=chunksize, max_workers=max_workers, on_progress=on_progress
+        )
 
     def get_forecast_run_url(self, project_id: str, forecast_id: str) -> str:
         """

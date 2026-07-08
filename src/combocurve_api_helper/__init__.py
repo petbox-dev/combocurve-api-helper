@@ -13,6 +13,7 @@ from .typecurves import TypeCurves
 from .directional import Directional
 
 from .base import Item, ItemList, PrimativeValue, IterableValue
+from ._batch import BatchChunk, BatchWriteResult
 
 
 class ComboCurveAPI(
