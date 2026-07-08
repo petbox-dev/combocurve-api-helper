@@ -1,6 +1,7 @@
 import warnings
 from pathlib import Path
 import json
+import time
 from itertools import chain
 from more_itertools import chunked
 from typing import List, Dict, Optional, Union, Any, Iterable, Iterator, Mapping
@@ -20,6 +21,27 @@ IterableValue: TypeAlias = Union[
 ]
 Item: TypeAlias = Dict[str, Union[PrimativeValue, IterableValue]]
 ItemList: TypeAlias = List[Item]
+
+
+# HTTP 429 (Too Many Requests) retry policy. ComboCurve's write quota is enforced
+# by Google Cloud and resets roughly every 60s, so a fixed 60s pause is the safe
+# fallback when the response carries no `Retry-After` header.
+_RATE_LIMIT_MAX_RETRIES = 5
+_RATE_LIMIT_DEFAULT_PAUSE_SECONDS = 60.0
+
+
+def _retry_after_seconds(response: Response) -> Optional[float]:
+    """Return the `Retry-After` header as seconds if present in delta-seconds form.
+
+    The HTTP-date form is not parsed here; callers fall back to the default pause.
+    """
+    value = response.headers.get('Retry-After')
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        return None
 
 
 class APIBase:
@@ -62,6 +84,30 @@ class APIBase:
 
         return json_
 
+    def _request_with_retry(
+        self,
+        method: str,
+        url: str,
+        *,
+        params: Optional[Mapping[str, Union[str, int, float]]] = None,
+        json_body: Any = None,
+    ) -> Response:
+        """Issue a single HTTP request, refreshing auth headers each attempt and
+        retrying on HTTP 429 (Too Many Requests).
+
+        Waits the response's `Retry-After` value when present, else
+        `_RATE_LIMIT_DEFAULT_PAUSE_SECONDS`, for up to `_RATE_LIMIT_MAX_RETRIES`
+        retries. Any non-429 response (success or other error) is returned
+        immediately for the caller to handle (e.g. `raise_for_status`).
+        """
+        for attempt in range(_RATE_LIMIT_MAX_RETRIES + 1):
+            headers = self.auth.get_auth_headers()
+            response = requests.request(method, url, headers=headers, params=params, json=json_body)
+            if response.status_code != 429 or attempt == _RATE_LIMIT_MAX_RETRIES:
+                return response
+            time.sleep(_retry_after_seconds(response) or _RATE_LIMIT_DEFAULT_PAUSE_SECONDS)
+        raise RuntimeError('unreachable: retry loop always returns')
+
     def _request_items_pages(
         self, method: str, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None
     ) -> Iterator[Response]:
@@ -71,8 +117,7 @@ class APIBase:
         """
         # keep fetching while there are more records to be returned
         while True:
-            headers = self.auth.get_auth_headers()
-            response = requests.request(method, url, headers=headers, params=params)
+            response = self._request_with_retry(method, url, params=params)
             try:
                 response.raise_for_status()
             except Exception as e:
@@ -112,8 +157,7 @@ class APIBase:
             # keep fetching while there are more records to be returned
             params_ = params
             while True:
-                headers = self.auth.get_auth_headers()
-                response = requests.request(method, url, headers=headers, json=chunk, params=params_)
+                response = self._request_with_retry(method, url, params=params_, json_body=chunk)
                 try:
                     response.raise_for_status()
                 except Exception as e:
