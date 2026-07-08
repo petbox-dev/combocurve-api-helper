@@ -387,6 +387,142 @@ class Scenarios(APIBase):
 
         return headers
 
+    # Scenario lookup-tables (project-scoped: /scenarios/lookup-tables)
+
+    def get_scenario_lookup_tables_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url of scenario lookup-tables for a specific project id.
+        Route: /v1/projects/{projectId}/scenarios/lookup-tables
+        """
+        url = f'{self.API_BASE_URL}/projects/{project_id}/scenarios/lookup-tables'
+        if filters is None:
+            return url
+
+        url += self._build_params_string(filters)
+        return url
+
+    def get_scenario_lookup_table_by_id_url(
+        self, project_id: str, lookup_table_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> str:
+        """
+        Returns the API url for a specific scenario lookup-table from its id.
+        """
+        base_url = self.get_scenario_lookup_tables_url(project_id)
+        url = f'{base_url}/{lookup_table_id}'
+        if filters is None:
+            return url
+
+        url += self._build_params_string(filters)
+        return url
+
+    def get_scenario_lookup_tables(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+        """
+        Returns a list of scenario lookup-tables for a specific project id.
+        """
+        url = self.get_scenario_lookup_tables_url(project_id, filters)
+        params = {'take': GET_LIMIT}
+        return self._get_items(url, params)
+
+    def get_scenario_lookup_table_by_id(self, project_id: str, lookup_table_id: str) -> Item:
+        """
+        Returns a specific scenario lookup-table from its id.
+        """
+        url = self.get_scenario_lookup_table_by_id_url(project_id, lookup_table_id)
+        lookup_tables = self._get_items(url)
+        return lookup_tables[0]
+
+    def post_scenario_lookup_tables(self, project_id: str, data: ItemList) -> ItemList:
+        """
+        Creates scenario lookup-tables for a specific project id.
+        """
+        url = self.get_scenario_lookup_tables_url(project_id)
+        return self._post_items(url, data)
+
+    def put_scenario_lookup_tables(self, project_id: str, data: ItemList) -> ItemList:
+        """
+        Upserts scenario lookup-tables for a specific project id.
+        """
+        url = self.get_scenario_lookup_tables_url(project_id)
+        return self._put_items(url, data)
+
+    def delete_scenario_lookup_table_by_id(self, project_id: str, lookup_table_id: str) -> CaseInsensitiveDict[str]:
+        """
+        Deletes a specific scenario lookup-table from its id.
+
+        Returns the headers from the delete response.
+        """
+        url = self.get_scenario_lookup_table_by_id_url(project_id, lookup_table_id)
+        lookup_tables = self._delete_responses(url, data=[])
+        return lookup_tables[0].headers
+
+    # Scenario lookup-table assignments (/scenarios/{id}/assignments/lookup-tables)
+
+    def get_scenario_lookup_table_assignments_url(
+        self, project_id: str, scenario_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> str:
+        """
+        Returns the API url for a scenario's lookup-table assignments.
+        Route: /v1/projects/{projectId}/scenarios/{scenarioId}/assignments/lookup-tables
+        """
+        base_url = self.get_scenario_by_id_url(project_id, scenario_id)
+        url = f'{base_url}/assignments/lookup-tables'
+        if filters is None:
+            return url
+
+        url += self._build_params_string(filters)
+        return url
+
+    def get_scenario_lookup_table_assignment_by_id_url(
+        self, project_id: str, scenario_id: str, lookup_table_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> str:
+        """
+        Returns the API url for a specific scenario lookup-table assignment from its id.
+        """
+        base_url = self.get_scenario_lookup_table_assignments_url(project_id, scenario_id)
+        url = f'{base_url}/{lookup_table_id}'
+        if filters is None:
+            return url
+
+        url += self._build_params_string(filters)
+        return url
+
+    def get_scenario_lookup_table_assignments(self, project_id: str, scenario_id: str) -> ItemList:
+        """
+        Returns the lookup-table assignments for a specific scenario.
+        """
+        url = self.get_scenario_lookup_table_assignments_url(project_id, scenario_id)
+        params = {'take': GET_LIMIT}
+        return self._get_items(url, params)
+
+    def put_scenario_lookup_table_assignments(self, project_id: str, scenario_id: str, data: ItemList) -> ItemList:
+        """
+        Upserts the lookup-table assignments for a specific scenario.
+        """
+        url = self.get_scenario_lookup_table_assignments_url(project_id, scenario_id)
+        return self._put_items(url, data)
+
+    def get_scenario_lookup_table_assignment_by_id(
+        self, project_id: str, scenario_id: str, lookup_table_id: str
+    ) -> Item:
+        """
+        Returns a specific scenario lookup-table assignment from its id.
+        """
+        url = self.get_scenario_lookup_table_assignment_by_id_url(project_id, scenario_id, lookup_table_id)
+        assignments = self._get_items(url)
+        return assignments[0]
+
+    def delete_scenario_lookup_table_assignment_by_id(
+        self, project_id: str, scenario_id: str, lookup_table_id: str
+    ) -> CaseInsensitiveDict[str]:
+        """
+        Deletes a specific scenario lookup-table assignment from its id.
+
+        Returns the headers from the delete response.
+        """
+        url = self.get_scenario_lookup_table_assignment_by_id_url(project_id, scenario_id, lookup_table_id)
+        assignments = self._delete_responses(url, data=[])
+        return assignments[0].headers
+
 
 post_put_scenarios_response = """
         Example data:

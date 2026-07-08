@@ -1,5 +1,7 @@
 from typing import List, Dict, Optional, Union, Any, Iterator, Mapping
 
+from requests.structures import CaseInsensitiveDict
+
 from .base import APIBase, Item, ItemList
 
 
@@ -1038,3 +1040,71 @@ class TypeCurves(APIBase):
         params = {'take': GET_LIMIT}
         monthly_fits = self._get_items(url, params)
         return monthly_fits
+
+    # Type-curve lookup-tables (/type-curves/lookup-tables)
+
+    def get_type_curve_lookup_tables_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        """
+        Returns the API url of type-curve lookup-tables for a specific project id.
+        Route: /v1/projects/{projectId}/type-curves/lookup-tables
+        """
+        url = f'{self.API_BASE_URL}/projects/{project_id}/type-curves/lookup-tables'
+        if filters is None:
+            return url
+
+        url += self._build_params_string(filters)
+        return url
+
+    def get_type_curve_lookup_table_by_id_url(
+        self, project_id: str, lookup_table_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> str:
+        """
+        Returns the API url for a specific type-curve lookup-table from its id.
+        """
+        base_url = self.get_type_curve_lookup_tables_url(project_id)
+        url = f'{base_url}/{lookup_table_id}'
+        if filters is None:
+            return url
+
+        url += self._build_params_string(filters)
+        return url
+
+    def get_type_curve_lookup_tables(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+        """
+        Returns a list of type-curve lookup-tables for a specific project id.
+        """
+        url = self.get_type_curve_lookup_tables_url(project_id, filters)
+        params = {'take': GET_LIMIT}
+        return self._get_items(url, params)
+
+    def get_type_curve_lookup_table_by_id(self, project_id: str, lookup_table_id: str) -> Item:
+        """
+        Returns a specific type-curve lookup-table from its id.
+        """
+        url = self.get_type_curve_lookup_table_by_id_url(project_id, lookup_table_id)
+        lookup_tables = self._get_items(url)
+        return lookup_tables[0]
+
+    def post_type_curve_lookup_tables(self, project_id: str, data: ItemList) -> ItemList:
+        """
+        Creates type-curve lookup-tables for a specific project id.
+        """
+        url = self.get_type_curve_lookup_tables_url(project_id)
+        return self._post_items(url, data)
+
+    def put_type_curve_lookup_tables(self, project_id: str, data: ItemList) -> ItemList:
+        """
+        Upserts type-curve lookup-tables for a specific project id.
+        """
+        url = self.get_type_curve_lookup_tables_url(project_id)
+        return self._put_items(url, data)
+
+    def delete_type_curve_lookup_table_by_id(self, project_id: str, lookup_table_id: str) -> CaseInsensitiveDict[str]:
+        """
+        Deletes a specific type-curve lookup-table from its id.
+
+        Returns the headers from the delete response.
+        """
+        url = self.get_type_curve_lookup_table_by_id_url(project_id, lookup_table_id)
+        lookup_tables = self._delete_responses(url, data=[])
+        return lookup_tables[0].headers
