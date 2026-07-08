@@ -941,3 +941,67 @@ class Forecasts(APIBase):
         segments = self._delete_items(url, data=[])
 
         return segments
+
+    # Bulk forecast parameters (whole-forecast PUT) and forecast run (async job)
+
+    def get_forecast_parameters_url(self, project_id: str, forecast_id: str) -> str:
+        """
+        Returns the API url for a forecast's parameters (bulk, whole-forecast).
+        Route: /v1/projects/{projectId}/forecasts/{forecastId}/parameters
+        """
+        base_url = self.get_forecast_by_id_url(project_id, forecast_id)
+        return f'{base_url}/parameters'
+
+    def put_forecast_parameters(self, project_id: str, forecast_id: str, data: ItemList) -> ItemList:
+        """
+        Upserts forecast parameters in bulk for a specific forecast. Each item is
+        a per-well/phase/series parameter object (see `put_forecast_segment_parameters`
+        for the single-well variant).
+        """
+        url = self.get_forecast_parameters_url(project_id, forecast_id)
+        return self._put_items(url, data)
+
+    def get_forecast_run_url(self, project_id: str, forecast_id: str) -> str:
+        """
+        Returns the API url to run a specific forecast.
+        Route: /v1/projects/{projectId}/forecasts/{forecastId}/run
+        """
+        base_url = self.get_forecast_by_id_url(project_id, forecast_id)
+        return f'{base_url}/run'
+
+    def get_forecast_run_by_job_id_url(self, project_id: str, forecast_id: str, job_id: str) -> str:
+        """
+        Returns the API url for the status of a specific forecast run job.
+        Route: /v1/projects/{projectId}/forecasts/{forecastId}/run/{jobId}
+        """
+        base_url = self.get_forecast_run_url(project_id, forecast_id)
+        return f'{base_url}/{job_id}'
+
+    def post_forecast_run(self, project_id: str, forecast_id: str, configuration_id: Optional[str] = None) -> ItemList:
+        """
+        Starts an (async) run of a specific forecast, optionally using a named
+        forecast configuration. Returns the run job (carrying its `jobId`); poll
+        `get_forecast_run_by_job_id` for status.
+        """
+        # The run endpoint receives a single object body ({configurationId}), not
+        # a list, so `self._post_items` (which chunks a list) does not apply.
+        headers = self.auth.get_auth_headers()
+        url = self.get_forecast_run_url(project_id, forecast_id)
+
+        data: Dict[str, str] = {}
+        if configuration_id is not None:
+            data['configurationId'] = configuration_id
+
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()
+
+        return self._extract_json(response)
+
+    def get_forecast_run_by_job_id(self, project_id: str, forecast_id: str, job_id: str) -> Item:
+        """
+        Returns the status of a specific forecast run job from its job id.
+        """
+        url = self.get_forecast_run_by_job_id_url(project_id, forecast_id, job_id)
+        jobs = self._get_items(url)
+
+        return jobs[0]
