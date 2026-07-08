@@ -22,7 +22,6 @@ class Projects(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_project_by_id_url(self, project_id: str) -> str:
         """
         Returns the API url for a specific project from its project id.
@@ -30,11 +29,9 @@ class Projects(APIBase):
         base_url = self.get_projects_url()
         return f'{base_url}/{project_id}'
 
-
     ###########
     # API calls
     ###########
-
 
     def get_projects(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -63,7 +60,6 @@ class Projects(APIBase):
             'updatedAt': 1,
         }
         return self._keysort(projects, order)
-
 
     def post_projects(self, data: ItemList) -> ItemList:
         """
@@ -116,7 +112,6 @@ class Projects(APIBase):
         projects = self._post_items(url, data)
 
         return projects
-
 
     def get_project_by_id(self, id: str) -> Item:
         """

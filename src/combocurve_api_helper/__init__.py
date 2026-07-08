@@ -16,17 +16,7 @@ from .base import Item, ItemList, PrimativeValue, IterableValue
 
 
 class ComboCurveAPI(
-    Root,
-    Projects,
-    Scenarios,
-    Production,
-    EconRuns,
-    Wells,
-    Models,
-    CompanyModels,
-    Forecasts,
-    TypeCurves,
-    Directional
+    Root, Projects, Scenarios, Production, EconRuns, Wells, Models, CompanyModels, Forecasts, TypeCurves, Directional
 ):
     """
     This class is the primary interface for interacting with the Combo Curve
@@ -34,4 +24,5 @@ class ComboCurveAPI(
     module. It is intended to be used as a single entrypoint for interacting
     with the ComboCurve API.
     """
+
     pass

@@ -12,45 +12,51 @@ def test_post_put_delete_assignment_generics_delegate(monkeypatch: pytest.Monkey
 
     def fake_url(pid: str, t: str, mid: str, filters: Optional[Dict[str, str]] = None) -> str:
         captured_url_calls.append((pid, t, mid, filters))
-        return f"URL/{pid}/{t}/{mid}"
+        return f'URL/{pid}/{t}/{mid}'
 
-    monkeypatch.setattr(m, "get_econ_model_assignments_by_type_by_id_url", fake_url)
-    monkeypatch.setattr(m, "_post_items", lambda url, data: ("POST", url, data))
-    monkeypatch.setattr(m, "_put_items", lambda url, data: ("PUT", url, data))
-    monkeypatch.setattr(m, "_delete_responses", lambda url, data: ("DEL", url, data))
+    monkeypatch.setattr(m, 'get_econ_model_assignments_by_type_by_id_url', fake_url)
+    monkeypatch.setattr(m, '_post_items', lambda url, data: ('POST', url, data))
+    monkeypatch.setattr(m, '_put_items', lambda url, data: ('PUT', url, data))
+    monkeypatch.setattr(m, '_delete_responses', lambda url, data: ('DEL', url, data))
 
-    body: ItemList = [{"scenario": "s", "qualifierName": "P50", "wells": ["w"], "allWells": False}]
-    post_result: object = m.post_econ_model_assignments_by_type_by_id("p", "Capex", "id", body)
-    assert post_result == ("POST", "URL/p/Capex/id", body)
-    put_result: object = m.put_econ_model_assignments_by_type_by_id("p", "Capex", "id", body)
-    assert put_result == ("PUT", "URL/p/Capex/id", body)
+    body: ItemList = [{'scenario': 's', 'qualifierName': 'P50', 'wells': ['w'], 'allWells': False}]
+    post_result: object = m.post_econ_model_assignments_by_type_by_id('p', 'Capex', 'id', body)
+    assert post_result == ('POST', 'URL/p/Capex/id', body)
+    put_result: object = m.put_econ_model_assignments_by_type_by_id('p', 'Capex', 'id', body)
+    assert put_result == ('PUT', 'URL/p/Capex/id', body)
 
     # DELETE takes query filters, not a body: scenarioId is required, the rest
     # are optional and only added to the filters dict when provided.
     delete_result: object = m.delete_econ_model_assignments_by_type_by_id(
-        "p", "Capex", "id", "scenario1", qualifier_name="P50", wells="w1,w2", all_wells=True)
-    assert delete_result == ("DEL", "URL/p/Capex/id", [])
+        'p', 'Capex', 'id', 'scenario1', qualifier_name='P50', wells='w1,w2', all_wells=True
+    )
+    assert delete_result == ('DEL', 'URL/p/Capex/id', [])
     assert captured_url_calls[-1] == (
-        "p", "Capex", "id",
-        {"scenarioId": "scenario1", "qualifierName": "P50", "wells": "w1,w2", "allWells": "true"})
+        'p',
+        'Capex',
+        'id',
+        {'scenarioId': 'scenario1', 'qualifierName': 'P50', 'wells': 'w1,w2', 'allWells': 'true'},
+    )
 
-    minimal_delete_result: object = m.delete_econ_model_assignments_by_type_by_id("p", "Capex", "id", "scenario2")
-    assert minimal_delete_result == ("DEL", "URL/p/Capex/id", [])
-    assert captured_url_calls[-1] == ("p", "Capex", "id", {"scenarioId": "scenario2"})
+    minimal_delete_result: object = m.delete_econ_model_assignments_by_type_by_id('p', 'Capex', 'id', 'scenario2')
+    assert minimal_delete_result == ('DEL', 'URL/p/Capex/id', [])
+    assert captured_url_calls[-1] == ('p', 'Capex', 'id', {'scenarioId': 'scenario2'})
 
     # `wells` accepts a sequence too -- e.g. a list reused from a POST/PUT body
     # by a JSON-driven caller not protected by mypy's `Optional[str]` type --
     # and must be normalized to the same comma-separated string filter, not
     # passed through as a Python list-repr that matches nothing server-side.
     list_delete_result: object = m.delete_econ_model_assignments_by_type_by_id(
-        "p", "Capex", "id", "scenario3", wells=["w1", "w2"])
-    assert list_delete_result == ("DEL", "URL/p/Capex/id", [])
-    assert captured_url_calls[-1] == ("p", "Capex", "id", {"scenarioId": "scenario3", "wells": "w1,w2"})
+        'p', 'Capex', 'id', 'scenario3', wells=['w1', 'w2']
+    )
+    assert list_delete_result == ('DEL', 'URL/p/Capex/id', [])
+    assert captured_url_calls[-1] == ('p', 'Capex', 'id', {'scenarioId': 'scenario3', 'wells': 'w1,w2'})
 
     str_delete_result: object = m.delete_econ_model_assignments_by_type_by_id(
-        "p", "Capex", "id", "scenario4", wells="w1")
-    assert str_delete_result == ("DEL", "URL/p/Capex/id", [])
-    assert captured_url_calls[-1] == ("p", "Capex", "id", {"scenarioId": "scenario4", "wells": "w1"})
+        'p', 'Capex', 'id', 'scenario4', wells='w1'
+    )
+    assert str_delete_result == ('DEL', 'URL/p/Capex/id', [])
+    assert captured_url_calls[-1] == ('p', 'Capex', 'id', {'scenarioId': 'scenario4', 'wells': 'w1'})
 
 
 def test_assignment_url_uses_kebab_route_not_econ_model_type() -> None:
@@ -60,11 +66,11 @@ def test_assignment_url_uses_kebab_route_not_econ_model_type() -> None:
     Exercises the real URL builder (no mock)."""
     m = Models.__new__(Models)
 
-    fluid_url = m.get_econ_model_assignments_by_type_by_id_url("proj", "FluidModel", "mid")
-    assert "/econ-models/fluid-models/mid/assignments" in fluid_url
-    assert "/FluidModel/" not in fluid_url  # must NOT use the PascalCase type
+    fluid_url = m.get_econ_model_assignments_by_type_by_id_url('proj', 'FluidModel', 'mid')
+    assert '/econ-models/fluid-models/mid/assignments' in fluid_url
+    assert '/FluidModel/' not in fluid_url  # must NOT use the PascalCase type
 
     # multi-word type -> hyphenated route, not the run-together PascalCase
-    own_url = m.get_econ_model_assignments_by_type_by_id_url("proj", "OwnershipReversion", "mid")
-    assert "/econ-models/ownership-reversions/mid/assignments" in own_url
-    assert "/OwnershipReversion/" not in own_url
+    own_url = m.get_econ_model_assignments_by_type_by_id_url('proj', 'OwnershipReversion', 'mid')
+    assert '/econ-models/ownership-reversions/mid/assignments' in own_url
+    assert '/OwnershipReversion/' not in own_url

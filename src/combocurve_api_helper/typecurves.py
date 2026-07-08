@@ -22,14 +22,12 @@ class TypeCurves(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_type_curve_by_id_url(self, project_id: str, type_curve_id: str) -> str:
         """
         Returns the API url for a specific type curve from its type curve id.
         """
         base_url = self.get_type_curves_url(project_id)
         return f'{base_url}/{type_curve_id}'
-
 
     def get_type_curve_representative_wells_url(self, project_id: str, type_curve_id: str) -> str:
         """
@@ -39,7 +37,6 @@ class TypeCurves(APIBase):
         base_url = self.get_type_curve_by_id_url(project_id, type_curve_id)
         return f'{base_url}/representative-wells'
 
-
     def get_type_curve_daily_fits_url(self, project_id: str, type_curve_id: str) -> str:
         """
         Returns the API url for daily fits for a specific project id and
@@ -47,7 +44,6 @@ class TypeCurves(APIBase):
         """
         base_url = self.get_type_curve_by_id_url(project_id, type_curve_id)
         return f'{base_url}/daily-fits'
-
 
     def get_type_curve_monthly_fits_url(self, project_id: str, type_curve_id: str) -> str:
         """
@@ -57,11 +53,9 @@ class TypeCurves(APIBase):
         base_url = self.get_type_curve_by_id_url(project_id, type_curve_id)
         return f'{base_url}/monthly-fits'
 
-
     ###########
     # API calls
     ###########
-
 
     def get_type_curves(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -493,7 +487,6 @@ class TypeCurves(APIBase):
         }
         return self._keysort(type_curves, order)
 
-
     def get_type_curve_by_id(self, project_id: str, type_curve_id: str) -> Item:
         """
         Returns a specific type curve from its type curve id.
@@ -916,7 +909,6 @@ class TypeCurves(APIBase):
 
         return type_curves[0]
 
-
     def get_type_curve_representative_fits(self, project_id: str, type_curve_id: str) -> ItemList:
         """
         Returns a list of representative wells for a specific project id and
@@ -973,7 +965,6 @@ class TypeCurves(APIBase):
         }
         return self._keysort(representative_wells, order)
 
-
     def get_type_curve_daily_fits(self, project_id: str, type_curve_id: str) -> ItemList:
         """
         Returns a list of daily fits for a specific project id and
@@ -1010,7 +1001,6 @@ class TypeCurves(APIBase):
         params = {'take': GET_LIMIT}
         daily_fits = self._get_items(url, params)
         return daily_fits
-
 
     def get_type_curve_monthly_fits(self, project_id: str, type_curve_id: str) -> ItemList:
         """

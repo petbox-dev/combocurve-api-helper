@@ -47,13 +47,15 @@ Run from the repo root:
 
 ```bash
 mypy src                               # type check (primary gate; README also documents `mypy --package combocurve_api_helper`)
-flake8 src                             # lint (max-line-length 120, rules in pyproject.toml [tool.flake8])
+ruff check src                         # lint (rules in pyproject.toml [tool.ruff.lint])
+ruff format --check src                # format check (line-length 120, single quotes; drop --check to apply)
 pytest                                 # tests (testpaths = src)
 pytest src/combocurve_api_helper/test_api.py::TestRoot::test_custom_columns   # single test
 ```
 
-`test/test.sh` / `test/test.bat` are the canonical pre-commit checks: both run flake8 then mypy
-(`test.bat` also runs pytest). Per the README contributing flow, type checking must pass before committing.
+`test/test.sh` / `test/test.bat` are the canonical pre-commit checks: both run ruff (`check` +
+`format --check`) then mypy (`test.bat` also runs pytest). Per the README contributing flow, type
+checking must pass before committing.
 
 `mypy` is configured strict-ish in `pyproject.toml` (`disallow_untyped_defs`, `disallow_any_generics`,
 `disallow_incomplete_defs`, etc.). Every method needs full parameter and return annotations.

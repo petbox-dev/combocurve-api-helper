@@ -3,6 +3,7 @@
 Run: python scripts/generate_model_methods.py          # writes the file
      python scripts/generate_model_methods.py --stdout # prints (used by tests)
 """
+
 from __future__ import annotations
 import sys
 import pathlib
@@ -26,7 +27,7 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 '''
 
 # Emitted for every model entry with `hasCrud: true` (list/get, no assignments).
-CRUD = '''
+CRUD = """
     def get_{method_base}_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_models_by_type_url(project_id, "{econ_model_type}", filters)
 
@@ -39,10 +40,10 @@ CRUD = '''
 
     def get_{method_base}_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "{econ_model_type}", model_id)
-'''
+"""
 
 # Emitted for every model entry with `assignable: true` (assignment CRUD).
-ASSIGN = '''
+ASSIGN = """
     def get_{method_base}_assignments_by_id_url(self, project_id: str, model_id: str,
                                       filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "{econ_model_type}", model_id, filters)
@@ -62,31 +63,31 @@ ASSIGN = '''
             all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "{econ_model_type}", model_id, scenario_id, qualifier_name, wells, all_wells)
-'''
+"""
 
 
 def render() -> str:
     """Render `_models_generated.py`'s source by expanding CRUD/ASSIGN templates for each configured econ model."""
     parts = [HEADER]
     for model_entry in config.ECON_MODELS:
-        method_base, econ_model_type = model_entry["methodBase"], model_entry["econModelType"]
-        if model_entry["hasCrud"]:
+        method_base, econ_model_type = model_entry['methodBase'], model_entry['econModelType']
+        if model_entry['hasCrud']:
             parts.append(CRUD.format(method_base=method_base, econ_model_type=econ_model_type))
-        if model_entry["assignable"]:
+        if model_entry['assignable']:
             parts.append(ASSIGN.format(method_base=method_base, econ_model_type=econ_model_type))
-    return "".join(parts)
+    return ''.join(parts)
 
 
 def main() -> None:
     """Write the generated module to disk, or print it to stdout with `--stdout` (used by tests)."""
     text = render()
-    if "--stdout" in sys.argv:
+    if '--stdout' in sys.argv:
         sys.stdout.write(text)
         return
-    out = pathlib.Path(__file__).resolve().parents[1] / "src" / "combocurve_api_helper" / "_models_generated.py"
-    out.write_text(text, encoding="utf-8")
-    print(f"wrote {out}")
+    out = pathlib.Path(__file__).resolve().parents[1] / 'src' / 'combocurve_api_helper' / '_models_generated.py'
+    out.write_text(text, encoding='utf-8')
+    print(f'wrote {out}')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

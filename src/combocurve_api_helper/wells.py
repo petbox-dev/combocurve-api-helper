@@ -1,5 +1,7 @@
 from typing import List, Dict, Optional, Union, Any, Iterator, Mapping
 
+from requests.structures import CaseInsensitiveDict
+
 from .base import APIBase, Item, ItemList
 
 
@@ -23,13 +25,11 @@ class Wells(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_company_well_by_id_url(self, well_id: str) -> str:
         """
         Returns the API url for a specific company well from its well id.
         """
         return f'{self.API_BASE_URL}/wells/{well_id}'
-
 
     def get_project_company_wells_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
@@ -43,14 +43,12 @@ class Wells(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_project_company_well_by_id_url(self, project_id: str, well_id: str) -> str:
         """
         Returns the API url for a specific project company well from its
         well id.
         """
         return f'{self.API_BASE_URL}/projects/{project_id}/company-wells/{well_id}'
-
 
     def get_project_wells_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
@@ -63,13 +61,11 @@ class Wells(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_project_well_by_id_url(self, project_id: str, well_id: str) -> str:
         """
         Returns the API url for a specific project well from its well id.
         """
         return f'{self.API_BASE_URL}/projects/{project_id}/wells/{well_id}'
-
 
     def get_well_comments_url(self, filters: Optional[Dict[str, str]] = None) -> str:
         """
@@ -86,9 +82,7 @@ class Wells(APIBase):
     # API calls
     ###########
 
-
     # Company Wells
-
 
     def get_company_wells(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -108,7 +102,6 @@ class Wells(APIBase):
         }
         return self._keysort(wells, order)
 
-
     def post_company_wells(self, data: ItemList) -> ItemList:
         """
         Creates a list of company wells.
@@ -119,7 +112,6 @@ class Wells(APIBase):
         wells = self._post_items(url, data, POST_PATCH_PUT_LIMIT)
 
         return wells
-
 
     def put_company_wells(self, data: ItemList) -> ItemList:
         """
@@ -132,7 +124,6 @@ class Wells(APIBase):
 
         return wells
 
-
     def patch_company_wells(self, data: ItemList) -> ItemList:
         """
         Updates a list of company wells.
@@ -144,11 +135,13 @@ class Wells(APIBase):
 
         return wells
 
-
     def delete_company_wells(
-            self, project_id: str,
-            chosen_id: Optional[str] = None, data_source: Optional[str] = None,
-            well_id: Optional[str] = None) -> ItemList:
+        self,
+        project_id: str,
+        chosen_id: Optional[str] = None,
+        data_source: Optional[str] = None,
+        well_id: Optional[str] = None,
+    ) -> CaseInsensitiveDict[str]:
         """
         Deletes a list of company wells.
 
@@ -177,7 +170,6 @@ class Wells(APIBase):
 
         return headers
 
-
     def get_company_well_by_id(self, well_id: str) -> Item:
         """
         Returns a specific company well from its well id.
@@ -190,7 +182,6 @@ class Wells(APIBase):
 
         return wells[0]
 
-
     def put_company_well_by_id(self, well_id: str, data: Item) -> ItemList:
         """
         Upserts a specific company well from its well id.
@@ -201,7 +192,6 @@ class Wells(APIBase):
         wells = self._put_items(url, [data])
 
         return wells
-
 
     def patch_company_well_by_id(self, well_id: str, data: Item) -> ItemList:
         """
@@ -214,8 +204,7 @@ class Wells(APIBase):
 
         return wells
 
-
-    def delete_company_well_by_id(self, well_id: str) -> ItemList:
+    def delete_company_well_by_id(self, well_id: str) -> CaseInsensitiveDict[str]:
         """
         Deletes a specific company well from its well id.
 
@@ -231,9 +220,7 @@ class Wells(APIBase):
 
         return headers
 
-
     # Project Company Wells
-
 
     def get_project_company_wells(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -253,7 +240,6 @@ class Wells(APIBase):
         }
         return self._keysort(wells, order)
 
-
     def post_project_company_wells(self, project_id: str, data: ItemList) -> ItemList:
         """
         Creates a list of project company wells.
@@ -265,11 +251,13 @@ class Wells(APIBase):
 
         return wells
 
-
     def delete_project_company_wells(
-            self, project_id: str,
-            chosen_id: Optional[str] = None, data_source: Optional[str] = None,
-            well_id: Optional[str] = None) -> ItemList:
+        self,
+        project_id: str,
+        chosen_id: Optional[str] = None,
+        data_source: Optional[str] = None,
+        well_id: Optional[str] = None,
+    ) -> CaseInsensitiveDict[str]:
         """
         Deletes a list of project company wells.
 
@@ -298,7 +286,6 @@ class Wells(APIBase):
 
         return headers
 
-
     def get_project_company_well_by_id(self, project_id: str, well_id: str) -> Item:
         """
         Returns a specific project company well from its well id.
@@ -311,9 +298,7 @@ class Wells(APIBase):
 
         return wells[0]
 
-
     # Project Wells
-
 
     def get_project_wells(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -333,7 +318,6 @@ class Wells(APIBase):
         }
         return self._keysort(wells, order)
 
-
     def post_project_wells(self, project_id: str, data: ItemList) -> ItemList:
         """
         Creates a list of project wells scoped from the project's id.
@@ -344,7 +328,6 @@ class Wells(APIBase):
         wells = self._post_items(url, data, POST_PATCH_PUT_LIMIT)
 
         return wells
-
 
     def put_project_wells(self, project_id: str, data: ItemList) -> ItemList:
         """
@@ -357,7 +340,6 @@ class Wells(APIBase):
 
         return wells
 
-
     def patch_project_wells(self, project_id: str, data: ItemList) -> ItemList:
         """
         Updates a list of project wells scoped from the project's id.
@@ -369,18 +351,20 @@ class Wells(APIBase):
 
         return wells
 
-
     def delete_project_wells(
-            self, project_id: str,
-            chosen_id: Optional[str] = None, data_source: Optional[str] = None,
-            well_id: Optional[str] = None) -> ItemList:
+        self,
+        project_id: str,
+        chosen_id: Optional[str] = None,
+        data_source: Optional[str] = None,
+        well_id: Optional[str] = None,
+    ) -> CaseInsensitiveDict[str]:
         """
-        Deletes a list of project wells scoped from the project's id.
-F
-        https://docs.api.combocurve.com/#1b535f9f-2ace-4a90-bf95-791a23a90977
+                Deletes a list of project wells scoped from the project's id.
+        F
+                https://docs.api.combocurve.com/#1b535f9f-2ace-4a90-bf95-791a23a90977
 
-        Returns the headers from the delete response where 'X-Delete-Count' is
-        the number of wells deleted.
+                Returns the headers from the delete response where 'X-Delete-Count' is
+                the number of wells deleted.
         """
         if (chosen_id or data_source or well_id) is None:
             raise ValueError('Must provide at least one of chosen_id, data_source, or well_id')
@@ -402,7 +386,6 @@ F
 
         return headers
 
-
     def get_project_well_by_id(self, project_id: str, well_id: str) -> Item:
         """
         Returns a specific project well from its well id.
@@ -415,7 +398,6 @@ F
 
         return wells[0]
 
-
     def put_project_well_by_id(self, project_id: str, well_id: str, data: Item) -> ItemList:
         """
         Upserts a specific project well from its well id.
@@ -426,7 +408,6 @@ F
         wells = self._put_items(url, [data])
 
         return wells
-
 
     def patch_project_well_by_id(self, project_id: str, well_id: str, data: Item) -> ItemList:
         """
@@ -439,8 +420,7 @@ F
 
         return wells
 
-
-    def delete_project_well_by_id(self, project_id: str, well_id: str) -> Item:
+    def delete_project_well_by_id(self, project_id: str, well_id: str) -> CaseInsensitiveDict[str]:
         """
         Deletes a specific project well from its well id.
 
@@ -455,7 +435,6 @@ F
         headers = wells[0].headers
 
         return headers
-
 
     def get_well_comments(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """

@@ -27,14 +27,12 @@ class Forecasts(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_forecast_by_id_url(self, project_id: str, forecast_id: str) -> str:
         """
         Returns the API url for a specific forecast from its forecast id.
         """
         base_url = self.get_forecasts_url(project_id)
         return f'{base_url}/{forecast_id}'
-
 
     def get_forecast_wells_url(self, project_id: str, forecast_id: str) -> str:
         """
@@ -43,9 +41,9 @@ class Forecasts(APIBase):
         base_url = self.get_forecast_by_id_url(project_id, forecast_id)
         return f'{base_url}/wells'
 
-
     def get_forecast_aries_url(
-            self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> str:
         """
         Returns the API url for a specific forecast's ARIES parameters from its forecast id.
         """
@@ -57,9 +55,9 @@ class Forecasts(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_forecast_outputs_url(
-            self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> str:
         """
         Returns the API url for a specific forecast outputs from its forecast id.
         """
@@ -71,7 +69,6 @@ class Forecasts(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_forecast_output_by_id_url(self, project_id: str, forecast_id: str, output_id: str) -> str:
         """
         Returns the API url for a specific forecast output from its forecast id and output id.
@@ -79,9 +76,9 @@ class Forecasts(APIBase):
         base_url = self.get_forecast_outputs_url(project_id, forecast_id)
         return f'{base_url}/{output_id}'
 
-
     def get_forecast_daily_volumes_url(
-            self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> str:
         """
         Returns the API url for daily volumes for a specific project id and forecast id.
         """
@@ -93,9 +90,9 @@ class Forecasts(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_forecast_monthly_volumes_url(
-            self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> str:
         """
         Returns the API url for monthly volumes for a specific project id and forecast id.
         """
@@ -107,9 +104,9 @@ class Forecasts(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_forecast_segment_parameters_url(
-            self, project_id: str, forecast_id: str, well_id: str, phase: str, series: str) -> str:
+        self, project_id: str, forecast_id: str, well_id: str, phase: str, series: str
+    ) -> str:
         """
         Returns the API url for a specific forecast segment parameters from its
         forecast id, well id, phase, and series.
@@ -119,10 +116,10 @@ class Forecasts(APIBase):
         VALID_SERIES = ['best', 'p10', 'p50', 'p90']
 
         if phase.lower() not in VALID_PHASES:
-            warnings.warn(f'`phase` \'{phase}\' is not in list of valid names:\n{VALID_PHASES}')
+            warnings.warn(f"`phase` '{phase}' is not in list of valid names:\n{VALID_PHASES}")
 
         if series.lower() not in VALID_SERIES:
-            warnings.warn(f'`series` \'{series}\' is not in list of valid names:\n{VALID_SERIES}')
+            warnings.warn(f"`series` '{series}' is not in list of valid names:\n{VALID_SERIES}")
 
         phase = phase.lower()
         series = series.lower()
@@ -132,11 +129,9 @@ class Forecasts(APIBase):
 
         return url
 
-
     ###########
     # API calls
     ###########
-
 
     def get_forecasts(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -168,7 +163,6 @@ class Forecasts(APIBase):
             'updatedAt': 1,
         }
         return self._keysort(forecasts, order)
-
 
     def post_forecasts(self, project_id: str, data: ItemList) -> ItemList:
         """
@@ -248,7 +242,7 @@ class Forecasts(APIBase):
 
         items: ItemList = []
         for well_ids_chunk in chunked(well_ids, chunksize):
-            data = {"wellIds": well_ids_chunk}
+            data = {'wellIds': well_ids_chunk}
             response = requests.post(url, headers=headers, json=data)
             response.raise_for_status()
 
@@ -279,9 +273,9 @@ class Forecasts(APIBase):
 
         return forecasts[0]
 
-
     def get_forecast_aries(
-            self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+        self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> ItemList:
         """
         Returns a list of ARIES parameters for a specific project id and forecast id.
 
@@ -351,9 +345,9 @@ class Forecasts(APIBase):
         params = {'take': GET_LIMIT_OUTPUTS_ARIES}
         return self._get_items(url, params)
 
-
     def get_forecast_outputs(
-            self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+        self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> ItemList:
         """
         Returns a list of outputs for a specific project id and forecast id.
 
@@ -531,7 +525,6 @@ class Forecasts(APIBase):
         params = {'take': GET_LIMIT_OUTPUTS_ARIES}
         return self._get_items(url, params)
 
-
     def get_forecast_output_by_id(self, project_id: str, forecast_id: str, output_id: str) -> Item:
         """
         Returns a specific forecast output from its forecast id and output id.
@@ -637,9 +630,9 @@ class Forecasts(APIBase):
 
         return outputs[0]
 
-
     def get_forecast_daily_volumes(
-            self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+        self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> ItemList:
         """
         Returns a list of daily volumes for a specific project id and forecast id.
 
@@ -742,9 +735,9 @@ class Forecasts(APIBase):
         }
         return self._keysort(daily_volumes, order)
 
-
     def get_forecast_monthly_volumes(
-            self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+        self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> ItemList:
         """
         Returns a list of monthly volumes for a specific project id and forecast id.
 
@@ -847,10 +840,9 @@ class Forecasts(APIBase):
         }
         return self._keysort(monthly_volumes, order)
 
-
     def post_forecast_segment_parameters(
-            self, project_id: str, forecast_id: str, well_id: str, phase: str, series: str,
-            data: ItemList) -> ItemList:
+        self, project_id: str, forecast_id: str, well_id: str, phase: str, series: str, data: ItemList
+    ) -> ItemList:
         """
         Inserts a specific well's forecast parameters from its forecast id,
         well id, phase, and series.
@@ -892,10 +884,9 @@ class Forecasts(APIBase):
 
         return segments
 
-
     def put_forecast_segment_parameters(
-            self, project_id: str, forecast_id: str, well_id: str, phase: str, series: str,
-            data: ItemList) -> ItemList:
+        self, project_id: str, forecast_id: str, well_id: str, phase: str, series: str, data: ItemList
+    ) -> ItemList:
         """
         Updates a specific well's forecast parameters from its forecast id,
         well id, phase, and series.
@@ -937,9 +928,9 @@ class Forecasts(APIBase):
 
         return segments
 
-
     def delete_forecast_segment_parameters(
-            self, project_id: str, forecast_id: str, well_id: str, phase: str, series: str) -> ItemList:
+        self, project_id: str, forecast_id: str, well_id: str, phase: str, series: str
+    ) -> ItemList:
         """
         Deletes a specific well's forecast parameters from its forecast id,
         well id, phase, and series.

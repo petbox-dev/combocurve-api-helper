@@ -22,7 +22,6 @@ class Directional(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_directional_survey_by_id_url(self, project_id: str, directional_survey_id: str) -> str:
         """
         Returns the API url for a specific directional survey from its
@@ -31,11 +30,9 @@ class Directional(APIBase):
         base_url = self.get_directional_surveys_url(project_id)
         return f'{base_url}/{directional_survey_id}'
 
-
     ###########
     # API calls
     ###########
-
 
     def get_directional_surveys(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -93,7 +90,6 @@ class Directional(APIBase):
         directional_surveys = self._get_items(url, params)
 
         return directional_surveys
-
 
     def get_directional_survey_by_id(self, project_id: str, directional_survey_id: str) -> Item:
         """

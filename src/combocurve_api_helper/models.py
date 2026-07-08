@@ -10,4 +10,5 @@ class Models(_GeneratedModelMethods):
     from `assets/econModels.json` by `scripts/generate_model_methods.py`; edit
     that data/generator rather than hand-writing methods here.
     """
+
     pass

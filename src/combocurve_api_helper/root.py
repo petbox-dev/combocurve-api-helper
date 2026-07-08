@@ -22,13 +22,11 @@ class Root(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_well_identifiers_url(self) -> str:
         """
         Returns the API url for well identifiers.
         """
         return f'{self.API_BASE_URL}/well-identifiers'
-
 
     def get_tags_url(self, filters: Optional[Dict[str, str]] = None) -> str:
         """
@@ -41,7 +39,6 @@ class Root(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_root_econ_runs_url(self, filters: Optional[Dict[str, str]] = None) -> str:
         """
         Returns the API url for econ runs.
@@ -53,13 +50,11 @@ class Root(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_root_econ_run_by_id_url(self, econrun_id: str) -> str:
         """
         Returns the API url for a specific econ run from its econ run id.
         """
         return f'{self.API_BASE_URL}/econ-runs/{econrun_id}'
-
 
     def get_root_forecast_daily_volumes_url(self, filters: Optional[Dict[str, str]] = None) -> str:
         """
@@ -72,7 +67,6 @@ class Root(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_root_forecast_monthly_volumes_url(self, filters: Optional[Dict[str, str]] = None) -> str:
         """
         Returns the API url for monthly volumes.
@@ -84,11 +78,9 @@ class Root(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     ###########
     # API calls
     ###########
-
 
     def get_custom_columns(self, collection: str, filters: Optional[Dict[str, str]] = None) -> Item:
         """
@@ -100,7 +92,6 @@ class Root(APIBase):
         columns = self._get_items(url)
         return columns[0]
 
-
     def get_custom_columns_wells(self, filters: Optional[Dict[str, str]] = None) -> Item:
         """
         Returns a list of custom columns for Wells.
@@ -108,7 +99,6 @@ class Root(APIBase):
         https://docs.api.combocurve.com/#3c047d2a-db2c-419f-9187-1a4db81215eb
         """
         return self.get_custom_columns('wells', filters)
-
 
     def get_custom_columns_daily_production(self, filters: Optional[Dict[str, str]] = None) -> Item:
         """
@@ -118,7 +108,6 @@ class Root(APIBase):
         """
         return self.get_custom_columns('daily-productions', filters)
 
-
     def get_custom_columns_monthly_production(self, filters: Optional[Dict[str, str]] = None) -> Item:
         """
         Returns a list of custom columns for Monthly Production.
@@ -126,7 +115,6 @@ class Root(APIBase):
         https://docs.api.combocurve.com/#3c047d2a-db2c-419f-9187-1a4db81215eb
         """
         return self.get_custom_columns('monthly-productions', filters)
-
 
     def patch_well_identifiers(self, data: ItemList) -> ItemList:
         """
@@ -150,7 +138,6 @@ class Root(APIBase):
         """
         url = self.get_well_identifiers_url()
         return self._patch_items(url, data)
-
 
     def get_tags(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -178,7 +165,6 @@ class Root(APIBase):
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
 
-
     def get_root_econ_runs(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
         Returns a list of econ runs.
@@ -188,7 +174,6 @@ class Root(APIBase):
         url = self.get_root_econ_runs_url(filters)
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
-
 
     def get_root_econ_run_by_id(self, id: str) -> Item:
         """
@@ -200,7 +185,6 @@ class Root(APIBase):
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)[0]
 
-
     def get_root_forecast_daily_volumes(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
         Returns a list of daily volumes.
@@ -210,7 +194,6 @@ class Root(APIBase):
         url = self.get_root_forecast_daily_volumes_url(filters)
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
-
 
     def get_root_forecast_monthly_volumes(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """

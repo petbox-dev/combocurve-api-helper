@@ -1,9 +1,11 @@
 :: Run tests and generate report
 @echo off
 
-echo Running flake8...
-echo flake8 src
-flake8 %~dp0..\src
+echo Running ruff...
+echo ruff check src
+ruff check %~dp0..\src
+echo ruff format --check src
+ruff format --check %~dp0..\src
 echo.
 
 echo Running mypy...

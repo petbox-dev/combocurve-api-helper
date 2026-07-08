@@ -55,9 +55,8 @@ classifiers = [
 
 [dependency-groups]
 dev = [
-    "flake8>=5.0.4",
-    "flake8-pyproject>=1.2.3",
     "mypy>=1.7.0",
+    "ruff>=0.15",
     "types-requests>=2.32.0.20241016",
 ]
 
@@ -88,36 +87,39 @@ testpaths = [
 ]
 
 
-[tool.flake8]
-max-line-length = 120
+[tool.ruff]
+line-length = 120
+extend-exclude = [
+    # Codegen output owned by scripts/generate_model_methods.py and byte-compared
+    # by the freshness test -- the formatter must not touch it, or the test breaks.
+    '_models_generated.py',
+]
+
+[tool.ruff.format]
+quote-style = 'single'
+
+[tool.ruff.lint]
+# Mirrors the previous flake8 policy: pyflakes (F) + pycodestyle (E/W) + mccabe (C90),
+# minus the rules this project has always ignored. Layout rules (blank lines,
+# continuation indents) are now owned by `ruff format`.
+select = [
+    'E',
+    'F',
+    'W',
+    'C90',
+]
 ignore = [
-    'F401',
-    'F841',
-    'E116',
-    'E123',
-    'E128',
-    'E251',
-    'E261',
-    'E265',
-    'E266',
-    'E302',
-    'E303',
-    'E305',
-    'E402',
-    'E722',
-    'E741',
-    'W503',
-    'W605'
+    'E402',  # module-level import not at top of file
+    'E722',  # bare except
+    'E741',  # ambiguous variable name (l, I, O)
+    'E265',  # block comment should start with '# ' (banner comments use ######)
+    'E266',  # too many leading '#' for block comment
+    'F401',  # imported but unused (re-export modules)
+    'F841',  # local variable assigned but never used
+    'W605',  # invalid escape sequence
 ]
-exclude = [
-    '.git',
-    '__pycache__',
-    'docs/conf.py',
-    'docs/source/conf.py',
-    'old',
-    'build',
-    'dist'
-]
+
+[tool.ruff.lint.mccabe]
 max-complexity = 20
 
 
@@ -138,3 +140,13 @@ warn_redundant_casts = true
 warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
+
+
+# The upstream combocurve-api-v1 package ships no py.typed marker / stubs.
+# Scope the missing-imports allowance to it rather than enabling it globally.
+[[tool.mypy.overrides]]
+module = [
+    'combocurve_api_v1',
+    'combocurve_api_v1.*',
+]
+ignore_missing_imports = true

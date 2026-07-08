@@ -16,8 +16,8 @@ from . import config
 
 PrimativeValue: TypeAlias = Union[str, int, float, bool]
 IterableValue: TypeAlias = Union[
-    List[str], List[int], List[float], List[bool],
-    Dict[str, Union[PrimativeValue, 'IterableValue']]]
+    List[str], List[int], List[float], List[bool], Dict[str, Union[PrimativeValue, 'IterableValue']]
+]
 Item: TypeAlias = Dict[str, Union[PrimativeValue, IterableValue]]
 ItemList: TypeAlias = List[Item]
 
@@ -28,17 +28,14 @@ class APIBase:
     WELLHEADER_COLUMNS = {k.lower(): k for k in config.REFERENCE_WELLHEADER.keys()}
     ECON_MODELS = config.ECON_MODELS
 
-
     def __init__(self) -> None:
         account = ServiceAccount.from_file(str(config.COMBOCURVE_JSON))
         self.auth = ComboCurveAuth(account, config.cfg.apikey)
 
-
     @classmethod
     def from_alternate_config(
-            cls,
-            combocurve_json_path: Union[str, Path],
-            cc_api_config_json_path: Union[str, Path]) -> Self:
+        cls, combocurve_json_path: Union[str, Path], cc_api_config_json_path: Union[str, Path]
+    ) -> Self:
         api_base = cls.__new__(cls)
         super(APIBase, api_base).__init__()
 
@@ -53,7 +50,6 @@ class APIBase:
 
         return api_base
 
-
     def _extract_json(self, response: requests.Response) -> ItemList:
         """
         Ensure returned JSON is a list of objects
@@ -66,10 +62,9 @@ class APIBase:
 
         return json_
 
-
     def _request_items_pages(
-            self, method: str, url: str,
-            params: Optional[Mapping[str, Union[str, int, float]]] = None) -> Iterator[Response]:
+        self, method: str, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None
+    ) -> Iterator[Response]:
         """
         Generic method for dispatching GET requests for the given `url` yielding
         response of each page
@@ -95,10 +90,14 @@ class APIBase:
 
             params = None
 
-
     def _request_items_pages_chunks(
-            self, method: str, url: str, data: ItemList, chunksize: Optional[int] = None,
-            params: Optional[Mapping[str, Union[str, int, float]]] = None) -> Iterator[Response]:
+        self,
+        method: str,
+        url: str,
+        data: ItemList,
+        chunksize: Optional[int] = None,
+        params: Optional[Mapping[str, Union[str, int, float]]] = None,
+    ) -> Iterator[Response]:
         """
         Generic method for dispatching POST/PATCH/PUT requests for the given
         `url` yielding response of each page
@@ -132,27 +131,25 @@ class APIBase:
 
                 params_ = None
 
-
     def _get_responses_iterator(
-            self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None) -> Iterator[Response]:
+        self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None
+    ) -> Iterator[Response]:
         """
         Generic method for dispatching GET requests for the given `url`
         strictly returning a generator of requests.Response
         """
         yield from self._request_items_pages('get', url, params)
 
-
-    def _get_responses(
-            self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None) -> List[Response]:
+    def _get_responses(self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None) -> List[Response]:
         """
         Generic method for dispatching GET requests for the given `url`
         strictly returning a list of requests.Response
         """
         return list(self._request_items_pages('get', url, params))
 
-
     def _get_items_iterator(
-            self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None) -> Iterator[ItemList]:
+        self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None
+    ) -> Iterator[ItemList]:
         """
         Generic method for dispatching GET requests for the given `url`
         strictly returning a generator of JSON of type: list of objects
@@ -160,10 +157,7 @@ class APIBase:
         for response in self._request_items_pages('get', url, params):
             yield self._extract_json(response)
 
-
-    def _get_items(
-            self, url: str,
-            params: Optional[Mapping[str, Union[str, int, float]]] = None) -> ItemList:
+    def _get_items(self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None) -> ItemList:
         """
         Generic method for dispatching GET requests for the given `url`
         strictly returning JSON of type: list of objects
@@ -174,27 +168,21 @@ class APIBase:
 
         return items
 
-
-    def _post_responses_iterator(
-            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[Response]:
+    def _post_responses_iterator(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[Response]:
         """
         Generic method for dispatching POST requests for the given `url`
         strictly returning a generator of requests.Response
         """
         yield from self._request_items_pages_chunks('post', url, data, chunksize)
 
-
-    def _post_responses(
-            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> List[Response]:
+    def _post_responses(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> List[Response]:
         """
         Generic method for dispatching POST requests for the given `url`
         strictly returning a list of requests.Response
         """
         return list(self._request_items_pages_chunks('post', url, data, chunksize))
 
-
-    def _post_items_iterator(
-            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[ItemList]:
+    def _post_items_iterator(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[ItemList]:
         """
         Generic method for dispatching POST requests for the given `url`
         strictly returning a generator of JSON of type: list of objects
@@ -202,9 +190,7 @@ class APIBase:
         for response in self._request_items_pages_chunks('post', url, data, chunksize):
             yield self._extract_json(response)
 
-
-    def _post_items(
-            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> ItemList:
+    def _post_items(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> ItemList:
         """
         Generic method for dispatching POST requests for the given `url`
         strictly returning JSON of type: list of objects
@@ -215,27 +201,23 @@ class APIBase:
 
         return items
 
-
     def _patch_responses_iterator(
-            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[Response]:
+        self, url: str, data: ItemList, chunksize: Optional[int] = None
+    ) -> Iterator[Response]:
         """
         Generic method for dispatching PATCH requests for the given `url`
         strictly returning a generator of requests.Response
         """
         yield from self._request_items_pages_chunks('patch', url, data, chunksize)
 
-
-    def _patch_responses(
-            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> List[Response]:
+    def _patch_responses(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> List[Response]:
         """
         Generic method for dispatching PATCH requests for the given `url`
         strictly returning a list of requests.Response
         """
         return list(self._request_items_pages_chunks('patch', url, data, chunksize))
 
-
-    def _patch_items_iterator(
-            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[ItemList]:
+    def _patch_items_iterator(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[ItemList]:
         """
         Generic method for dispatching PATCH requests for the given `url`
         strictly returning a generator of JSON of type: list of objects
@@ -243,9 +225,7 @@ class APIBase:
         for response in self._request_items_pages_chunks('patch', url, data, chunksize):
             yield self._extract_json(response)
 
-
-    def _patch_items(
-            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> ItemList:
+    def _patch_items(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> ItemList:
         """
         Generic method for dispatching PATCH requests for the given `url`
         strictly returning JSON of type: list of objects
@@ -256,27 +236,21 @@ class APIBase:
 
         return items
 
-
-    def _put_responses_iterator(
-            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[Response]:
+    def _put_responses_iterator(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[Response]:
         """
         Generic method for dispatching PUT requests for the given `url`
         strictly returning a generator of requests.Response
         """
         yield from self._request_items_pages_chunks('put', url, data, chunksize)
 
-
-    def _put_responses(
-            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> List[Response]:
+    def _put_responses(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> List[Response]:
         """
         Generic method for dispatching PUT requests for the given `url`
         strictly returning a list of requests.Response
         """
         return list(self._request_items_pages_chunks('put', url, data, chunksize))
 
-
-    def _put_items_iterator(
-            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[ItemList]:
+    def _put_items_iterator(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[ItemList]:
         """
         Generic method for dispatching PUT requests for the given `url`
         strictly returning a generator of JSON of type: list of objects
@@ -284,9 +258,7 @@ class APIBase:
         for response in self._request_items_pages_chunks('put', url, data, chunksize):
             yield self._extract_json(response)
 
-
-    def _put_items(
-            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> ItemList:
+    def _put_items(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> ItemList:
         """
         Generic method for dispatching PUT requests for the given `url`
         strictly returning JSON of type: list of objects
@@ -297,27 +269,23 @@ class APIBase:
 
         return items
 
-
     def _delete_responses_iterator(
-            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[Response]:
+        self, url: str, data: ItemList, chunksize: Optional[int] = None
+    ) -> Iterator[Response]:
         """
         Generic method for dispatching DELETE requests for the given `url`
         strictly returning a generator of requests.Response
         """
         yield from self._request_items_pages_chunks('delete', url, data, chunksize)
 
-
-    def _delete_responses(
-            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> List[Response]:
+    def _delete_responses(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> List[Response]:
         """
         Generic method for dispatching DELETE requests for the given `url`
         strictly returning a list of requests.Response
         """
         return list(self._request_items_pages_chunks('delete', url, data, chunksize))
 
-
-    def _delete_items_iterator(
-            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[ItemList]:
+    def _delete_items_iterator(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> Iterator[ItemList]:
         """
         Generic method for dispatching DELETE requests for the given `url`
         strictly returning a generator of JSON of type: list of objects
@@ -325,9 +293,7 @@ class APIBase:
         for response in self._request_items_pages_chunks('delete', url, data, chunksize):
             yield self._extract_json(response)
 
-
-    def _delete_items(
-            self, url: str, data: ItemList, chunksize: Optional[int] = None) -> ItemList:
+    def _delete_items(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> ItemList:
         """
         Generic method for dispatching DELETE requests for the given `url`
         strictly returning JSON of type: list of objects
@@ -337,7 +303,6 @@ class APIBase:
             items.extend(self._extract_json(response))
 
         return items
-
 
     @staticmethod
     def _build_params_string(filters: Optional[Dict[str, str]] = None) -> str:
@@ -350,15 +315,14 @@ class APIBase:
 
         return '?' + '&'.join(parameters)
 
-
     @staticmethod
-    def _keysort(items: ItemList, order: Dict[str, int], reverse: bool = False
-                 ) -> ItemList:
+    def _keysort(items: ItemList, order: Dict[str, int], reverse: bool = False) -> ItemList:
         """
         Return an iterable of dictionaries where each dictionary has
         its keys sorted by the given `order`. The `order` is a mapping
         that defines the key => integer index to order by.
         """
+
         def sort_by_key(item: Item) -> List[str]:
             """
             Returns a sort order for a dictionary key.
@@ -376,7 +340,6 @@ class APIBase:
                         keys += (k,)
                         values += (None,)
 
-
             values_pre: List[str] = []
             for value in values:
                 if value is None:
@@ -392,15 +355,16 @@ class APIBase:
 
         return list(sorted(items, key=sort_by_key, reverse=reverse))
 
-
     @staticmethod
-    def extract_id(items: Union[Item, ItemList],
-                   name: str, name_key: str = 'name', id_key: str = 'id') -> Optional[str]:
+    def extract_id(
+        items: Union[Item, ItemList], name: str, name_key: str = 'name', id_key: str = 'id'
+    ) -> Optional[str]:
         id_: Optional[str] = None
 
         if not isinstance(items, (dict, list)):
             warnings.warn(  # type: ignore
-                f'Expected items to be a dict or list, got {type(items)}', RuntimeWarning)
+                f'Expected items to be a dict or list, got {type(items)}', RuntimeWarning
+            )
             return
 
         elif isinstance(items, dict):
@@ -417,14 +381,14 @@ class APIBase:
             warnings.warn(f'Could not find `id` for {name}', UserWarning)
         return id_
 
-
     @staticmethod
     def index_of(items: ItemList, value: str, key: str = 'id') -> Union[int, None]:
         id_: Optional[str] = None
 
         if not isinstance(items, list):
             warnings.warn(  # type: ignore
-                f'Expected items to be a list, got {type(items)}', RuntimeWarning)
+                f'Expected items to be a list, got {type(items)}', RuntimeWarning
+            )
             return
 
         # iterate over the list of dict until value is found, return index

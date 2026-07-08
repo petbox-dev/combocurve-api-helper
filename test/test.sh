@@ -2,9 +2,11 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-echo Running flake8...
-echo flake8 src
-flake8 $DIR/../src
+echo Running ruff...
+echo ruff check src
+ruff check $DIR/../src
+echo ruff format --check src
+ruff format --check $DIR/../src
 echo
 
 echo Running mypy...

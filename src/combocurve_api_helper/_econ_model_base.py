@@ -29,7 +29,6 @@ class _EconModelMethodsBase(APIBase):
     # URLs
     ######
 
-
     def get_econ_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
         Returns the API url of econ models for a specific project id.
@@ -41,14 +40,15 @@ class _EconModelMethodsBase(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_econ_models_by_type_url(
-            self, project_id: str, econ_model_type: str, filters: Optional[Dict[str, str]] = None) -> str:
+        self, project_id: str, econ_model_type: str, filters: Optional[Dict[str, str]] = None
+    ) -> str:
         """
         Returns the API url of econ models for a specific project id and model
         type. Allows `econModelType` passed as a parameter rather than calling
         a different function for each model type.
         """
+
         def _get_route_for_model(econ_model_type: str) -> Union[str, None]:
             for model in APIBase.ECON_MODELS:
                 if model['econModelType'].casefold() == econ_model_type.casefold():
@@ -65,10 +65,9 @@ class _EconModelMethodsBase(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_econ_model_by_type_by_id_url(
-            self, project_id: str, econ_model_type: str, model_id: str,
-            filters: Optional[Dict[str, str]] = None) -> str:
+        self, project_id: str, econ_model_type: str, model_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> str:
         """
         Returns the API url of a sepcific econ model for a specific project id
         and model type. Allows `econModelType` passed as a parameter rather
@@ -82,15 +81,15 @@ class _EconModelMethodsBase(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_econ_model_assignments_by_type_by_id_url(
-            self, project_id: str, econ_model_type: str, model_id: str,
-            filters: Optional[Dict[str, str]] = None) -> str:
+        self, project_id: str, econ_model_type: str, model_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> str:
         """
         Returns the API url for assignments of a sepcific econ model for a
         specific project id and model type. Allows `econModelType` passed as a
         parameter rather than calling a different function for each model type.
         """
+
         def _get_route_for_assignment(econ_model_type: str) -> Union[str, None]:
             # The assignment route's {econName} path segment is the KEBAB
             # `route` (e.g. `fluid-models`), NOT the PascalCase `econModelType`.
@@ -113,11 +112,9 @@ class _EconModelMethodsBase(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     ###########
     # API calls
     ###########
-
 
     def get_econ_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -129,9 +126,9 @@ class _EconModelMethodsBase(APIBase):
 
         return self._keysort(econ_models, SORT_ORDER)
 
-
     def get_econ_models_by_type(
-            self, project_id: str, econ_model_type: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+        self, project_id: str, econ_model_type: str, filters: Optional[Dict[str, str]] = None
+    ) -> ItemList:
         """
         Returns a list of econ models by type. Allows `econModelType` passed as
         a parameter rather than calling a different function for each model
@@ -143,9 +140,7 @@ class _EconModelMethodsBase(APIBase):
 
         return self._keysort(econ_models, SORT_ORDER)
 
-
-    def get_econ_model_by_type_by_id(
-            self, project_id: str, econ_model_type: str, model_id: str) -> Union[Item, None]:
+    def get_econ_model_by_type_by_id(self, project_id: str, econ_model_type: str, model_id: str) -> Union[Item, None]:
         """
         Returns a specific econ model from its type and id. Allows
         `econModelType` passed as a parameter rather than calling a different
@@ -156,9 +151,9 @@ class _EconModelMethodsBase(APIBase):
 
         return econ_model[0]
 
-
     def get_econ_model_assignments_by_type_by_id(
-            self, project_id: str, econ_model_type: str, model_id: str) -> Union[ItemList, None]:
+        self, project_id: str, econ_model_type: str, model_id: str
+    ) -> Union[ItemList, None]:
         """
         Returns a specific econ model assignment from its type and id. Allows
         `econModelType` passed as a parameter rather than calling a different
@@ -172,23 +167,30 @@ class _EconModelMethodsBase(APIBase):
 
         return assignments
 
-
     def post_econ_model_assignments_by_type_by_id(
-            self, project_id: str, econ_model_type: str, model_id: str, data: ItemList) -> ItemList:
+        self, project_id: str, econ_model_type: str, model_id: str, data: ItemList
+    ) -> ItemList:
         """Create assignments for a specific econ model (by type + id)."""
         url = self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
         return self._post_items(url, data)
 
     def put_econ_model_assignments_by_type_by_id(
-            self, project_id: str, econ_model_type: str, model_id: str, data: ItemList) -> ItemList:
+        self, project_id: str, econ_model_type: str, model_id: str, data: ItemList
+    ) -> ItemList:
         """Upsert assignments for a specific econ model (by type + id)."""
         url = self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
         return self._put_items(url, data)
 
     def delete_econ_model_assignments_by_type_by_id(
-            self, project_id: str, econ_model_type: str, model_id: str, scenario_id: str,
-            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
-            all_wells: Optional[bool] = None) -> List[Response]:
+        self,
+        project_id: str,
+        econ_model_type: str,
+        model_id: str,
+        scenario_id: str,
+        qualifier_name: Optional[str] = None,
+        wells: Union[str, Sequence[str], None] = None,
+        all_wells: Optional[bool] = None,
+    ) -> List[Response]:
         """Delete assignments for a specific econ model (by type + id).
 
         Unlike POST/PUT on the same route, DELETE takes query parameters, not
@@ -207,7 +209,7 @@ class _EconModelMethodsBase(APIBase):
             filters['qualifierName'] = qualifier_name
 
         if wells is not None:
-            filters['wells'] = wells if isinstance(wells, str) else ",".join(wells)
+            filters['wells'] = wells if isinstance(wells, str) else ','.join(wells)
 
         if all_wells is not None:
             filters['allWells'] = str(all_wells).lower()

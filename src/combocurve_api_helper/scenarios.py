@@ -1,6 +1,8 @@
 import requests
 import warnings
 
+from requests.structures import CaseInsensitiveDict
+
 from combocurve_api_v1.pagination import get_next_page_url
 
 from typing import List, Dict, Optional, Union, Any, Iterator, Mapping, cast
@@ -27,7 +29,6 @@ class Scenarios(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_scenario_by_id_url(self, project_id: str, scenario_id: str) -> str:
         """
         Returns the API url for a specific project scenario from its
@@ -36,9 +37,9 @@ class Scenarios(APIBase):
         base_url = self.get_scenarios_url(project_id)
         return f'{base_url}/{scenario_id}'
 
-
     def get_scenario_combos_url(
-            self, project_id: str, scenario_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        self, project_id: str, scenario_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> str:
         """
         Returns the API url for combos for a specific project id, scenario id,
         and econ run id.
@@ -51,11 +52,13 @@ class Scenarios(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
-
     def get_scenario_qualifiers_url(
-            self, project_id: str, scenario_id: str, econ_name: Optional[str] = None,
-            filters: Optional[Dict[str, str]] = None) -> str:
+        self,
+        project_id: str,
+        scenario_id: str,
+        econ_name: Optional[str] = None,
+        filters: Optional[Dict[str, str]] = None,
+    ) -> str:
         """
         Returns the API url for qualifiers for a specific project id,
         scenario id, and optionally, econ name.
@@ -75,14 +78,15 @@ class Scenarios(APIBase):
             else:
                 model_names = [m['econModelType'] for m in self.ECON_MODELS]
                 warnings.warn(
-                    f'`econ_name` is not in list of valid names:\n{model_names}. All qualifiers will be returned.')
+                    f'`econ_name` is not in list of valid names:\n{model_names}. All qualifiers will be returned.'
+                )
 
         url += self._build_params_string(filters)
         return url
 
-
     def get_scenario_wells_url(
-            self, project_id: str, scenario_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        self, project_id: str, scenario_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> str:
         """
         Returns the API url for well assignments for a specific project id and
         scenario id.
@@ -95,9 +99,9 @@ class Scenarios(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_scenario_econ_model_assignments_url(
-            self, project_id: str, scenario_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        self, project_id: str, scenario_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> str:
         """
         Returns the API url for the scenario's econ-model assignment grid
         (per-well assignments across every econ column / qualifier).
@@ -110,14 +114,11 @@ class Scenarios(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     ###########
     # API calls
     ###########
 
-
     # Scenarios
-
 
     def get_scenarios(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -137,7 +138,6 @@ class Scenarios(APIBase):
         }
         return self._keysort(scenarios, order)
 
-
     def post_scenarios(self, project_id: str, data: ItemList) -> ItemList:
         """
         Creates scenarios for a specific project id.
@@ -148,7 +148,6 @@ class Scenarios(APIBase):
         scenarios = self._post_items(url, data)
 
         return scenarios
-
 
     def put_scenarios(self, project_id: str, data: ItemList) -> ItemList:
         """
@@ -161,8 +160,9 @@ class Scenarios(APIBase):
 
         return scenarios
 
-
-    def delete_scenarios(self, project_id: str, scenario_name: Optional[str], scenario_id: Optional[str]) -> ItemList:
+    def delete_scenarios(
+        self, project_id: str, scenario_name: Optional[str], scenario_id: Optional[str]
+    ) -> CaseInsensitiveDict[str]:
         """
         Deletes scenarios for a specific project id.
 
@@ -188,7 +188,6 @@ class Scenarios(APIBase):
 
         return headers
 
-
     def get_scenario_by_id(self, project_id: str, scenario_id: str) -> Item:
         """
         Returns a specific scenario from its scenario id.
@@ -210,9 +209,7 @@ class Scenarios(APIBase):
 
         return scenarios[0]
 
-
     # Combos
-
 
     def get_scenario_combos(self, project_id: str, scenario_id: str) -> ItemList:
         """
@@ -223,7 +220,6 @@ class Scenarios(APIBase):
         url = self.get_scenario_combos_url(project_id, scenario_id)
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
-
 
     def post_scenario_combos(self, project_id: str, scenario_id: str, data: ItemList) -> ItemList:
         """
@@ -236,7 +232,6 @@ class Scenarios(APIBase):
 
         return scenarios
 
-
     def put_scenario_combos(self, project_id: str, scenario_id: str, data: ItemList) -> ItemList:
         """
         Upserts scenario combos for a specific project id and scenario id.
@@ -248,8 +243,7 @@ class Scenarios(APIBase):
 
         return scenarios
 
-
-    def delete_scenario_combo(self, project_id: str, scenario_id: str, saved_name: str) -> ItemList:
+    def delete_scenario_combo(self, project_id: str, scenario_id: str, saved_name: str) -> CaseInsensitiveDict[str]:
         """
         Deletes scenario combos for a specific project id and scenario id.
 
@@ -268,9 +262,7 @@ class Scenarios(APIBase):
 
         return headers
 
-
     # Qualifiers
-
 
     def get_scenario_qualifiers(self, project_id: str, scenario_id: str, econ_name: Optional[str] = None) -> Item:
         """
@@ -284,7 +276,6 @@ class Scenarios(APIBase):
 
         return qualifiers[0]
 
-
     def post_scenario_qualifiers(self, project_id: str, scenario_id: str, data: ItemList) -> ItemList:
         """
         Creates scenario qualifiers for a specific project id and scenario id.
@@ -295,7 +286,6 @@ class Scenarios(APIBase):
         scenarios = self._post_items(url, data)
 
         return scenarios
-
 
     def put_scenario_qualifiers(self, project_id: str, scenario_id: str, data: ItemList) -> ItemList:
         """
@@ -308,10 +298,9 @@ class Scenarios(APIBase):
 
         return scenarios
 
-
     def delete_scenario_qualifiers(
-            self, project_id: str, scenario_id: str,
-            econ_names: str, qualifier_names: str) -> ItemList:
+        self, project_id: str, scenario_id: str, econ_names: str, qualifier_names: str
+    ) -> CaseInsensitiveDict[str]:
         """
         Deletes scenario qualifiers for a specific project id and scenario id.
 
@@ -331,7 +320,6 @@ class Scenarios(APIBase):
 
     # Scenario Wells
 
-
     def get_scenario_wells(self, project_id: str, scenario_id: str) -> ItemList:
         """
         Returns a list of well assignments for a specific project id and
@@ -341,7 +329,6 @@ class Scenarios(APIBase):
         """
         url = self.get_scenario_wells_url(project_id, scenario_id)
         return self._get_items(url)
-
 
     def get_scenario_econ_model_assignments(self, project_id: str, scenario_id: str) -> ItemList:
         """
@@ -359,7 +346,6 @@ class Scenarios(APIBase):
         url = self.get_scenario_econ_model_assignments_url(project_id, scenario_id)
         return self._get_items(url)
 
-
     def post_scenario_wells(self, project_id: str, scenario_id: str, data: ItemList) -> ItemList:
         """
         Creates scenario well assignments for a specific project id and scenario id.
@@ -370,7 +356,6 @@ class Scenarios(APIBase):
         scenarios = self._post_items(url, data)
 
         return scenarios
-
 
     def put_scenario_wells(self, project_id: str, scenario_id: str, data: ItemList) -> ItemList:
         """
@@ -383,8 +368,7 @@ class Scenarios(APIBase):
 
         return scenarios
 
-
-    def delete_scenario_wells(self, project_id: str, scenario_id: str, wells: str) -> ItemList:
+    def delete_scenario_wells(self, project_id: str, scenario_id: str, wells: str) -> CaseInsensitiveDict[str]:
         """
         Deletes scenario well assignments for a specific project id and scenario id.
 

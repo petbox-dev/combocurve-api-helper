@@ -25,7 +25,6 @@ class Production(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_company_daily_productions_url(self, filters: Optional[Dict[str, str]] = None) -> str:
         """
         Returns the API url for company daily production.
@@ -36,7 +35,6 @@ class Production(APIBase):
 
         url += self._build_params_string(filters)
         return url
-
 
     def get_project_monthly_productions_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
@@ -49,7 +47,6 @@ class Production(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     def get_project_daily_productions_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         """
         Returns the API url for a specific project's daily production.
@@ -61,11 +58,9 @@ class Production(APIBase):
         url += self._build_params_string(filters)
         return url
 
-
     ###########
     # API calls
     ###########
-
 
     def get_company_monthly_productions(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -83,7 +78,6 @@ class Production(APIBase):
         }
         return self._keysort(monthly_production, order)
 
-
     def post_company_monthly_productions(self, data: ItemList) -> ItemList:
         """
         Creates monthly production items.
@@ -94,7 +88,6 @@ class Production(APIBase):
         monthly_production = self._post_items(url, data)
 
         return monthly_production
-
 
     def put_company_monthly_productions(self, data: ItemList) -> ItemList:
         """
@@ -107,7 +100,6 @@ class Production(APIBase):
 
         return monthly_production
 
-
     def patch_company_monthly_productions(self, data: ItemList) -> ItemList:
         """
         Updates monthly production items.
@@ -119,7 +111,6 @@ class Production(APIBase):
 
         return monthly_production
 
-
     def delete_company_monthly_productions(self, data: ItemList) -> ItemList:
         """
         Deletes monthly production items.
@@ -130,7 +121,6 @@ class Production(APIBase):
         monthly_production = self._delete_items(url, data)
 
         return monthly_production
-
 
     def get_company_daily_productions(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -148,7 +138,6 @@ class Production(APIBase):
         }
         return self._keysort(dailiy_production, order)
 
-
     def post_company_daily_productions(self, data: ItemList) -> ItemList:
         """
         Creates daily production items.
@@ -159,7 +148,6 @@ class Production(APIBase):
         daily_production = self._post_items(url, data)
 
         return daily_production
-
 
     def put_company_daily_productions(self, data: ItemList) -> ItemList:
         """
@@ -172,7 +160,6 @@ class Production(APIBase):
 
         return daily_production
 
-
     def patch_company_daily_productions(self, data: ItemList) -> ItemList:
         """
         Updates daily production items.
@@ -184,7 +171,6 @@ class Production(APIBase):
 
         return daily_production
 
-
     def delete_company_daily_productions(self, data: ItemList) -> ItemList:
         """
         Delete daily production items.
@@ -195,7 +181,6 @@ class Production(APIBase):
         daily_production = self._delete_items(url, data)
 
         return daily_production
-
 
     def get_project_monthly_productions(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -213,7 +198,6 @@ class Production(APIBase):
         }
         return self._keysort(monthly_production, order)
 
-
     def post_project_monthly_productions(self, project_id: str, data: ItemList) -> ItemList:
         """
         Creates project monthly production items.
@@ -224,7 +208,6 @@ class Production(APIBase):
         monthly_production = self._post_items(url, data)
 
         return monthly_production
-
 
     def put_project_monthly_productions(self, project_id: str, data: ItemList) -> ItemList:
         """
@@ -237,7 +220,6 @@ class Production(APIBase):
 
         return monthly_production
 
-
     def patch_project_monthly_productions(self, project_id: str, data: ItemList) -> ItemList:
         """
         Updates project monthly production items.
@@ -249,7 +231,6 @@ class Production(APIBase):
 
         return monthly_production
 
-
     def delete_project_monthly_productions(self, project_id: str, data: ItemList) -> ItemList:
         """
         Deletes project monthly production items.
@@ -260,7 +241,6 @@ class Production(APIBase):
         monthly_production = self._delete_items(url, data)
 
         return monthly_production
-
 
     def get_project_daily_productions(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
@@ -278,7 +258,6 @@ class Production(APIBase):
         }
         return self._keysort(daily_production, order)
 
-
     def post_project_daily_productions(self, project_id: str, data: ItemList) -> ItemList:
         """
         Creates project daily production items.
@@ -289,7 +268,6 @@ class Production(APIBase):
         daily_production = self._post_items(url, data)
 
         return daily_production
-
 
     def put_project_daily_productions(self, project_id: str, data: ItemList) -> ItemList:
         """
@@ -302,7 +280,6 @@ class Production(APIBase):
 
         return daily_production
 
-
     def patch_project_daily_productions(self, project_id: str, data: ItemList) -> ItemList:
         """
         Updates project daily production items.
@@ -313,7 +290,6 @@ class Production(APIBase):
         daily_production = self._put_items(url, data)
 
         return daily_production
-
 
     def delete_project_daily_productions(self, project_id: str, data: ItemList) -> ItemList:
         """

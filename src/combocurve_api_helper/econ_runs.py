@@ -44,14 +44,12 @@ class EconRuns(APIBase):
         """
         return f'{self.API_BASE_URL}/projects/{project_id}/scenarios/{scenario_id}/econ-runs'
 
-
     def get_econ_run_by_id_url(self, project_id: str, scenario_id: str, econ_run_id: str) -> str:
         """
         Returns the API url for a specific econ run from its econ run id.
         """
         base_url = self.get_econ_runs_url(project_id, scenario_id)
         return f'{base_url}/{econ_run_id}'
-
 
     def get_econ_run_onelines_url(self, project_id: str, scenario_id: str, econ_run_id: str) -> str:
         """
@@ -61,7 +59,6 @@ class EconRuns(APIBase):
         base_url = self.get_econ_run_by_id_url(project_id, scenario_id, econ_run_id)
         return f'{base_url}/one-liners'
 
-
     def get_econ_run_combo_names_url(self, project_id: str, scenario_id: str, econ_run_id: str) -> str:
         """
         Returns the API url for onelines for a specific project id, scenario id,
@@ -69,7 +66,6 @@ class EconRuns(APIBase):
         """
         base_url = self.get_econ_run_onelines_url(project_id, scenario_id, econ_run_id)
         return f'{base_url}/combo-names'
-
 
     def get_econ_run_monthly_export_id_url(self, project_id: str, scenario_id: str, econ_run_id: str) -> str:
         """
@@ -79,9 +75,9 @@ class EconRuns(APIBase):
         base_url = self.get_econ_run_by_id_url(project_id, scenario_id, econ_run_id)
         return f'{base_url}/monthly-exports'
 
-
-    def get_econ_run_monthly_export_url(self, project_id: str, scenario_id: str, econ_run_id: str,
-                                        monthly_export_id: str) -> str:
+    def get_econ_run_monthly_export_url(
+        self, project_id: str, scenario_id: str, econ_run_id: str, monthly_export_id: str
+    ) -> str:
         """
         Returns the API url for monthly exports for a specific project id,
         scenario id, econ run id,
@@ -90,11 +86,9 @@ class EconRuns(APIBase):
         base_url = self.get_econ_run_monthly_export_id_url(project_id, scenario_id, econ_run_id)
         return f'{base_url}/{monthly_export_id}'
 
-
     ###########
     # API calls
     ###########
-
 
     def get_econ_runs(self, project_id: str, scenario_id: str, add_combo_names: bool = True) -> ItemList:
         """
@@ -116,9 +110,9 @@ class EconRuns(APIBase):
         }
         return self._keysort(econruns, order, reverse=True)
 
-
-    def get_econ_run_by_id(self, project_id: str, scenario_id: str, econ_run_id: str,
-                           add_combo_names: bool = True) -> Item:
+    def get_econ_run_by_id(
+        self, project_id: str, scenario_id: str, econ_run_id: str, add_combo_names: bool = True
+    ) -> Item:
         """
         Returns a specific econ run from its econ run id.
 
@@ -137,7 +131,6 @@ class EconRuns(APIBase):
         }
         return self._keysort(econruns, order, reverse=True)[0]
 
-
     def get_econ_run_combo_names(self, project_id: str, scenario_id: str, econ_run_id: str) -> List[str]:
         """
         Returns a list of combo names for a specific project id, scenario id,
@@ -148,7 +141,6 @@ class EconRuns(APIBase):
         data = self._get_items(url, params)
 
         return cast(List[str], sorted(set(data)))
-
 
     def get_econ_run_onelines(self, project_id: str, scenario_id: str, econ_run_id: str) -> ItemList:
         """
@@ -163,13 +155,12 @@ class EconRuns(APIBase):
         items = self._get_items(url, params)
 
         onelines = [
-            item for item in
-            (flatten_outputs(item) for item in items)
+            item
+            for item in (flatten_outputs(item) for item in items)
             # if item is not None
         ]
 
         return onelines  # type: ignore[return-value]
-
 
     def update_econ_run_combo_names(self, econruns: ItemList, project_id: str, scenario_id: str) -> None:
         """
@@ -184,7 +175,6 @@ class EconRuns(APIBase):
 
         return
 
-
     def post_econ_run_monthly_export(self, project_id: str, scenario_id: str, econ_run_id: str) -> str:
         """
         Create a monthly export for a specific project id, scenario id,
@@ -197,9 +187,9 @@ class EconRuns(APIBase):
 
         return id_
 
-
     def get_econ_run_monthly_export(
-            self, project_id: str, scenario_id: str, econ_run_id: str, monthly_export_id: str) -> ItemList:
+        self, project_id: str, scenario_id: str, econ_run_id: str, monthly_export_id: str
+    ) -> ItemList:
         """
         Returns a list of monthly exports for a specific project id,
         scenario id, econ run id, and monthly export id.
@@ -214,16 +204,12 @@ class EconRuns(APIBase):
 
         results = cast(ItemList, items[0]['results'])
 
-        results_flat = [
-            result for result in
-            (flatten_outputs(result) for result in results)
-            if result is not None
-        ]
+        results_flat = [result for result in (flatten_outputs(result) for result in results) if result is not None]
         return results_flat
 
-
     def get_stream_econ_run_monthly_export(
-            self, project_id: str, scenario_id: str, econ_run_id: str, monthly_export_id: str) -> Iterator[ItemList]:
+        self, project_id: str, scenario_id: str, econ_run_id: str, monthly_export_id: str
+    ) -> Iterator[ItemList]:
         """
         Similar to `get_econ_run_monthly_export` but instead streams the data
         yielding chunks of 100 items at a time, where each item is a list of
@@ -243,8 +229,6 @@ class EconRuns(APIBase):
                 results = cast(ItemList, item['results'])
 
                 results_flat = [
-                    result for result in
-                    (flatten_outputs(result) for result in results)
-                    if result is not None
+                    result for result in (flatten_outputs(result) for result in results) if result is not None
                 ]
                 yield results_flat

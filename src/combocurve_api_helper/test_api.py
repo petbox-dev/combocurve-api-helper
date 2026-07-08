@@ -8,8 +8,8 @@ from combocurve_api_helper import ComboCurveAPI
 def api() -> ComboCurveAPI:
     CONFIG_PATH = Path.home() / '.combocurve/dev'
     api = ComboCurveAPI.from_alternate_config(
-        combocurve_json_path=CONFIG_PATH / 'combocurve.json',
-        cc_api_config_json_path=CONFIG_PATH / 'cc_api_config.json')
+        combocurve_json_path=CONFIG_PATH / 'combocurve.json', cc_api_config_json_path=CONFIG_PATH / 'cc_api_config.json'
+    )
 
     return api
 
