@@ -13,7 +13,9 @@ HEADER = '''\
 # Re-run that script after changing econModels.json.
 from __future__ import annotations
 
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Union
+
+from requests import Response
 
 from .base import Item, ItemList
 from ._econ_model_base import _EconModelMethodsBase
@@ -52,8 +54,11 @@ ASSIGN = '''
     def put_{b}_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "{t}", model_id, data)
 
-    def delete_{b}_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "{t}", model_id, data)
+    def delete_{b}_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "{t}", model_id, scenario_id, qualifier_name, wells, all_wells)
 '''
 
 

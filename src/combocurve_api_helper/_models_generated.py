@@ -2,7 +2,9 @@
 # Re-run that script after changing econModels.json.
 from __future__ import annotations
 
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Union
+
+from requests import Response
 
 from .base import Item, ItemList
 from ._econ_model_base import _EconModelMethodsBase
@@ -50,8 +52,11 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_actual_forecast_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "ActualOrForecast", model_id, data)
 
-    def delete_actual_forecast_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "ActualOrForecast", model_id, data)
+    def delete_actual_forecast_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "ActualOrForecast", model_id, scenario_id, qualifier_name, wells, all_wells)
 
     def get_capex_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_models_by_type_url(project_id, "Capex", filters)
@@ -79,8 +84,11 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_capex_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Capex", model_id, data)
 
-    def delete_capex_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "Capex", model_id, data)
+    def delete_capex_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "Capex", model_id, scenario_id, qualifier_name, wells, all_wells)
 
     def get_date_settings_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_models_by_type_url(project_id, "Dates", filters)
@@ -108,8 +116,11 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_date_settings_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Dates", model_id, data)
 
-    def delete_date_settings_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "Dates", model_id, data)
+    def delete_date_settings_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "Dates", model_id, scenario_id, qualifier_name, wells, all_wells)
 
     def get_depreciation_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_models_by_type_url(project_id, "Depreciation", filters)
@@ -137,8 +148,11 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_depreciation_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Depreciation", model_id, data)
 
-    def delete_depreciation_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "Depreciation", model_id, data)
+    def delete_depreciation_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "Depreciation", model_id, scenario_id, qualifier_name, wells, all_wells)
 
     def get_differentials_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_models_by_type_url(project_id, "Differentials", filters)
@@ -166,8 +180,11 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_differentials_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Differentials", model_id, data)
 
-    def delete_differentials_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "Differentials", model_id, data)
+    def delete_differentials_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "Differentials", model_id, scenario_id, qualifier_name, wells, all_wells)
 
     def get_emissions_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_models_by_type_url(project_id, "Emission", filters)
@@ -195,8 +212,11 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_emissions_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Emission", model_id, data)
 
-    def delete_emissions_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "Emission", model_id, data)
+    def delete_emissions_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "Emission", model_id, scenario_id, qualifier_name, wells, all_wells)
 
     def get_escalations_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_models_by_type_url(project_id, "Escalation", filters)
@@ -224,8 +244,11 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_escalations_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Escalation", model_id, data)
 
-    def delete_escalations_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "Escalation", model_id, data)
+    def delete_escalations_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "Escalation", model_id, scenario_id, qualifier_name, wells, all_wells)
 
     def get_expenses_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_models_by_type_url(project_id, "Expenses", filters)
@@ -253,8 +276,11 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_expenses_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Expenses", model_id, data)
 
-    def delete_expenses_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "Expenses", model_id, data)
+    def delete_expenses_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "Expenses", model_id, scenario_id, qualifier_name, wells, all_wells)
 
     def get_fluid_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_models_by_type_url(project_id, "FluidModel", filters)
@@ -282,8 +308,11 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_fluid_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "FluidModel", model_id, data)
 
-    def delete_fluid_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "FluidModel", model_id, data)
+    def delete_fluid_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "FluidModel", model_id, scenario_id, qualifier_name, wells, all_wells)
 
     def get_operations_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_models_by_type_url(project_id, "Operations", filters)
@@ -311,8 +340,11 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_operations_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Operations", model_id, data)
 
-    def delete_operations_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "Operations", model_id, data)
+    def delete_operations_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "Operations", model_id, scenario_id, qualifier_name, wells, all_wells)
 
     def get_ownership_reversions_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_models_by_type_url(project_id, "OwnershipReversion", filters)
@@ -340,8 +372,11 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "OwnershipReversion", model_id, data)
 
-    def delete_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "OwnershipReversion", model_id, data)
+    def delete_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "OwnershipReversion", model_id, scenario_id, qualifier_name, wells, all_wells)
 
     def get_pricing_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_models_by_type_url(project_id, "Pricing", filters)
@@ -369,8 +404,11 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_pricing_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Pricing", model_id, data)
 
-    def delete_pricing_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "Pricing", model_id, data)
+    def delete_pricing_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "Pricing", model_id, scenario_id, qualifier_name, wells, all_wells)
 
     def get_production_taxes_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_models_by_type_url(project_id, "ProductionTaxes", filters)
@@ -398,8 +436,11 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_production_taxes_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "ProductionTaxes", model_id, data)
 
-    def delete_production_taxes_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "ProductionTaxes", model_id, data)
+    def delete_production_taxes_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "ProductionTaxes", model_id, scenario_id, qualifier_name, wells, all_wells)
 
     def get_reserves_categories_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_models_by_type_url(project_id, "ReservesCategory", filters)
@@ -427,8 +468,11 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_reserves_categories_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "ReservesCategory", model_id, data)
 
-    def delete_reserves_categories_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "ReservesCategory", model_id, data)
+    def delete_reserves_categories_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "ReservesCategory", model_id, scenario_id, qualifier_name, wells, all_wells)
 
     def get_riskings_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_models_by_type_url(project_id, "Risking", filters)
@@ -456,8 +500,11 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_riskings_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Risking", model_id, data)
 
-    def delete_riskings_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "Risking", model_id, data)
+    def delete_riskings_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "Risking", model_id, scenario_id, qualifier_name, wells, all_wells)
 
     def get_stream_properties_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
         return self.get_econ_models_by_type_url(project_id, "StreamProperties", filters)
@@ -485,5 +532,8 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_stream_properties_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "StreamProperties", model_id, data)
 
-    def delete_stream_properties_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.delete_econ_model_assignments_by_type_by_id(project_id, "StreamProperties", model_id, data)
+    def delete_stream_properties_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+                                     all_wells: Optional[bool] = None) -> List[Response]:
+        return self.delete_econ_model_assignments_by_type_by_id(
+            project_id, "StreamProperties", model_id, scenario_id, qualifier_name, wells, all_wells)

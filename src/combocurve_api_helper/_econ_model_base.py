@@ -1,4 +1,6 @@
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Union
+
+from requests import Response
 
 from .base import APIBase, Item, ItemList
 
@@ -180,12 +182,25 @@ class _EconModelMethodsBase(APIBase):
         return self._put_items(url, data)
 
     def delete_econ_model_assignments_by_type_by_id(
-            self, project_id: str, econ_model_type: str, model_id: str, data: ItemList) -> ItemList:
+            self, project_id: str, econ_model_type: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         """Delete assignments for a specific econ model (by type + id).
 
-        NOTE: the delete request body/filters for this route are UNVERIFIED and
-        remain unconfirmed until a live dev test (Task 6) exercises them
-        against the API; adjust here if the live response shows a different
-        shape (e.g. query filters instead of a JSON body)."""
-        url = self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
-        return self._delete_responses(url, data)  # type: ignore[return-value]
+        Unlike POST/PUT on the same route, DELETE takes query parameters, not
+        a JSON body: `scenarioId` is required; `qualifierName`, `wells`, and
+        `allWells` are optional filters narrowing which assignments are
+        removed. Confirmed against the official ComboCurve Postman
+        collection."""
+        filters: Dict[str, str] = {'scenarioId': scenario_id}
+        if qualifier_name is not None:
+            filters['qualifierName'] = qualifier_name
+
+        if wells is not None:
+            filters['wells'] = wells
+
+        if all_wells is not None:
+            filters['allWells'] = str(all_wells).lower()
+
+        url = self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id, filters)
+        return self._delete_responses(url, data=[])
