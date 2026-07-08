@@ -51,3 +51,20 @@ def test_post_put_delete_assignment_generics_delegate(monkeypatch: pytest.Monkey
         "p", "Capex", "id", "scenario4", wells="w1")
     assert str_delete_result == ("DEL", "URL/p/Capex/id", [])
     assert captured_url_calls[-1] == ("p", "Capex", "id", {"scenarioId": "scenario4", "wells": "w1"})
+
+
+def test_assignment_url_uses_kebab_route_not_econ_model_type() -> None:
+    """The assignment {econName} path segment must be the kebab `route`, NOT the
+    PascalCase econModelType. FluidModel is the canary: the server rejects
+    `FluidModel` (InvalidEconName: fluidmodel) and accepts only `fluid-models`.
+    Exercises the real URL builder (no mock)."""
+    m = Models.__new__(Models)
+
+    fluid_url = m.get_econ_model_assignments_by_type_by_id_url("proj", "FluidModel", "mid")
+    assert "/econ-models/fluid-models/mid/assignments" in fluid_url
+    assert "/FluidModel/" not in fluid_url  # must NOT use the PascalCase type
+
+    # multi-word type -> hyphenated route, not the run-together PascalCase
+    own_url = m.get_econ_model_assignments_by_type_by_id_url("proj", "OwnershipReversion", "mid")
+    assert "/econ-models/ownership-reversions/mid/assignments" in own_url
+    assert "/OwnershipReversion/" not in own_url

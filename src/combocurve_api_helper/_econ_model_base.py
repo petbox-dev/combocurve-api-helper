@@ -92,9 +92,15 @@ class _EconModelMethodsBase(APIBase):
         parameter rather than calling a different function for each model type.
         """
         def _get_route_for_assignment(econ_model_type: str) -> Union[str, None]:
+            # The assignment route's {econName} path segment is the KEBAB
+            # `route` (e.g. `fluid-models`), NOT the PascalCase `econModelType`.
+            # The server tolerates PascalCase for most types by coincidental
+            # normalization, but REJECTS it for FluidModel
+            # (`InvalidEconName: fluidmodel`); only the `route` resolves for all
+            # types. Verified live 2026-07. See econModels.json name-form note.
             for model in APIBase.ECON_MODELS:
                 if model['econModelType'].casefold() == econ_model_type.casefold():
-                    return model['econModelType']
+                    return model['route']
 
             return None
 
