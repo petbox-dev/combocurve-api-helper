@@ -25,11 +25,18 @@ Item: TypeAlias = Dict[str, Union[PrimativeValue, IterableValue]]
 ItemList: TypeAlias = List[Item]
 
 
-# HTTP 429 (Too Many Requests) retry policy. ComboCurve's write quota is enforced
-# by Google Cloud and resets roughly every 60s, so a fixed 60s pause is the safe
-# fallback when the response carries no `Retry-After` header.
-_RATE_LIMIT_MAX_RETRIES = 5
+# HTTP retry policy. Two retryable conditions:
+#   * 429 (Too Many Requests) -- ComboCurve's write quota is enforced by Google
+#     Cloud and resets ~every 60s, so a fixed 60s pause is the safe fallback when
+#     the response carries no `Retry-After` header.
+#   * 502/503/504 -- transient gateway errors, retried with exponential backoff.
+#     This mirrors the retry strategy consumers previously applied at the session
+#     level (e.g. VDR's make_session), so nothing is lost by routing requests
+#     through the helper.
+_MAX_REQUEST_RETRIES = 5
 _RATE_LIMIT_DEFAULT_PAUSE_SECONDS = 60.0
+_RETRYABLE_GATEWAY_STATUSES = frozenset({502, 503, 504})
+_GATEWAY_BACKOFF_SECONDS = 1.0  # sleep before a gateway retry = _GATEWAY_BACKOFF_SECONDS * 2**attempt
 
 
 def _retry_after_seconds(response: Response) -> Optional[float]:
@@ -44,6 +51,21 @@ def _retry_after_seconds(response: Response) -> Optional[float]:
         return float(value)
     except ValueError:
         return None
+
+
+def _retry_delay_seconds(response: Response, attempt: int) -> Optional[float]:
+    """Seconds to wait before retrying `response`, or None if it is not retryable.
+
+    Retryable: HTTP 429 (wait `Retry-After` or the default quota pause) and
+    transient gateway errors 502/503/504 (exponential backoff). Any other status
+    (2xx success, other 4xx/5xx) returns None for the caller to handle.
+    """
+    status = response.status_code
+    if status == 429:
+        return _retry_after_seconds(response) or _RATE_LIMIT_DEFAULT_PAUSE_SECONDS
+    if status in _RETRYABLE_GATEWAY_STATUSES:
+        return _GATEWAY_BACKOFF_SECONDS * (2**attempt)
+    return None
 
 
 class APIBase:
@@ -95,19 +117,21 @@ class APIBase:
         json_body: Any = None,
     ) -> Response:
         """Issue a single HTTP request, refreshing auth headers each attempt and
-        retrying on HTTP 429 (Too Many Requests).
+        retrying transient failures.
 
-        Waits the response's `Retry-After` value when present, else
-        `_RATE_LIMIT_DEFAULT_PAUSE_SECONDS`, for up to `_RATE_LIMIT_MAX_RETRIES`
-        retries. Any non-429 response (success or other error) is returned
-        immediately for the caller to handle (e.g. `raise_for_status`).
+        Retries HTTP 429 (waiting `Retry-After` or the default quota pause) and
+        transient gateway errors 502/503/504 (exponential backoff), for up to
+        `_MAX_REQUEST_RETRIES` retries. Any other response (success or a
+        non-transient error) is returned immediately for the caller to handle
+        (e.g. `raise_for_status`).
         """
-        for attempt in range(_RATE_LIMIT_MAX_RETRIES + 1):
+        for attempt in range(_MAX_REQUEST_RETRIES + 1):
             headers = self.auth.get_auth_headers()
             response = requests.request(method, url, headers=headers, params=params, json=json_body)
-            if response.status_code != 429 or attempt == _RATE_LIMIT_MAX_RETRIES:
+            delay = _retry_delay_seconds(response, attempt)
+            if delay is None or attempt == _MAX_REQUEST_RETRIES:
                 return response
-            time.sleep(_retry_after_seconds(response) or _RATE_LIMIT_DEFAULT_PAUSE_SECONDS)
+            time.sleep(delay)
         raise RuntimeError('unreachable: retry loop always returns')
 
     def _request_items_pages(
@@ -187,22 +211,28 @@ class APIBase:
         chunk: ItemList,
         rate_limit: _RateLimitState,
     ) -> BatchChunk:
-        """Send one batch chunk with coordinated 429 backoff; parse its 207 body.
+        """Send one batch chunk with transient-failure retries; parse its 207 body.
 
         Runs on a worker thread and uses pre-fetched `headers` (shared across
         workers) rather than re-authenticating per request. A 429 pauses every
-        worker via `rate_limit` and retries up to `_RATE_LIMIT_MAX_RETRIES`;
-        4xx/5xx and exhausted retries are recorded as whole-chunk failures.
+        worker via `rate_limit`; transient gateway errors (502/503/504) back off
+        and retry just this chunk. Both retry up to `_MAX_REQUEST_RETRIES`; any
+        other 4xx/5xx (and a transient status that survives all retries) is
+        recorded as a whole-chunk failure.
         """
         count = len(chunk)
-        for _attempt in range(_RATE_LIMIT_MAX_RETRIES + 1):
+        for attempt in range(_MAX_REQUEST_RETRIES + 1):
             rate_limit.wait_if_limited()
             response = requests.request(method, url, headers=dict(headers), json=chunk)
             status = response.status_code
 
-            if status == 429:
-                rate_limit.set_limited()
-                continue
+            if attempt < _MAX_REQUEST_RETRIES:
+                if status == 429:
+                    rate_limit.set_limited()
+                    continue
+                if status in _RETRYABLE_GATEWAY_STATUSES:
+                    time.sleep(_GATEWAY_BACKOFF_SECONDS * (2**attempt))
+                    continue
 
             if status >= 400:
                 try:
@@ -237,14 +267,7 @@ class APIBase:
                 general_errors=[e for e in general_raw if isinstance(e, dict)],
             )
 
-        return BatchChunk(
-            index=index,
-            offset=offset,
-            count=count,
-            http_status=429,
-            failed_count=count,
-            error_message=f'Exhausted {_RATE_LIMIT_MAX_RETRIES} retries (HTTP 429)',
-        )
+        raise RuntimeError('unreachable: retry loop always returns on the final attempt')
 
     def _request_batched(
         self,

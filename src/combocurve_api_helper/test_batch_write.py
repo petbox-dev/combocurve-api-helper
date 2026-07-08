@@ -94,3 +94,43 @@ def test_request_batched_empty_data(monkeypatch: MonkeyPatch) -> None:
     assert result.success_count == 0
     assert result.results == []
     assert result.chunks == []
+
+
+def test_request_batched_retries_transient_gateway_5xx(monkeypatch: MonkeyPatch) -> None:
+    api = _make_api(monkeypatch)
+    monkeypatch.setattr(base_mod.time, 'sleep', lambda _s: None)  # skip real backoff
+    calls = {'n': 0}
+
+    def fake_request(method: str, url: str, headers: Any = None, params: Any = None, json: Any = None) -> _FakeResponse:
+        calls['n'] += 1
+        if calls['n'] == 1:
+            return _FakeResponse(503, {'error': 'temporarily unavailable'})
+        n = len(json)
+        return _FakeResponse(
+            207, {'successCount': n, 'failedCount': 0, 'results': [{} for _ in json], 'generalErrors': []}
+        )
+
+    monkeypatch.setattr(base_mod.requests, 'request', fake_request)
+    data: list[dict[str, Any]] = [{'well': f'w{i}'} for i in range(10)]
+    result = api._request_batched('put', 'https://x', data, chunksize=25, max_workers=1)
+
+    assert result.ok
+    assert result.success_count == 10
+    assert calls['n'] == 2  # one 503, retried, then success
+
+
+def test_request_batched_does_not_retry_non_gateway_5xx(monkeypatch: MonkeyPatch) -> None:
+    api = _make_api(monkeypatch)
+    monkeypatch.setattr(base_mod.time, 'sleep', lambda _s: None)
+    calls = {'n': 0}
+
+    def fake_request(method: str, url: str, headers: Any = None, params: Any = None, json: Any = None) -> _FakeResponse:
+        calls['n'] += 1
+        return _FakeResponse(500, {'error': 'boom'})
+
+    monkeypatch.setattr(base_mod.requests, 'request', fake_request)
+    result = api._request_batched('put', 'https://x', [{'well': 'w0'}], chunksize=25, max_workers=1)
+
+    assert not result.ok
+    assert result.failed_count == 1
+    assert calls['n'] == 1  # 500 is not a retryable gateway status
