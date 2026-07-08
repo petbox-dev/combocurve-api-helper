@@ -4,7 +4,8 @@ Run: python scripts/generate_model_methods.py          # writes the file
      python scripts/generate_model_methods.py --stdout # prints (used by tests)
 """
 from __future__ import annotations
-import sys, pathlib
+import sys
+import pathlib
 from combocurve_api_helper import config
 
 HEADER = '''\
