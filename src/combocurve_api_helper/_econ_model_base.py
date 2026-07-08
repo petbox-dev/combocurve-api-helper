@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Sequence, Union
 
 from requests import Response
 
@@ -181,7 +181,7 @@ class _EconModelMethodsBase(APIBase):
 
     def delete_econ_model_assignments_by_type_by_id(
             self, project_id: str, econ_model_type: str, model_id: str, scenario_id: str,
-            qualifier_name: Optional[str] = None, wells: Optional[str] = None,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
             all_wells: Optional[bool] = None) -> List[Response]:
         """Delete assignments for a specific econ model (by type + id).
 
@@ -189,13 +189,19 @@ class _EconModelMethodsBase(APIBase):
         a JSON body: `scenarioId` is required; `qualifierName`, `wells`, and
         `allWells` are optional filters narrowing which assignments are
         removed. Confirmed against the official ComboCurve Postman
-        collection."""
+        collection.
+
+        `wells` accepts either a comma-separated string or a sequence of
+        well-id strings -- POST/PUT assignment bodies carry `wells` as a
+        list, so callers that reuse that value here (e.g. JSON-driven
+        callers not protected by mypy) are normalized rather than silently
+        producing a Python list-repr query param that matches nothing."""
         filters: Dict[str, str] = {'scenarioId': scenario_id}
         if qualifier_name is not None:
             filters['qualifierName'] = qualifier_name
 
         if wells is not None:
-            filters['wells'] = wells
+            filters['wells'] = wells if isinstance(wells, str) else ",".join(wells)
 
         if all_wells is not None:
             filters['allWells'] = str(all_wells).lower()

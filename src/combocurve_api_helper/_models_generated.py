@@ -2,7 +2,7 @@
 # Re-run that script after changing econModels.json.
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Sequence, Union
 
 from requests import Response
 
@@ -52,9 +52,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_actual_forecast_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "ActualOrForecast", model_id, data)
 
-    def delete_actual_forecast_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
-                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
-                                     all_wells: Optional[bool] = None) -> List[Response]:
+    def delete_actual_forecast_assignments_by_id(
+            self, project_id: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "ActualOrForecast", model_id, scenario_id, qualifier_name, wells, all_wells)
 
@@ -84,9 +85,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_capex_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Capex", model_id, data)
 
-    def delete_capex_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
-                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
-                                     all_wells: Optional[bool] = None) -> List[Response]:
+    def delete_capex_assignments_by_id(
+            self, project_id: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "Capex", model_id, scenario_id, qualifier_name, wells, all_wells)
 
@@ -116,9 +118,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_date_settings_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Dates", model_id, data)
 
-    def delete_date_settings_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
-                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
-                                     all_wells: Optional[bool] = None) -> List[Response]:
+    def delete_date_settings_assignments_by_id(
+            self, project_id: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "Dates", model_id, scenario_id, qualifier_name, wells, all_wells)
 
@@ -148,9 +151,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_depreciation_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Depreciation", model_id, data)
 
-    def delete_depreciation_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
-                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
-                                     all_wells: Optional[bool] = None) -> List[Response]:
+    def delete_depreciation_assignments_by_id(
+            self, project_id: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "Depreciation", model_id, scenario_id, qualifier_name, wells, all_wells)
 
@@ -180,9 +184,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_differentials_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Differentials", model_id, data)
 
-    def delete_differentials_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
-                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
-                                     all_wells: Optional[bool] = None) -> List[Response]:
+    def delete_differentials_assignments_by_id(
+            self, project_id: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "Differentials", model_id, scenario_id, qualifier_name, wells, all_wells)
 
@@ -212,9 +217,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_emissions_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Emission", model_id, data)
 
-    def delete_emissions_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
-                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
-                                     all_wells: Optional[bool] = None) -> List[Response]:
+    def delete_emissions_assignments_by_id(
+            self, project_id: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "Emission", model_id, scenario_id, qualifier_name, wells, all_wells)
 
@@ -244,9 +250,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_escalations_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Escalation", model_id, data)
 
-    def delete_escalations_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
-                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
-                                     all_wells: Optional[bool] = None) -> List[Response]:
+    def delete_escalations_assignments_by_id(
+            self, project_id: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "Escalation", model_id, scenario_id, qualifier_name, wells, all_wells)
 
@@ -276,9 +283,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_expenses_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Expenses", model_id, data)
 
-    def delete_expenses_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
-                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
-                                     all_wells: Optional[bool] = None) -> List[Response]:
+    def delete_expenses_assignments_by_id(
+            self, project_id: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "Expenses", model_id, scenario_id, qualifier_name, wells, all_wells)
 
@@ -308,9 +316,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_fluid_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "FluidModel", model_id, data)
 
-    def delete_fluid_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
-                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
-                                     all_wells: Optional[bool] = None) -> List[Response]:
+    def delete_fluid_assignments_by_id(
+            self, project_id: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "FluidModel", model_id, scenario_id, qualifier_name, wells, all_wells)
 
@@ -340,9 +349,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_operations_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Operations", model_id, data)
 
-    def delete_operations_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
-                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
-                                     all_wells: Optional[bool] = None) -> List[Response]:
+    def delete_operations_assignments_by_id(
+            self, project_id: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "Operations", model_id, scenario_id, qualifier_name, wells, all_wells)
 
@@ -372,9 +382,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "OwnershipReversion", model_id, data)
 
-    def delete_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
-                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
-                                     all_wells: Optional[bool] = None) -> List[Response]:
+    def delete_ownership_reversions_assignments_by_id(
+            self, project_id: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "OwnershipReversion", model_id, scenario_id, qualifier_name, wells, all_wells)
 
@@ -404,9 +415,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_pricing_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Pricing", model_id, data)
 
-    def delete_pricing_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
-                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
-                                     all_wells: Optional[bool] = None) -> List[Response]:
+    def delete_pricing_assignments_by_id(
+            self, project_id: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "Pricing", model_id, scenario_id, qualifier_name, wells, all_wells)
 
@@ -436,9 +448,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_production_taxes_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "ProductionTaxes", model_id, data)
 
-    def delete_production_taxes_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
-                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
-                                     all_wells: Optional[bool] = None) -> List[Response]:
+    def delete_production_taxes_assignments_by_id(
+            self, project_id: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "ProductionTaxes", model_id, scenario_id, qualifier_name, wells, all_wells)
 
@@ -468,9 +481,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_reserves_categories_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "ReservesCategory", model_id, data)
 
-    def delete_reserves_categories_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
-                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
-                                     all_wells: Optional[bool] = None) -> List[Response]:
+    def delete_reserves_categories_assignments_by_id(
+            self, project_id: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "ReservesCategory", model_id, scenario_id, qualifier_name, wells, all_wells)
 
@@ -500,9 +514,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_riskings_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Risking", model_id, data)
 
-    def delete_riskings_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
-                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
-                                     all_wells: Optional[bool] = None) -> List[Response]:
+    def delete_riskings_assignments_by_id(
+            self, project_id: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "Risking", model_id, scenario_id, qualifier_name, wells, all_wells)
 
@@ -532,8 +547,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def put_stream_properties_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "StreamProperties", model_id, data)
 
-    def delete_stream_properties_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
-                                     qualifier_name: Optional[str] = None, wells: Optional[str] = None,
-                                     all_wells: Optional[bool] = None) -> List[Response]:
+    def delete_stream_properties_assignments_by_id(
+            self, project_id: str, model_id: str, scenario_id: str,
+            qualifier_name: Optional[str] = None, wells: Union[str, Sequence[str], None] = None,
+            all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
             project_id, "StreamProperties", model_id, scenario_id, qualifier_name, wells, all_wells)

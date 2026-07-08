@@ -37,3 +37,17 @@ def test_post_put_delete_assignment_generics_delegate(monkeypatch: pytest.Monkey
     minimal_delete_result: object = m.delete_econ_model_assignments_by_type_by_id("p", "Capex", "id", "scenario2")
     assert minimal_delete_result == ("DEL", "URL/p/Capex/id", [])
     assert captured_url_calls[-1] == ("p", "Capex", "id", {"scenarioId": "scenario2"})
+
+    # `wells` accepts a sequence too -- e.g. a list reused from a POST/PUT body
+    # by a JSON-driven caller not protected by mypy's `Optional[str]` type --
+    # and must be normalized to the same comma-separated string filter, not
+    # passed through as a Python list-repr that matches nothing server-side.
+    list_delete_result: object = m.delete_econ_model_assignments_by_type_by_id(
+        "p", "Capex", "id", "scenario3", wells=["w1", "w2"])
+    assert list_delete_result == ("DEL", "URL/p/Capex/id", [])
+    assert captured_url_calls[-1] == ("p", "Capex", "id", {"scenarioId": "scenario3", "wells": "w1,w2"})
+
+    str_delete_result: object = m.delete_econ_model_assignments_by_type_by_id(
+        "p", "Capex", "id", "scenario4", wells="w1")
+    assert str_delete_result == ("DEL", "URL/p/Capex/id", [])
+    assert captured_url_calls[-1] == ("p", "Capex", "id", {"scenarioId": "scenario4", "wells": "w1"})
