@@ -26,3 +26,23 @@ def test_assignable_set() -> None:
         "Risking", "StreamProperties",
     }
     assert "GeneralOptions" not in assignable
+
+
+def test_method_base_matches_route_derivation() -> None:
+    """methodBase must equal route.replace('-','_') (except FluidModel='fluid').
+
+    Independent cross-check against the REST route: the generator names public
+    methods from methodBase, and every other test derives its expectations from
+    the same econModels.json -- so a typo'd methodBase would silently rename a
+    public method with all other tests still green. This pins methodBase to the
+    route, which nothing else does.
+    """
+    for m in config.ECON_MODELS:
+        route = m["route"]
+        base = m["methodBase"]
+        if route is None:
+            assert base is None
+        elif m["econModelType"] == "FluidModel":
+            assert base == "fluid"
+        else:
+            assert base == route.replace("-", "_")
