@@ -13,12 +13,13 @@ CC_API_CONFIG_JSON = USER_HOME / '.combocurve' / 'cc-api.config.json'
 REFERENCE_WELLHEADER: Dict[str, Union[str, int, float, bool]] = json.loads(
     (PACKAGE_ROOT / 'assets' / 'wellHeader.json').read_text())
 
+
 class EconModelEntry(TypedDict):
     """Shape of each entry in `assets/econModels.json`."""
     qualifier: str
     econModelType: str
-    route: Optional[str]
-    methodBase: Optional[str]
+    route: Optional[str]  # API path segment; None when hasCrud and assignable are both False
+    methodBase: Optional[str]  # generated method-name stem; None when hasCrud and assignable are both False
     hasCrud: bool
     assignable: bool
 

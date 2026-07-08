@@ -25,55 +25,59 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     """Per-type econ-model methods (generated). Mixed into Models."""
 '''
 
+# Emitted for every model entry with `hasCrud: true` (list/get, no assignments).
 CRUD = '''
-    def get_{b}_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
-        return self.get_econ_models_by_type_url(project_id, "{t}", filters)
+    def get_{method_base}_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+        return self.get_econ_models_by_type_url(project_id, "{econ_model_type}", filters)
 
-    def get_{b}_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
-        return self.get_econ_models_by_type(project_id, "{t}", filters)
+    def get_{method_base}_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+        return self.get_econ_models_by_type(project_id, "{econ_model_type}", filters)
 
-    def get_{b}_model_by_id_url(self, project_id: str, model_id: str,
+    def get_{method_base}_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: Optional[Dict[str, str]] = None) -> str:
-        return self.get_econ_model_by_type_by_id_url(project_id, "{t}", model_id, filters)
+        return self.get_econ_model_by_type_by_id_url(project_id, "{econ_model_type}", model_id, filters)
 
-    def get_{b}_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
-        return self.get_econ_model_by_type_by_id(project_id, "{t}", model_id)
+    def get_{method_base}_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
+        return self.get_econ_model_by_type_by_id(project_id, "{econ_model_type}", model_id)
 '''
 
+# Emitted for every model entry with `assignable: true` (assignment CRUD).
 ASSIGN = '''
-    def get_{b}_assignments_by_id_url(self, project_id: str, model_id: str,
+    def get_{method_base}_assignments_by_id_url(self, project_id: str, model_id: str,
                                       filters: Optional[Dict[str, str]] = None) -> str:
-        return self.get_econ_model_assignments_by_type_by_id_url(project_id, "{t}", model_id, filters)
+        return self.get_econ_model_assignments_by_type_by_id_url(project_id, "{econ_model_type}", model_id, filters)
 
-    def get_{b}_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "{t}", model_id)
+    def get_{method_base}_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "{econ_model_type}", model_id)
 
-    def post_{b}_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.post_econ_model_assignments_by_type_by_id(project_id, "{t}", model_id, data)
+    def post_{method_base}_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+        return self.post_econ_model_assignments_by_type_by_id(project_id, "{econ_model_type}", model_id, data)
 
-    def put_{b}_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
-        return self.put_econ_model_assignments_by_type_by_id(project_id, "{t}", model_id, data)
+    def put_{method_base}_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+        return self.put_econ_model_assignments_by_type_by_id(project_id, "{econ_model_type}", model_id, data)
 
-    def delete_{b}_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
+    def delete_{method_base}_assignments_by_id(self, project_id: str, model_id: str, scenario_id: str,
                                      qualifier_name: Optional[str] = None, wells: Optional[str] = None,
                                      all_wells: Optional[bool] = None) -> List[Response]:
         return self.delete_econ_model_assignments_by_type_by_id(
-            project_id, "{t}", model_id, scenario_id, qualifier_name, wells, all_wells)
+            project_id, "{econ_model_type}", model_id, scenario_id, qualifier_name, wells, all_wells)
 '''
 
 
 def render() -> str:
+    """Render `_models_generated.py`'s source by expanding CRUD/ASSIGN templates for each configured econ model."""
     parts = [HEADER]
-    for m in config.ECON_MODELS:
-        b, t = m["methodBase"], m["econModelType"]
-        if m["hasCrud"]:
-            parts.append(CRUD.format(b=b, t=t))
-        if m["assignable"]:
-            parts.append(ASSIGN.format(b=b, t=t))
+    for model_entry in config.ECON_MODELS:
+        method_base, econ_model_type = model_entry["methodBase"], model_entry["econModelType"]
+        if model_entry["hasCrud"]:
+            parts.append(CRUD.format(method_base=method_base, econ_model_type=econ_model_type))
+        if model_entry["assignable"]:
+            parts.append(ASSIGN.format(method_base=method_base, econ_model_type=econ_model_type))
     return "".join(parts)
 
 
 def main() -> None:
+    """Write the generated module to disk, or print it to stdout with `--stdout` (used by tests)."""
     text = render()
     if "--stdout" in sys.argv:
         sys.stdout.write(text)

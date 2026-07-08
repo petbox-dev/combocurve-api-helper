@@ -6,8 +6,6 @@ from .base import APIBase, Item, ItemList
 
 
 GET_LIMIT = 200
-POST_LIMIT = 500
-PUT_LIMIT = 500
 
 SORT_ORDER = {
     'name': 0,
