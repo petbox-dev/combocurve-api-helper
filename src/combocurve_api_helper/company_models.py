@@ -1,5 +1,7 @@
 from typing import List, Dict, Optional, Union, Any, Iterator, Mapping
 
+from requests import Response
+
 from .base import APIBase, Item, ItemList
 
 
@@ -354,6 +356,33 @@ class CompanyModels(APIBase):
         econ_model = self._get_items(url)
 
         return econ_model[0]
+
+    def post_company_econ_models_by_type(self, econ_model_type: str, data: ItemList) -> ItemList:
+        """
+        Creates company econ models of a specific type. Allows `econModelType`
+        passed as a parameter rather than calling a different function for each
+        model type.
+        """
+        url = self.get_company_econ_models_by_type_url(econ_model_type)
+        return self._post_items(url, data)
+
+    def put_company_econ_models_by_type(self, econ_model_type: str, data: ItemList) -> ItemList:
+        """
+        Upserts company econ models of a specific type. Allows `econModelType`
+        passed as a parameter rather than calling a different function for each
+        model type.
+        """
+        url = self.get_company_econ_models_by_type_url(econ_model_type)
+        return self._put_items(url, data)
+
+    def delete_company_econ_model_by_type_by_id(self, econ_model_type: str, model_id: str) -> List[Response]:
+        """
+        Deletes a specific company econ model by type + id. Allows
+        `econModelType` passed as a parameter rather than calling a different
+        function for each model type.
+        """
+        url = self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
+        return self._delete_responses(url, data=[])
 
     def get_company_general_options_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """

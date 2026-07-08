@@ -40,6 +40,15 @@ CRUD = """
 
     def get_{method_base}_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "{econ_model_type}", model_id)
+
+    def post_{method_base}_models(self, project_id: str, data: ItemList) -> ItemList:
+        return self.post_econ_models_by_type(project_id, "{econ_model_type}", data)
+
+    def put_{method_base}_models(self, project_id: str, data: ItemList) -> ItemList:
+        return self.put_econ_models_by_type(project_id, "{econ_model_type}", data)
+
+    def delete_{method_base}_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
+        return self.delete_econ_model_by_type_by_id(project_id, "{econ_model_type}", model_id)
 """
 
 # Emitted for every model entry with `assignable: true` (assignment CRUD).

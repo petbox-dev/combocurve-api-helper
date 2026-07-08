@@ -19,7 +19,15 @@ def _expected_method_names() -> set[str]:
     for m in config.ECON_MODELS:
         b = m['methodBase']
         if m['hasCrud']:
-            names |= {f'get_{b}_models', f'get_{b}_models_url', f'get_{b}_model_by_id', f'get_{b}_model_by_id_url'}
+            names |= {
+                f'get_{b}_models',
+                f'get_{b}_models_url',
+                f'get_{b}_model_by_id',
+                f'get_{b}_model_by_id_url',
+                f'post_{b}_models',
+                f'put_{b}_models',
+                f'delete_{b}_model_by_id',
+            }
         if m['assignable']:
             names |= {
                 f'get_{b}_assignments_by_id',
