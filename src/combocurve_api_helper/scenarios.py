@@ -320,9 +320,9 @@ class Scenarios(APIBase):
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
         """
-        filters: Dict[str, str] = {'qualifierNames': qualifier_names}
-
-        url = self.get_scenario_qualifiers_url(project_id, scenario_id, econ_names, filters)
+        base_url = self.get_scenario_by_id_url(project_id, scenario_id)
+        filters: Dict[str, str] = {'econNames': econ_names, 'qualifierNames': qualifier_names}
+        url = f'{base_url}/qualifiers' + self._build_params_string(filters)
         scenarios = self._delete_responses(url, data=[])
 
         headers = scenarios[0].headers
