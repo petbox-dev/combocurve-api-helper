@@ -70,7 +70,7 @@ class Projects(APIBase):
         Example request:
         [
             {
-                "name": "Test project"
+                "name": "test"
             }
         ]
 

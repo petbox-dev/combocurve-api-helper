@@ -902,7 +902,9 @@ class TypeCurves(APIBase):
                 }
             },
             "forecast": "5f85c4df8420070012ca8d75",
-            "name": "TC1"
+            "name": "TC1",
+            "createdAt": "2020-01-21T16:58:08.986Z",
+            "updatedAt": "2020-01-21T17:58:08.986Z"
         }
         """
         url = self.get_type_curve_by_id_url(project_id, type_curve_id)

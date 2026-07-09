@@ -195,14 +195,12 @@ class Scenarios(APIBase):
         https://docs.api.combocurve.com/api/get-scenario-by-id
 
         Example response:
-        [
-            {
-                "createdAt": "2020-01-21T16:58:08.986Z",
-                "id": "5e5981b9e23dae0012624d72",
-                "name": "Test scenario",
-                "updatedAt": "2020-01-21T17:58:08.986Z"
-            }
-        ]
+        {
+            "createdAt": "2020-01-21T16:58:08.986Z",
+            "id": "5e5981b9e23dae0012624d72",
+            "name": "Test scenario",
+            "updatedAt": "2020-01-21T17:58:08.986Z"
+        }
         """
         url = self.get_scenario_by_id_url(project_id, scenario_id)
         scenarios = self._get_items(url)
@@ -528,12 +526,8 @@ post_put_scenarios_response = """
         Example data:
         [
             {
-                "id": "<string>",
-                "name": "<string>"
-            },
-            {
-                "id": "<string>",
-                "name": "<string>"
+                "name": "Test scenario",
+                "id": "5e5981b9e23dae0012624d72"
             }
         ]
 

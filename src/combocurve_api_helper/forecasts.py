@@ -175,10 +175,6 @@ class Forecasts(APIBase):
         [
             {
                 "name": "Test forecast",
-                "type": "deterministic"
-            },
-            {
-                "name": "Test forecast 2",
                 "type": "probabilistic"
             }
         ]

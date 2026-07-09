@@ -119,7 +119,27 @@ these build econ-model assumptions. `wells.py` (~30), `production.py` (~24), `sc
 
 1. Create `src/combocurve_api_helper/<name>.py` with a class subclassing `APIBase` (and `Item`/`ItemList` from `.base`).
 2. Import it and add it to the `ComboCurveAPI` base-class list in `__init__.py`.
-3. Follow the url-builder + api-method pairing and the docstring-anchor convention above.
+3. Follow the url-builder + api-method pairing above. Each docstring links to its operation with
+   `https://docs.api.combocurve.com/api/<operationId>`; `Example response:` / `Example data:` JSON is
+   generated (see Generated content) -- write the description + link, leave example JSON to the generator.
 
 `__version__` is set manually in `__init__.py` and is the source setuptools reads (`pyproject.toml`
 `[tool.setuptools.dynamic]`); bump it there when releasing.
+
+## Generated content (do not hand-edit)
+
+Two build-time generators keep source in sync with external sources; each has a freshness test that
+fails when the committed output is stale.
+
+- **`scripts/generate_model_methods.py`** -> `_models_generated.py`: per-type econ-model CRUD +
+  assignment methods expanded from `assets/econModels.json`. Edit the JSON, re-run, commit
+  (`test_generated_models.py`).
+- **`scripts/generate_docstrings.py`** rewrites the `Example response:` / `Example data:` JSON blocks
+  in docstrings -- and the shared module-level `*_response` / `*_data` constants appended via
+  `__doc__ +=` -- from the ComboCurve OpenAPI spec
+  (`storage.googleapis.com/beta-combocurve-api-docs/openapi-spec.yaml`). Each method maps to its
+  operation via the `docs.api.combocurve.com/api/<slug>` link (slug == spec `operationId`). Shared
+  constants are sourced from their first (representative) method, so company/project variants show the
+  company example; blocks whose operation has no spec example are left as-is. Refresh with
+  `python scripts/generate_docstrings.py`; `--check` exits 1 (stale) or 2 (spec unreachable)
+  (`test_docstrings_current.py`, network-gated).
