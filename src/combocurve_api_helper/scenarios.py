@@ -196,10 +196,10 @@ class Scenarios(APIBase):
 
         Example response:
         {
-            "createdAt": "2020-01-21T16:58:08.986Z",
-            "id": "5e5981b9e23dae0012624d72",
-            "name": "Test scenario",
-            "updatedAt": "2020-01-21T17:58:08.986Z"
+            "createdAt": "2020-01-01",
+            "id": "5e272d38b78910dd2a1bd691",
+            "name": "Example",
+            "updatedAt": "2020-01-01"
         }
         """
         url = self.get_scenario_by_id_url(project_id, scenario_id)
@@ -526,202 +526,139 @@ post_put_scenarios_response = """
         Example data:
         [
             {
-                "name": "Test scenario",
-                "id": "5e5981b9e23dae0012624d72"
+                "id": "5e272d38b78910dd2a1bd691",
+                "name": "Example"
             }
         ]
 
         Example response:
-        [
-            {
-                "generalErrors": [
-                    {
-                        "name": "ValidationError",
-                        "message": "The field 'name' is required.",
-                        "location": "[0]"
-                    },
-                    {
-                        "name": "ValidationError",
-                        "message": "The field 'unique' is required.",
-                        "location": "[2]"
-                    }
-                ],
-                "results": [
-                    {
-                        "status": "Success",
-                        "code": 200,
-                        "chosenID": "5e5981b9e23dae0012624d72"
-                    }
-                ],
-                "failedCount": 2,
-                "successCount": 2
-            }
-        ]
+        {
+            "generalErrors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string"
+                }
+            ],
+            "results": [
+                {
+                    "status": "string",
+                    "code": 123,
+                    "id": "5e272d38b78910dd2a1bd691",
+                    "errors": [
+                        {
+                            "name": "Example",
+                            "message": "string",
+                            "location": "string"
+                        }
+                    ]
+                }
+            ],
+            "failedCount": 123,
+            "successCount": 123
+        }
 """
 
 post_put_scenario_combos_response = """
         Example data:
         [
             {
-                "savedName": "<string>",
+                "savedName": "string",
                 "combos": [
                     {
-                        "comboName": "<string>",
+                        "comboName": "string",
                         "qualifiers": [
                             {
-                                "assumption": "<string>",
-                                "qualifierName": "<string>"
-                            },
-                            {
-                                "assumption": "<string>",
-                                "qualifierName": "<string>"
+                                "assumption": "string",
+                                "qualifierName": "string"
                             }
                         ],
-                        "selected": "<boolean>"
-                    },
-                    {
-                        "comboName": "<string>",
-                        "qualifiers": [
-                            {
-                                "assumption": "<string>",
-                                "qualifierName": "<string>"
-                            },
-                            {
-                                "assumption": "<string>",
-                                "qualifierName": "<string>"
-                            }
-                        ],
-                        "selected": "<boolean>"
-                    }
-                ]
-            },
-            {
-                "savedName": "<string>",
-                "combos": [
-                    {
-                        "comboName": "<string>",
-                        "qualifiers": [
-                            {
-                                "assumption": "<string>",
-                                "qualifierName": "<string>"
-                            },
-                            {
-                                "assumption": "<string>",
-                                "qualifierName": "<string>"
-                            }
-                        ],
-                        "selected": "<boolean>"
-                    },
-                    {
-                        "comboName": "<string>",
-                        "qualifiers": [
-                            {
-                                "assumption": "<string>",
-                                "qualifierName": "<string>"
-                            },
-                            {
-                                "assumption": "<string>",
-                                "qualifierName": "<string>"
-                            }
-                        ],
-                        "selected": "<boolean>"
+                        "selected": true
                     }
                 ]
             }
         ]
 
         Example response:
-        [
-            {
-                "failedCount": 1,
-                "generalErrors": [
-                    {
-                        "chosenID": "chosen_id",
-                        "location": ".person.name",
-                        "message": "The field name is required",
-                        "name": "ValidationError"
-                    }
-                ],
-                "results": [
-                    {
-                        "chosenID": "chosen_id",
-                        "code": 201,
-                        "status": "created"
-                    }
-                ],
-                "successCount": 1
-            }
-        ]
+        {
+            "failedCount": 123,
+            "generalErrors": [
+                {
+                    "chosenID": "string",
+                    "location": "string",
+                    "message": "string",
+                    "name": "Example"
+                }
+            ],
+            "results": [
+                {
+                    "chosenID": "string",
+                    "code": 123,
+                    "status": "string"
+                }
+            ],
+            "successCount": 123
+        }
 """
 
 post_put_scenario_qualifiers_response = """
         Example data:
         [
             {
-                "econModel": "<string>",
-                "name": "<string>",
-                "newName": "<string>"
-            },
-            {
-                "econModel": "<string>",
-                "name": "<string>",
-                "newName": "<string>"
+                "econModel": "string",
+                "name": "Example",
+                "newName": "string"
             }
         ]
 
         Example response:
-        [
-            {
-                "failedCount": 1,
-                "generalErrors": [
-                    {
-                        "chosenID": "chosen_id",
-                        "location": ".person.name",
-                        "message": "The field name is required",
-                        "name": "ValidationError"
-                    }
-                ],
-                "results": [
-                    {
-                        "chosenID": "chosen_id",
-                        "code": 201,
-                        "status": "created"
-                    }
-                ],
-                "successCount": 1
-            }
-        ]
+        {
+            "failedCount": 123,
+            "generalErrors": [
+                {
+                    "chosenID": "string",
+                    "location": "string",
+                    "message": "string",
+                    "name": "Example"
+                }
+            ],
+            "results": [
+                {
+                    "chosenID": "string",
+                    "code": 123,
+                    "status": "string"
+                }
+            ],
+            "successCount": 123
+        }
 """
 
 post_put_scenario_wells_response = """
         Example data:
         [
-            "<string>",
-            "<string>"
+            "string"
         ]
 
         Example response:
-        [
-            {
-                "failedCount": 1,
-                "generalErrors": [
-                    {
-                        "chosenID": "chosen_id",
-                        "location": ".person.name",
-                        "message": "The field name is required",
-                        "name": "ValidationError"
-                    }
-                ],
-                "results": [
-                    {
-                        "chosenID": "chosen_id",
-                        "code": 201,
-                        "status": "created"
-                    }
-                ],
-                "successCount": 1
-            }
-        ]
+        {
+            "failedCount": 123,
+            "generalErrors": [
+                {
+                    "chosenID": "string",
+                    "location": "string",
+                    "message": "string",
+                    "name": "Example"
+                }
+            ],
+            "results": [
+                {
+                    "chosenID": "string",
+                    "code": 123,
+                    "status": "string"
+                }
+            ],
+            "successCount": 123
+        }
 """
 
 Scenarios.post_scenarios.__doc__ += post_put_scenarios_response  # type: ignore [operator]

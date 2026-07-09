@@ -136,13 +136,13 @@ fails when the committed output is stale.
   (`test_generated_models.py`).
 - **`scripts/generate_docstrings.py`** rewrites the `Example response:` / `Example data:` JSON blocks
   in docstrings -- and the shared module-level `*_response` / `*_data` constants appended via
-  `__doc__ +=` -- from the ComboCurve OpenAPI spec
-  (`storage.googleapis.com/beta-combocurve-api-docs/openapi-spec.yaml`). Each method maps to its
-  operation via the `docs.api.combocurve.com/api/<slug>` link (slug == spec `operationId`). Shared
-  constants are sourced from their first (representative) method, so company/project variants show the
-  company example; blocks whose operation has no spec example are left as-is. Refresh with
-  `python scripts/generate_docstrings.py`; `--check` exits 1 (stale) or 2 (spec unreachable)
-  (`test_docstrings_current.py`, network-gated). One doc-slug != spec-`operationId`
-  case is bridged by `SLUG_ALIASES` in that script (bulk forecast-params PUT:
-  docs/Postman `put-version-two-...` vs spec `put-v2-...`); drop the entry if a
-  future spec adopts the docs-site slug.
+  `__doc__ +=` -- from the **Postman collection** (a superset of the OpenAPI spec, which is an
+  older/less-complete snapshot missing ~52 ops as of 2026-07). The collection's `<type>` placeholders
+  are filled with realistic, deterministic spoof values (numbers as numbers, bools as bools, ISO dates,
+  ObjectId-like ids) and duplicated array items are collapsed, so a docstring shows the response's
+  key/value shape without a live call. Each method maps to its operation via the
+  `docs.api.combocurve.com/api/<slug>` link (slug == the collection item name). Shared constants use
+  their first (representative) method. Refresh with `python scripts/generate_docstrings.py`; `--check`
+  exits 1 (stale) or 2 (collection unreachable) (`test_docstrings_current.py`, network-gated). (The
+  OpenAPI spec has *real* example values; if it ever catches up on coverage, switching the source back
+  would give real instead of spoofed values.)

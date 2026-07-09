@@ -115,23 +115,22 @@ in `./config-examples/` to demonstrate the expected file structures.
 ## Docstring examples
 
 The `Example response:` / `Example data:` blocks in method docstrings are
-**generated from the ComboCurve OpenAPI spec** — do not edit them by hand. To
-refresh after the API/spec changes:
+**generated from the ComboCurve Postman collection** — do not edit them by hand.
+The collection's `<type>` placeholders (`<string>`, `<number>`, `<boolean>`, …)
+are filled with realistic, deterministic spoof values (numbers as numbers, bools
+as bools, ISO dates, ObjectId-like ids), so a docstring shows the response's
+key/value shape without a live API call. Refresh after the API changes:
 
 ```sh
 python scripts/generate_docstrings.py          # rewrite in place
-python scripts/generate_docstrings.py --check   # verify; exit 1 if stale, 2 if the spec is unreachable
+python scripts/generate_docstrings.py --check   # verify; exit 1 if stale, 2 if unreachable
 ```
 
 Each method is matched to its operation by the `docs.api.combocurve.com/api/<slug>`
-link in its docstring, where `<slug>` is the spec `operationId`.
-
-**Known slug alias (follow-up):** for one operation the live-docs/Postman slug
-differs from the spec's `operationId` — the bulk forecast-parameters PUT is
-`put-version-two-projects-forecast-segment-parameters` on the docs site but
-`put-v2-projects-forecast-segment-parameters` in the spec. `SLUG_ALIASES` in
-`scripts/generate_docstrings.py` bridges this so the example still resolves. If a
-future spec adopts the docs-site slug, remove that entry.
+link in its docstring, where `<slug>` is the collection item name. (The OpenAPI
+spec at `storage.googleapis.com/beta-combocurve-api-docs/openapi-spec.yaml` has
+*real* example values, but is an older/less-complete snapshot — missing ~52
+operations as of 2026-07 — so the collection is used instead.)
 
 ## Authors
 

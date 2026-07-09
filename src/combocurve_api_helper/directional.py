@@ -43,45 +43,35 @@ class Directional(APIBase):
         Example response:
         [
             {
-                "id": "64a5d81cdf46498bc8941a00",
-                "well": "64a5d81cdf46498bc8941a00",
-                "project": "64a5d81cdf46498bc8941a00",
-                "dataSource": "IHS",
-                "spatialDataType": "NAD27",
+                "id": "5e272d38b78910dd2a1bd691",
+                "well": "string",
                 "measuredDepth": [
-                    0,
-                    10
+                    123.45
                 ],
                 "trueVerticalDepth": [
-                    0,
-                    10
+                    123.45
                 ],
                 "azimuth": [
-                    0,
-                    10
+                    123.45
                 ],
                 "inclination": [
-                    0,
-                    10
-                ],
-                "deviationEW": [
-                    0,
-                    10
+                    123.45
                 ],
                 "deviationNS": [
-                    0,
-                    10
+                    123.45
+                ],
+                "deviationEW": [
+                    123.45
                 ],
                 "latitude": [
-                    0,
-                    10
+                    123.45
                 ],
                 "longitude": [
-                    0,
-                    10
+                    123.45
                 ],
-                "createdAt": "2019-01-01T00:00:00.000Z",
-                "updatedAt": "2019-01-01T00:00:00.000Z"
+                "project": "string",
+                "createdAt": "2020-01-01T00:00:00.000Z",
+                "updatedAt": "2020-01-01T00:00:00.000Z"
             }
         ]
         """
@@ -100,45 +90,35 @@ class Directional(APIBase):
 
         Example response:
         {
-            "id": "64a5d81cdf46498bc8941a00",
-            "well": "64a5d81cdf46498bc8941a00",
-            "project": "64a5d81cdf46498bc8941a00",
-            "dataSource": "IHS",
-            "spatialDataType": "NAD27",
+            "id": "5e272d38b78910dd2a1bd691",
+            "well": "string",
             "measuredDepth": [
-                0,
-                10
+                123.45
             ],
             "trueVerticalDepth": [
-                0,
-                10
+                123.45
             ],
             "azimuth": [
-                0,
-                10
+                123.45
             ],
             "inclination": [
-                0,
-                10
-            ],
-            "deviationEW": [
-                0,
-                10
+                123.45
             ],
             "deviationNS": [
-                0,
-                10
+                123.45
+            ],
+            "deviationEW": [
+                123.45
             ],
             "latitude": [
-                0,
-                10
+                123.45
             ],
             "longitude": [
-                0,
-                10
+                123.45
             ],
-            "createdAt": "2019-01-01T00:00:00.000Z",
-            "updatedAt": "2019-01-01T00:00:00.000Z"
+            "project": "string",
+            "createdAt": "2020-01-01T00:00:00.000Z",
+            "updatedAt": "2020-01-01T00:00:00.000Z"
         }
         """
         url = self.get_directional_survey_by_id_url(project_id, directional_survey_id)

@@ -42,10 +42,10 @@ class Projects(APIBase):
         Example response:
         [
             {
-                "createdAt": "2020-01-21T16:58:08.986Z",
-                "id": "5e5981b9e23dae0012624d72",
-                "name": "Test project",
-                "updatedAt": "2020-01-21T17:58:08.986Z"
+                "createdAt": "2020-01-01",
+                "id": "5e272d38b78910dd2a1bd691",
+                "name": "Example",
+                "updatedAt": "2020-01-01"
             }
         ]
         """
@@ -70,43 +70,37 @@ class Projects(APIBase):
         Example request:
         [
             {
-                "name": "test"
+                "name": "Example"
             }
         ]
 
         Example response:
-        [
-            {
-                "generalErrors": [
-                    {
-                        "name": "ValidationError",
-                        "message": "The field 'id' is required.",
-                        "location": "In body of request at position [0]"
-                    },
-                    {
-                        "name": "ValidationError",
-                        "message": "The field 'dataSource' is required.",
-                        "location": "In body of request at position [2]"
-                    }
-                ],
-                "results": [
-                    {
-                        "status": "Success",
-                        "code": 200,
-                        "name": "Acme Royalties 2021-10-28",
-                        "id": "61698aa08eca904d9cc5b622"
-                    },
-                    {
-                        "status": "Success",
-                        "code": 200,
-                        "name": "Acme Royalties 2021-10-28",
-                        "id": "61698aa08eca904d9cc5b623"
-                    }
-                ],
-                "failedCount": 2,
-                "successCount": 2
-            }
-        ]
+        {
+            "generalErrors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string"
+                }
+            ],
+            "results": [
+                {
+                    "status": "string",
+                    "code": 123,
+                    "name": "Example",
+                    "id": "5e272d38b78910dd2a1bd691",
+                    "errors": [
+                        {
+                            "name": "Example",
+                            "message": "string",
+                            "location": "string"
+                        }
+                    ]
+                }
+            ],
+            "failedCount": 123,
+            "successCount": 123
+        }
         """
         url = self.get_projects_url()
         projects = self._post_items(url, data)
@@ -121,10 +115,10 @@ class Projects(APIBase):
 
         Example response:
         {
-            "createdAt": "2020-01-21T16:58:08.986Z",
-            "id": "5e5981b9e23dae0012624d72",
-            "name": "Test project",
-            "updatedAt": "2020-01-21T17:58:08.986Z"
+            "createdAt": "2020-01-01",
+            "id": "5e272d38b78910dd2a1bd691",
+            "name": "Example",
+            "updatedAt": "2020-01-01"
         }
         """
         url = self.get_project_by_id_url(id)

@@ -148,16 +148,10 @@ class Root(APIBase):
         Example response:
         [
             {
-                "createdAt": "2021-07-27T17:52:28.791Z",
-                "name": "Test tag",
-                "description": "Test tag description",
-                "updatedAt": "2021-07-27T17:52:28.791Z"
-            },
-            {
-                "createdAt": "2021-07-27T17:52:28.791Z",
-                "name": "Test tag 2",
-                "description": "Test tag 2 description",
-                "updatedAt": "2021-07-27T17:52:28.791Z"
+                "createdAt": "2020-01-01",
+                "description": "string",
+                "name": "Example",
+                "updatedAt": "2020-01-01"
             }
         ]
         """

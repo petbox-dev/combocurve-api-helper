@@ -143,13 +143,21 @@ class Forecasts(APIBase):
         Example response:
         [
             {
-                "createdAt": "2020-01-21T16:58:08.986Z",
-                "id": "5e5981b9e23dae0012624d72",
-                "name": "Test forecast",
-                "runDate": "2020-06-08T19:14:22.012Z",
-                "running": false,
-                "type": "probabilistic",
-                "updatedAt": "2020-01-21T17:58:08.986Z"
+                "createdAt": "2020-01-01",
+                "id": "5e272d38b78910dd2a1bd691",
+                "name": "Example",
+                "runDate": "2020-01-01",
+                "running": true,
+                "tags": [
+                    {
+                        "createdAt": "2020-01-01",
+                        "description": "string",
+                        "name": "Example",
+                        "updatedAt": "2020-01-01"
+                    }
+                ],
+                "type": "string",
+                "updatedAt": "2020-01-01"
             }
         ]
         """
@@ -174,8 +182,8 @@ class Forecasts(APIBase):
         Example data:
         [
             {
-                "name": "Test forecast",
-                "type": "probabilistic"
+                "name": "Example",
+                "type": "string"
             }
         ]
 
@@ -183,30 +191,28 @@ class Forecasts(APIBase):
         {
             "generalErrors": [
                 {
-                    "name": "ValidationError",
-                    "message": "The field 'name' is required.",
-                    "location": "In body of request at position [0]"
-                },
-                {
-                    "name": "ValidationError",
-                    "message": "The field 'unique' is required.",
-                    "location": "In body of request at position [2]"
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string"
                 }
             ],
             "results": [
                 {
-                    "status": "Success",
-                    "code": 200,
-                    "name": "Test forecast"
-                },
-                {
-                    "status": "Success",
-                    "code": 200,
-                    "name": "Test forecast 2"
+                    "status": "string",
+                    "code": 123,
+                    "forecastId": "5e272d38b78910dd2a1bd691",
+                    "name": "Example",
+                    "errors": [
+                        {
+                            "name": "Example",
+                            "message": "string",
+                            "location": "string"
+                        }
+                    ]
                 }
             ],
-            "failedCount": 2,
-            "successCount": 2
+            "failedCount": 123,
+            "successCount": 123
         }
         """
         url = self.get_forecasts_url(project_id)
@@ -255,13 +261,21 @@ class Forecasts(APIBase):
 
         Example response:
         {
-            "createdAt": "2020-01-21T16:58:08.986Z",
-            "id": "5e5981b9e23dae0012624d72",
-            "name": "Test forecast",
-            "runDate": "2020-06-08T19:14:22.012Z",
-            "running": false,
-            "type": "probabilistic",
-            "updatedAt": "2020-01-21T17:58:08.986Z"
+            "createdAt": "2020-01-01",
+            "id": "5e272d38b78910dd2a1bd691",
+            "name": "Example",
+            "runDate": "2020-01-01",
+            "running": true,
+            "tags": [
+                {
+                    "createdAt": "2020-01-01",
+                    "description": "string",
+                    "name": "Example",
+                    "updatedAt": "2020-01-01"
+                }
+            ],
+            "type": "string",
+            "updatedAt": "2020-01-01"
         }
         """
         url = self.get_forecast_by_id_url(project_id, forecast_id)
@@ -281,60 +295,26 @@ class Forecasts(APIBase):
         Example response:
         [
             {
-                "well": "602d31de4477b92029913e56",
                 "forecast": [
                     {
-                        "PROPNUM": "1PDPOIL020",
-                        "WELL NAME": "1PDPOIL235",
-                        "WELL NUMBER": "1H",
-                        "INPT ID": "DTHrr7FMza",
-                        "API10": "1234567890",
-                        "API12": "12345678901",
-                        "API14": "12345678901214",
-                        "CHOSEN ID": "1PDPOIL235",
-                        "ARIES ID": "1PDPOIL235",
-                        "PHDWIN ID": "9E5F5CC579867509254700023",
-                        "SECTION": 4,
-                        "SEQUENCE": 10,
-                        "QUALIFIER": "CC_QUAL",
-                        "KEYWORD": "CUMS",
-                        "EXPRESSION": "0 0 0 0 0 0"
-                    },
-                    {
-                        "PROPNUM": "1PDPOIL020",
-                        "WELL NAME": "1PDPOIL236",
-                        "WELL NUMBER": "2H",
-                        "INPT ID": "KMLrr7FMqq",
-                        "API10": "1234567890",
-                        "API12": "12345678901",
-                        "API14": "12345678901214",
-                        "CHOSEN ID": "1PDPOIL236",
-                        "ARIES ID": "1PDPOIL236",
-                        "PHDWIN ID": "9E5F5CC579867509254700023",
-                        "SECTION": 5,
-                        "SEQUENCE": 20,
-                        "QUALIFIER": "CC_QUAL",
-                        "KEYWORD": "CUMS",
-                        "EXPRESSION": "0 0 0 0 0 0"
-                    },
-                    {
-                        "PROPNUM": "1PDPOIL020",
-                        "WELL NAME": "1PDPOIL237",
-                        "WELL NUMBER": "3H",
-                        "INPT ID": "LGHrr9FMhg",
-                        "API10": "1234567890",
-                        "API12": "12345678901",
-                        "API14": "12345678901214",
-                        "CHOSEN ID": "1PDPOIL237",
-                        "ARIES ID": "1PDPOIL237",
-                        "PHDWIN ID": "9E5F5CC579867509254700023",
-                        "SECTION": 6,
-                        "SEQUENCE": 30,
-                        "QUALIFIER": "CC_QUAL",
-                        "KEYWORD": "CUMS",
-                        "EXPRESSION": "0 0 0 0 0 0"
+                        "PROPNUM": "string",
+                        "WELL NAME": "string",
+                        "WELL NUMBER": "string",
+                        "INPT ID": "string",
+                        "API10": "string",
+                        "API12": "string",
+                        "API14": "string",
+                        "CHOSEN ID": "string",
+                        "ARIES ID": "string",
+                        "PHDWIN ID": "string",
+                        "SECTION": 123,
+                        "SEQUENCE": 123,
+                        "QUALIFIER": "string",
+                        "KEYWORD": "string",
+                        "EXPRESSION": "string"
                     }
-                ]
+                ],
+                "well": "string"
             }
         ]
         """
@@ -356,165 +336,130 @@ class Forecasts(APIBase):
                 "best": {
                     "segments": [
                         {
-                            "b": 1.5,
-                            "diEffSec": 0.603721736666588,
-                            "diNominal": 0.005491514853419089,
-                            "endDate": "2001-02-12T00:00:00.000Z",
-                            "qEnd": 0.10001738801851469,
-                            "qStart": 2.2340862422997945,
-                            "realizedDSwEffSec": 0.07999999999999996,
-                            "segmentIndex": 1,
-                            "segmentType": "arps_modified",
-                            "startDate": "1982-05-15T00:00:00.000Z",
-                            "swDate": "1989-07-17T02:09:12.931Z"
+                            "b": 123.45,
+                            "diEffSec": 123.45,
+                            "diNominal": 123.45,
+                            "endDate": "2020-01-01",
+                            "qEnd": 123.45,
+                            "qStart": 123.45,
+                            "realizedDSwEffSec": 123.45,
+                            "segmentIndex": 123,
+                            "segmentType": "string",
+                            "startDate": "2020-01-01",
+                            "swDate": "2020-01-01",
+                            "qSw": 123.45,
+                            "slope": 123.45
                         }
                     ],
-                    "eur": 539853.3300559863
+                    "eur": 123.45
                 },
-                "createdAt": "2020-01-21T16:58:08.986Z",
+                "createdAt": "2020-01-01",
                 "forecasted": true,
-                "forecastedAt": "2020-01-31T22:58:50.578Z",
-                "forecastedBy": "5e272d39b78910dd2a1bd8ea",
-                "id": "5e272f1d4b97ed0013313088",
-                "forecast": "6285655e2448a0ec88951dba",
+                "forecastedAt": "2020-01-01",
+                "forecastedBy": "string",
+                "id": "5e272d38b78910dd2a1bd691",
+                "forecast": "string",
+                "forecastType": "string",
+                "forecastSubType": "string",
                 "p10": {
                     "segments": [
                         {
-                            "b": 1.5,
-                            "diEffSec": 0.461422453817678,
-                            "diNominal": 0.0027926834451796035,
-                            "endDate": "2005-11-15T00:00:00.000Z",
-                            "qEnd": 0.10000470857720545,
-                            "qStart": 2.2340862422997945,
-                            "realizedDSwEffSec": 0.07999999999999996,
-                            "segmentIndex": 1,
-                            "segmentType": "arps_modified",
-                            "startDate": "1982-05-15T00:00:00.000Z",
-                            "swDate": "1989-03-21T18:28:58.327Z"
+                            "b": 123.45,
+                            "diEffSec": 123.45,
+                            "diNominal": 123.45,
+                            "endDate": "2020-01-01",
+                            "qEnd": 123.45,
+                            "qStart": 123.45,
+                            "realizedDSwEffSec": 123.45,
+                            "segmentIndex": 123,
+                            "segmentType": "string",
+                            "startDate": "2020-01-01",
+                            "swDate": "2020-01-01",
+                            "qSw": 123.45,
+                            "slope": 123.45
                         }
                     ],
-                    "eur": 539853.3300559863
+                    "eur": 123.45
                 },
                 "p50": {
                     "segments": [
                         {
-                            "b": 1.5,
-                            "diEffSec": 0.603721736666588,
-                            "diNominal": 0.005491514853419089,
-                            "endDate": "2001-02-12T00:00:00.000Z",
-                            "qEnd": 0.10001738801851469,
-                            "qStart": 2.2340862422997945,
-                            "realizedDSwEffSec": 0.07999999999999996,
-                            "segmentIndex": 1,
-                            "segmentType": "arps_modified",
-                            "startDate": "1982-05-15T00:00:00.000Z",
-                            "swDate": "1989-07-17T02:09:12.931Z"
+                            "b": 123.45,
+                            "diEffSec": 123.45,
+                            "diNominal": 123.45,
+                            "endDate": "2020-01-01",
+                            "qEnd": 123.45,
+                            "qStart": 123.45,
+                            "realizedDSwEffSec": 123.45,
+                            "segmentIndex": 123,
+                            "segmentType": "string",
+                            "startDate": "2020-01-01",
+                            "swDate": "2020-01-01",
+                            "qSw": 123.45,
+                            "slope": 123.45
                         }
-                    ]
+                    ],
+                    "eur": 123.45
                 },
                 "p90": {
                     "segments": [
                         {
-                            "b": 1.4864126197388372,
-                            "diEffSec": 0.6377483484117903,
-                            "diNominal": 0.006490343943301474,
-                            "endDate": "1999-10-06T00:00:00.000Z",
-                            "qEnd": 0.1000051797269731,
-                            "qStart": 2.2340862422997945,
-                            "realizedDSwEffSec": 0.07999999999999996,
-                            "segmentIndex": 1,
-                            "segmentType": "arps_modified",
-                            "startDate": "1982-05-15T00:00:00.000Z",
-                            "swDate": "1989-08-30T11:51:00.367Z"
+                            "b": 123.45,
+                            "diEffSec": 123.45,
+                            "diNominal": 123.45,
+                            "endDate": "2020-01-01",
+                            "qEnd": 123.45,
+                            "qStart": 123.45,
+                            "realizedDSwEffSec": 123.45,
+                            "segmentIndex": 123,
+                            "segmentType": "string",
+                            "startDate": "2020-01-01",
+                            "swDate": "2020-01-01",
+                            "qSw": 123.45,
+                            "slope": 123.45
                         }
                     ],
-                    "eur": 539853.3300559863
+                    "eur": 123.45
                 },
-                "phase": "oil",
-                "reviewedAt": "2020-01-31T23:00:00.00Z",
-                "reviewedBy": "5e272d38b78910dd2a1bd6b5",
-                "runDate": "2020-01-31T22:58:50.578Z",
-                "status": "in_progress",
-                "typeCurveData": {
-                    "name": "applied-type-curve",
-                    "type": "ratio"
-                },
-                "updatedAt": "2020-01-21T17:58:08.986Z",
-                "well": "5e272d39b78910dd2a1bd8fe",
-                "data_freq": "monthly"
-            },
-            {
-                "best": {
-                    "segments": [
-                        {
-                            "b": 0.5871650672699218,
-                            "diEffSec": 0.5717582558912915,
-                            "diNominal": 0.003009175917809707,
-                            "endDate": "2015-06-16T00:00:00.000Z",
-                            "qEnd": 92.20980498278352,
-                            "qStart": 423.3332616779596,
-                            "realizedDSwEffSec": 0.07999999999999996,
-                            "segmentIndex": 1,
-                            "segmentType": "arps_modified",
-                            "startDate": "2013-03-19T00:00:00.000Z",
-                            "swDate": "2031-08-05T06:08:36.544Z"
-                        }
-                    ],
-                    "eur": 539853.3300559863
-                },
-                "createdAt": "2020-01-21T16:58:08.986Z",
-                "forecasted": true,
-                "forecastedAt": "2020-01-31T22:58:50.578Z",
-                "forecastedBy": "5e272d39b78910dd2a1bd8ea",
-                "id": "5f24af6537794900129b17af",
-                "forecast": "6285655e2448a0ec88951dba",
-                "phase": "oil",
-                "reviewedAt": "2020-01-31T23:00:00.00Z",
-                "reviewedBy": "5e272d38b78910dd2a1bd6b5",
-                "runDate": "2020-07-31T23:57:20.352Z",
-                "status": "in_progress",
-                "updatedAt": "2020-01-21T17:58:08.986Z",
-                "well": "5ed67b2ec3629ac71ded298b",
-                "data_freq": "monthly"
-            },
-            {
-                "createdAt": "2020-01-21T16:58:08.986Z",
-                "forecasted": true,
-                "forecastedAt": "2020-01-31T22:58:50.578Z",
-                "forecastedBy": "5e272d39b78910dd2a1bd8ea",
-                "id": "5f24af6537794900129b17af",
-                "forecast": "6285655e2448a0ec88951dba",
-                "phase": "oil",
+                "phase": "string",
                 "ratio": {
-                    "basePhase": "oil",
                     "segments": [
                         {
-                            "b": 0.5871650672699218,
-                            "diEffSec": 0.5717582558912915,
-                            "diNominal": 0.003009175917809707,
-                            "endDate": "2015-06-16T00:00:00.000Z",
-                            "qEnd": 92.20980498278352,
-                            "qStart": 423.3332616779596,
-                            "realizedDSwEffSec": 0.07999999999999996,
-                            "segmentIndex": 1,
-                            "segmentType": "arps_modified",
-                            "startDate": "2013-03-19T00:00:00.000Z",
-                            "swDate": "2031-08-05T06:08:36.544Z"
+                            "b": 123.45,
+                            "diEffSec": 123.45,
+                            "diNominal": 123.45,
+                            "endDate": "2020-01-01",
+                            "qEnd": 123.45,
+                            "qStart": 123.45,
+                            "realizedDSwEffSec": 123.45,
+                            "segmentIndex": 123,
+                            "segmentType": "string",
+                            "startDate": "2020-01-01",
+                            "swDate": "2020-01-01",
+                            "qSw": 123.45,
+                            "slope": 123.45
                         }
                     ],
-                    "eur": 4544.45
+                    "basePhase": "string",
+                    "eur": 123.45
                 },
-                "reviewedAt": "2020-01-31T23:00:00.00Z",
-                "reviewedBy": "5e272d38b78910dd2a1bd6b5",
-                "runDate": "2020-07-31T23:57:20.352Z",
-                "status": "in_progress",
+                "reviewedAt": "2020-01-01",
+                "reviewedBy": "string",
+                "runDate": "2020-01-01",
+                "status": "string",
+                "typeCurve": "string",
+                "typeCurveApplySettings": {
+                    "applyNormalization": true,
+                    "fpdSource": "string",
+                    "riskFactor": 123.45
+                },
                 "typeCurveData": {
-                    "name": "applied-type-curve",
-                    "type": "ratio"
+                    "name": "Example",
+                    "type": "string"
                 },
-                "updatedAt": "2020-01-21T17:58:08.986Z",
-                "well": "5ed67b2ec3629ac71ded298b",
-                "data_freq": "monthly"
+                "updatedAt": "2020-01-01",
+                "well": "string",
+                "data_freq": "string"
             }
         ]
         """
@@ -533,92 +478,130 @@ class Forecasts(APIBase):
             "best": {
                 "segments": [
                     {
-                        "b": 1.5,
-                        "diEffSec": 0.603721736666588,
-                        "diNominal": 0.005491514853419089,
-                        "endDate": "2001-02-12T00:00:00.000Z",
-                        "qEnd": 0.10001738801851469,
-                        "qStart": 2.2340862422997945,
-                        "realizedDSwEffSec": 0.07999999999999996,
-                        "segmentIndex": 1,
-                        "segmentType": "arps_modified",
-                        "startDate": "1982-05-15T00:00:00.000Z",
-                        "swDate": "1989-07-17T02:09:12.931Z"
+                        "b": 123.45,
+                        "diEffSec": 123.45,
+                        "diNominal": 123.45,
+                        "endDate": "2020-01-01",
+                        "qEnd": 123.45,
+                        "qStart": 123.45,
+                        "realizedDSwEffSec": 123.45,
+                        "segmentIndex": 123,
+                        "segmentType": "string",
+                        "startDate": "2020-01-01",
+                        "swDate": "2020-01-01",
+                        "qSw": 123.45,
+                        "slope": 123.45
                     }
                 ],
-                "eur": 539853.3300559863
+                "eur": 123.45
             },
-            "createdAt": "2020-01-21T16:58:08.986Z",
+            "createdAt": "2020-01-01",
             "forecasted": true,
-            "forecastedAt": "2020-01-31T22:58:50.578Z",
-            "forecastedBy": "5e272d39b78910dd2a1bd8ea",
-            "id": "5e272f1d4b97ed0013313088",
-            "forecast": "6285655e2448a0ec88951dba",
+            "forecastedAt": "2020-01-01",
+            "forecastedBy": "string",
+            "id": "5e272d38b78910dd2a1bd691",
+            "forecast": "string",
+            "forecastType": "string",
+            "forecastSubType": "string",
             "p10": {
                 "segments": [
                     {
-                        "b": 1.5,
-                        "diEffSec": 0.461422453817678,
-                        "diNominal": 0.0027926834451796035,
-                        "endDate": "2005-11-15T00:00:00.000Z",
-                        "qEnd": 0.10000470857720545,
-                        "qStart": 2.2340862422997945,
-                        "realizedDSwEffSec": 0.07999999999999996,
-                        "segmentIndex": 1,
-                        "segmentType": "arps_modified",
-                        "startDate": "1982-05-15T00:00:00.000Z",
-                        "swDate": "1989-03-21T18:28:58.327Z"
+                        "b": 123.45,
+                        "diEffSec": 123.45,
+                        "diNominal": 123.45,
+                        "endDate": "2020-01-01",
+                        "qEnd": 123.45,
+                        "qStart": 123.45,
+                        "realizedDSwEffSec": 123.45,
+                        "segmentIndex": 123,
+                        "segmentType": "string",
+                        "startDate": "2020-01-01",
+                        "swDate": "2020-01-01",
+                        "qSw": 123.45,
+                        "slope": 123.45
                     }
                 ],
-                "eur": 539853.3300559863
+                "eur": 123.45
             },
             "p50": {
                 "segments": [
                     {
-                        "b": 1.5,
-                        "diEffSec": 0.603721736666588,
-                        "diNominal": 0.005491514853419089,
-                        "endDate": "2001-02-12T00:00:00.000Z",
-                        "qEnd": 0.10001738801851469,
-                        "qStart": 2.2340862422997945,
-                        "realizedDSwEffSec": 0.07999999999999996,
-                        "segmentIndex": 1,
-                        "segmentType": "arps_modified",
-                        "startDate": "1982-05-15T00:00:00.000Z",
-                        "swDate": "1989-07-17T02:09:12.931Z"
+                        "b": 123.45,
+                        "diEffSec": 123.45,
+                        "diNominal": 123.45,
+                        "endDate": "2020-01-01",
+                        "qEnd": 123.45,
+                        "qStart": 123.45,
+                        "realizedDSwEffSec": 123.45,
+                        "segmentIndex": 123,
+                        "segmentType": "string",
+                        "startDate": "2020-01-01",
+                        "swDate": "2020-01-01",
+                        "qSw": 123.45,
+                        "slope": 123.45
                     }
-                ]
+                ],
+                "eur": 123.45
             },
             "p90": {
                 "segments": [
                     {
-                        "b": 1.4864126197388372,
-                        "diEffSec": 0.6377483484117903,
-                        "diNominal": 0.006490343943301474,
-                        "endDate": "1999-10-06T00:00:00.000Z",
-                        "qEnd": 0.1000051797269731,
-                        "qStart": 2.2340862422997945,
-                        "realizedDSwEffSec": 0.07999999999999996,
-                        "segmentIndex": 1,
-                        "segmentType": "arps_modified",
-                        "startDate": "1982-05-15T00:00:00.000Z",
-                        "swDate": "1989-08-30T11:51:00.367Z"
+                        "b": 123.45,
+                        "diEffSec": 123.45,
+                        "diNominal": 123.45,
+                        "endDate": "2020-01-01",
+                        "qEnd": 123.45,
+                        "qStart": 123.45,
+                        "realizedDSwEffSec": 123.45,
+                        "segmentIndex": 123,
+                        "segmentType": "string",
+                        "startDate": "2020-01-01",
+                        "swDate": "2020-01-01",
+                        "qSw": 123.45,
+                        "slope": 123.45
                     }
                 ],
-                "eur": 539853.3300559863
+                "eur": 123.45
             },
-            "phase": "OIL",
-            "reviewedAt": "2020-01-31T23:00:00.00Z",
-            "reviewedBy": "5e272d38b78910dd2a1bd6b5",
-            "runDate": "2020-01-31T22:58:50.578Z",
-            "status": "in_progress",
+            "phase": "string",
+            "ratio": {
+                "segments": [
+                    {
+                        "b": 123.45,
+                        "diEffSec": 123.45,
+                        "diNominal": 123.45,
+                        "endDate": "2020-01-01",
+                        "qEnd": 123.45,
+                        "qStart": 123.45,
+                        "realizedDSwEffSec": 123.45,
+                        "segmentIndex": 123,
+                        "segmentType": "string",
+                        "startDate": "2020-01-01",
+                        "swDate": "2020-01-01",
+                        "qSw": 123.45,
+                        "slope": 123.45
+                    }
+                ],
+                "basePhase": "string",
+                "eur": 123.45
+            },
+            "reviewedAt": "2020-01-01",
+            "reviewedBy": "string",
+            "runDate": "2020-01-01",
+            "status": "string",
+            "typeCurve": "string",
+            "typeCurveApplySettings": {
+                "applyNormalization": true,
+                "fpdSource": "string",
+                "riskFactor": 123.45
+            },
             "typeCurveData": {
-                "name": "applied-type-curve",
-                "type": "ratio"
+                "name": "Example",
+                "type": "string"
             },
-            "updatedAt": "2020-01-21T17:58:08.986Z",
-            "well": "5e272d39b78910dd2a1bd8fe",
-            "data_freq": "monthly"
+            "updatedAt": "2020-01-01",
+            "well": "string",
+            "data_freq": "string"
         }
         """
         url = self.get_forecast_output_by_id_url(project_id, forecast_id, output_id)
@@ -638,86 +621,143 @@ class Forecasts(APIBase):
         Example response:
         [
             {
-                "project": "63bdcdf1dc401f0012613185",
-                "forecast": "63bdce14dc401f00126131a7",
-                "well": "63bdcdf56782656f8aaad644",
+                "project": "string",
+                "forecast": "string",
+                "forecastType": "deterministic",
+                "well": "string",
                 "resolution": "daily",
                 "phases": [
                     {
-                        "phase": "gas",
-                        "forecastOutputId": "63bdce17dc401f0012614f34",
+                        "phase": "customNumber2",
                         "series": [
                             {
+                                "eur": 123.45,
                                 "series": "best",
-                                "startDate": "2020-03-15T00:00:00.000Z",
-                                "endDate": "2025-03-15T00:00:00.000Z",
-                                "eur": 1980202.8287785284,
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
                                 "volumes": [
-                                    0,
-                                    1,
-                                    2
+                                    123.45
+                                ]
+                            },
+                            {
+                                "eur": 123.45,
+                                "series": "P10",
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
+                                "volumes": [
+                                    123.45
                                 ]
                             }
-                        ]
+                        ],
+                        "forecastOutputId": "5e272d38b78910dd2a1bd691",
+                        "ratio": {
+                            "eur": 123.45,
+                            "basePhase": "gas",
+                            "startDate": "2020-01-01",
+                            "endDate": "2020-01-01",
+                            "volumes": [
+                                123.45
+                            ]
+                        }
                     },
                     {
-                        "phase": "oil",
-                        "forecastOutputId": "63bdce17dc401f0012614f34",
+                        "phase": "gas",
                         "series": [
                             {
+                                "eur": 123.45,
                                 "series": "best",
-                                "startDate": "2020-03-15T00:00:00.000Z",
-                                "endDate": "2025-03-15T00:00:00.000Z",
-                                "eur": 610156.72736362,
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
                                 "volumes": [
-                                    0,
-                                    1,
-                                    2
+                                    123.45
+                                ]
+                            },
+                            {
+                                "eur": 123.45,
+                                "series": "P10",
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
+                                "volumes": [
+                                    123.45
                                 ]
                             }
-                        ]
+                        ],
+                        "forecastOutputId": "5e272d38b78910dd2a1bd691",
+                        "ratio": {
+                            "eur": 123.45,
+                            "basePhase": "gas",
+                            "startDate": "2020-01-01",
+                            "endDate": "2020-01-01",
+                            "volumes": [
+                                123.45
+                            ]
+                        }
                     }
                 ]
             },
             {
-                "project": "63bdcdf1dc401f0012613185",
-                "forecast": "63bdce14dc401f00126131a7",
-                "well": "63bdcdf56782654efaaad6ca",
-                "resolution": "daily",
+                "project": "string",
+                "forecast": "string",
+                "forecastType": "probabilistic",
+                "well": "string",
+                "resolution": "monthly",
                 "phases": [
                     {
-                        "phase": "gas",
-                        "forecastOutputId": "63bdce17dc401f00126150f5",
+                        "phase": "customNumber16",
                         "series": [
                             {
+                                "eur": 123.45,
                                 "series": "best",
-                                "startDate": "2020-03-15T00:00:00.000Z",
-                                "endDate": "2025-03-15T00:00:00.000Z",
-                                "eur": 1980202.8287785284,
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
                                 "volumes": [
-                                    0,
-                                    1,
-                                    2
+                                    123.45
+                                ]
+                            },
+                            {
+                                "eur": 123.45,
+                                "series": "P10",
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
+                                "volumes": [
+                                    123.45
                                 ]
                             }
-                        ]
+                        ],
+                        "forecastOutputId": "5e272d38b78910dd2a1bd691",
+                        "ratio": {
+                            "eur": 123.45,
+                            "basePhase": "gas",
+                            "startDate": "2020-01-01",
+                            "endDate": "2020-01-01",
+                            "volumes": [
+                                123.45
+                            ]
+                        }
                     },
                     {
-                        "phase": "oil",
-                        "forecastOutputId": "63bdce17dc401f00126150f5",
+                        "phase": "_project_custom_stream_14",
                         "series": [
                             {
-                                "series": "best",
-                                "startDate": "2020-03-15T00:00:00.000Z",
-                                "endDate": "2025-03-15T00:00:00.000Z",
-                                "eur": 610156.72736362,
+                                "eur": 123.45,
+                                "series": "P10",
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
                                 "volumes": [
-                                    0,
-                                    1,
-                                    2
+                                    123.45
                                 ]
                             }
-                        ]
+                        ],
+                        "forecastOutputId": "5e272d38b78910dd2a1bd691",
+                        "ratio": {
+                            "eur": 123.45,
+                            "basePhase": "gas",
+                            "startDate": "2020-01-01",
+                            "endDate": "2020-01-01",
+                            "volumes": [
+                                123.45
+                            ]
+                        }
                     }
                 ]
             }
@@ -743,86 +783,143 @@ class Forecasts(APIBase):
         Example response:
         [
             {
-                "project": "63bdcdf1dc401f0012613185",
-                "forecast": "63bdce14dc401f00126131a7",
-                "well": "63bdcdf56782656f8aaad644",
+                "project": "string",
+                "forecast": "string",
+                "forecastType": "deterministic",
+                "well": "string",
                 "resolution": "daily",
                 "phases": [
                     {
-                        "phase": "gas",
-                        "forecastOutputId": "63bdce17dc401f0012614f34",
+                        "phase": "customNumber2",
                         "series": [
                             {
+                                "eur": 123.45,
                                 "series": "best",
-                                "startDate": "2020-03-15T00:00:00.000Z",
-                                "endDate": "2025-03-15T00:00:00.000Z",
-                                "eur": 1980202.8287785284,
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
                                 "volumes": [
-                                    0,
-                                    1,
-                                    2
+                                    123.45
+                                ]
+                            },
+                            {
+                                "eur": 123.45,
+                                "series": "P10",
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
+                                "volumes": [
+                                    123.45
                                 ]
                             }
-                        ]
+                        ],
+                        "forecastOutputId": "5e272d38b78910dd2a1bd691",
+                        "ratio": {
+                            "eur": 123.45,
+                            "basePhase": "gas",
+                            "startDate": "2020-01-01",
+                            "endDate": "2020-01-01",
+                            "volumes": [
+                                123.45
+                            ]
+                        }
                     },
                     {
-                        "phase": "oil",
-                        "forecastOutputId": "63bdce17dc401f0012614f34",
+                        "phase": "gas",
                         "series": [
                             {
+                                "eur": 123.45,
                                 "series": "best",
-                                "startDate": "2020-03-15T00:00:00.000Z",
-                                "endDate": "2025-03-15T00:00:00.000Z",
-                                "eur": 610156.72736362,
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
                                 "volumes": [
-                                    0,
-                                    1,
-                                    2
+                                    123.45
+                                ]
+                            },
+                            {
+                                "eur": 123.45,
+                                "series": "P10",
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
+                                "volumes": [
+                                    123.45
                                 ]
                             }
-                        ]
+                        ],
+                        "forecastOutputId": "5e272d38b78910dd2a1bd691",
+                        "ratio": {
+                            "eur": 123.45,
+                            "basePhase": "gas",
+                            "startDate": "2020-01-01",
+                            "endDate": "2020-01-01",
+                            "volumes": [
+                                123.45
+                            ]
+                        }
                     }
                 ]
             },
             {
-                "project": "63bdcdf1dc401f0012613185",
-                "forecast": "63bdce14dc401f00126131a7",
-                "well": "63bdcdf56782654efaaad6ca",
-                "resolution": "daily",
+                "project": "string",
+                "forecast": "string",
+                "forecastType": "probabilistic",
+                "well": "string",
+                "resolution": "monthly",
                 "phases": [
                     {
-                        "phase": "gas",
-                        "forecastOutputId": "63bdce17dc401f00126150f5",
+                        "phase": "customNumber16",
                         "series": [
                             {
+                                "eur": 123.45,
                                 "series": "best",
-                                "startDate": "2020-03-15T00:00:00.000Z",
-                                "endDate": "2025-03-15T00:00:00.000Z",
-                                "eur": 1980202.8287785284,
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
                                 "volumes": [
-                                    0,
-                                    1,
-                                    2
+                                    123.45
+                                ]
+                            },
+                            {
+                                "eur": 123.45,
+                                "series": "P10",
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
+                                "volumes": [
+                                    123.45
                                 ]
                             }
-                        ]
+                        ],
+                        "forecastOutputId": "5e272d38b78910dd2a1bd691",
+                        "ratio": {
+                            "eur": 123.45,
+                            "basePhase": "gas",
+                            "startDate": "2020-01-01",
+                            "endDate": "2020-01-01",
+                            "volumes": [
+                                123.45
+                            ]
+                        }
                     },
                     {
-                        "phase": "oil",
-                        "forecastOutputId": "63bdce17dc401f00126150f5",
+                        "phase": "_project_custom_stream_14",
                         "series": [
                             {
-                                "series": "best",
-                                "startDate": "2020-03-15T00:00:00.000Z",
-                                "endDate": "2025-03-15T00:00:00.000Z",
-                                "eur": 610156.72736362,
+                                "eur": 123.45,
+                                "series": "P10",
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
                                 "volumes": [
-                                    0,
-                                    1,
-                                    2
+                                    123.45
                                 ]
                             }
-                        ]
+                        ],
+                        "forecastOutputId": "5e272d38b78910dd2a1bd691",
+                        "ratio": {
+                            "eur": 123.45,
+                            "basePhase": "gas",
+                            "startDate": "2020-01-01",
+                            "endDate": "2020-01-01",
+                            "volumes": [
+                                123.45
+                            ]
+                        }
                     }
                 ]
             }
@@ -849,31 +946,28 @@ class Forecasts(APIBase):
         Example data:
         [
             {
-                "segmentType": "arps",
-                "startDate": "2022-07-28",
-                "endDate": "2028-07-26",
-                "qStart": 497.54078888022735,
-                "qEnd": 169.85103,
-                "diEffSec": 0.2708,
-                "b": 1.3
-            },
-            {
-                "segmentType": "arps_modified",
-                "startDate": "2028-07-27",
-                "endDate": "2037-07-14",
-                "qStart": 497.54078888022735,
-                "qEnd": 108.2303,
-                "diEffSec": 0.2708,
-                "b": 0.9,
-                "targetDSwEffSec": 0.06
+                "segmentType": "string",
+                "startDate": "string",
+                "endDate": "string",
+                "qStart": 123.45,
+                "qEnd": 123.45,
+                "diEffSec": 123.45,
+                "b": 123.45,
+                "targetDSwEffSec": 123.45,
+                "flatValue": 123.45,
+                "slope": 123.45,
+                "realizedDEffSw": 123.45,
+                "d": 123.45,
+                "dEff": 123.45,
+                "calculatedField": "string"
             }
         ]
 
         Example response:
         {
-            "status": "success",
-            "segmentCount": "8,",
-            "id": "62b1c13e2750169012ee4515"
+            "status": "string",
+            "segmentCount": 123,
+            "id": "5e272d38b78910dd2a1bd691"
         }
         """
         url = self.get_forecast_segment_parameters_url(project_id, forecast_id, well_id, phase, series)
@@ -893,31 +987,28 @@ class Forecasts(APIBase):
         Example data:
         [
             {
-                "segmentType": "arps",
-                "startDate": "2022-07-28",
-                "endDate": "2028-07-26",
-                "qStart": 497.54078888022735,
-                "qEnd": 169.85103,
-                "diEffSec": 0.2708,
-                "b": 1.3
-            },
-            {
-                "segmentType": "arps_modified",
-                "startDate": "2028-07-27",
-                "endDate": "2037-07-14",
-                "qStart": 497.54078888022735,
-                "qEnd": 108.2303,
-                "diEffSec": 0.2708,
-                "b": 0.9,
-                "targetDSwEffSec": 0.06
+                "segmentType": "string",
+                "startDate": "string",
+                "endDate": "string",
+                "qStart": 123.45,
+                "qEnd": 123.45,
+                "diEffSec": 123.45,
+                "b": 123.45,
+                "targetDSwEffSec": 123.45,
+                "flatValue": 123.45,
+                "slope": 123.45,
+                "realizedDEffSw": 123.45,
+                "d": 123.45,
+                "dEff": 123.45,
+                "calculatedField": "string"
             }
         ]
 
         Example response:
         {
-            "status": "success",
-            "segmentCount": "8,",
-            "id": "62b1c13e2750169012ee4515"
+            "status": "string",
+            "segmentCount": 123,
+            "id": "5e272d38b78910dd2a1bd691"
         }
         """
         url = self.get_forecast_segment_parameters_url(project_id, forecast_id, well_id, phase, series)
