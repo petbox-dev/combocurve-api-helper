@@ -88,7 +88,7 @@ class Wells(APIBase):
         """
         Returns a list of company wells.
 
-        https://docs.api.combocurve.com/#f55ae267-2161-4025-a3a7-5df7d411a8e6
+        https://docs.api.combocurve.com/api/get-wells
         """
         url = self.get_company_wells_url(filters)
         params = {'take': GET_LIMIT}
@@ -106,7 +106,7 @@ class Wells(APIBase):
         """
         Creates a list of company wells.
 
-        https://docs.api.combocurve.com/#3af96ea2-87a7-4fc2-9082-7b3191411f03
+        https://docs.api.combocurve.com/api/post-wells
         """
         url = self.get_company_wells_url()
         wells = self._post_items(url, data, POST_PATCH_PUT_LIMIT)
@@ -117,7 +117,7 @@ class Wells(APIBase):
         """
         Upserts a list of company wells.
 
-        https://docs.api.combocurve.com/#9aa285c2-8108-4589-92fd-3c7ee1a60c56
+        https://docs.api.combocurve.com/api/put-wells
         """
         url = self.get_company_wells_url()
         wells = self._put_items(url, data, POST_PATCH_PUT_LIMIT)
@@ -128,7 +128,7 @@ class Wells(APIBase):
         """
         Updates a list of company wells.
 
-        https://docs.api.combocurve.com/#3d56ff9f-2c3d-4d28-8309-32ca79c61450
+        https://docs.api.combocurve.com/api/patch-wells
         """
         url = self.get_company_wells_url()
         wells = self._patch_items(url, data, POST_PATCH_PUT_LIMIT)
@@ -145,7 +145,7 @@ class Wells(APIBase):
         """
         Deletes a list of company wells.
 
-        https://docs.api.combocurve.com/#359b608e-05c2-41b4-a5ba-8070c34e5407
+        https://docs.api.combocurve.com/api/delete-wells
 
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
@@ -174,7 +174,7 @@ class Wells(APIBase):
         """
         Returns a specific company well from its well id.
 
-        https://docs.api.combocurve.com/#1e7560fb-4913-4bee-8ed5-7f691e5f6ec9
+        https://docs.api.combocurve.com/api/get-well-by-id
         """
         url = self.get_company_well_by_id_url(well_id)
         params = {'take': GET_LIMIT}
@@ -186,7 +186,7 @@ class Wells(APIBase):
         """
         Upserts a specific company well from its well id.
 
-        https://docs.api.combocurve.com/#9aa285c2-8108-4589-92fd-3c7ee1a60c56
+        https://docs.api.combocurve.com/api/put-well-by-id
         """
         url = self.get_company_well_by_id_url(well_id)
         wells = self._put_items(url, [data])
@@ -197,7 +197,7 @@ class Wells(APIBase):
         """
         Updates a specific company well from its well id.
 
-        https://docs.api.combocurve.com/#dfed1eec-120f-4bc8-9ce8-8f8314e511b9
+        https://docs.api.combocurve.com/api/patch-well-by-id
         """
         url = self.get_company_well_by_id_url(well_id)
         wells = self._patch_items(url, [data])
@@ -208,7 +208,7 @@ class Wells(APIBase):
         """
         Deletes a specific company well from its well id.
 
-        https://docs.api.combocurve.com/#359b608e-05c2-41b4-a5ba-8070c34e5407
+        https://docs.api.combocurve.com/api/delete-well-by-id
 
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
@@ -226,7 +226,7 @@ class Wells(APIBase):
         """
         Returns a list of project company wells scoped from the project's id.
 
-        https://docs.api.combocurve.com/#15374dc9-94fe-4d85-b367-ae07c3881b5b
+        https://docs.api.combocurve.com/api/get-project-company-wells
         """
         url = self.get_project_company_wells_url(project_id, filters)
         params = {'take': GET_LIMIT}
@@ -244,7 +244,7 @@ class Wells(APIBase):
         """
         Creates a list of project company wells.
 
-        https://docs.api.combocurve.com/#b9940884-cbd9-46cc-b8da-fa17246cced7
+        https://docs.api.combocurve.com/api/post-project-company-wells
         """
         url = self.get_project_company_wells_url(project_id)
         wells = self._post_items(url, data, POST_PATCH_PUT_LIMIT)
@@ -261,7 +261,7 @@ class Wells(APIBase):
         """
         Deletes a list of project company wells.
 
-        https://docs.api.combocurve.com/#359b608e-05c2-41b4-a5ba-8070c34e5407
+        https://docs.api.combocurve.com/api/delete-project-company-wells
 
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
@@ -290,7 +290,7 @@ class Wells(APIBase):
         """
         Returns a specific project company well from its well id.
 
-        https://docs.api.combocurve.com/#f3a836ab-93b0-4ec0-922a-a65d35d26b06
+        https://docs.api.combocurve.com/api/get-project-company-well-by-id
         """
         url = self.get_project_company_well_by_id_url(project_id, well_id)
         params = {'take': GET_LIMIT}
@@ -304,7 +304,7 @@ class Wells(APIBase):
         """
         Returns a list of project wells scoped from the project's id.
 
-        https://docs.api.combocurve.com/#2e1d512f-4996-49e8-b917-20bea90373ab
+        https://docs.api.combocurve.com/api/get-project-wells
         """
         url = self.get_project_wells_url(project_id)
         params = {'take': GET_LIMIT}
@@ -322,7 +322,7 @@ class Wells(APIBase):
         """
         Creates a list of project wells scoped from the project's id.
 
-        https://docs.api.combocurve.com/#55c7dcb1-b694-40ec-83bd-56e87f5853a6
+        https://docs.api.combocurve.com/api/post-projects-wells
         """
         url = self.get_project_wells_url(project_id)
         wells = self._post_items(url, data, POST_PATCH_PUT_LIMIT)
@@ -333,7 +333,7 @@ class Wells(APIBase):
         """
         Upserts a list of project wells scoped from the project's id.
 
-        https://docs.api.combocurve.com/#731d6bb4-86af-4dff-8a34-3b63049e6c4b
+        https://docs.api.combocurve.com/api/put-projects-wells
         """
         url = self.get_project_wells_url(project_id)
         wells = self._put_items(url, data, POST_PATCH_PUT_LIMIT)
@@ -344,7 +344,7 @@ class Wells(APIBase):
         """
         Updates a list of project wells scoped from the project's id.
 
-        https://docs.api.combocurve.com/#80cb3f55-0444-41d3-9682-61e3d36e3b16
+        https://docs.api.combocurve.com/api/patch-project-wells
         """
         url = self.get_project_wells_url(project_id)
         wells = self._patch_items(url, data, POST_PATCH_PUT_LIMIT)
@@ -361,7 +361,7 @@ class Wells(APIBase):
         """
                 Deletes a list of project wells scoped from the project's id.
         F
-                https://docs.api.combocurve.com/#1b535f9f-2ace-4a90-bf95-791a23a90977
+                https://docs.api.combocurve.com/api/delete-project-wells
 
                 Returns the headers from the delete response where 'X-Delete-Count' is
                 the number of wells deleted.
@@ -390,7 +390,7 @@ class Wells(APIBase):
         """
         Returns a specific project well from its well id.
 
-        https://docs.api.combocurve.com/#e44fe1d2-b292-4e34-bb79-224c63351ea3
+        https://docs.api.combocurve.com/api/get-project-well-by-id
         """
         url = self.get_project_well_by_id_url(project_id, well_id)
         params = {'take': GET_LIMIT}
@@ -402,7 +402,7 @@ class Wells(APIBase):
         """
         Upserts a specific project well from its well id.
 
-        https://docs.api.combocurve.com/#08036541-c470-4ee3-b4a6-be6626184071
+        https://docs.api.combocurve.com/api/put-projects-wells-by-id
         """
         url = self.get_project_well_by_id_url(project_id, well_id)
         wells = self._put_items(url, [data])
@@ -413,7 +413,7 @@ class Wells(APIBase):
         """
         Updates a specific project well from its well id.
 
-        https://docs.api.combocurve.com/#29c1cd19-7e3c-4415-944d-0a2514e1823f
+        https://docs.api.combocurve.com/api/patch-project-well-by-id
         """
         url = self.get_project_well_by_id_url(project_id, well_id)
         wells = self._patch_items(url, [data])
@@ -424,7 +424,7 @@ class Wells(APIBase):
         """
         Deletes a specific project well from its well id.
 
-        https://docs.api.combocurve.com/#18cd243f-187b-423d-98a7-a2b296ac7dee
+        https://docs.api.combocurve.com/api/delete-project-well-by-id
 
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
@@ -440,7 +440,7 @@ class Wells(APIBase):
         """
         Returns a list of well comments.
 
-        https://docs.api.combocurve.com/#0088082c-5909-47bd-b92e-d08db58bd8bb
+        https://docs.api.combocurve.com/api/get-well-comments
 
         Example response:
         [

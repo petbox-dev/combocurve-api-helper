@@ -38,7 +38,7 @@ class Directional(APIBase):
         """
         Returns a list of directional survey items for a specific project id.
 
-        https://docs.api.combocurve.com/#e5bd0d9e-32ef-4fc7-9634-01bcc5dd6134
+        https://docs.api.combocurve.com/api/get-directional-surveys
 
         Example response:
         [
@@ -96,7 +96,7 @@ class Directional(APIBase):
         Returns a directional survey item for a specific project id and
         directional survey id.
 
-        https://docs.api.combocurve.com/#a432abf4-eb7e-425c-8daa-22dd36680d3e
+        https://docs.api.combocurve.com/api/get-directional-surveys-by-id
 
         Example response:
         {

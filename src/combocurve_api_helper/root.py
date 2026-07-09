@@ -86,7 +86,7 @@ class Root(APIBase):
         """
         Returns a list of custom columns. See other convenience methods for specific collections.
 
-        https://docs.api.combocurve.com/#3c047d2a-db2c-419f-9187-1a4db81215eb
+        https://docs.api.combocurve.com/api/get-custom-columns
         """
         url = self.get_custom_columns_url(collection, filters)
         columns = self._get_items(url)
@@ -96,7 +96,7 @@ class Root(APIBase):
         """
         Returns a list of custom columns for Wells.
 
-        https://docs.api.combocurve.com/#3c047d2a-db2c-419f-9187-1a4db81215eb
+        https://docs.api.combocurve.com/api/get-custom-columns
         """
         return self.get_custom_columns('wells', filters)
 
@@ -104,7 +104,7 @@ class Root(APIBase):
         """
         Returns a list of custom columns for Daily Production.
 
-        https://docs.api.combocurve.com/#3c047d2a-db2c-419f-9187-1a4db81215eb
+        https://docs.api.combocurve.com/api/get-custom-columns
         """
         return self.get_custom_columns('daily-productions', filters)
 
@@ -112,7 +112,7 @@ class Root(APIBase):
         """
         Returns a list of custom columns for Monthly Production.
 
-        https://docs.api.combocurve.com/#3c047d2a-db2c-419f-9187-1a4db81215eb
+        https://docs.api.combocurve.com/api/get-custom-columns
         """
         return self.get_custom_columns('monthly-productions', filters)
 
@@ -120,7 +120,7 @@ class Root(APIBase):
         """
         Update well identifiers.
 
-        https://docs.api.combocurve.com/#7d7f9a19-e693-4b59-9769-71efd58cba31
+        https://docs.api.combocurve.com/api/patch-wells-identifiers
 
         Structure of data:
         [
@@ -143,7 +143,7 @@ class Root(APIBase):
         """
         Returns a list of tags.
 
-        https://docs.api.combocurve.com/#17a1bfdc-e23e-4b4a-a033-4dc31fb4e35a
+        https://docs.api.combocurve.com/api/get-tags
 
         Example response:
         [
@@ -169,7 +169,7 @@ class Root(APIBase):
         """
         Returns a list of econ runs.
 
-        https://docs.api.combocurve.com/#489ddb62-4cdd-4470-a572-00dc0e10e73b
+        https://docs.api.combocurve.com/api/get-root-econ-runs
         """
         url = self.get_root_econ_runs_url(filters)
         params = {'take': GET_LIMIT}
@@ -179,7 +179,7 @@ class Root(APIBase):
         """
         Returns a specific econ run from its econ run id.
 
-        https://docs.api.combocurve.com/#bba4ff40-fd07-4ce2-a2c7-368a97e99e93
+        https://docs.api.combocurve.com/api/get-root-econ-run-by-id
         """
         url = self.get_root_econ_run_by_id_url(id)
         params = {'take': GET_LIMIT}
@@ -189,7 +189,7 @@ class Root(APIBase):
         """
         Returns a list of daily volumes.
 
-        https://docs.api.combocurve.com/#351629d8-78f0-459c-9463-ba4ffb9675d3
+        https://docs.api.combocurve.com/api/get-root-forecast-daily-volumes
         """
         url = self.get_root_forecast_daily_volumes_url(filters)
         params = {'take': GET_LIMIT}
@@ -199,7 +199,7 @@ class Root(APIBase):
         """
         Returns a list of monthly volumes.
 
-        https://docs.api.combocurve.com/#26cc17ce-3c64-44f0-82c8-e3fe9243e191
+        https://docs.api.combocurve.com/api/get-root-forecast-monthly-volumes
         """
         url = self.get_root_forecast_monthly_volumes_url(filters)
         params = {'take': GET_LIMIT}

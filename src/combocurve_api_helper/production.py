@@ -66,7 +66,7 @@ class Production(APIBase):
         """
         Returns a list of company monthly production items.
 
-        https://docs.api.combocurve.com/#6cecaf35-e501-4e21-899f-22261de76fff
+        https://docs.api.combocurve.com/api/get-monthly-productions
         """
         url = self.get_company_monthly_productions_url(filters)
         params = {'take': GET_LIMIT}
@@ -82,7 +82,7 @@ class Production(APIBase):
         """
         Creates monthly production items.
 
-        https://docs.api.combocurve.com/#8e46ba1e-c230-4d19-bd94-45af8fbe89cb
+        https://docs.api.combocurve.com/api/post-monthly-productions
         """
         url = self.get_company_monthly_productions_url()
         monthly_production = self._post_items(url, data)
@@ -93,7 +93,7 @@ class Production(APIBase):
         """
         Upserts monthly production items.
 
-        https://docs.api.combocurve.com/#7cc3b686-2f9f-470b-8dd0-810fd4fa13dc
+        https://docs.api.combocurve.com/api/put-monthly-productions
         """
         url = self.get_company_monthly_productions_url()
         monthly_production = self._put_items(url, data)
@@ -104,7 +104,7 @@ class Production(APIBase):
         """
         Updates monthly production items.
 
-        https://docs.api.combocurve.com/#5167e26e-de2d-4860-aa3d-b9b9f80d0d24
+        https://docs.api.combocurve.com/api/patch-monthly-productions
         """
         url = self.get_company_monthly_productions_url()
         monthly_production = self._put_items(url, data)
@@ -115,7 +115,7 @@ class Production(APIBase):
         """
         Deletes monthly production items.
 
-        https://docs.api.combocurve.com/#81ca806f-dfd5-4af2-b155-05439bdf1158
+        https://docs.api.combocurve.com/api/delete-monthly-productions
         """
         url = self.get_company_monthly_productions_url()
         monthly_production = self._delete_items(url, data)
@@ -126,7 +126,7 @@ class Production(APIBase):
         """
         Returns a list of company monthly production items.
 
-        https://docs.api.combocurve.com/#d53b02b3-6574-40ee-bdfb-1e64191ae80a
+        https://docs.api.combocurve.com/api/get-daily-productions
         """
         url = self.get_company_daily_productions_url(filters)
         params = {'take': GET_LIMIT}
@@ -142,7 +142,7 @@ class Production(APIBase):
         """
         Creates daily production items.
 
-        https://docs.api.combocurve.com/#9d7db301-2512-491d-8a8b-985cd3417d3e
+        https://docs.api.combocurve.com/api/post-daily-productions
         """
         url = self.get_company_daily_productions_url()
         daily_production = self._post_items(url, data)
@@ -153,7 +153,7 @@ class Production(APIBase):
         """
         Upserts daily production items.
 
-        https://docs.api.combocurve.com/#dfb57b4d-60aa-4116-b219-b174f01cc5dd
+        https://docs.api.combocurve.com/api/put-daily-productions
         """
         url = self.get_company_daily_productions_url()
         daily_production = self._put_items(url, data)
@@ -164,7 +164,7 @@ class Production(APIBase):
         """
         Updates daily production items.
 
-        https://docs.api.combocurve.com/#64460347-9135-4020-9bc6-bb5eeebcbc85
+        https://docs.api.combocurve.com/api/patch-daily-productions
         """
         url = self.get_company_daily_productions_url()
         daily_production = self._patch_items(url, data)
@@ -175,7 +175,7 @@ class Production(APIBase):
         """
         Delete daily production items.
 
-        https://docs.api.combocurve.com/#4292e628-bfaa-4b9e-8ef2-467715e1092c
+        https://docs.api.combocurve.com/api/delete-daily-productions
         """
         url = self.get_company_daily_productions_url()
         daily_production = self._delete_items(url, data)
@@ -186,7 +186,7 @@ class Production(APIBase):
         """
         Returns a list of monthly production items for a specific project id.
 
-        https://docs.api.combocurve.com/#91a94565-b7cb-40f2-b5a2-0689d8efb897
+        https://docs.api.combocurve.com/api/get-projects-monthly-productions
         """
         url = self.get_project_monthly_productions_url(project_id, filters)
         params = {'take': GET_LIMIT}
@@ -202,7 +202,7 @@ class Production(APIBase):
         """
         Creates project monthly production items.
 
-        https://docs.api.combocurve.com/#2a58c950-1747-43d9-b0d7-c847db39c850
+        https://docs.api.combocurve.com/api/post-projects-monthly-productions
         """
         url = self.get_project_monthly_productions_url(project_id)
         monthly_production = self._post_items(url, data)
@@ -213,7 +213,7 @@ class Production(APIBase):
         """
         Upserts project monthly production items.
 
-        https://docs.api.combocurve.com/#43c7de35-b397-464c-98c6-a5da1b37de5c
+        https://docs.api.combocurve.com/api/put-projects-monthly-productions
         """
         url = self.get_project_monthly_productions_url(project_id)
         monthly_production = self._put_items(url, data)
@@ -224,7 +224,7 @@ class Production(APIBase):
         """
         Updates project monthly production items.
 
-        https://docs.api.combocurve.com/#b5c7dc84-6897-4650-bf89-2709fd9189a7
+        https://docs.api.combocurve.com/api/patch-projects-monthly-productions
         """
         url = self.get_project_monthly_productions_url(project_id)
         monthly_production = self._put_items(url, data)
@@ -235,7 +235,7 @@ class Production(APIBase):
         """
         Deletes project monthly production items.
 
-        https://docs.api.combocurve.com/#1c826ba7-ff89-434f-bf87-7e3957b25353
+        https://docs.api.combocurve.com/api/delete-project-monthly-productions
         """
         url = self.get_project_monthly_productions_url(project_id)
         monthly_production = self._delete_items(url, data)
@@ -246,7 +246,7 @@ class Production(APIBase):
         """
         Returns a list of daily production items for a specific project id.
 
-        https://docs.api.combocurve.com/#637b21b2-6c45-4d19-829c-ffc0514ed86c
+        https://docs.api.combocurve.com/api/get-projects-daily-productions
         """
         url = self.get_project_daily_productions_url(project_id, filters)
         params = {'take': GET_LIMIT}
@@ -262,7 +262,7 @@ class Production(APIBase):
         """
         Creates project daily production items.
 
-        https://docs.api.combocurve.com/#8e46ba1e-c230-4d19-bd94-45af8fbe89cb
+        https://docs.api.combocurve.com/api/post-projects-daily-productions
         """
         url = self.get_project_daily_productions_url(project_id)
         daily_production = self._post_items(url, data)
@@ -273,7 +273,7 @@ class Production(APIBase):
         """
         Upserts project daily production items.
 
-        https://docs.api.combocurve.com/#c0a0e460-0692-4231-a4bc-e2602f73dd3a
+        https://docs.api.combocurve.com/api/put-projects-daily-productions
         """
         url = self.get_project_daily_productions_url(project_id)
         daily_production = self._put_items(url, data)
@@ -284,7 +284,7 @@ class Production(APIBase):
         """
         Updates project daily production items.
 
-        https://docs.api.combocurve.com/#91720250-6958-43e8-9d66-85498a628a02
+        https://docs.api.combocurve.com/api/patch-projects-daily-productions
         """
         url = self.get_project_daily_productions_url(project_id)
         daily_production = self._put_items(url, data)
@@ -295,7 +295,7 @@ class Production(APIBase):
         """
         Deletes project daily production items.
 
-        https://docs.api.combocurve.com/#e61b507c-76cb-4e2a-95ba-0c1381938129
+        https://docs.api.combocurve.com/api/delete-project-daily-productions
         """
         url = self.get_project_daily_productions_url(project_id)
         daily_production = self._delete_items(url, data)

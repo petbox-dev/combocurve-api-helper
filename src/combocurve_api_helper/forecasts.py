@@ -138,7 +138,7 @@ class Forecasts(APIBase):
         """
         Returns a list of forecasts for a specific project id.
 
-        https://docs.api.combocurve.com/#3f80e303-3285-4ce1-aec8-40ab2d518e9e
+        https://docs.api.combocurve.com/api/get-forecasts
 
         Example response:
         [
@@ -169,7 +169,7 @@ class Forecasts(APIBase):
         """
         Creates new forecasts for a specific project id.
 
-        https://docs.api.combocurve.com/#e49824bc-678f-4b10-aaee-14d5ec1825cf
+        https://docs.api.combocurve.com/api/post-forecasts
 
         Example data:
         [
@@ -233,7 +233,7 @@ class Forecasts(APIBase):
         per request to avoid HTTP 413 Content Too Large or 504 Gateway Timeout errors
         when making requests to the ComboCurve API.
 
-        https://docs.api.combocurve.com/#8cd55b04-67a2-4534-bace-10504ac5ccd4
+        https://docs.api.combocurve.com/api/post-wells-to-forecast
         """
         # NOTE: we can't use `self._post_items` since it expects the base data to be a list
         # whereas this particular endpoint receives an object
@@ -255,7 +255,7 @@ class Forecasts(APIBase):
         """
         Returns a specific forecast from its forecast id.
 
-        https://docs.api.combocurve.com/#5fec685c-a64e-43bb-b32a-920d1a0c3be7
+        https://docs.api.combocurve.com/api/get-forecast-by-id
 
         Example response:
         {
@@ -280,7 +280,7 @@ class Forecasts(APIBase):
         """
         Returns a list of ARIES parameters for a specific project id and forecast id.
 
-        https://docs.api.combocurve.com/#d24c7390-9c9e-48e7-91aa-1ad2c9551bd2
+        https://docs.api.combocurve.com/api/get-aries-forecast
 
         Example response:
         [
@@ -352,7 +352,7 @@ class Forecasts(APIBase):
         """
         Returns a list of outputs for a specific project id and forecast id.
 
-        https://docs.api.combocurve.com/#b396508a-bb08-4014-916e-3f7543dfd58b
+        https://docs.api.combocurve.com/api/get-forecast-outputs
 
         Example response:
         [
@@ -530,7 +530,7 @@ class Forecasts(APIBase):
         """
         Returns a specific forecast output from its forecast id and output id.
 
-        https://docs.api.combocurve.com/#4a6312b3-51cf-48d8-bef2-7752e840b2e0
+        https://docs.api.combocurve.com/api/get-forecast-output-by-id
 
         Example response:
         {
@@ -637,7 +637,7 @@ class Forecasts(APIBase):
         """
         Returns a list of daily volumes for a specific project id and forecast id.
 
-        https://docs.api.combocurve.com/#5c8407df-a92f-464a-976c-60fc610caafd
+        https://docs.api.combocurve.com/api/get-forecast-daily-volumes
 
         Example response:
         [
@@ -742,7 +742,7 @@ class Forecasts(APIBase):
         """
         Returns a list of monthly volumes for a specific project id and forecast id.
 
-        https://docs.api.combocurve.com/#f4d538aa-1c10-41f2-bcb3-d9e3716e2ecf
+        https://docs.api.combocurve.com/api/get-forecast-monthly-volumes
 
         Example response:
         [
@@ -848,7 +848,7 @@ class Forecasts(APIBase):
         Inserts a specific well's forecast parameters from its forecast id,
         well id, phase, and series.
 
-        https://docs.api.combocurve.com/#498a95b7-5c23-4aae-b92a-191503ac0c5c
+        https://docs.api.combocurve.com/api/post-projects-forecast-segment-parameters
 
         Example data:
         [
@@ -892,7 +892,7 @@ class Forecasts(APIBase):
         Updates a specific well's forecast parameters from its forecast id,
         well id, phase, and series.
 
-        https://docs.api.combocurve.com/#59772626-e3af-458e-8ec4-9e57287706f6
+        https://docs.api.combocurve.com/api/put-projects-forecast-segment-parameters
 
         Example data:
         [
@@ -936,7 +936,7 @@ class Forecasts(APIBase):
         Deletes a specific well's forecast parameters from its forecast id,
         well id, phase, and series.
 
-        https://docs.api.combocurve.com/#943e863d-2dbd-4f83-a21e-f0305c072c07
+        https://docs.api.combocurve.com/api/delete-projects-forecast-segment-parameters
         """
         url = self.get_forecast_segment_parameters_url(project_id, forecast_id, well_id, phase, series)
         segments = self._delete_items(url, data=[])

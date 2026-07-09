@@ -124,7 +124,7 @@ class Scenarios(APIBase):
         """
         Returns a list of scenarios scoped from the project's id.
 
-        https://docs.api.combocurve.com/#e7de7ef5-228b-4de6-bd67-89c8ef14a4bc
+        https://docs.api.combocurve.com/api/get-scenarios
         """
         url = self.get_scenarios_url(project_id, filters)
         params = {'take': GET_LIMIT}
@@ -142,7 +142,7 @@ class Scenarios(APIBase):
         """
         Creates scenarios for a specific project id.
 
-        https://docs.api.combocurve.com/#52df57aa-af96-4e86-976c-8d4aff3125f7
+        https://docs.api.combocurve.com/api/post-project-scenarios
         """
         url = self.get_scenarios_url(project_id)
         scenarios = self._post_items(url, data)
@@ -153,7 +153,7 @@ class Scenarios(APIBase):
         """
         Upserts scenarios for a specific project id.
 
-        https://docs.api.combocurve.com/#94b372d8-6696-4f65-b1b7-6c0576b3f75b
+        https://docs.api.combocurve.com/api/put-project-scenarios
         """
         url = self.get_scenarios_url(project_id)
         scenarios = self._put_items(url, data)
@@ -166,7 +166,7 @@ class Scenarios(APIBase):
         """
         Deletes scenarios for a specific project id.
 
-        https://docs.api.combocurve.com/#7429717e-51f2-48de-ad22-6c4bc5bf1bb1
+        https://docs.api.combocurve.com/api/delete-project-scenarios
 
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
@@ -192,7 +192,7 @@ class Scenarios(APIBase):
         """
         Returns a specific scenario from its scenario id.
 
-        https://docs.api.combocurve.com/#e7de7ef5-228b-4de6-bd67-89c8ef14a4bc
+        https://docs.api.combocurve.com/api/get-scenario-by-id
 
         Example response:
         [
@@ -215,7 +215,7 @@ class Scenarios(APIBase):
         """
         Returns a list of combos for a specific project id and scenario id.
 
-        https://docs.api.combocurve.com/#844e5b66-d20f-48ab-a186-380a1cc49630
+        https://docs.api.combocurve.com/api/get-scenario-combos-read
         """
         url = self.get_scenario_combos_url(project_id, scenario_id)
         params = {'take': GET_LIMIT}
@@ -225,7 +225,7 @@ class Scenarios(APIBase):
         """
         Creates scenario combos for a specific project id and scenario id.
 
-        https://docs.api.combocurve.com/#e14969da-bd78-4747-9f19-e0277836dfee
+        https://docs.api.combocurve.com/api/post-scenario-combos-upsert
         """
         url = self.get_scenario_combos_url(project_id, scenario_id)
         scenarios = self._post_items(url, data)
@@ -236,7 +236,7 @@ class Scenarios(APIBase):
         """
         Upserts scenario combos for a specific project id and scenario id.
 
-        https://docs.api.combocurve.com/#2e47dad1-c176-4628-b97f-8ace00c6ad0d
+        https://docs.api.combocurve.com/api/put-scenario-combos-upsert
         """
         url = self.get_scenario_combos_url(project_id, scenario_id)
         scenarios = self._put_items(url, data)
@@ -247,7 +247,7 @@ class Scenarios(APIBase):
         """
         Deletes scenario combos for a specific project id and scenario id.
 
-        https://docs.api.combocurve.com/#881f45fd-287f-4f6c-a805-2e690d675a7a
+        https://docs.api.combocurve.com/api/delete-scenario-combos-delete
 
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
@@ -269,7 +269,7 @@ class Scenarios(APIBase):
         Returns a list of qualifiers for a specific project id, scenario id and
         econ name.
 
-        https://docs.api.combocurve.com/#76132581-aefd-4efa-ae82-2af8596340de
+        https://docs.api.combocurve.com/api/get-qualifiers-read
         """
         url = self.get_scenario_qualifiers_url(project_id, scenario_id, econ_name)
         qualifiers = self._get_items(url)
@@ -280,7 +280,7 @@ class Scenarios(APIBase):
         """
         Creates scenario qualifiers for a specific project id and scenario id.
 
-        https://docs.api.combocurve.com/#b917f0ea-9bf2-4fea-8c16-d780ade2ac2d
+        https://docs.api.combocurve.com/api/post-qualifiers-upsert
         """
         url = self.get_scenario_qualifiers_url(project_id, scenario_id)
         scenarios = self._post_items(url, data)
@@ -291,7 +291,7 @@ class Scenarios(APIBase):
         """
         Upserts scenario qualifiers for a specific project id and scenario id.
 
-        https://docs.api.combocurve.com/#f2d33571-1d1b-4f7b-b8a7-02d437dd4f02
+        https://docs.api.combocurve.com/api/put-qualifiers-upsert
         """
         url = self.get_scenario_qualifiers_url(project_id, scenario_id)
         scenarios = self._put_items(url, data)
@@ -304,7 +304,7 @@ class Scenarios(APIBase):
         """
         Deletes scenario qualifiers for a specific project id and scenario id.
 
-        https://docs.api.combocurve.com/#75353547-a52c-444d-953f-219a0a006a51
+        https://docs.api.combocurve.com/api/delete-qualifiers-delete
 
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
@@ -325,7 +325,7 @@ class Scenarios(APIBase):
         Returns a list of well assignments for a specific project id and
         scenario id.
 
-        https://docs.api.combocurve.com/#7849574f-3530-4751-a21a-485e694609e6
+        https://docs.api.combocurve.com/api/get-scenario-wells-read
         """
         url = self.get_scenario_wells_url(project_id, scenario_id)
         return self._get_items(url)
@@ -350,7 +350,7 @@ class Scenarios(APIBase):
         """
         Creates scenario well assignments for a specific project id and scenario id.
 
-        https://docs.api.combocurve.com/#538885a6-3b78-44aa-9852-5b5574bd60f3
+        https://docs.api.combocurve.com/api/post-scenario-wells-upsert
         """
         url = self.get_scenario_wells_url(project_id, scenario_id)
         scenarios = self._post_items(url, data)
@@ -361,7 +361,7 @@ class Scenarios(APIBase):
         """
         Upserts scenario well assignments for a specific project id and scenario id.
 
-        https://docs.api.combocurve.com/#b4f4a676-b3aa-4207-ae06-69b282da36fd
+        https://docs.api.combocurve.com/api/put-scenario-wells-upsert
         """
         url = self.get_scenario_wells_url(project_id, scenario_id)
         scenarios = self._put_items(url, data)
@@ -372,7 +372,7 @@ class Scenarios(APIBase):
         """
         Deletes scenario well assignments for a specific project id and scenario id.
 
-        https://docs.api.combocurve.com/#96bc7d64-831c-44ff-a707-4f0b31bb6c34
+        https://docs.api.combocurve.com/api/delete-scenario-wells-delete
 
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.

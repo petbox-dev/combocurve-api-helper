@@ -37,7 +37,7 @@ class Projects(APIBase):
         """
         Returns a list of projects.
 
-        https://docs.api.combocurve.com/#25b8ab6b-5c03-49bc-ba57-06f063b31a97
+        https://docs.api.combocurve.com/api/get-projects
 
         Example response:
         [
@@ -65,7 +65,7 @@ class Projects(APIBase):
         """
         Creates a new project.
 
-        https://docs.api.combocurve.com/#a89937e7-92ed-4184-a4c0-9009732cd4e8
+        https://docs.api.combocurve.com/api/post-projects
 
         Example request:
         [
@@ -117,7 +117,7 @@ class Projects(APIBase):
         """
         Returns a specific project from its project id.
 
-        https://docs.api.combocurve.com/#3d58f1b6-41f5-4bf0-9d79-613f14d08bed
+        https://docs.api.combocurve.com/api/get-project-by-id
 
         Example response:
         {

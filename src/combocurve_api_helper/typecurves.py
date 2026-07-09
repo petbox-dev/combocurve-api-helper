@@ -63,7 +63,7 @@ class TypeCurves(APIBase):
         """
         Returns a list of type curves for a specific project id.
 
-        https://docs.api.combocurve.com/#8bee4cfe-8385-449f-bf14-fcbefae49376
+        https://docs.api.combocurve.com/api/get-type-curves
 
         Example response:
         [
@@ -493,7 +493,7 @@ class TypeCurves(APIBase):
         """
         Returns a specific type curve from its type curve id.
 
-        https://docs.api.combocurve.com/#d28fbde4-9213-46ee-bec8-3fb3ef8658f4
+        https://docs.api.combocurve.com/api/get-type-curve-by-id
 
         Example response:
         {
@@ -916,7 +916,7 @@ class TypeCurves(APIBase):
         Returns a list of representative wells for a specific project id and
         type curve id.
 
-        https://docs.api.combocurve.com/#ad854ce8-2a59-4c18-b4db-93f7dff5081a
+        https://docs.api.combocurve.com/api/get-type-curve-representative-wells
 
         Example response:
         [
@@ -972,7 +972,7 @@ class TypeCurves(APIBase):
         Returns a list of daily fits for a specific project id and
         type curve id.
 
-        https://docs.api.combocurve.com/#710a5516-f471-4788-91d6-5787a9bea6db
+        https://docs.api.combocurve.com/api/get-type-curve-daily-fits
 
         Example response:
         [
@@ -1009,7 +1009,7 @@ class TypeCurves(APIBase):
         Returns a list of monthly fits for a specific project id and
         type curve id.
 
-        https://docs.api.combocurve.com/#f226dfec-e4ba-451a-9246-8bb2a4585d40
+        https://docs.api.combocurve.com/api/get-type-curve-monthly-fits
 
         Example response:
         [
