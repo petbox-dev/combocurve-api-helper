@@ -112,6 +112,27 @@ in `./config-examples/` to demonstrate the expected file structures.
     - Fill the title and description with a summary of the proposed changes
     - Request a review from `@dsfulf`
 
+## Docstring examples
+
+The `Example response:` / `Example data:` blocks in method docstrings are
+**generated from the ComboCurve OpenAPI spec** — do not edit them by hand. To
+refresh after the API/spec changes:
+
+```sh
+python scripts/generate_docstrings.py          # rewrite in place
+python scripts/generate_docstrings.py --check   # verify; exit 1 if stale, 2 if the spec is unreachable
+```
+
+Each method is matched to its operation by the `docs.api.combocurve.com/api/<slug>`
+link in its docstring, where `<slug>` is the spec `operationId`.
+
+**Known slug alias (follow-up):** for one operation the live-docs/Postman slug
+differs from the spec's `operationId` — the bulk forecast-parameters PUT is
+`put-version-two-projects-forecast-segment-parameters` on the docs site but
+`put-v2-projects-forecast-segment-parameters` in the spec. `SLUG_ALIASES` in
+`scripts/generate_docstrings.py` bridges this so the example still resolves. If a
+future spec adopts the docs-site slug, remove that entry.
+
 ## Authors
 
 - David Fulford

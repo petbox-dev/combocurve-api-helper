@@ -142,4 +142,7 @@ fails when the committed output is stale.
   constants are sourced from their first (representative) method, so company/project variants show the
   company example; blocks whose operation has no spec example are left as-is. Refresh with
   `python scripts/generate_docstrings.py`; `--check` exits 1 (stale) or 2 (spec unreachable)
-  (`test_docstrings_current.py`, network-gated).
+  (`test_docstrings_current.py`, network-gated). One doc-slug != spec-`operationId`
+  case is bridged by `SLUG_ALIASES` in that script (bulk forecast-params PUT:
+  docs/Postman `put-version-two-...` vs spec `put-v2-...`); drop the entry if a
+  future spec adopts the docs-site slug.

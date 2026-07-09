@@ -33,6 +33,16 @@ URL_RE = re.compile(r'https://docs\.api\.combocurve\.com/api/([a-z0-9-]+)')
 MARKERS = {'Example response:': 'response', 'Example data:': 'request', 'Example request:': 'request'}
 METHODS = ('get', 'post', 'put', 'patch', 'delete', 'head')
 
+# A docstring's example is looked up in the spec by the slug in its
+# /api/<slug> link. For a few operations the live-docs/Postman slug differs from
+# the spec's operationId, so the lookup would miss without a translation here.
+# doc-slug -> spec operationId. FOLLOW-UP: re-check when the spec is refreshed; if
+# the spec adopts the doc slug, delete that entry (see README "Docstring examples").
+SLUG_ALIASES = {
+    # bulk forecast-parameters PUT: docs/Postman say "version-two", spec says "v2"
+    'put-version-two-projects-forecast-segment-parameters': 'put-v2-projects-forecast-segment-parameters',
+}
+
 
 def load_spec(src: str) -> dict:
     if src.startswith(('http://', 'https://')):
@@ -163,7 +173,7 @@ def rewrite_file(path: pathlib.Path, examples: dict, check: bool) -> tuple:
     replacements = []  # (json_start, json_end, new_lines)
     unsourced = []
     for node, opid in collect_targets(tree):
-        ex = examples.get(opid)
+        ex = examples.get(SLUG_ALIASES.get(opid, opid))
         label = getattr(node, 'name', None) or opid
         lo, hi = node.lineno - 1, (node.end_lineno or len(lines))
         for i in range(lo, hi):
