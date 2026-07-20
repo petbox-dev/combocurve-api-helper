@@ -13,7 +13,10 @@ from .typecurves import TypeCurves
 from .directional import Directional
 
 from .base import Item, ItemList, PrimativeValue, IterableValue
-from ._batch import BatchChunk, BatchWriteResult
+# Explicit re-export (`as`) so downstream `mypy --strict`
+# (--no-implicit-reexport) sees these public types as exported.
+from ._batch import BatchChunk as BatchChunk
+from ._batch import BatchWriteResult as BatchWriteResult
 
 
 class ComboCurveAPI(
