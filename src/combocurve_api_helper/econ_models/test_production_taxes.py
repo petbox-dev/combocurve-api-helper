@@ -87,6 +87,71 @@ TEXAS: Dict[str, Any] = {
 }
 
 
+_DATES_PERIODS = ['1900-01-01', '2023-07-01', '2024-07-01']
+
+
+def _dates_severance(phase: str, unit: str, values: list[float]) -> Dict[str, Any]:
+    """Real API shape for a 'dates'-criteria severance row (verified live + against CC's
+    CSV export, Sample Project B 'SAMPLE PDP STREAM'). period is a list of ISO dates; the first is
+    CC's 1900-01-01 schedule-start sentinel."""
+    return {
+        'key': phase,
+        'category': 'severance_tax',
+        'criteria': 'dates',
+        'period': list(_DATES_PERIODS),
+        'value': list(values),
+        'unit': unit,
+        'shrinkageCondition': 'shrunk',
+        'escalation': 'none',
+        'calculation': 'nri',
+        'rateType': 'gross_well_head',
+        'rateRowsCalculationMethod': 'non_monotonic',
+    }
+
+
+DATES: Dict[str, Any] = {
+    'id': 'pt-nd',
+    'name': 'SAMPLE PDP STREAM',
+    'unique': False,
+    'createdAt': '2026-05-10T03:11:41.000Z',
+    'updatedAt': '2026-05-10T03:11:41.000Z',
+    'econModelType': 'ProductionTaxes',
+    'data': {
+        'state': 'custom',
+        'rows': [
+            _dates_severance('oil', 'pct_of_revenue', [9.4, 9.4, 9.4]),
+            _dates_severance('oil', 'dollar_per_bbl', [0, 0, 0]),
+            _dates_severance('gas', 'pct_of_revenue', [0, 0, 0]),
+            _dates_severance('gas', 'dollar_per_mcf', [0.0753, 0.0753, 0.0753]),
+        ],
+    },
+}
+
+
+def test_dates_criteria_matches_cc_export() -> None:
+    """CC renders a 'dates' Period as '%b-%y' ('Jul-23'); the 1900-01-01 sentinel is
+    'Jan-00'. Verified against a CC CSV export of 'SAMPLE PDP STREAM' (Sample Project B)."""
+    rows = ProductionTaxesMapper().to_csv_rows(DATES)
+    assert len(rows) == 12  # 4 API rows x 3 periods
+
+    oil_t1 = [r for r in rows if r['Key'] == 'oil' and r['Category'] == 'Severance Tax 1']
+    assert [r['Criteria'] for r in oil_t1] == ['dates', 'dates', 'dates']
+    assert [r['Period'] for r in oil_t1] == ['Jan-00', 'Jul-23', 'Jul-24']
+    assert [r['Value'] for r in oil_t1] == ['9.4', '9.4', '9.4']
+    assert [r['Unit'] for r in oil_t1] == ['% of rev', '% of rev', '% of rev']
+
+    gas_t2 = [r for r in rows if r['Key'] == 'gas' and r['Category'] == 'Severance Tax 2']
+    assert [r['Period'] for r in gas_t2] == ['Jan-00', 'Jul-23', 'Jul-24']
+    assert [r['Value'] for r in gas_t2] == ['0.0753', '0.0753', '0.0753']
+    assert [r['Unit'] for r in gas_t2] == ['$/mcf', '$/mcf', '$/mcf']
+
+
+def test_dates_criteria_roundtrip() -> None:
+    m = ProductionTaxesMapper()
+    rebuilt = m.from_csv_rows(m.to_csv_rows(DATES))
+    assert rebuilt['data'] == DATES['data']
+
+
 def test_to_csv_rows_new_mexico_real_shape() -> None:
     rows = ProductionTaxesMapper().to_csv_rows(NEW_MEXICO)
     assert len(rows) == 5

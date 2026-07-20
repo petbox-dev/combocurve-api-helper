@@ -52,6 +52,11 @@ cut yet. This entry covers everything merged since `v1.2.0` (2025-09-04).
   `to_csv_rows` raised `NotImplementedError` on ~22% of real capex rows (2,150 of
   9,729 across three production projects). Verified live and against a CC CSV
   export.
+- ProductionTaxes CSV mapper now handles the `dates` criteria (date-based rate
+  schedules), not only `entire_well_life`/`offset_to_fpd`. The `Period` renders as
+  CC's `%b-%y` (`Jul-23`); the `1900-01-01` schedule-start sentinel is `Jan-00`
+  and round-trips losslessly. Previously `to_csv_rows` raised `NotImplementedError`
+  on 12 production models. Verified live and against a CC CSV export.
 - Econ-model assignment `econName` is the kebab-case route segment, not
   `econModelType`.
 - `delete_scenario_qualifiers()` uses the plural `econNames` query param

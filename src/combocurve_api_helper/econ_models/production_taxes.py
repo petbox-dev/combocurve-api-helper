@@ -1,3 +1,4 @@
+import datetime
 from typing import Annotated, Any, Dict, List, NamedTuple, Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -15,10 +16,34 @@ _PHASE_FROM_CSV = {v: k for k, v in _PHASE_TO_CSV.items()}
 _UNIT_TO_CSV = {'pct_of_revenue': '% of rev', 'dollar_per_bbl': '$/bbl', 'dollar_per_mcf': '$/mcf'}
 _UNIT_FROM_CSV = {v: k for k, v in _UNIT_TO_CSV.items()}
 
-# API 'criteria' -> CSV 'Criteria' column value (verified live against NM/TX
-# ProductionTaxes models in project Sample_Onboarding). Unknown criteria raise.
-_CRITERIA_TO_CSV = {'entire_well_life': 'flat', 'offset_to_fpd': 'fpd'}
+# API 'criteria' -> CSV 'Criteria' column value. 'flat'/'fpd' verified live against NM/TX
+# models (project Sample_Onboarding); 'dates' verified against a CC CSV export of
+# 'SAMPLE PDP STREAM' (Sample Project B). Unknown criteria raise.
+_CRITERIA_TO_CSV = {'entire_well_life': 'flat', 'offset_to_fpd': 'fpd', 'dates': 'dates'}
 _CRITERIA_FROM_CSV = {v: k for k, v in _CRITERIA_TO_CSV.items()}
+
+# For a 'dates' criteria the Period column is the schedule date rendered as month-abbrev +
+# 2-digit year ('2023-07-01' -> 'Jul-23'), verified against CC's CSV export. Every dates
+# schedule's first period is CC's 1900-01-01 "beginning of time" sentinel, which renders as
+# 'Jan-00'. '%b-%y' cannot carry the century, so that exact string is special-cased on the
+# inverse to keep the round-trip lossless; all other periods are 21st-century first-of-month
+# dates. A fixed English month table keeps output locale-independent.
+_MONTH_ABBRS = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
+_DATES_START_SENTINEL_ISO = '1900-01-01'
+_DATES_START_SENTINEL_CSV = 'Jan-00'
+
+
+def _dates_period_to_csv(iso: str) -> str:
+    d = datetime.datetime.strptime(iso[:10], '%Y-%m-%d').date()
+    return f'{_MONTH_ABBRS[d.month - 1]}-{d.year % 100:02d}'
+
+
+def _dates_period_from_csv(period_csv: str) -> str:
+    if period_csv == _DATES_START_SENTINEL_CSV:
+        return _DATES_START_SENTINEL_ISO
+    mon_abbr, yy = period_csv.split('-')
+    return datetime.date(2000 + int(yy), _MONTH_ABBRS.index(mon_abbr) + 1, 1).isoformat()
+
 
 _SEVERANCE_CATEGORY_API = 'severance_tax'
 _SEVERANCE_CATEGORY_CSV = 'Severance Tax'
@@ -123,7 +148,13 @@ def _build_api_row(key_csv: str, category_csv: str, members: List[Dict[str, str]
         category = _SEVERANCE_CATEGORY_API
 
     flat_marker = formats.ENTIRE_WELL_LIFE_MARKER
-    period: List[Any] = [flat_marker if criteria_csv == 'flat' else m['Period'] for m in members]
+    period: List[Any]
+    if criteria_csv == 'flat':
+        period = [flat_marker for _ in members]
+    elif criteria_csv == 'dates':
+        period = [_dates_period_from_csv(m['Period']) for m in members]
+    else:
+        period = [m['Period'] for m in members]
     value: List[Any] = [csv_to_num(m['Value']) for m in members]
 
     row_kwargs: Dict[str, Any] = {
@@ -175,7 +206,12 @@ class ProductionTaxesMapper:
             criteria_csv = _CRITERIA_TO_CSV[row.criteria]
 
             for period_elem, value_elem in zip(row.period, row.value):
-                period_csv = '' if criteria_csv == 'flat' else ('' if period_elem is None else str(period_elem))
+                if criteria_csv == 'flat' or period_elem is None:
+                    period_csv = ''
+                elif criteria_csv == 'dates':
+                    period_csv = _dates_period_to_csv(period_elem)
+                else:
+                    period_csv = str(period_elem)
                 csv_row = dict(common)
                 csv_row.update(
                     {
