@@ -64,7 +64,7 @@ def _retry_delay_seconds(response: Response, attempt: int) -> Optional[float]:
     if status == 429:
         return _retry_after_seconds(response) or _RATE_LIMIT_DEFAULT_PAUSE_SECONDS
     if status in _RETRYABLE_GATEWAY_STATUSES:
-        return _GATEWAY_BACKOFF_SECONDS * (2**attempt)
+        return _GATEWAY_BACKOFF_SECONDS * (2.0**attempt)
     return None
 
 
@@ -231,7 +231,7 @@ class APIBase:
                     rate_limit.set_limited()
                     continue
                 if status in _RETRYABLE_GATEWAY_STATUSES:
-                    time.sleep(_GATEWAY_BACKOFF_SECONDS * (2**attempt))
+                    time.sleep(_GATEWAY_BACKOFF_SECONDS * (2.0**attempt))
                     continue
 
             if status >= 400:

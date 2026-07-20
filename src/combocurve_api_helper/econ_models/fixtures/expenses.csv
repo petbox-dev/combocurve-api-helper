@@ -1,0 +1,37 @@
+Index,Project Name,Created At,Model Type,Model Name,Embedded Lookup Table,Key,Category,Criteria,Value,Period,Unit,Description,Shrinkage Condition,Escalation,Calculation,Affect Econ Limit,Deduct bef Sev Tax,Deduct bef Ad Val Tax,Stop at Econ Limit,Expense bef FPD,Cap,Paying WI / Earning WI,Rate Type,Rate Rows Calculation Method,Last Update
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,oil,g&p,flat,0.0,,$/bbl,,unshrunk,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,oil,opc,fpd,0.0,ecl,$/bbl,OPC/OIL,unshrunk,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,oil,trn,flat,0.0,,$/bbl,,unshrunk,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,oil,mkt,flat,0.0,,$/bbl,,unshrunk,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,oil,other,flat,0.0,,$/bbl,,unshrunk,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,gas,g&p,flat,0.0,,$/mcf,,unshrunk,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,gas,opc,fpd,0.31,ecl,$/mcf,OPC/GAS,shrunk,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,gas,trn,flat,0.0,,$/mcf,,shrunk,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,gas,mkt,flat,0.0,,$/mcf,,shrunk,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,gas,other,flat,0.0,,$/mcf,,shrunk,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,ngl,g&p,flat,0.0,,$/bbl,,,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,ngl,opc,flat,0.0,,$/bbl,,,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,ngl,trn,flat,0.0,,$/bbl,,,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,ngl,mkt,flat,0.0,,$/bbl,,,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,ngl,other,flat,0.0,,$/bbl,,,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,drip cond,g&p,flat,0.0,,$/bbl,,,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,drip cond,opc,flat,0.0,,$/bbl,,,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,drip cond,trn,flat,0.0,,$/bbl,,,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,drip cond,mkt,flat,0.0,,$/bbl,,,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,drip cond,other,flat,0.0,,$/bbl,,,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,boe,opc,flat,0.0,,$/bbl,,unshrunk,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,total_fluid,opc,flat,0.0,,$/bbl,,unshrunk,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,fixed,fixed1,fpd,4100.0,ecl,$/month,OPC/T,,none,wi,yes,no,no,yes,yes,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,fixed,fixed2,flat,0.0,,$/month,WRK/T,,none,wi,yes,no,no,yes,yes,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,fixed,fixed3,flat,0.0,,$/month,,,none,wi,yes,no,no,yes,yes,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,fixed,fixed4,flat,0.0,,$/month,,,none,wi,yes,no,no,yes,yes,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,fixed,fixed5,flat,0.0,,$/month,,,none,wi,yes,no,no,yes,yes,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,fixed,fixed6,flat,0.0,,$/month,,,none,wi,yes,no,no,yes,yes,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,fixed,fixed7,flat,0.0,,$/month,,,none,wi,yes,no,no,yes,yes,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,fixed,fixed8,flat,0.0,,$/month,,,none,wi,yes,no,no,yes,yes,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,fixed,fixed9,flat,0.0,,$/month,,,none,wi,yes,no,no,yes,yes,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,water,,flat,0.0,,$/bbl,,,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,co2e,co2e,flat,0.0,,$/MT,,,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,co2,co2e,flat,0.0,,$/MT,,,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,ch4,co2e,flat,0.0,,$/MT,,,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07
+1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:16 UTC,project,SAMPLE_OPEX_LOOKUP_0001,,n2o,co2e,flat,0.0,,$/MT,,,none,wi,yes,no,no,,,,1.0,,,05/08/2026 14:18:07

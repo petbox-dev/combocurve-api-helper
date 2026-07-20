@@ -1,0 +1,15 @@
+Index,Created At,Project Name,Model Type,Model Name,New Name,Embedded Lookup Table,Production Taxes State,Key,Stream Type,Category,Criteria,Value,Period,Unit,Description,Shrinkage Condition,Escalation,Calculation,Deduct Severance Tax,Rate Type,Rate Rows Calculation Method,Last Update
+1,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,NM,,,new_mexico,Ad Valorem Tax,,Ad Val Tax,flat,5,,% of rev,,shrunk,None,nri,no,gross well head,non monotonic,06/10/2026 13:03:56
+1,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,NM,,,new_mexico,oil,,Severance Tax,flat,7.09,,% of rev,,shrunk,None,nri,,gross well head,non monotonic,06/10/2026 13:03:56
+1,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,NM,,,new_mexico,gas,,Severance Tax,flat,7.94,,% of rev,,shrunk,None,nri,,gross well head,non monotonic,06/10/2026 13:03:56
+1,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,NM,,,new_mexico,ngl,,Severance Tax,flat,7.94,,% of rev,,shrunk,None,nri,,gross well head,non monotonic,06/10/2026 13:03:56
+1,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,NM,,,new_mexico,drip cond,,Severance Tax,flat,7.09,,% of rev,,shrunk,None,nri,,gross well head,non monotonic,06/10/2026 13:03:56
+2,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,TX,,,texas,Ad Valorem Tax,,Ad Val Tax,flat,2.5,,% of rev,,shrunk,None,nri,no,gross well head,non monotonic,06/10/2026 13:03:56
+2,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,TX,,,texas,oil,,Severance Tax 1,flat,4.6,,% of rev,,shrunk,None,nri,,gross well head,non monotonic,06/10/2026 13:03:56
+2,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,TX,,,texas,oil,,Severance Tax 2,flat,0.0081,,$/bbl,,shrunk,None,nri,,gross well head,non monotonic,06/10/2026 13:03:56
+2,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,TX,,,texas,gas,,Severance Tax 1,flat,7.5,,% of rev,,shrunk,None,nri,,gross well head,non monotonic,06/10/2026 13:03:56
+2,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,TX,,,texas,gas,,Severance Tax 2,flat,0.0007,,$/mcf,,shrunk,None,nri,,gross well head,non monotonic,06/10/2026 13:03:56
+2,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,TX,,,texas,ngl,,Severance Tax 1,flat,7.5,,% of rev,,shrunk,None,nri,,gross well head,non monotonic,06/10/2026 13:03:56
+2,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,TX,,,texas,ngl,,Severance Tax 2,flat,0.0001167,,$/bbl,,shrunk,None,nri,,gross well head,non monotonic,06/10/2026 13:03:56
+2,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,TX,,,texas,drip cond,,Severance Tax 1,flat,4.6,,% of rev,,shrunk,None,nri,,gross well head,non monotonic,06/10/2026 13:03:56
+2,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,TX,,,texas,drip cond,,Severance Tax 2,flat,0.0081,,$/bbl,,shrunk,None,nri,,gross well head,non monotonic,06/10/2026 13:03:56

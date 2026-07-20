@@ -22,6 +22,7 @@ requires-python = '>=3.8'
 dependencies = [
     'combocurve-api-v1',
     'more-itertools',
+    'pydantic>=2,<3',
     'requests',
     'typing-extensions',
 ]
