@@ -133,6 +133,9 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# ruff
+.ruff_cache/
+
 # Pyre type checker
 .pyre/
 
@@ -153,3 +156,6 @@ docs/*.postman_collection.json
 
 # ignore temporary files used for debugging
 tmp/
+
+# Superpowers SDD execution scratch (task briefs/reports)
+.superpowers/

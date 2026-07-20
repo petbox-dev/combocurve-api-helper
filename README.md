@@ -10,6 +10,34 @@ A utility library mapped to ComboCurve's API.
 
  [Open in Visual Studio Code](https://open.vscode.dev/petbox-dev/combocurve-api-helper)
 
+## Features
+
+`combocurve-api-helper` wraps the ComboCurve REST API behind a single
+`ComboCurveAPI` entrypoint that composes one mixin per resource area:
+
+- **Projects, scenarios, wells** — list / create / update / delete, plus custom
+  columns.
+- **Production** — daily and monthly volumes.
+- **Forecasts & type curves** — read forecasts, write forecast parameters, and
+  `put_forecast_parameters_batched()` for parallel, chunked (25 well x phase per
+  request), 207-aware bulk writes that return a `BatchWriteResult` (per-record
+  `success_count` / `failed_count` / `ok`, results in original payload order).
+- **Forecast runs** — submit a forecast run as an async job and poll its status.
+- **Econ models** — CREATE / UPDATE / DELETE for econ-model types (project
+  per-type and generic; company generics), plus an exact, invertible
+  API <-> CSV column mapping for 11 econ-model types.
+- **Econ-model assignments** — assign / unassign models to wells per scenario
+  qualifier, and read the scenario assignment grid.
+- **Lookup tables** — scenario, type-curve, and scenario-assignment CRUD.
+- **Econ runs** — trigger scenario economics and read results.
+- **Directional** — directional survey access.
+- **Resilient transport** — automatic retry with backoff on HTTP 429 (honoring
+  `Retry-After`) and transient gateway errors (502 / 503 / 504).
+
+Method docstrings carry an `Example response:` block and a link to the matching
+`docs.api.combocurve.com` operation (see [Docstring examples](#docstring-examples)).
+See [CHANGELOG.md](CHANGELOG.md) for release history.
+
 ### Installation
 
 Install from Python package repository:
@@ -61,6 +89,57 @@ in `./config-examples/` to demonstrate the expected file structures.
 }
 
  ```
+
+## Usage
+
+```python
+from combocurve_api_helper import ComboCurveAPI
+
+# Credentials are read from ~/.combocurve (see Setup above)
+api = ComboCurveAPI()
+
+# List projects, then scenarios and forecasts within one
+projects = api.get_projects()
+project_id = projects[0]["id"]
+
+scenarios = api.get_scenarios(project_id)
+forecasts = api.get_forecasts(project_id)
+
+# Bulk-write forecast parameters in parallel: chunked and 207-aware
+result = api.put_forecast_parameters_batched(project_id, forecast_id, records)
+if not result.ok:
+    print(f"{result.failed_count} of {len(result.results)} records failed")
+```
+
+### Econ models to / from CSV
+
+Each econ-model type has an invertible mapper (`to_csv_rows` / `from_csv_rows`)
+looked up by its PascalCase `econModelType`. The mapper's `columns` attribute is
+the exact CSV header, and `to_csv_rows` emits one dict per row keyed by those
+columns, so a round trip through a CSV file is lossless.
+
+```python
+import csv
+from combocurve_api_helper import ComboCurveAPI
+from combocurve_api_helper.econ_models import get_mapper
+
+api = ComboCurveAPI()
+mapper = get_mapper("Expenses")   # keyed by econModelType (PascalCase)
+
+# --- Read a model from ComboCurve and write it to a CSV ---
+model = api.get_expenses_model_by_id(project_id, model_id)
+with open("expenses.csv", "w", newline="") as f:
+    writer = csv.DictWriter(f, fieldnames=mapper.columns)
+    writer.writeheader()
+    writer.writerows(mapper.to_csv_rows(model))
+
+# --- Read the CSV back and write the model to ComboCurve ---
+with open("expenses.csv", newline="") as f:
+    rows = list(csv.DictReader(f))
+
+payload = mapper.from_csv_rows(rows)
+api.post_expenses_models(project_id, [payload])   # or put_expenses_models(...) to update
+```
 
 ## Contributing
 

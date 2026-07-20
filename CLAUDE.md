@@ -115,6 +115,18 @@ and `WELLHEADER_COLUMNS` (lowercased-name → canonical-name map); `econModels.j
 these build econ-model assumptions. `wells.py` (~30), `production.py` (~24), `scenarios.py` (~22),
 `forecasts.py` (~21) follow. `directional.py` and `typecurves.py` are small.
 
+**Econ-model CSV mappers** live in the `econ_models/` subpackage (hand-written, NOT generated — distinct
+from the generated CRUD methods below). Each econ-model type has a mapper implementing the `EconModelMapper`
+protocol (`econ_models/base.py`): an invertible pair — `to_csv_rows(model, context=None)` turns an API model
+dict into a list of CSV row dicts, `from_csv_rows(rows)` reconstructs the API payload — plus a `columns` list
+(the exact CSV header) and an `econ_model_type`. Look one up with `get_mapper(econ_model_type)`; `MAPPERS`
+registers all 11 types (StreamProperties, Differentials, ProductionTaxes, Expenses, Capex, ReservesCategory,
+Pricing, DateSettings, OwnershipReversion, ActualOrForecast, Risking). `to_csv_rows` keys every row by the
+full `columns` list, so a CSV round trip is lossless; value formatting (numbers, dates, enums, escalations)
+is centralized in `econ_models/formats.py` with matching `*_to_csv` / `*_from_csv` helpers, and the shared
+header is `econ_models/csv_columns.py` `COLUMNS`. **The `get_mapper` / `MAPPERS` key is the PascalCase
+`econModelType`** (see the name-forms section above), not the kebab route or camelCase form.
+
 ## Adding a new endpoint group
 
 1. Create `src/combocurve_api_helper/<name>.py` with a class subclassing `APIBase` (and `Item`/`ItemList` from `.base`).
