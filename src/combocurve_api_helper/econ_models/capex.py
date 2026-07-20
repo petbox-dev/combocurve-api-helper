@@ -30,9 +30,17 @@ from .formats import num_to_csv
 # `fromSchedule` row using this token has been observed (verified live across 'Sample Project A', 'Sample Project A | AFE', 'Sample Project D | NonOp MultiBasin', 'Sample Project E | NonOp | Multi Basin' -- zero fromSchedule rows at all), so extending it would
 # be speculative; an unmapped token still raises loudly.
 
-# escalationStart API key -> CSV 'Escalation Start Criteria' display (only shape observed
-# live: {'applyToCriteria': 0}). Fail loud on any other escalationStart shape.
-_ESCALATION_START_KEY_TO_CSV: Dict[str, str] = {'applyToCriteria': 'apply to criteria'}
+# escalationStart API key -> CSV 'Escalation Start Criteria' display. Verified live across
+# 9,729 real otherCapex rows (Sample Project B / Sample Project C / Sample Project A, 2026-07): exactly
+# two keys occur -- {'applyToCriteria': <int>} (7521 rows) and {'asOfDate': <int>} (2150
+# rows) -- plus a None escalationStart (58 rows, rendered blank by _escalation_start_to_csv).
+# Both values are integer day-offsets, so num_to_csv is correct for each. Both displays are
+# verified against CC's CSV export -- 'apply to criteria' and 'as of date' are CC's two
+# escalation-start UI options, lowercased. Fail loud on any other (unsampled) shape.
+_ESCALATION_START_KEY_TO_CSV: Dict[str, str] = {
+    'applyToCriteria': 'apply to criteria',
+    'asOfDate': 'as of date',
+}
 _ESCALATION_START_KEY_FROM_CSV: Dict[str, str] = {v: k for k, v in _ESCALATION_START_KEY_TO_CSV.items()}
 
 # otherCapex rows also carry probabilistic fields with no CSV column at all (distribution

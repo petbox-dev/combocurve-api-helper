@@ -161,6 +161,24 @@ def test_non_default_probabilistic_fields_warn() -> None:
         mapper.to_csv_rows(m)
 
 
+def test_escalation_start_as_of_date() -> None:
+    """escalationStart {'asOfDate': <int>} occurs on 2150 of 9729 real otherCapex rows
+    (Sample Project B / Sample Project C / Sample Project A, verified live 2026-07). The int is a
+    day-offset, mapped like applyToCriteria. The round-trip assertion is label-agnostic
+    (proves to_csv / from_csv are inverses); the 'as of date' display string is CC's
+    escalation-start UI option, verified against a CC CSV export."""
+    rows_in: List[Dict[str, Any]] = [
+        {**_row('drilling', intangible=3000, offsetToFpd=-120), 'escalationStart': {'asOfDate': 5}},
+    ]
+    m: Dict[str, Any] = {'name': 'AS OF DATE ESC', 'unique': False, 'otherCapex': {'rows': rows_in}}
+    mapper = CapexMapper()
+    rows = mapper.to_csv_rows(m)
+    assert rows[0]['Escalation Start Criteria'] == 'as of date'
+    assert rows[0]['Escalation Start Value (Days/Date)'] == '5'
+    rebuilt = mapper.from_csv_rows(rows)
+    assert rebuilt['otherCapex']['rows'][0]['escalationStart'] == {'asOfDate': 5}
+
+
 def test_escalation_none_python_roundtrip() -> None:
     """escalationModel/depreciationModel = None (Python None, not the string 'none')
     should round-trip to None, matching the Optional-string convention used elsewhere."""
