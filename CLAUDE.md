@@ -9,6 +9,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 it and drive it through the single `ComboCurveAPI` class. There is no application or service here —
 just the library and its type/lint/test tooling.
 
+## CRITICAL: this is a PUBLIC repo — no confidential data
+
+This repository is public. NEVER commit confidential client/project data. This applies
+especially to the econ-model test fixtures (`econ_models/fixtures/*.csv`) and to any
+"verified live" provenance comments or test dicts:
+
+- **Project names** and **model names** — including well/unit names and ARIES lookup keys —
+  must be anonymized to synthetic placeholders (`Sample Project A`, `Sample Well 1`,
+  `SAMPLE_*_LOOKUP`, …). Real live model **ObjectIds** likewise (they are not load-bearing —
+  any 24-hex value works).
+- Before committing a new fixture or a "verified live, project X, model Y" comment, replace
+  the specifics with synthetic values. Afterward, grep the tree to confirm no real
+  project/model/well names remain (mind line-wrapped names in comments).
+- Bare basin/state geology words are fine once the client/project linkage is removed.
+
 ## CRITICAL: econ-model names differ by API surface
 
 `assets/econModels.json` exists for exactly one reason: **an econ model is named
