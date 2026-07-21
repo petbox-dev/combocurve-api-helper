@@ -1,5 +1,5 @@
-Index,Project Name,Created At,Model Type,Model Name,Embedded Lookup Table,Production Taxes State,Key,Stream Type,Category,Criteria,Value,Period,Unit,Description,Shrinkage Condition,Escalation,Calculation,Deduct Severance Tax,Rate Type,Rate Rows Calculation Method,Last Update
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:19 UTC,project,SAMPLE_TAX_LOOKUP_0001,,custom,oil,,Severance Tax,flat,7.2,,% of rev,,shrunk,None,nri,,,,05/08/2026 14:18:04
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:19 UTC,project,SAMPLE_TAX_LOOKUP_0001,,custom,gas,,Severance Tax,flat,5.4,,% of rev,,shrunk,None,nri,,,,05/08/2026 14:18:04
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:19 UTC,project,SAMPLE_TAX_LOOKUP_0001,,custom,ngl,,Severance Tax,flat,5.3,,% of rev,,shrunk,None,nri,,,,05/08/2026 14:18:04
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:19 UTC,project,SAMPLE_TAX_LOOKUP_0001,,custom,drip cond,,Severance Tax,flat,7.2,,% of rev,,shrunk,None,nri,,,,05/08/2026 14:18:04
+Index,Created At,Project Name,Model Type,Model Name,Embedded Lookup Table,Production Taxes State,Key,Stream Type,Category,Criteria,Value,Period,Unit,Description,Shrinkage Condition,Escalation,Calculation,Deduct Severance Tax,Rate Type,Rate Rows Calculation Method,Last Update
+1,2026-07-09 00:26:19 UTC,Sample Project E,project,Sample Production Taxes,,custom,oil,,Severance Tax,flat,7.2,,% of rev,,shrunk,None,nri,,,,05/08/2026 14:18:04
+1,2026-07-09 00:26:19 UTC,Sample Project E,project,Sample Production Taxes,,custom,gas,,Severance Tax,flat,5.4,,% of rev,,shrunk,None,nri,,,,05/08/2026 14:18:04
+1,2026-07-09 00:26:19 UTC,Sample Project E,project,Sample Production Taxes,,custom,ngl,,Severance Tax,flat,5.3,,% of rev,,shrunk,None,nri,,,,05/08/2026 14:18:04
+1,2026-07-09 00:26:19 UTC,Sample Project E,project,Sample Production Taxes,,custom,drip cond,,Severance Tax,flat,7.2,,% of rev,,shrunk,None,nri,,,,05/08/2026 14:18:04

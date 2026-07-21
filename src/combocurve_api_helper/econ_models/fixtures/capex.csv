@@ -1,35 +1,35 @@
 Index,Created At,Project Name,Model Type,Model Name,New Name,Embedded Lookup Table,Category,Description,Tangible (M$),Intangible (M$),Criteria,From Schedule,From Headers,Value,CAPEX or Expense,Appear After Econ Limit,Calculation,Escalation,Escalation Start Criteria,Escalation Start Value (Days/Date),Depreciation,Paying WI / Earning WI,Last Update
-1,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Abandonment + Salvage,,,abandonment,,0,70,econ limit,,,90,capex,yes,gross,None,apply to criteria,0,None,1,06/10/2026 13:03:56
-1,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Abandonment + Salvage,,,salvage,,-10,0,econ limit,,,90,capex,yes,gross,None,apply to criteria,0,None,1,06/10/2026 13:03:56
-3,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,D&C CAPEX,,,drilling,,0,3000,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,06/15/2026 13:05:14
-3,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,D&C CAPEX,,,completion,,0,4000,fpd,,,-30,capex,no,gross,None,apply to criteria,0,None,1,06/15/2026 13:05:14
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,drilling,,0,3000,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,completion,,0,4000,fpd,,,-30,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,drilling,,0,0,as of,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,drilling,,0,0,disc date,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,drilling,,0,0,maj seg,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,drilling,,0,0,econ limit,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,drilling,,0,0,date,,,07/08/2026,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,drilling,,0,0,oil rate,,,1,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,drilling,,0,0,gas rate,,,0,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,drilling,,0,0,water rate,,,0,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,drilling,,0,0,total fluid rate,,,5,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,drilling,,0,0,from schedule,Spud Start,,0,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,drilling,,0,0,from schedule,Completion Start,,0,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,drilling,,0,0,from headers,,Spud Date,0,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,drilling,,0,0,from headers,,Completion Start Date,0,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,completion,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,legal,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,pad,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,facilities,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,artificial lift,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,workover,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,leasehold,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,development,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,pipelines,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,exploration,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,waterline,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,appraisal,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,other investment,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,abandonment,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
-4,2026-07-09 01:16:14 UTC,Sample_Onboarding,project,Example,,,salvage,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+1,2026-07-09 01:16:14 UTC,Sample Project H,project,Abandonment + Salvage,,,abandonment,,0,70,econ limit,,,90,capex,yes,gross,None,apply to criteria,0,None,1,06/10/2026 13:03:56
+1,2026-07-09 01:16:14 UTC,Sample Project H,project,Abandonment + Salvage,,,salvage,,-10,0,econ limit,,,90,capex,yes,gross,None,apply to criteria,0,None,1,06/10/2026 13:03:56
+3,2026-07-09 01:16:14 UTC,Sample Project H,project,D&C CAPEX,,,drilling,,0,3000,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,06/15/2026 13:05:14
+3,2026-07-09 01:16:14 UTC,Sample Project H,project,D&C CAPEX,,,completion,,0,4000,fpd,,,-30,capex,no,gross,None,apply to criteria,0,None,1,06/15/2026 13:05:14
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,drilling,,0,3000,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,completion,,0,4000,fpd,,,-30,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,drilling,,0,0,as of,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,drilling,,0,0,disc date,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,drilling,,0,0,maj seg,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,drilling,,0,0,econ limit,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,drilling,,0,0,date,,,07/08/2026,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,drilling,,0,0,oil rate,,,1,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,drilling,,0,0,gas rate,,,0,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,drilling,,0,0,water rate,,,0,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,drilling,,0,0,total fluid rate,,,5,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,drilling,,0,0,from schedule,Spud Start,,0,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,drilling,,0,0,from schedule,Completion Start,,0,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,drilling,,0,0,from headers,,Spud Date,0,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,drilling,,0,0,from headers,,Completion Start Date,0,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,completion,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,legal,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,pad,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,facilities,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,artificial lift,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,workover,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,leasehold,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,development,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,pipelines,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,exploration,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,waterline,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,appraisal,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,other investment,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,abandonment,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17
+4,2026-07-09 01:16:14 UTC,Sample Project H,project,Sample Capex,,,salvage,,0,0,fpd,,,-120,capex,no,gross,None,apply to criteria,0,None,1,07/09/2026 01:13:17

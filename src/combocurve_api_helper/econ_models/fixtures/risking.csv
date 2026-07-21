@@ -1,21 +1,21 @@
-"Index","Created At","Project Name","Model Type","Model Name","New Name","Key","Phase","Category","Description","Risk Hist Prod","Risk NGL & Drip Cond via Gas Risk","Value","Period","Criteria","Criteria Start","Criteria End","Repeat Range Of Dates","Total Occurrences","Unit","Scale Post Shut-in Factor","Scale Post Shut-In End Criteria","Scale Post Shut-In End","Fixed Expense","CAPEX","Last Update"
-1,"2026-07-10 16:10:38 UTC","Sample Project A","project","3% Downtime","","risking","oil","","","yes","yes",97,"","flat","","","","","%","","","","","","01/03/2024 16:12:40"
-1,"2026-07-10 16:10:38 UTC","Sample Project A","project","3% Downtime","","risking","gas","","","yes","yes",97,"","flat","","","","","%","","","","","","01/03/2024 16:12:40"
-1,"2026-07-10 16:10:38 UTC","Sample Project A","project","3% Downtime","","risking","ngl","","","yes","yes",100,"","flat","","","","","%","","","","","","01/03/2024 16:12:40"
-1,"2026-07-10 16:10:38 UTC","Sample Project A","project","3% Downtime","","risking","drip cond","","","yes","yes",100,"","flat","","","","","%","","","","","","01/03/2024 16:12:40"
-1,"2026-07-10 16:10:38 UTC","Sample Project A","project","3% Downtime","","risking","water","","","yes","yes",100,"","flat","","","","","%","","","","","","01/03/2024 16:12:40"
-3,"2026-07-10 16:10:38 UTC","Sample Project A","project","Low Proppant","","risking","oil","","","yes","yes",85,"","flat","","","","","%","","","","","","08/03/2021 23:21:32"
-3,"2026-07-10 16:10:38 UTC","Sample Project A","project","Low Proppant","","risking","gas","","","yes","yes",85,"","flat","","","","","%","","","","","","08/03/2021 23:21:32"
-3,"2026-07-10 16:10:38 UTC","Sample Project A","project","Low Proppant","","risking","ngl","","","yes","yes",85,"","flat","","","","","%","","","","","","08/03/2021 23:21:32"
-3,"2026-07-10 16:10:38 UTC","Sample Project A","project","Low Proppant","","risking","drip cond","","","yes","yes",85,"","flat","","","","","%","","","","","","08/03/2021 23:21:32"
-3,"2026-07-10 16:10:38 UTC","Sample Project A","project","Low Proppant","","risking","water","","","yes","yes",85,"","flat","","","","","%","","","","","","08/03/2021 23:21:32"
-29,"2026-07-10 16:10:38 UTC","Sample Project A","project","SAMPLE WELL 1 P50","","risking","oil","","","yes","yes",93.976,"","flat","","","","","%","","","","","","05/16/2023 16:59:55"
-29,"2026-07-10 16:10:38 UTC","Sample Project A","project","SAMPLE WELL 1 P50","","risking","gas","","","yes","yes",93.976,"","flat","","","","","%","","","","","","05/16/2023 16:59:55"
-29,"2026-07-10 16:10:38 UTC","Sample Project A","project","SAMPLE WELL 1 P50","","risking","ngl","","","yes","yes",100,"","flat","","","","","%","","","","","","05/16/2023 16:59:55"
-29,"2026-07-10 16:10:38 UTC","Sample Project A","project","SAMPLE WELL 1 P50","","risking","drip cond","","","yes","yes",100,"","flat","","","","","%","","","","","","05/16/2023 16:59:55"
-29,"2026-07-10 16:10:38 UTC","Sample Project A","project","SAMPLE WELL 1 P50","","risking","water","","","yes","yes",100,"","flat","","","","","%","","","","","","05/16/2023 16:59:55"
-35,"2026-07-10 16:10:38 UTC","Sample Project A","project","SAMPLE UNIT A P50","","risking","oil","","","yes","yes",93.7378,"","flat","","","","","%","","","","","","08/24/2023 14:40:39"
-35,"2026-07-10 16:10:38 UTC","Sample Project A","project","SAMPLE UNIT A P50","","risking","gas","","","yes","yes",93.7378,"","flat","","","","","%","","","","","","08/24/2023 14:40:39"
-35,"2026-07-10 16:10:38 UTC","Sample Project A","project","SAMPLE UNIT A P50","","risking","ngl","","","yes","yes",100,"","flat","","","","","%","","","","","","08/24/2023 14:40:39"
-35,"2026-07-10 16:10:38 UTC","Sample Project A","project","SAMPLE UNIT A P50","","risking","drip cond","","","yes","yes",100,"","flat","","","","","%","","","","","","08/24/2023 14:40:39"
-35,"2026-07-10 16:10:38 UTC","Sample Project A","project","SAMPLE UNIT A P50","","risking","water","","","yes","yes",100,"","flat","","","","","%","","","","","","08/24/2023 14:40:39"
+Index,Created At,Project Name,Model Type,Model Name,New Name,Key,Phase,Category,Description,Risk Hist Prod,Risk NGL & Drip Cond via Gas Risk,Value,Period,Criteria,Criteria Start,Criteria End,Repeat Range Of Dates,Total Occurrences,Unit,Scale Post Shut-in Factor,Scale Post Shut-In End Criteria,Scale Post Shut-In End,Fixed Expense,CAPEX,Last Update
+1,2026-07-10 16:10:38 UTC,Sample Project A,project,3% Downtime,,risking,oil,,,yes,yes,97,,flat,,,,,%,,,,,,01/03/2024 16:12:40
+1,2026-07-10 16:10:38 UTC,Sample Project A,project,3% Downtime,,risking,gas,,,yes,yes,97,,flat,,,,,%,,,,,,01/03/2024 16:12:40
+1,2026-07-10 16:10:38 UTC,Sample Project A,project,3% Downtime,,risking,ngl,,,yes,yes,100,,flat,,,,,%,,,,,,01/03/2024 16:12:40
+1,2026-07-10 16:10:38 UTC,Sample Project A,project,3% Downtime,,risking,drip cond,,,yes,yes,100,,flat,,,,,%,,,,,,01/03/2024 16:12:40
+1,2026-07-10 16:10:38 UTC,Sample Project A,project,3% Downtime,,risking,water,,,yes,yes,100,,flat,,,,,%,,,,,,01/03/2024 16:12:40
+3,2026-07-10 16:10:38 UTC,Sample Project A,project,85% Risk,,risking,oil,,,yes,yes,85,,flat,,,,,%,,,,,,08/03/2021 23:21:32
+3,2026-07-10 16:10:38 UTC,Sample Project A,project,85% Risk,,risking,gas,,,yes,yes,85,,flat,,,,,%,,,,,,08/03/2021 23:21:32
+3,2026-07-10 16:10:38 UTC,Sample Project A,project,85% Risk,,risking,ngl,,,yes,yes,85,,flat,,,,,%,,,,,,08/03/2021 23:21:32
+3,2026-07-10 16:10:38 UTC,Sample Project A,project,85% Risk,,risking,drip cond,,,yes,yes,85,,flat,,,,,%,,,,,,08/03/2021 23:21:32
+3,2026-07-10 16:10:38 UTC,Sample Project A,project,85% Risk,,risking,water,,,yes,yes,85,,flat,,,,,%,,,,,,08/03/2021 23:21:32
+29,2026-07-10 16:10:38 UTC,Sample Project A,project,Sample Well 1,,risking,oil,,,yes,yes,93.976,,flat,,,,,%,,,,,,05/16/2023 16:59:55
+29,2026-07-10 16:10:38 UTC,Sample Project A,project,Sample Well 1,,risking,gas,,,yes,yes,93.976,,flat,,,,,%,,,,,,05/16/2023 16:59:55
+29,2026-07-10 16:10:38 UTC,Sample Project A,project,Sample Well 1,,risking,ngl,,,yes,yes,100,,flat,,,,,%,,,,,,05/16/2023 16:59:55
+29,2026-07-10 16:10:38 UTC,Sample Project A,project,Sample Well 1,,risking,drip cond,,,yes,yes,100,,flat,,,,,%,,,,,,05/16/2023 16:59:55
+29,2026-07-10 16:10:38 UTC,Sample Project A,project,Sample Well 1,,risking,water,,,yes,yes,100,,flat,,,,,%,,,,,,05/16/2023 16:59:55
+35,2026-07-10 16:10:38 UTC,Sample Project A,project,Sample Unit A,,risking,oil,,,yes,yes,93.7378,,flat,,,,,%,,,,,,08/24/2023 14:40:39
+35,2026-07-10 16:10:38 UTC,Sample Project A,project,Sample Unit A,,risking,gas,,,yes,yes,93.7378,,flat,,,,,%,,,,,,08/24/2023 14:40:39
+35,2026-07-10 16:10:38 UTC,Sample Project A,project,Sample Unit A,,risking,ngl,,,yes,yes,100,,flat,,,,,%,,,,,,08/24/2023 14:40:39
+35,2026-07-10 16:10:38 UTC,Sample Project A,project,Sample Unit A,,risking,drip cond,,,yes,yes,100,,flat,,,,,%,,,,,,08/24/2023 14:40:39
+35,2026-07-10 16:10:38 UTC,Sample Project A,project,Sample Unit A,,risking,water,,,yes,yes,100,,flat,,,,,%,,,,,,08/24/2023 14:40:39

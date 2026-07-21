@@ -1,8 +1,8 @@
-Index,Project Name,Created At,Model Type,Model Name,Embedded Lookup Table,Key,Category,Criteria,Value,Period,Unit,Gas Shrinkage Condition,Rate Type,Rate Rows Calculation Method,Yield Source,Yield (BBL/MMCF),Mol %,Gal/lb-mol Factor,Plant Eff (%),Shrink (% Remaining),BTU (MBTU/MCF),Post Extraction (%),Last Update
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:12 UTC,project,SAMPLE_NGL_SHRINK_LOOKUP_0001,,yields,ngl,flat,7.02,,bbl/mmcf,unshrunk,,,,,,,,,,,05/08/2026 14:18:05
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:12 UTC,project,SAMPLE_NGL_SHRINK_LOOKUP_0001,,yields,drip cond,flat,0.0,,bbl/mmcf,unshrunk,,,,,,,,,,,05/08/2026 14:18:05
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:12 UTC,project,SAMPLE_NGL_SHRINK_LOOKUP_0001,,shrinkage,oil,flat,100.0,,% remaining,,,,,,,,,,,,05/08/2026 14:18:05
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:12 UTC,project,SAMPLE_NGL_SHRINK_LOOKUP_0001,,shrinkage,gas,flat,71.7,,% remaining,,,,,,,,,,,,05/08/2026 14:18:05
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:12 UTC,project,SAMPLE_NGL_SHRINK_LOOKUP_0001,,loss & flare,oil loss,flat,100.0,,% remaining,,,,,,,,,,,,05/08/2026 14:18:05
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:12 UTC,project,SAMPLE_NGL_SHRINK_LOOKUP_0001,,loss & flare,gas loss,flat,100.0,,% remaining,,,,,,,,,,,,05/08/2026 14:18:05
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:26:12 UTC,project,SAMPLE_NGL_SHRINK_LOOKUP_0001,,loss & flare,gas flare,flat,100.0,,% remaining,,,,,,,,,,,,05/08/2026 14:18:05
+Index,Created At,Project Name,Model Type,Model Name,Embedded Lookup Table,Key,Category,Criteria,Value,Period,Unit,Gas Shrinkage Condition,Rate Type,Rate Rows Calculation Method,Yield Source,Yield (BBL/MMCF),Mol %,Gal/lb-mol Factor,Plant Eff (%),Shrink (% Remaining),BTU (MBTU/MCF),Post Extraction (%),Last Update
+1,2026-07-09 00:26:12 UTC,Sample Project E,project,Sample Stream Properties,,yields,ngl,flat,7.02,,bbl/mmcf,unshrunk,,,,,,,,,,,05/08/2026 14:18:05
+1,2026-07-09 00:26:12 UTC,Sample Project E,project,Sample Stream Properties,,yields,drip cond,flat,0.0,,bbl/mmcf,unshrunk,,,,,,,,,,,05/08/2026 14:18:05
+1,2026-07-09 00:26:12 UTC,Sample Project E,project,Sample Stream Properties,,shrinkage,oil,flat,100.0,,% remaining,,,,,,,,,,,,05/08/2026 14:18:05
+1,2026-07-09 00:26:12 UTC,Sample Project E,project,Sample Stream Properties,,shrinkage,gas,flat,71.7,,% remaining,,,,,,,,,,,,05/08/2026 14:18:05
+1,2026-07-09 00:26:12 UTC,Sample Project E,project,Sample Stream Properties,,loss & flare,oil loss,flat,100.0,,% remaining,,,,,,,,,,,,05/08/2026 14:18:05
+1,2026-07-09 00:26:12 UTC,Sample Project E,project,Sample Stream Properties,,loss & flare,gas loss,flat,100.0,,% remaining,,,,,,,,,,,,05/08/2026 14:18:05
+1,2026-07-09 00:26:12 UTC,Sample Project E,project,Sample Stream Properties,,loss & flare,gas flare,flat,100.0,,% remaining,,,,,,,,,,,,05/08/2026 14:18:05

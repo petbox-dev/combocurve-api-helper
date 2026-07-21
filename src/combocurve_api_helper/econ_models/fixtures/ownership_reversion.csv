@@ -1,8 +1,9 @@
-"Index","Created At","Project Name","Model Type","Model Name","New Name","Key","Reversion Type","Reversion Value","WI %","NRI %","Lease NRI %","Reversion Tied To","Balance","Include NPI","NPI Type","NPI %","Oil NRI %","Gas NRI %","NGL NRI %","Drip Cond. NRI %","Rev Basis WI %","Rev Basis NRI %","Last Update"
-1,"2026-07-10 16:10:55 UTC","Sample Project A | AFE","project","8/8ths","","initial","","",100,75,75,"","","","expense",0,"","","","","","","11/05/2024 17:02:51"
-5,"2026-07-10 16:10:55 UTC","Sample Project A | AFE","project","Sample Reversion A w PO","","initial","","",0,0,75.00140853,"","","","expense",0,"","","","","","","11/05/2024 17:02:50"
-5,"2026-07-10 16:10:55 UTC","Sample Project A | AFE","project","Sample Reversion A w PO","","first","po",12290000,0.177749,0.132697,75.00140853,"as of","gross","yes","",0,"","","","","","","11/05/2024 17:02:50"
-17,"2026-07-10 16:10:55 UTC","Sample Project A | AFE","project","Sample Well 2 - PO 100%","","initial","","",0,0,75.2085885,"","","","expense",0,"","","","","","","11/05/2024 17:02:51"
-17,"2026-07-10 16:10:55 UTC","Sample Project A | AFE","project","Sample Well 2 - PO 100%","","first","po",11540170,3.237211,2.4346607,75.2085885,"as of","gross","yes","",0,"","","","","","","11/05/2024 17:02:51"
-25,"2026-07-10 16:10:55 UTC","Sample Project A | AFE","project","Sample Well 3 - PO 100%","","initial","","",0,0,75.01990998,"","","","expense",0,"","","","","","","11/05/2024 17:02:51"
-25,"2026-07-10 16:10:55 UTC","Sample Project A | AFE","project","Sample Well 3 - PO 100%","","first","po",10946565,0.227273,0.1705,75.01990998,"as of","gross","yes","",0,"","","","","","","11/05/2024 17:02:51"
+Index,Created At,Project Name,Model Type,Model Name,New Name,Key,Reversion Type,Reversion Value,WI %,NRI %,Lease NRI %,Reversion Tied To,Balance,Include NPI,NPI Type,NPI %,Oil NRI %,Gas NRI %,NGL NRI %,Drip Cond. NRI %,Rev Basis WI %,Rev Basis NRI %,Last Update
+1,2026-07-10 16:10:55 UTC,Sample Project G,project,8/8ths,,initial,,,100,75,75,,,,expense,0,,,,,,,11/05/2024 17:02:51
+5,2026-07-10 16:10:55 UTC,Sample Project G,project,Sample Reversion A w PO,,initial,,,0,0,75.00140853,,,,expense,0,,,,,,,11/05/2024 17:02:50
+5,2026-07-10 16:10:55 UTC,Sample Project G,project,Sample Reversion A w PO,,first,po,12290000,0.177749,0.132697,75.00140853,as of,gross,yes,,0,,,,,,,11/05/2024 17:02:50
+12,2026-07-10 16:10:55 UTC,Sample Project G,project,Sample Well 1,,initial,,,5.2197531,3.909102,74.890554,,,,expense,0,,,,,,,11/05/2024 17:02:51
+17,2026-07-10 16:10:55 UTC,Sample Project G,project,Sample Well 2 - PO 100%,,initial,,,0,0,75.2085885,,,,expense,0,,,,,,,11/05/2024 17:02:51
+17,2026-07-10 16:10:55 UTC,Sample Project G,project,Sample Well 2 - PO 100%,,first,po,11540170,3.237211,2.4346607,75.2085885,as of,gross,yes,,0,,,,,,,11/05/2024 17:02:51
+25,2026-07-10 16:10:55 UTC,Sample Project G,project,Sample Well 3 - PO 100%,,initial,,,0,0,75.01990998,,,,expense,0,,,,,,,11/05/2024 17:02:51
+25,2026-07-10 16:10:55 UTC,Sample Project G,project,Sample Well 3 - PO 100%,,first,po,10946565,0.227273,0.1705,75.01990998,as of,gross,yes,,0,,,,,,,11/05/2024 17:02:51

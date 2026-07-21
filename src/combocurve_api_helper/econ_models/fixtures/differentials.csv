@@ -1,25 +1,25 @@
-Index,Project Name,Created At,Model Type,Model Name,Embedded Lookup Table,Key,Phase,Criteria,Value,Period,Unit,Escalation,Last Update
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_1,oil,dates,-2.54,01/01/1970,$/bbl,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_1,oil,dates,-2.54,01/01/2027,$/bbl,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_1,oil,dates,-2.54,01/01/2028,$/bbl,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_1,oil,dates,-2.54,01/01/2029,$/bbl,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_1,gas,dates,-0.17,01/01/1970,$/mcf,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_1,gas,dates,-0.17,01/01/2027,$/mcf,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_1,gas,dates,-0.17,01/01/2028,$/mcf,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_1,gas,dates,-0.17,01/01/2029,$/mcf,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_1,ngl,dates,30.3,01/01/1970,% base price rem,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_1,ngl,dates,30.3,01/01/2027,% base price rem,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_1,ngl,dates,30.3,01/01/2028,% base price rem,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_1,ngl,dates,30.3,01/01/2029,% base price rem,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_1,drip cond,dates,-2.54,01/01/1970,$/bbl,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_1,drip cond,dates,-2.54,01/01/2027,$/bbl,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_1,drip cond,dates,-2.54,01/01/2028,$/bbl,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_1,drip cond,dates,-2.54,01/01/2029,$/bbl,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_2,oil,flat,0,,$/bbl,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_2,gas,flat,0,,$/mmbtu,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_2,ngl,flat,0,,$/bbl,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_2,drip cond,flat,0,,$/bbl,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_3,oil,flat,0,,$/bbl,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_3,gas,flat,0,,$/mmbtu,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_3,ngl,flat,0,,$/bbl,none,05/10/2026 03:11:41
-1,Sample Project E | NonOp | Multi Basin,2026-07-09 00:33:06 UTC,project,SAMPLE_DIFF_LOOKUP_0001,,differentials_3,drip cond,flat,0,,$/bbl,none,05/10/2026 03:11:41
+Index,Created At,Project Name,Model Type,Model Name,Embedded Lookup Table,Key,Phase,Criteria,Value,Period,Unit,Escalation,Last Update
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_1,oil,dates,-2.54,01/01/1970,$/bbl,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_1,oil,dates,-2.54,01/01/2027,$/bbl,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_1,oil,dates,-2.54,01/01/2028,$/bbl,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_1,oil,dates,-2.54,01/01/2029,$/bbl,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_1,gas,dates,-0.17,01/01/1970,$/mcf,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_1,gas,dates,-0.17,01/01/2027,$/mcf,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_1,gas,dates,-0.17,01/01/2028,$/mcf,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_1,gas,dates,-0.17,01/01/2029,$/mcf,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_1,ngl,dates,30.3,01/01/1970,% base price rem,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_1,ngl,dates,30.3,01/01/2027,% base price rem,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_1,ngl,dates,30.3,01/01/2028,% base price rem,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_1,ngl,dates,30.3,01/01/2029,% base price rem,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_1,drip cond,dates,-2.54,01/01/1970,$/bbl,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_1,drip cond,dates,-2.54,01/01/2027,$/bbl,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_1,drip cond,dates,-2.54,01/01/2028,$/bbl,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_1,drip cond,dates,-2.54,01/01/2029,$/bbl,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_2,oil,flat,0,,$/bbl,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_2,gas,flat,0,,$/mmbtu,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_2,ngl,flat,0,,$/bbl,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_2,drip cond,flat,0,,$/bbl,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_3,oil,flat,0,,$/bbl,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_3,gas,flat,0,,$/mmbtu,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_3,ngl,flat,0,,$/bbl,none,05/10/2026 03:11:41
+1,2026-07-09 00:33:06 UTC,Sample Project E,project,Sample Differentials,,differentials_3,drip cond,flat,0,,$/bbl,none,05/10/2026 03:11:41
