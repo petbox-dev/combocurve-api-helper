@@ -1,3 +1,4 @@
+import json
 import warnings
 from typing import Annotated, Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
@@ -42,6 +43,33 @@ _ESCALATION_START_KEY_TO_CSV: Dict[str, str] = {
     'asOfDate': 'as of date',
 }
 _ESCALATION_START_KEY_FROM_CSV: Dict[str, str] = {v: k for k, v in _ESCALATION_START_KEY_TO_CSV.items()}
+
+# CC's CSV export OMITS the model-level $/ft `drillingCost`/`completionCost` objects
+# (verified: CAPEX.csv and CAPEX_per_foot.csv carry identical otherCapex rows, neither
+# with these). Rather than drop them, CapexMapper captures each as a compact JSON blob in
+# an extra column. CC ignores unknown column headers on import, so the CSV stays
+# re-importable. These header strings MUST match csv_columns.COLUMNS['Capex'].
+_DRILLING_COST_COL = 'Drilling Cost ($/ft)'
+_COMPLETION_COST_COL = 'Completion Cost ($/ft)'
+
+
+def _perfoot_to_json(obj: Optional[Dict[str, Any]]) -> str:
+    """Serialize a model-level $/ft object (drillingCost/completionCost) to a compact,
+    key-sorted JSON string; '' when absent. Lossless -- preserves the nested `rows[]`
+    timing schedule and completion's tiered `dollarPerFtOfHorizontal` list."""
+    if obj is None:
+        return ''
+    return json.dumps(obj, separators=(',', ':'), sort_keys=True)
+
+
+def _perfoot_from_json(cell: str) -> Optional[Dict[str, Any]]:
+    """Inverse of `_perfoot_to_json`: parse a $/ft JSON cell back to its object, or None
+    when the cell is blank."""
+    if not cell:
+        return None
+    parsed: Dict[str, Any] = json.loads(cell)
+    return parsed
+
 
 # otherCapex rows also carry probabilistic fields with no CSV column at all (distribution
 # type/mean/stdev/bounds/mode/seed). In every sampled real row these sit at a fixed,
@@ -198,16 +226,22 @@ class CapexMapper:
 
     def to_csv_rows(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
         common = common_columns(model, context)
-        if model.get('drillingCost') is not None or model.get('completionCost') is not None:
-            warnings.warn(
-                "Capex model has $/ft 'drillingCost'/'completionCost' objects; CC's own CSV "
-                'export omits these (verified: CAPEX.csv and CAPEX_per_foot.csv contain '
-                'identical otherCapex rows), so this mapper omits them too.',
-                stacklevel=2,
-            )
         rows: List[Dict[str, str]] = []
         for r in model.get('otherCapex', {}).get('rows', []):
             rows.append(self._row_to_csv(common, r))
+        # Model-level $/ft objects have no native CC column; capture them losslessly as
+        # JSON on the FIRST row. If the model carries them but has no otherCapex rows, emit
+        # a single carrier row (blank line-item cells, model identity intact) so nothing is
+        # dropped -- from_csv_rows skips carrier rows (they have no Criteria).
+        drilling_json = _perfoot_to_json(model.get('drillingCost'))
+        completion_json = _perfoot_to_json(model.get('completionCost'))
+        if drilling_json or completion_json:
+            if not rows:
+                carrier = {c: '' for c in self.columns}
+                carrier.update(common)
+                rows.append(carrier)
+            rows[0][_DRILLING_COST_COL] = drilling_json
+            rows[0][_COMPLETION_COST_COL] = completion_json
         return rows
 
     def _row_to_csv(self, common: Dict[str, str], r: Dict[str, Any]) -> Dict[str, str]:
@@ -242,8 +276,26 @@ class CapexMapper:
 
     def from_csv_rows(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
         name, unique = model_identity(rows)
-        other_capex_rows: List[Dict[str, Any]] = [self._row_from_csv(row) for row in rows]
-        return {'name': name, 'unique': unique, 'otherCapex': {'rows': other_capex_rows}}
+        other_capex_rows: List[Dict[str, Any]] = []
+        drilling: Optional[Dict[str, Any]] = None
+        completion: Optional[Dict[str, Any]] = None
+        for row in rows:
+            if drilling is None:
+                drilling = _perfoot_from_json(row.get(_DRILLING_COST_COL, ''))
+            if completion is None:
+                completion = _perfoot_from_json(row.get(_COMPLETION_COST_COL, ''))
+            # A row with no line-item Criteria is a per-foot carrier row (see to_csv_rows),
+            # not an otherCapex line item: harvest its JSON above but do not parse it as a
+            # row. Real otherCapex rows always carry a Criteria.
+            if not (row.get('Criteria') or '').strip():
+                continue
+            other_capex_rows.append(self._row_from_csv(row))
+        model: Dict[str, Any] = {'name': name, 'unique': unique, 'otherCapex': {'rows': other_capex_rows}}
+        if drilling is not None:
+            model['drillingCost'] = drilling
+        if completion is not None:
+            model['completionCost'] = completion
+        return model
 
     @staticmethod
     def _row_from_csv(row: Dict[str, str]) -> Dict[str, Any]:

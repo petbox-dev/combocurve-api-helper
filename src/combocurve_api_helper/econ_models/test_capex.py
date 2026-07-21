@@ -1,3 +1,5 @@
+import json
+import warnings
 from typing import Any, Dict, List
 
 import pytest
@@ -125,21 +127,116 @@ def test_roundtrip() -> None:
     assert rebuilt['unique'] == API['unique']
 
 
-def test_drilling_cost_present_warns_and_emits_no_extra_rows() -> None:
-    """drillingCost/completionCost ($/ft) are not representable in this CSV -- CC's own
-    export confirms this (CAPEX.csv and CAPEX_per_foot.csv contain identical otherCapex
-    rows despite the per-foot model having drillingCost/completionCost populated)."""
+_DRILLING_COST = 'Drilling Cost ($/ft)'
+_COMPLETION_COST = 'Completion Cost ($/ft)'
+
+# Real live shapes (project 'Sample Project B'/'Sample Project C', 2026-07): drilling's
+# dollarPerFtOfHorizontal is a scalar; completion's is a proppant-loading tier LIST.
+_DRILLING_PER_FOOT: Dict[str, Any] = {
+    'dollarPerFtOfVertical': 0,
+    'dollarPerFtOfHorizontal': 196,
+    'fixedCost': 1000,
+    'tangiblePct': 0,
+    'calculation': 'gross',
+    'escalationModel': 'none',
+    'depreciationModel': 'none',
+    'dealTerms': 1,
+    'rows': [{'pctOfTotalCost': 50, 'offsetToFpd': -243}, {'pctOfTotalCost': 50, 'offsetToFpd': -212}],
+}
+_COMPLETION_PER_FOOT: Dict[str, Any] = {
+    'dollarPerFtOfVertical': 0,
+    'dollarPerFtOfHorizontal': [{'propLl': 1, 'unitCost': 142}, {'propLl': 10000, 'unitCost': 142}],
+    'fixedCost': 3000,
+    'tangiblePct': 0,
+    'calculation': 'gross',
+    'escalationModel': 'none',
+    'depreciationModel': 'none',
+    'dealTerms': 1,
+    'rows': [{'pctOfTotalCost': 50, 'offsetToFpd': -62}, {'pctOfTotalCost': 50, 'offsetToFpd': -31}],
+}
+
+
+def test_perfoot_columns_declared() -> None:
+    """The two extra $/ft columns must be part of the mapper's column set, else
+    to_csv_rows would silently filter their values back out."""
+    assert _DRILLING_COST in CapexMapper.columns
+    assert _COMPLETION_COST in CapexMapper.columns
+
+
+def test_drilling_completion_cost_captured_as_json_and_round_trip() -> None:
+    """Model-level drillingCost/completionCost ($/ft) have no native CC CSV column (CC's
+    own export omits them); the mapper captures them losslessly as JSON on the first row
+    -- no warning -- and reconstructs them on the inverse pass. Completion's
+    dollarPerFtOfHorizontal tier LIST and both rows[] schedules survive the round trip."""
     m: Dict[str, Any] = {
         'name': 'DC PER FOOT',
         'unique': False,
-        'drillingCost': {'fixedCost': 0, 'tangiblePct': 0, 'dollarPerFt': 500},
-        'completionCost': {'fixedCost': 0, 'tangiblePct': 0, 'dollarPerFt': 700},
+        'drillingCost': _DRILLING_PER_FOOT,
+        'completionCost': _COMPLETION_PER_FOOT,
         'otherCapex': {'rows': [_row('drilling', intangible=3000, offsetToFpd=-120)]},
     }
     mapper = CapexMapper()
-    with pytest.warns(UserWarning, match='drillingCost'):
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')  # capturing per-foot must NOT warn
         rows = mapper.to_csv_rows(m)
     assert len(rows) == 1
+    assert json.loads(rows[0][_DRILLING_COST]) == _DRILLING_PER_FOOT
+    assert json.loads(rows[0][_COMPLETION_COST]) == _COMPLETION_PER_FOOT
+
+    rebuilt = mapper.from_csv_rows(rows)
+    assert rebuilt['drillingCost'] == _DRILLING_PER_FOOT
+    assert rebuilt['completionCost'] == _COMPLETION_PER_FOOT
+    assert rebuilt['otherCapex'] == m['otherCapex']
+
+
+def test_perfoot_only_drilling_leaves_completion_absent() -> None:
+    """A model with only drillingCost gets a blank Completion column and no
+    completionCost key on the inverse pass (not a null-valued key)."""
+    m: Dict[str, Any] = {
+        'name': 'DRILL ONLY',
+        'unique': False,
+        'drillingCost': _DRILLING_PER_FOOT,
+        'otherCapex': {'rows': [_row('drilling', intangible=3000, offsetToFpd=-120)]},
+    }
+    mapper = CapexMapper()
+    rows = mapper.to_csv_rows(m)
+    assert rows[0][_COMPLETION_COST] == ''
+    rebuilt = mapper.from_csv_rows(rows)
+    assert rebuilt['drillingCost'] == _DRILLING_PER_FOOT
+    assert 'completionCost' not in rebuilt
+
+
+def test_perfoot_with_no_other_capex_rows_uses_carrier_row() -> None:
+    """A model with $/ft objects but ZERO otherCapex rows must not silently drop them:
+    the mapper emits ONE carrier row (blank line-item cells, so blank Criteria) carrying
+    only the JSON, and the inverse pass restores the object without inventing a spurious
+    otherCapex row."""
+    m: Dict[str, Any] = {
+        'name': 'PER FOOT ONLY',
+        'unique': False,
+        'drillingCost': _DRILLING_PER_FOOT,
+        'otherCapex': {'rows': []},
+    }
+    mapper = CapexMapper()
+    rows = mapper.to_csv_rows(m)
+    assert len(rows) == 1
+    assert rows[0]['Criteria'] == ''
+    assert rows[0]['Model Name'] == 'PER FOOT ONLY'
+    assert json.loads(rows[0][_DRILLING_COST]) == _DRILLING_PER_FOOT
+
+    rebuilt = mapper.from_csv_rows(rows)
+    assert rebuilt['drillingCost'] == _DRILLING_PER_FOOT
+    assert rebuilt['otherCapex']['rows'] == []
+
+
+def test_no_perfoot_emits_blank_columns_and_no_key() -> None:
+    """The common case (no $/ft objects) leaves both extra columns blank and adds no
+    drillingCost/completionCost key on the inverse pass."""
+    rows = CapexMapper().to_csv_rows(API)
+    assert all(r[_DRILLING_COST] == '' and r[_COMPLETION_COST] == '' for r in rows)
+    rebuilt = CapexMapper().from_csv_rows(rows)
+    assert 'drillingCost' not in rebuilt
+    assert 'completionCost' not in rebuilt
 
 
 def test_non_default_probabilistic_fields_warn() -> None:

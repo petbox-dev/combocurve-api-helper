@@ -21,6 +21,15 @@ cut yet. This entry covers everything merged since `v1.2.0` (2025-09-04).
   `get_scenario_econ_model_assignments()` to read the scenario assignment grid.
 - **Econ-model CSV mapping.** Exact, invertible API <-> CSV column mapping for 11
   econ-model types (`csv_columns`).
+- **Capex $/ft capture.** The Capex CSV mapper now captures the model-level
+  `drillingCost` / `completionCost` per-foot objects — which CC's own export omits —
+  losslessly as JSON in two extra columns (`Drilling Cost ($/ft)` /
+  `Completion Cost ($/ft)`) instead of warning and dropping them. CC ignores unknown
+  headers on import, so the CSV stays re-importable. Round-trips exactly, including
+  completion's tiered `dollarPerFtOfHorizontal` list and the `rows[]` timing schedule.
+  A model carrying $/ft objects but no `otherCapex` rows emits a single carrier row so
+  nothing is dropped. (Consumers staging `CapexMapper.columns` into SQL must add the two
+  new columns as `NVARCHAR`, not float.)
 - **Lookup-table CRUD.** Scenario lookup tables, type-curve lookup tables, and
   scenario-assignment lookups.
 - **Forecast runs and bulk writes.** Forecast run as an async job (submit +

@@ -103,6 +103,11 @@ COLUMNS: Dict[str, List[str]] = {
         'Escalation Start Value (Days/Date)',
         'Depreciation',
         'Paying WI / Earning WI',
+        # Model-level $/ft objects that CC's own CSV export omits; captured losslessly as
+        # JSON by CapexMapper (CC ignores unknown headers on import). These header strings
+        # MUST match capex._DRILLING_COST_COL / _COMPLETION_COST_COL.
+        'Drilling Cost ($/ft)',
+        'Completion Cost ($/ft)',
     ]
     + ['Last Update'],
     'ReservesCategory': _COMMON_HEAD
