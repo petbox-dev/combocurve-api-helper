@@ -89,7 +89,7 @@ Type cols: `Category, Description, Tangible (M$), Intangible (M$), Criteria, Fro
 - **Fixture tests** against small slices of `examples/*.csv` (the full files are 100-200MB; commit a trimmed fixture of a few populated models per type).
 - mypy --strict clean; pydantic models validate on construction.
 
-## Resolved (verified against the `Sample Project E | NonOp | Multi Basin` export + API)
+## Resolved (verified against the `Sample Project E` export + API)
 
 - Expenses variable subcat -> `g&p/opc/trn/mkt/other` ✅ (gathering->g&p, processing->opc, transportation->trn, marketing->mkt, other->other).
 - Fixed slot -> `fixed1..fixed9` ✅ (monthlyWellCost->fixed1, otherMonthlyCost1..8->fixed2..fixed9).
