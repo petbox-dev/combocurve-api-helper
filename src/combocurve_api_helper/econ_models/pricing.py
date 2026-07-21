@@ -12,7 +12,8 @@ _PHASE_FROM_CSV = {v: k for k, v in _PHASE_TO_CSV.items()}
 _PHASE_ORDER = ('oil', 'gas', 'ngl', 'dripCondensate')
 
 # (PriceRow python attribute name, CSV 'Unit' column value) per phase -- verified
-# EXHAUSTIVELY live against all 100 real Pricing models in project Sample Project A (every phase-node row, 15106 rows total): oil rows are ALWAYS `price`
+# EXHAUSTIVELY live against all 100 real Pricing models in project Sample Project A (every
+# phase-node row, 15106 rows total): oil rows are ALWAYS `price`
 # (never `dollarPerBbl`); gas rows are `dollarPerMmbtu` or `dollarPerMcf` (never
 # anything else); ngl rows are ALWAYS `pctOfOilPrice` (never `dollarPerBbl`, in this
 # dataset); dripCondensate rows are `pctOfOilPrice` OR `dollarPerBbl` (NEVER bare
@@ -92,7 +93,8 @@ class PricePhaseNode(BaseModel):
 
 
 class Breakeven(BaseModel):
-    """The top-level `breakeven` object (verified live, project Sample Project A): `{"basedOnPriceRatio": false, "npvDiscount": 0, "priceRatio": null}`
+    """The top-level `breakeven` object (verified live, project Sample Project A):
+    `{"basedOnPriceRatio": false, "npvDiscount": 0, "priceRatio": null}`
     (direct) or `{"basedOnPriceRatio": true, "npvDiscount": 15, "priceRatio": 20}`
     (based on price ratio). Maps to a single CSV row: Phase='breakeven', Criteria=
     'direct'/'based on price ratio', Value=npvDiscount, Unit='npv discount %',

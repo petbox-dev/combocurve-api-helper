@@ -60,7 +60,8 @@ ENVELOPE_KEYS: FrozenSet[str] = frozenset(
 )
 
 # Baseline: every key CC was observed to emit in real payloads (sampled 2026-07-20 across
-# projects Sample Project A, Sample Project A | AFE, Sample Project D | NonOp | MultiBasin, Sample Project E | NonOp | Multi Basin). Every key here is either consumed by a
+# projects Sample Project A, Sample Project A | AFE, Sample Project D | NonOp |
+# MultiBasin, Sample Project E | NonOp | Multi Basin). Every key here is either consumed by a
 # mapper or a documented CSV/API limitation. A payload key outside this set (and outside
 # ENVELOPE_KEYS) is drift -- CC emitted something the mappers were not written against.
 _BASELINE_KEYS: Dict[str, FrozenSet[str]] = {

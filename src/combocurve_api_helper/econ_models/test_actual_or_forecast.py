@@ -68,7 +68,8 @@ FORECAST_JULY_24: Dict[str, Any] = {
     },
 }
 
-# Explicit modern shape for the built-ins (verified live, project Sample Project B / Sample Project C): once migrated, 'Actual' carries explicit {"never": true} and
+# Explicit modern shape for the built-ins (verified live, project Sample Project B / Sample
+# Project C): once migrated, 'Actual' carries explicit {"never": true} and
 # 'Forecast As Of' carries explicit {"asOfDate": true} per phase.
 ACTUAL_MODERN_EXPLICIT: Dict[str, Any] = {
     'id': '000000000000000000000010',
@@ -160,9 +161,7 @@ def test_forward_modern_explicit_never_and_as_of_date() -> None:
 
 
 def test_to_csv_rows_includes_common_columns_with_context() -> None:
-    ctx = Context(
-        id=FORECAST_JULY_24['id'], created_at=FORECAST_JULY_24['createdAt'], project_name='Sample Project A'
-    )
+    ctx = Context(id=FORECAST_JULY_24['id'], created_at=FORECAST_JULY_24['createdAt'], project_name='Sample Project A')
     rows = ActualOrForecastMapper().to_csv_rows(FORECAST_JULY_24, context=ctx)
     assert rows[0]['Model Id'] == FORECAST_JULY_24['id']
     assert rows[0]['Project Name'] == 'Sample Project A'

@@ -5,7 +5,8 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from .base import Context, common_columns, model_identity
 from .csv_columns import COLUMNS
 
-# CC always emits exactly 3 rows per model, in this order (verified live, project Sample Project A: 18/18 models each render as exactly 3 rows, Key=oil/gas/water).
+# CC always emits exactly 3 rows per model, in this order (verified live, project Sample
+# Project A: 18/18 models each render as exactly 3 rows, Key=oil/gas/water).
 _PHASES: Tuple[str, str, str] = ('oil', 'gas', 'water')
 
 # The econ-model type's two fixed, non-deletable built-in model names (every project
@@ -140,7 +141,8 @@ class ActualOrForecastMapper:
         #
         # When every phase is Never AND the model is not the built-in
         # 'Forecast As Of', reproduce CC's real legacy/default empty shape
-        # (`actualOrForecast: {}`) exactly -- verified live on project Sample Project A ('Actual' and ordinary Never-only models alike are `{}`-shaped or
+        # (`actualOrForecast: {}`) exactly -- verified live on project Sample Project A
+        # ('Actual' and ordinary Never-only models alike are `{}`-shaped or
         # carry only `ignoreHistoryProd`, never an explicit per-phase `never` node).
         # Collapsing to `{}` for a model literally named 'Forecast As Of' would
         # silently flip back to 'As of Date' on the next `to_csv_rows` pass (see

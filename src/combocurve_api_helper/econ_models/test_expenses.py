@@ -535,7 +535,8 @@ def test_to_csv_rows_fixed_expense_per_well_maps_and_round_trips() -> None:
 
 def test_to_csv_rows_water_disposal_dates_criteria_maps_and_round_trips() -> None:
     """Regression (drift audit): a leaf's rows can use `dates` (dated criteria)
-    instead of `entireWellLife`/`offsetToFpd` -- verified live (project 'Sample Project A', model 'Sample Unit | Bid', waterDisposal rows
+    instead of `entireWellLife`/`offsetToFpd` -- verified live (project 'Sample Project A',
+    model 'Sample Unit | Bid', waterDisposal rows
     `{'dates': '2000-01-01', 'dollarPerBbl': 1.155}` /
     `{'dates': '2025-01-01', 'dollarPerBbl': 0.838}`). Also proves the fpd-only
     terminal-row 'ecl' rule does not apply to 'dates' rows, even for the last row of
@@ -568,7 +569,8 @@ def test_to_csv_rows_water_disposal_dates_criteria_maps_and_round_trips() -> Non
 
 
 def test_no_value_key_bbl_leaf_falls_back_to_zero_dollar_per_bbl() -> None:
-    """Regression (drift audit, model 'Sample Model | Bid', project 'Sample Project A | AFE'): a real API row for a $/bbl-denominated leaf (oil/ngl/drip-cond
+    """Regression (drift audit, model 'Sample Model | Bid', project 'Sample Project A |
+    AFE'): a real API row for a $/bbl-denominated leaf (oil/ngl/drip-cond
     variable expenses, water disposal) can omit EVERY value key entirely --
     `{'entireWellLife': 'Flat'}` with no dollarPerBbl/etc at all. The real Expenses.csv
     export still renders these as Value '0' Unit '$/bbl' (not blank/skipped), so the

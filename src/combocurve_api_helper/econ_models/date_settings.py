@@ -9,7 +9,9 @@ from .csv_columns import COLUMNS
 from .formats import csv_to_num, enum_from_csv, enum_to_csv, num_to_csv
 
 # API cutOff 'criterion key' -> CSV 'Cut Off Criteria' column value. Verified live against ALL
-# 571 real DateSettings models across all 4 production projects (Sample Project A, Sample Project A | AFE, Sample Project D | NonOp | MultiBasin, Sample Project E | NonOp | Multi Basin;
+# 571 real DateSettings models across all 4 production projects (Sample Project A, Sample
+# Project A | AFE, Sample Project D | NonOp | MultiBasin, Sample Project E | NonOp | Multi
+# Basin;
 # sampled 2026-07-20): these are the only 6 criterion keys that appear. NOT a generic
 # camelCase->spaced transform -- 'maxCumCashFlow'/'lastPositiveCashFlow'/'firstNegativeCashFlow'
 # render as the SHORTER 'max cum'/'last positive'/'first negative' (dropping "cash flow"), while
@@ -201,7 +203,8 @@ class CutOffFixedData(BaseModel):
         criteria (e.g. ~87% of the original Sample Project D project's 'max cum' models).
       - `discount`: absent on 366 of 479 real 'last positive' (lastPositiveCashFlow) models, all
         in project Sample Project E | NonOp | Multi Basin. Never absent for any other criterion.
-      - `alignDependentPhases`: absent on 4 of 8 real 'date' models (all in project Sample Project A). Never absent for any other criterion.
+      - `alignDependentPhases`: absent on 4 of 8 real 'date' models (all in project Sample
+        Project A). Never absent for any other criterion.
     `includeCapex`/`econLimitDelay` were NOT observed absent for any criterion in this dataset and
     remain required. Optional + None default reproduces the absence on `model_dump(exclude_none=
     True)`.

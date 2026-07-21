@@ -21,14 +21,17 @@ from .formats import csv_to_num, enum_from_csv, enum_to_csv, escalation_from_csv
 from .formats import num_to_csv
 
 # Real otherCapex `fromHeaders` rows carry the token 'offset_to_first_prod_date' with
-# companion API date-key 'firstProdDate' (verified live: project 'Sample Project A | AFE', 9 SAMPLE_LATERAL models, e.g. {'fromHeaders': 'offset_to_first_prod_date',
+# companion API date-key 'firstProdDate' (verified live: project 'Sample Project A
+# | AFE', 9 SAMPLE_LATERAL models, e.g. {'fromHeaders': 'offset_to_first_prod_date',
 # 'firstProdDate': 185}). This is now `OffsetTo.FirstProductionDate` in enums.py (fixed
 # 2026-07-20 -- it previously held the different, unverified string
 # 'offset_to_first_production_date', with no other consumer anywhere in the repo -- see
 # enums.py) with a matching `OFFSET_TO_HEADER_CSV`/`OFFSET_TO_API_DATEKEY` entry, so no
 # local override table is needed here anymore; the bare enums.py imports above are used
 # directly. `OFFSET_TO_SCHEDULE_CSV`/`OFFSET_FROM_SCHEDULE_CSV` remain untouched: no real
-# `fromSchedule` row using this token has been observed (verified live across 'Sample Project A', 'Sample Project A | AFE', 'Sample Project D | NonOp MultiBasin', 'Sample Project E | NonOp | Multi Basin' -- zero fromSchedule rows at all), so extending it would
+# `fromSchedule` row using this token has been observed (verified live across 'Sample
+# Project A', 'Sample Project A | AFE', 'Sample Project D | NonOp MultiBasin', and 'Sample
+# Project E | NonOp | Multi Basin' -- zero fromSchedule rows at all), so extending it would
 # be speculative; an unmapped token still raises loudly.
 
 # escalationStart API key -> CSV 'Escalation Start Criteria' display. Verified live across

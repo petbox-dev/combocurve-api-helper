@@ -89,7 +89,8 @@ _CARBON_CATEGORY_CSV = 'co2e'
 _WATER_KEY_CSV = 'water'
 
 # Row value key (API alias) -> CSV 'Unit' column value. dollarPerMmbtu/
-# fixedExpensePerWell verified against real Expenses.csv exports (Sample Project A / Sample Project A | AFE projects): dollarPerMmbtu is a gas variable
+# fixedExpensePerWell verified against real Expenses.csv exports (Sample Project A / Sample
+# Project A | AFE projects): dollarPerMmbtu is a gas variable
 # expense (always value 0 in every real row observed, Criteria='flat', across
 # g&p/opc/trn/mkt/other subcats) and fixedExpensePerWell is the per-well variant of
 # fixedExpense on fixedExpenses slots (observed on monthlyWellCost, Criteria='dates').

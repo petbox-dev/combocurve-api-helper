@@ -24,7 +24,9 @@ _WELLS_KEY_CSV = 'wells'
 
 
 class RiskingMultiplierRow(BaseModel):
-    """One `rows[]` element within a Risking phase node (verified live, project Sample Project A, all 37 models; also verified against the SampleFund/SampleExport_AFE/Sample Project D real
+    """One `rows[]` element within a Risking phase node (verified live, project Sample
+    Project A, all 37 models; also verified against the SampleExport_AFE and Sample
+    Project D real
     CSV exports). Every real row carries exactly these two keys -- `entireWellLife` is
     always the literal string `'Flat'`. No shut-in, offset/dates, or seasonal criteria
     are observed anywhere; `RiskingMapper` raises `NotImplementedError` on anything else.

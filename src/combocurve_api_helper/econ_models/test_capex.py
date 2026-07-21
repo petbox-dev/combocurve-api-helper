@@ -97,7 +97,8 @@ def test_to_csv_rows_values() -> None:
 
 def test_from_headers_first_prod_date() -> None:
     """Real otherCapex rows use the abbreviated token 'offset_to_first_prod_date'
-    (companion key 'firstProdDate') -- verified live, project 'Sample Project A | AFE' (9 SAMPLE_LATERAL models). Mirrors the existing 'offset_to_spud_date' handling."""
+    (companion key 'firstProdDate') -- verified live, project 'Sample Project A |
+    AFE' (9 SAMPLE_LATERAL models). Mirrors the existing 'offset_to_spud_date' handling."""
     m: Dict[str, Any] = {
         'name': 'FIRST PROD DATE CAPEX',
         'unique': False,

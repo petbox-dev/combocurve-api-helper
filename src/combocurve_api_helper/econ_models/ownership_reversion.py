@@ -56,7 +56,8 @@ _INITIAL_KEY_API = 'initialOwnership'
 # raises NotImplementedError rather than guessing at its CSV rendering.
 #
 # 'PayoutWithoutInvestment' -> 'po' is VERIFIED against the real CSV export (all 3
-# populated-reversion models in 'Sample Project A | AFE' use it -- 'Sample Reversion A w PO', 'Sample Well 2 - PO 100%', 'Sample Well 3 - PO 100%').
+# populated-reversion models in 'Sample Project A | AFE' use it -- 'Sample Reversion A w
+# PO', 'Sample Well 2 - PO 100%', 'Sample Well 3 - PO 100%').
 #
 # 'Date' -> 'date' is VERIFIED indirectly: `examples/_zipwork/Sample Project D/Ownership and
 # Reversion.csv` is a real export (matching 'Last Update' timestamps) whose numeric/WI/NRI
@@ -128,7 +129,8 @@ class ReversionTiedTo(BaseModel):
 
 
 class InitialOwnershipData(BaseModel):
-    """`ownership.initialOwnership` (verified live, project 'Sample Project A | AFE', model '8/8ths'): `{"workingInterest": 100, "netProfitInterestType": "expense",
+    """`ownership.initialOwnership` (verified live, project 'Sample Project A |
+    AFE', model '8/8ths'): `{"workingInterest": 100, "netProfitInterestType": "expense",
     "netProfitInterest": 0, "netRevenueInterest": 75, "leaseNetRevenueInterest": 75,
     "oilNetRevenueInterest": null, "gasNetRevenueInterest": null,
     "nglNetRevenueInterest": null, "dripCondensateNetRevenueInterest": null}`.
@@ -161,7 +163,8 @@ class InitialOwnershipData(BaseModel):
 
 
 class ReversionTierData(BaseModel):
-    """One `ownership.<n>Reversion` element (verified live, project 'Sample Project A | AFE', model 'Sample Reversion A w PO'): `{"reversionType":
+    """One `ownership.<n>Reversion` element (verified live, project 'Sample Project A |
+    AFE', model 'Sample Reversion A w PO'): `{"reversionType":
     "PayoutWithoutInvestment", "reversionValue": 12290000, "balance": "gross",
     "includeNetProfitInterest": "yes", "workingInterest": 0.177749, "netRevenueInterest":
     0.132697, "leaseNetRevenueInterest": 75.00140853, "netProfitInterest": 0,
