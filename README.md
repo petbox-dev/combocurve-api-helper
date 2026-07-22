@@ -113,32 +113,33 @@ if not result.ok:
 
 ### Econ models to / from CSV
 
-Each econ-model type has an invertible mapper (`to_csv_rows` / `from_csv_rows`)
-looked up by its PascalCase `econModelType`. The mapper's `columns` attribute is
-the exact CSV header, and `to_csv_rows` emits one dict per row keyed by those
-columns, so a round trip through a CSV file is lossless.
+Each econ-model type has an invertible mapper looked up by its PascalCase `econModelType`.
+The library exposes per-type convenience functions that convert a whole **multi-model** CSV
+(the shape ComboCurve exports) directly to and from lists of API dicts, so no `csv` boilerplate
+is needed. `to_csv`/`from_csv` work on strings; `read_csv`/`write_csv` (on the mapper) work on
+file paths.
 
 ```python
-import csv
 from combocurve_api_helper import ComboCurveAPI
-from combocurve_api_helper.econ_models import get_mapper
+from combocurve_api_helper.econ_models import (
+    expenses_to_csv,
+    expenses_from_csv,
+    get_expenses_mapper,
+)
 
 api = ComboCurveAPI()
-mapper = get_mapper("Expenses")   # keyed by econModelType (PascalCase)
 
-# --- Read a model from ComboCurve and write it to a CSV ---
-model = api.get_expenses_model_by_id(project_id, model_id)
-with open("expenses.csv", "w", newline="") as f:
-    writer = csv.DictWriter(f, fieldnames=mapper.columns)
-    writer.writeheader()
-    writer.writerows(mapper.to_csv_rows(model))
+# --- ComboCurve -> CSV file ---
+models = [api.get_expenses_model_by_id(project_id, model_id)]
+get_expenses_mapper().write_csv("expenses.csv", models)
 
-# --- Read the CSV back and write the model to ComboCurve ---
-with open("expenses.csv", newline="") as f:
-    rows = list(csv.DictReader(f))
+# --- CSV file -> ComboCurve ---
+payloads = get_expenses_mapper().read_csv("expenses.csv")   # list[dict], one per model
+api.post_expenses_models(project_id, payloads)              # or put_expenses_models(...)
 
-payload = mapper.from_csv_rows(rows)
-api.post_expenses_models(project_id, [payload])   # or put_expenses_models(...) to update
+# --- In-memory string round trip ---
+csv_text = expenses_to_csv(models)
+same_models = expenses_from_csv(csv_text)
 ```
 
 ## Contributing
