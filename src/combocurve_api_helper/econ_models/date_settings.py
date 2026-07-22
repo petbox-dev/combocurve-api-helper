@@ -62,6 +62,7 @@ _MIN_LIFE_CRITERION_TO_CSV = {
     'none': 'none',
     'asOf': 'as of',
     'date': 'date',
+    'endHist': 'end hist',  # min life = end of historical production; a flag ({'endHist': true})
 }
 _MIN_LIFE_CRITERION_FROM_CSV = {v: k for k, v in _MIN_LIFE_CRITERION_TO_CSV.items()}
 
@@ -106,19 +107,25 @@ def _extract_cutoff_criterion(cutoff: Dict[str, Any]) -> Tuple[str, Any]:
     return key, cutoff[key]
 
 
+_DATE_ANCHOR_FPD_CSV = 'fpd'
+
+
 def _date_anchor_to_csv(anchor: Dict[str, Any]) -> str:
-    """`asOfDate`/`discountDate` shape: the single key `date` holding a plain `YYYY-MM-DD`
-    string, rendered on the CSV UNCHANGED (no MM/DD/YYYY reformatting, unlike 'Created At'/'Last
-    Update'). CC's schema may support other anchor kinds (e.g. keyed off FPD or a dynamic
-    expression), which are not handled here.
+    """`asOfDate`/`discountDate`: either `{'date': 'YYYY-MM-DD'}` -- rendered on the CSV UNCHANGED
+    (no MM/DD/YYYY reformatting, unlike 'Created At'/'Last Update') -- or `{'fpd': true}`, anchored
+    to first production date, rendered as the literal 'fpd'. Other anchor kinds raise.
     """
     key = _single_key(anchor)
-    if key != 'date':
-        raise NotImplementedError(f'Unknown DateSettings date-anchor key: {key!r}')
-    return str(anchor['date'])
+    if key == 'date':
+        return str(anchor['date'])
+    if key == 'fpd':
+        return _DATE_ANCHOR_FPD_CSV
+    raise NotImplementedError(f'Unknown DateSettings date-anchor key: {key!r}')
 
 
-def _date_anchor_from_csv(s: str) -> Dict[str, str]:
+def _date_anchor_from_csv(s: str) -> Dict[str, Any]:
+    if s == _DATE_ANCHOR_FPD_CSV:
+        return {'fpd': True}
     return {'date': s}
 
 
@@ -193,17 +200,18 @@ class CutOffFixedData(BaseModel):
         for any other criterion.
       - `alignDependentPhases`: absent on some 'date' models. Never absent for any other
         criterion.
-    `includeCapex`/`econLimitDelay` were not observed absent for any criterion and remain
-    required. Optional + None default reproduces the absence on `model_dump(exclude_none=True)`.
+      - `includeCapex`/`econLimitDelay`: absent on 'date'-criterion models (a date cut-off carries
+        only `date`/`minLife`/`alignDependentPhases`). Present for the cash-flow criteria.
+    Optional + None default reproduces each absence on `model_dump(exclude_none=True)`.
     """
 
     model_config = ConfigDict(populate_by_name=True)
 
     min_life: Annotated[Optional[Dict[str, Any]], Field(alias='minLife')] = None
     trigger_ecl_capex: Annotated[Optional[bool], Field(alias='triggerEclCapex')] = None
-    include_capex: Annotated[bool, Field(alias='includeCapex')]
+    include_capex: Annotated[Optional[bool], Field(alias='includeCapex')] = None
     discount: Optional[float] = None
-    econ_limit_delay: Annotated[float, Field(alias='econLimitDelay')]
+    econ_limit_delay: Annotated[Optional[float], Field(alias='econLimitDelay')] = None
     align_dependent_phases: Annotated[Optional[bool], Field(alias='alignDependentPhases')] = None
     tolerate_negative_cf: Annotated[Optional[float], Field(alias='tolerateNegativeCF')] = None
 
@@ -226,7 +234,7 @@ def _cutoff_from_csv(row: Dict[str, str]) -> Dict[str, Any]:
     if min_life_criteria_csv not in _MIN_LIFE_CRITERION_FROM_CSV:
         raise NotImplementedError(f'Unknown DateSettings Min Life Criteria: {min_life_criteria_csv!r}')
     min_life_key = _MIN_LIFE_CRITERION_FROM_CSV[min_life_criteria_csv]
-    if min_life_key == 'none':
+    if min_life_key in ('none', 'endHist'):
         min_life_value: Any = True
     elif min_life_key == 'date':
         min_life_value = row['Min Life Value']
@@ -327,8 +335,14 @@ class DateSettingsMapper:
         min_life_criteria_csv, min_life_value_csv = self._min_life_csv(cutoff.min_life)
 
         is_cashflow = crit_key in _CASHFLOW_CRITERIA
-        include_capex_csv = formats.yes_no(cutoff.include_capex) if is_cashflow else ''
-        econ_limit_delay_csv = num_to_csv(cutoff.econ_limit_delay) if is_cashflow else ''
+        # include_capex/econ_limit_delay are absent on 'date'-criterion cutoffs (Optional); the
+        # is_cashflow gate already skips them there, and the `is not None` guard is belt-and-braces.
+        include_capex_csv = (
+            formats.yes_no(cutoff.include_capex) if is_cashflow and cutoff.include_capex is not None else ''
+        )
+        econ_limit_delay_csv = (
+            num_to_csv(cutoff.econ_limit_delay) if is_cashflow and cutoff.econ_limit_delay is not None else ''
+        )
         trigger_ecl_csv = formats.yes_no(cutoff.trigger_ecl_capex or False) if is_cashflow else ''
         # `discount` is Optional (absent on legacy lastPositiveCashFlow models); guard the
         # read so a maxCumCashFlow model that also omits it renders blank instead of

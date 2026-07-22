@@ -75,7 +75,12 @@ _REVERSION_TYPE_FROM_CSV = {v: k for k, v in _REVERSION_TYPE_TO_CSV.items()}
 # text and from a blank cell. If the rendering disagrees with a future export, adjust
 # `_tied_to_to_csv`/`_tied_to_from_csv` below.
 _REVERSION_TIED_TO_CSV_DEFAULT = 'as of'
-_KNOWN_TIED_TO_TYPES = frozenset({'as_of', 'date'})
+# `reversionTiedTo == {'type': 'fpd'}` (no value) means the tier reverts at first production
+# date; it is the third observed shape alongside `as_of` and `date`. Rendered as the literal
+# 'fpd' cell (CC-consistent token; round-trips losslessly). No real CSV export sample was on
+# hand to byte-confirm the exact label, so treat like the 'po'/'poi' convention.
+_REVERSION_TIED_TO_FPD_CSV = 'fpd'
+_KNOWN_TIED_TO_TYPES = frozenset({'as_of', 'date', 'fpd'})
 
 # 'Rev Basis WI %'/'Rev Basis NRI %' have never been observed populated, and no backing API
 # field has been identified. to_csv_rows always emits '' for both; from_csv_rows raises if it
@@ -84,8 +89,9 @@ _REV_BASIS_COLUMNS = ('Rev Basis WI %', 'Rev Basis NRI %')
 
 
 class ReversionTiedTo(BaseModel):
-    """`ownership.<n>Reversion.reversionTiedTo` -- two shapes: `{"type": "as_of"}` (no `value`)
-    and `{"type": "date", "value": "<ISO date>"}`. `value` is a plain ISO `"YYYY-MM-DD"` string,
+    """`ownership.<n>Reversion.reversionTiedTo` -- three shapes: `{"type": "as_of"}` (no `value`),
+    `{"type": "fpd"}` (no `value`, reverts at first production date), and
+    `{"type": "date", "value": "<ISO date>"}`. `value` is a plain ISO `"YYYY-MM-DD"` string,
     present only for `type == 'date'`.
     """
 
@@ -228,6 +234,10 @@ def _tied_to_to_csv(tied_to: Optional[ReversionTiedTo]) -> str:
         if tied_to.value is None:
             raise NotImplementedError("reversionTiedTo type 'date' has only been observed live WITH a value")
         return to_csv_date(tied_to.value)
+    if tied_to.type == 'fpd':
+        if tied_to.value is not None:
+            raise NotImplementedError(f"Unexpected reversionTiedTo value on type 'fpd': {tied_to.value!r}")
+        return _REVERSION_TIED_TO_FPD_CSV
     # type == 'as_of': never carries a value.
     if tied_to.value is not None:
         raise NotImplementedError(f"Unexpected reversionTiedTo value on type 'as_of': {tied_to.value!r}")
@@ -246,6 +256,8 @@ def _tied_to_from_csv(cell: str) -> Optional[ReversionTiedTo]:
         return None
     if cell == _REVERSION_TIED_TO_CSV_DEFAULT:
         return ReversionTiedTo(type='as_of')
+    if cell == _REVERSION_TIED_TO_FPD_CSV:
+        return ReversionTiedTo(type='fpd')
     try:
         iso = from_csv_date(cell)
     except ValueError as exc:

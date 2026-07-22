@@ -1,3 +1,4 @@
+import copy
 from typing import Any, Dict
 
 import pytest
@@ -419,6 +420,19 @@ def test_roundtrip_reversion_tied_to_absent_reconstructs_as_explicit() -> None:
     rebuilt = m.from_csv_rows(m.to_csv_rows(SAMPLE_REVERSION_A_W_PO))
     assert rebuilt['ownership']['firstReversion']['reversionTiedTo'] == {'type': 'as_of'}
     assert 'reversionTiedTo' not in SAMPLE_REVERSION_A_W_PO['ownership']['firstReversion']
+
+
+def test_reversion_tied_to_fpd_round_trips() -> None:
+    # reversionTiedTo {'type': 'fpd'} (reverts at first production date; no value) renders the
+    # literal 'fpd' cell and round-trips losslessly -- distinct from 'as of' and a formatted date.
+    model = copy.deepcopy(SAMPLE_WELL_2)
+    model['ownership']['firstReversion']['reversionTiedTo'] = {'type': 'fpd'}
+    m = OwnershipReversionMapper()
+    rows = m.to_csv_rows(model)
+    assert rows[1]['Reversion Tied To'] == 'fpd'
+    rebuilt = m.from_csv_rows(rows)
+    assert rebuilt['ownership']['firstReversion']['reversionTiedTo'] == {'type': 'fpd'}
+    assert rebuilt['ownership'] == model['ownership']
 
 
 def test_to_csv_rows_payout_with_investment_forward_shape() -> None:

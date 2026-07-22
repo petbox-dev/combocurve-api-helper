@@ -1,3 +1,4 @@
+import copy
 from typing import Any, Dict
 
 import pytest
@@ -780,6 +781,48 @@ def test_maxcumcashflow_missing_discount_renders_blank_not_crash() -> None:
     rows = DateSettingsMapper().to_csv_rows(model)
     assert rows[0]['Cut Off Criteria'] == 'max cum'
     assert rows[0]['Discount'] == ''
+
+
+def test_to_csv_rows_date_anchor_fpd_round_trips() -> None:
+    """asOfDate/discountDate can be {'fpd': true} (anchored to first production date) instead of
+    {'date': ...} -- rendered as the literal 'fpd' and round-tripped losslessly."""
+    model = copy.deepcopy(ABD)
+    model['dateSetting']['asOfDate'] = {'fpd': True}
+    model['dateSetting']['discountDate'] = {'fpd': True}
+    m = DateSettingsMapper()
+    row = m.to_csv_rows(model)[0]
+    assert row['As of Date'] == 'fpd'
+    assert row['Discount Date'] == 'fpd'
+    rebuilt = m.from_csv_rows(m.to_csv_rows(model))
+    assert rebuilt['dateSetting']['asOfDate'] == {'fpd': True}
+    assert rebuilt['dateSetting']['discountDate'] == {'fpd': True}
+
+
+def test_to_csv_rows_minlife_endhist_round_trips() -> None:
+    """cutOff.minLife can be {'endHist': true} (min life = end of historical production) -- a flag
+    like {'none': true}; renders 'end hist' with a blank Min Life Value and round-trips."""
+    model = copy.deepcopy(ABD)
+    model['cutOff']['minLife'] = {'endHist': True}
+    m = DateSettingsMapper()
+    row = m.to_csv_rows(model)[0]
+    assert row['Min Life Criteria'] == 'end hist'
+    assert row['Min Life Value'] == ''
+    rebuilt = m.from_csv_rows(m.to_csv_rows(model))
+    assert rebuilt['cutOff']['minLife'] == {'endHist': True}
+
+
+def test_to_csv_rows_date_cutoff_missing_include_capex_econ_delay_does_not_raise() -> None:
+    """A 'date'-criterion cutOff omits includeCapex/econLimitDelay entirely (only date/minLife/
+    alignDependentPhases present). The forward mapper must render (both blank -- non-cash-flow)
+    instead of raising a ValidationError on the now-Optional required-field absence."""
+    model = copy.deepcopy(ABD)
+    model['cutOff'] = {'date': '2024-10-01', 'minLife': {'none': True}, 'alignDependentPhases': False}
+    row = DateSettingsMapper().to_csv_rows(model)[0]
+    assert row['Cut Off Criteria'] == 'date'
+    assert row['Cut Off Value'] == '2024-10-01'
+    assert row['Include CAPEX'] == ''
+    assert row['Econ Limit Delay'] == ''
+    assert row['Min Life Criteria'] == 'none'
 
 
 def test_registry_get_mapper() -> None:
