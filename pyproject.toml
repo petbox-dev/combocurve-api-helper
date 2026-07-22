@@ -73,6 +73,12 @@ where = ['src']
 [tool.setuptools.package-data]
 combocurve_api_helper = ['**/*']
 
+# `package-data = ['**/*']` would otherwise sweep in compiled bytecode
+# (`__pycache__/*.pyc`) -- stale caches that bloat the sdist/wheel and can carry
+# pre-edit source content. Exclude them so builds ship only real source + data.
+[tool.setuptools.exclude-package-data]
+combocurve_api_helper = ['**/__pycache__/*', '**/*.pyc', '**/*.pyo']
+
 
 [project.urls]
 Homepage = "https://github.com/petbox-dev/combocurve-api-helper.git"
