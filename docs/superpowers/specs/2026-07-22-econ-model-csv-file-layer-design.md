@@ -160,8 +160,10 @@ models2 = expenses_from_csv(csv_text)                                # str or fi
 - **Coverage:** update the two `__all__`/`hasattr` tests to the 5-per-mapper shape.
 - **Round-trip (file level):** for every fixture in `FIXTURE_FILES`, read the fixture text via `from_csv`
   and assert it equals the per-model `from_csv_rows` results (grouped as the fixtures already are); then
-  `to_csv(models)` must re-emit a CSV whose `DictReader` parse equals the original fixture rows
-  (byte-identical header + row order).
+  `to_csv(models)` re-emitted and re-parsed must equal the original fixture rows compared on the
+  **model-parameter columns** (`mapper.columns[3:-1]`), matching how `test_fixtures.py` already gates the
+  row-level round trip (the leading `Model Id`/`Created At`/`Project Name` and trailing `Last Update` are
+  not reconstructable from rows and are excluded).
 - **Edge cases:** `to_csv([])` → header-only string that `from_csv` maps back to `[]`;
   `from_csv` accepts both a `str` and a `StringIO`; a header with no `Model Name` raises `ValueError`.
 
