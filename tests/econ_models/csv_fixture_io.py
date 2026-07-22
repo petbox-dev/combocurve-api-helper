@@ -9,6 +9,8 @@ import csv
 import os
 from typing import Dict, List
 
+from combocurve_api_helper.econ_models.base import group_rows_by_model_name
+
 # Directory holding the trimmed real-CC-export fixtures (sits next to this module).
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'fixtures')
 
@@ -37,16 +39,13 @@ def read_csv_rows(path: str) -> List[Dict[str, str]]:
 
 
 def group_by_model_name(rows: List[Dict[str, str]]) -> Dict[str, List[Dict[str, str]]]:
-    """Group rows by their 'Model Name', preserving first-seen model order."""
-    groups: Dict[str, List[Dict[str, str]]] = {}
-    order: List[str] = []
-    for row in rows:
-        name = row['Model Name']
-        if name not in groups:
-            groups[name] = []
-            order.append(name)
-        groups[name].append(row)
-    return {name: groups[name] for name in order}
+    """Group rows by 'Model Name' as a name -> rows dict, preserving first-seen model order.
+
+    A thin dict view over the library's `group_rows_by_model_name` (which returns the groups as
+    a list), so the test suite and the shipped `from_csv` share one grouping implementation
+    rather than two copies that could drift.
+    """
+    return {group[0].get('Model Name', ''): group for group in group_rows_by_model_name(rows)}
 
 
 def project_columns(row: Dict[str, str], columns: List[str]) -> Dict[str, str]:
