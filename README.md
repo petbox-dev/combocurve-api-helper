@@ -150,9 +150,12 @@ and `mapper.columns` is the exact CSV header.
 
 ```python
 import csv
+from combocurve_api_helper import ComboCurveAPI
 from combocurve_api_helper.econ_models import get_expenses_mapper
 
+api = ComboCurveAPI()
 mapper = get_expenses_mapper()
+model = api.get_expenses_model_by_id(project_id, model_id)   # one Expenses econ-model API dict
 
 # --- one model -> row dicts -> your own CSV file ---
 with open("expenses.csv", "w", newline="") as f:

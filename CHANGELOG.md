@@ -5,10 +5,13 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.0] - 2026-07-20
+## [1.3.1] - 2026-07-22
 
-Version `__version__` is set to `1.3.0`; a matching `v1.3.0` git tag has not been
-cut yet. This entry covers everything merged since `v1.2.0` (2025-09-04).
+Version `__version__` is set to `1.3.1`; a matching `v1.3.1` git tag has not been
+cut yet. This entry covers everything merged since `v1.2.0` (2025-09-04) and
+supersedes the never-tagged `1.3.0` dev version. (The per-type CSV convenience
+functions were briefly on `main` as `<type>_to_csv_rows` / `<type>_from_csv_rows`
+before being renamed to `<type>_to_row_dicts` / `<type>_from_row_dicts` for 1.3.1.)
 
 ### Added
 
