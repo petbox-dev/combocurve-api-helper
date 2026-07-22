@@ -20,38 +20,32 @@ from .enums import (
 from .formats import csv_to_num, enum_from_csv, enum_to_csv, escalation_from_csv, escalation_to_csv
 from .formats import num_to_csv
 
-# Real otherCapex `fromHeaders` rows carry the token 'offset_to_first_prod_date' with
-# companion API date-key 'firstProdDate' (verified live: project 'Sample Project A
-# | AFE', 9 SAMPLE_LATERAL models, e.g. {'fromHeaders': 'offset_to_first_prod_date',
-# 'firstProdDate': 185}). This is now `OffsetTo.FirstProductionDate` in enums.py (fixed
-# 2026-07-20 -- it previously held the different, unverified string
-# 'offset_to_first_production_date', with no other consumer anywhere in the repo -- see
-# enums.py) with a matching `OFFSET_TO_HEADER_CSV`/`OFFSET_TO_API_DATEKEY` entry, so no
-# local override table is needed here anymore; the bare enums.py imports above are used
-# directly. `OFFSET_TO_SCHEDULE_CSV`/`OFFSET_FROM_SCHEDULE_CSV` remain untouched: no real
-# `fromSchedule` row using this token has been observed (verified live across 'Sample
-# Project A', 'Sample Project A | AFE', 'Sample Project D | NonOp MultiBasin', and 'Sample
-# Project E | NonOp | Multi Basin' -- zero fromSchedule rows at all), so extending it would
-# be speculative; an unmapped token still raises loudly.
+# otherCapex `fromHeaders` rows carry the token 'offset_to_first_prod_date' with companion
+# API date-key 'firstProdDate' (e.g. {'fromHeaders': 'offset_to_first_prod_date',
+# 'firstProdDate': 185}). This is now `OffsetTo.FirstProductionDate` in enums.py (it
+# previously held the different string 'offset_to_first_production_date', with no other
+# consumer anywhere in the repo -- see enums.py) with a matching
+# `OFFSET_TO_HEADER_CSV`/`OFFSET_TO_API_DATEKEY` entry, so no local override table is needed
+# here anymore; the bare enums.py imports above are used directly.
+# `OFFSET_TO_SCHEDULE_CSV`/`OFFSET_FROM_SCHEDULE_CSV` remain untouched: no `fromSchedule`
+# row using this token is known, so extending it would be speculative; an unmapped token
+# still raises loudly.
 
-# escalationStart API key -> CSV 'Escalation Start Criteria' display. Verified live across
-# 9,729 real otherCapex rows (Sample Project B / Sample Project C / Sample Project A, 2026-07): exactly
-# two keys occur -- {'applyToCriteria': <int>} (7521 rows) and {'asOfDate': <int>} (2150
-# rows) -- plus a None escalationStart (58 rows, rendered blank by _escalation_start_to_csv).
-# Both values are integer day-offsets, so num_to_csv is correct for each. Both displays are
-# verified against CC's CSV export -- 'apply to criteria' and 'as of date' are CC's two
-# escalation-start UI options, lowercased. Fail loud on any other (unsampled) shape.
+# escalationStart API key -> CSV 'Escalation Start Criteria' display. Exactly two keys
+# occur -- {'applyToCriteria': <int>} and {'asOfDate': <int>} -- plus a None escalationStart
+# (rendered blank by _escalation_start_to_csv). Both values are integer day-offsets, so
+# num_to_csv is correct for each. 'apply to criteria' and 'as of date' are CC's two
+# escalation-start UI options, lowercased. Fail loud on any other shape.
 _ESCALATION_START_KEY_TO_CSV: Dict[str, str] = {
     'applyToCriteria': 'apply to criteria',
     'asOfDate': 'as of date',
 }
 _ESCALATION_START_KEY_FROM_CSV: Dict[str, str] = {v: k for k, v in _ESCALATION_START_KEY_TO_CSV.items()}
 
-# CC's CSV export OMITS the model-level $/ft `drillingCost`/`completionCost` objects
-# (verified: CAPEX.csv and CAPEX_per_foot.csv carry identical otherCapex rows, neither
-# with these). Rather than drop them, CapexMapper captures each as a compact JSON blob in
-# an extra column. CC ignores unknown column headers on import, so the CSV stays
-# re-importable. These header strings MUST match csv_columns.COLUMNS['Capex'].
+# CC's CSV export OMITS the model-level $/ft `drillingCost`/`completionCost` objects.
+# Rather than drop them, CapexMapper captures each as a compact JSON blob in an extra
+# column. CC ignores unknown column headers on import, so the CSV stays re-importable.
+# These header strings MUST match csv_columns.COLUMNS['Capex'].
 _DRILLING_COST_COL = 'Drilling Cost ($/ft)'
 _COMPLETION_COST_COL = 'Completion Cost ($/ft)'
 
@@ -75,10 +69,10 @@ def _perfoot_from_json(cell: str) -> Optional[Dict[str, Any]]:
 
 
 # otherCapex rows also carry probabilistic fields with no CSV column at all (distribution
-# type/mean/stdev/bounds/mode/seed). In every sampled real row these sit at a fixed,
-# invariant default -- so on the inverse pass we reconstruct that default, giving exact
-# round-trip equality for the common case. A row with non-default probabilistic values
-# will not round-trip; to_csv_rows warns rather than silently dropping the distinction.
+# type/mean/stdev/bounds/mode/seed). These normally sit at a fixed, invariant default --
+# so on the inverse pass we reconstruct that default, giving exact round-trip equality for
+# the common case. A row with non-default probabilistic values will not round-trip;
+# to_csv_rows warns rather than silently dropping the distinction.
 _PROBABILISTIC_DEFAULTS: Dict[str, Any] = {
     'distributionType': 'na',
     'mean': 0,
@@ -91,8 +85,7 @@ _PROBABILISTIC_DEFAULTS: Dict[str, Any] = {
 
 
 class CapexOtherRow(BaseModel):
-    """One `otherCapex.rows[]` element of the real Capex API shape (verified live,
-    projects 'Example' / 'D&C CAPEX').
+    """One `otherCapex.rows[]` element of the Capex API shape.
 
     Named fields cover the always-present scalar columns. The row's single Criteria
     key (one of twelve -- see `Criteria`), its optional companion API date-header key

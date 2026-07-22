@@ -11,16 +11,14 @@ from .formats import csv_to_num, escalation_from_csv, escalation_to_csv, num_to_
 _PHASE_FROM_CSV = {v: k for k, v in _PHASE_TO_CSV.items()}
 _PHASE_ORDER = ('oil', 'gas', 'ngl', 'dripCondensate')
 
-# (PriceRow python attribute name, CSV 'Unit' column value) per phase -- verified
-# EXHAUSTIVELY live against all 100 real Pricing models in project Sample Project A (every
-# phase-node row, 15106 rows total): oil rows are ALWAYS `price`
-# (never `dollarPerBbl`); gas rows are `dollarPerMmbtu` or `dollarPerMcf` (never
-# anything else); ngl rows are ALWAYS `pctOfOilPrice` (never `dollarPerBbl`, in this
-# dataset); dripCondensate rows are `pctOfOilPrice` OR `dollarPerBbl` (NEVER bare
-# `price` -- despite oil/dripCondensate both rendering CSV Unit '$/bbl', they use
-# DIFFERENT API keys). The dispatch is phase-keyed (not a single flat scan) because
-# oil's `price` and ngl/dripCondensate's `dollarPerBbl` both map to the same CSV Unit
-# '$/bbl' string and would collide in a single unit->attr inverse table.
+# (PriceRow python attribute name, CSV 'Unit' column value) per phase: oil rows are ALWAYS
+# `price` (never `dollarPerBbl`); gas rows are `dollarPerMmbtu` or `dollarPerMcf` (never
+# anything else); ngl rows are ALWAYS `pctOfOilPrice` (never `dollarPerBbl`);
+# dripCondensate rows are `pctOfOilPrice` OR `dollarPerBbl` (NEVER bare `price` -- despite
+# oil/dripCondensate both rendering CSV Unit '$/bbl', they use DIFFERENT API keys). The
+# dispatch is phase-keyed (not a single flat scan) because oil's `price` and
+# ngl/dripCondensate's `dollarPerBbl` both map to the same CSV Unit '$/bbl' string and
+# would collide in a single unit->attr inverse table.
 _PHASE_VALUE_UNIT: Dict[str, List[Tuple[str, str]]] = {
     'oil': [('price', '$/bbl')],
     'gas': [('dollar_per_mmbtu', '$/mmbtu'), ('dollar_per_mcf', '$/mcf')],
@@ -34,32 +32,28 @@ _BREAKEVEN_UNIT_CSV = 'npv discount %'
 _BREAKEVEN_DIRECT_CSV = 'direct'
 _BREAKEVEN_RATIO_CSV = 'based on price ratio'
 
-# Gas-only compositional-pricing 'Category' values verified live in a real CSV export
-# (project Sample Project A, model "23Q4 Avg": 4 extra flat $/mmbtu=0 rows with
-# Category in {remaining, n2, co2, c1}) alongside 'full_stream' (the plain single-
-# stream label, seen on ~19% of real models' gas/ngl rows). CRITICAL, verified finding:
-# the live `GET .../pricing` API (both the list endpoint and the single-model-by-id
-# endpoint) returns `priceModel.gas` as EXACTLY `{cap, escalationModel, rows}` with
-# PLAIN scalar `dollarPerMmbtu`/`dollarPerMcf` row values -- IDENTICAL in shape whether
-# CC's CSV renders that model's Category as '', 'full_stream', or (for "23Q4 Avg")
-# emits the 4 additional component rows. There is no key anywhere in the API response
-# -- checked both "23Q4 Avg" and "23Q3 Avg Strip" via both endpoints -- that
-# distinguishes these cases. This is a real, checked-live API limitation, not an
-# oversight: 'full_stream' vs '' is not a property of the Pricing econ model document
-# at all (it appears to depend on scenario-level Compositional Economics context that
-# this project-scoped econ-model GET endpoint has no way to surface), and the
+# Gas-only compositional-pricing 'Category' values: extra flat $/mmbtu=0 rows with Category
+# in {remaining, n2, co2, c1} can appear alongside 'full_stream' (the plain single-stream
+# label) on gas/ngl rows. CRITICAL: the `GET .../pricing` API (both the list endpoint and
+# the single-model-by-id endpoint) returns `priceModel.gas` as EXACTLY
+# `{cap, escalationModel, rows}` with PLAIN scalar `dollarPerMmbtu`/`dollarPerMcf` row
+# values -- IDENTICAL in shape whether CC's CSV renders that model's Category as '',
+# 'full_stream', or emits the additional component rows. There is no key anywhere in the
+# API response that distinguishes these cases. This is a real API limitation, not an
+# oversight: 'full_stream' vs '' is not a property of the Pricing econ model document at
+# all (it appears to depend on scenario-level Compositional Economics context that this
+# project-scoped econ-model GET endpoint has no way to surface), and the
 # c1/co2/n2/remaining component rows have no representable slot in `priceModel.gas`
 # whatsoever. `to_csv_rows` therefore ALWAYS emits Category='' (the only constructible
-# value; correct for ~81% of real models) -- 'full_stream' is a non-round-trippable
-# display label CSV-side. `from_csv_rows` accepts 'full_stream' as equivalent to ''
-# (same numeric row, label simply not preserved) but raises NotImplementedError for
-# the compositional component categories, which have no known API home.
+# value) -- 'full_stream' is a non-round-trippable display label CSV-side. `from_csv_rows`
+# accepts 'full_stream' as equivalent to '' (same numeric row, label simply not preserved)
+# but raises NotImplementedError for the compositional component categories, which have no
+# known API home.
 _GAS_COMPONENT_CATEGORIES = {'remaining', 'n2', 'co2', 'c1'}
 
 
 class PriceRow(BaseModel):
-    """One `rows[]` element within a `priceModel` phase node (verified against real CC
-    CSV exports and the live API, project Sample Project A).
+    """One `rows[]` element within a `priceModel` phase node.
 
     Carries exactly one of `entire_well_life` (flat criteria) or `dates` (dated
     criteria), and exactly one of the four value/unit fields (`price`/
@@ -78,12 +72,11 @@ class PriceRow(BaseModel):
 
 
 class PricePhaseNode(BaseModel):
-    """The `{'cap': ..., 'escalationModel': ..., 'rows': [...]}` node for a single
-    phase (oil/gas/ngl/dripCondensate) within `priceModel`. Verified live: every real
-    phase node carries all three keys, `cap` usually `null` (no real populated example
-    seen live -- `Cap` renders blank in every row of the verified CSV export, so its
-    forward `num_to_csv` rendering when populated is inferred from the sibling
-    Differentials/Expenses 'Cap'/'Value' conventions, not directly confirmed)."""
+    """The `{'cap': ..., 'escalationModel': ..., 'rows': [...]}` node for a single phase
+    (oil/gas/ngl/dripCondensate) within `priceModel`. Every phase node carries all three
+    keys, `cap` usually `null`; its forward `num_to_csv` rendering when populated is
+    inferred from the sibling Differentials/Expenses 'Cap'/'Value' conventions, not
+    directly confirmed."""
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -93,7 +86,7 @@ class PricePhaseNode(BaseModel):
 
 
 class Breakeven(BaseModel):
-    """The top-level `breakeven` object (verified live, project Sample Project A):
+    """The top-level `breakeven` object:
     `{"basedOnPriceRatio": false, "npvDiscount": 0, "priceRatio": null}`
     (direct) or `{"basedOnPriceRatio": true, "npvDiscount": 15, "priceRatio": 20}`
     (based on price ratio). Maps to a single CSV row: Phase='breakeven', Criteria=
@@ -209,9 +202,9 @@ class PricingMapper:
             category = row.get('Category') or ''
             if category in _GAS_COMPONENT_CATEGORIES:
                 # Compositional gas-component row (c1/co2/n2/remaining) -- see
-                # `_GAS_COMPONENT_CATEGORIES` docstring: verified live that the API has
-                # no field to hold this. Fail loud rather than silently dropping it or
-                # folding it into the plain gas node.
+                # `_GAS_COMPONENT_CATEGORIES` docstring: the API has no field to hold this.
+                # Fail loud rather than silently dropping it or folding it into the plain
+                # gas node.
                 raise NotImplementedError(
                     f'Pricing Category {category!r} (compositional gas component pricing) has no '
                     'known API representation -- cannot reconstruct from CSV'
@@ -221,9 +214,8 @@ class PricingMapper:
 
             if phase not in price_model:
                 # Only the FIRST row seen for a given phase determines the node's
-                # cap/escalationModel -- verified constant across all rows of a phase
-                # in every real export inspected (matches DifferentialsMapper's
-                # escalationModel-from-first-row convention).
+                # cap/escalationModel -- constant across all rows of a phase (matches
+                # DifferentialsMapper's escalationModel-from-first-row convention).
                 cap_cell = row.get('Cap') or ''
                 price_model[phase] = {
                     'cap': None if not cap_cell else csv_to_num(cap_cell),

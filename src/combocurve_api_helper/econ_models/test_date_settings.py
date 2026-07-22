@@ -6,9 +6,8 @@ from combocurve_api_helper.econ_models import MAPPERS, get_mapper
 from combocurve_api_helper.econ_models.base import Context
 from combocurve_api_helper.econ_models.date_settings import DateSettingsMapper
 
-# Real, FULL API shapes (verified live, project Sample Project D | NonOp | MultiBasin). ABD exercises the
-# 'years from as of' (non-cash-flow) Cut Off Criteria with an explicit, full-schema cutOff
-# (minLife/triggerEclCapex/tolerateNegativeCF all present).
+# ABD exercises the 'years from as of' (non-cash-flow) Cut Off Criteria with an explicit,
+# full-schema cutOff (minLife/triggerEclCapex/tolerateNegativeCF all present).
 ABD: Dict[str, Any] = {
     'id': '000000000000000000000021',
     'name': 'ABD',
@@ -77,7 +76,7 @@ HISTORICAL: Dict[str, Any] = {
 }
 
 # 'max cum' (cash-flow) criterion, LEGACY schema: no minLife/triggerEclCapex/tolerateNegativeCF
-# keys at all (absent, not null) -- verified live on 17 of 131 models in this project.
+# keys at all (absent, not null).
 ARIES_LEGACY: Dict[str, Any] = {
     'id': '000000000000000000000019',
     'name': 'SAMPLE_DATES_MODEL_0001',
@@ -108,8 +107,8 @@ ARIES_LEGACY: Dict[str, Any] = {
     },
 }
 
-# 'last positive' (cash-flow) criterion -- verified live: Discount is NEVER rendered for this
-# criterion even though the API carries a real (occasionally non-zero) value.
+# 'last positive' (cash-flow) criterion: Discount is NEVER rendered for this criterion even
+# though the API carries a real (occasionally non-zero) value.
 INJ: Dict[str, Any] = {
     'id': '000000000000000000000022',
     'name': 'INJ',
@@ -144,8 +143,7 @@ INJ: Dict[str, Any] = {
 }
 
 # 'max cum' criterion, FULL schema, with every field fully round-trippable through the CSV --
-# the only real model in the 131-model dataset where NONE of the 5 "extra" cutOff columns lose
-# information (verified live).
+# NONE of the 5 "extra" cutOff columns lose information.
 LOCATION: Dict[str, Any] = {
     'id': '000000000000000000000020',
     'name': 'Location',
@@ -179,9 +177,8 @@ LOCATION: Dict[str, Any] = {
     },
 }
 
-# --- Drift-audit fixtures (verified live, project Sample Project A unless noted; sampled
-# 2026-07-20 across all 4 production projects, 571 real models) -- the shapes below crashed the
-# mapper before the DateSettings drift-audit fix. ---
+# --- Drift-audit fixtures -- the shapes below crashed the mapper before the DateSettings
+# drift-audit fix. ---
 
 # 'date' cutOff criterion: the Cut Off Value IS the ISO date string, not a plain flag.
 # alignDependentPhases and minLife are both fully present here (contrast BID_TO_LAST_PROD below,
@@ -217,9 +214,8 @@ DATE_CUTOFF: Dict[str, Any] = {
     },
 }
 
-# 'firstNegativeCashFlow' cutOff criterion -- the only known live model with this criterion, and
-# the ONLY criterion where CC's CSV export renders a real 'Tolerant Negative CF' value instead of
-# always blanking it (verified live: tolerateNegativeCF=0 here renders CSV cell '0', not '').
+# 'firstNegativeCashFlow' cutOff criterion -- the ONLY criterion where CC's CSV export renders a
+# real 'Tolerant Negative CF' value instead of always blanking it.
 FIRST_NEGATIVE: Dict[str, Any] = {
     'id': '000000000000000000000017',
     'name': "Jan '26 (no min life)",
@@ -253,9 +249,8 @@ FIRST_NEGATIVE: Dict[str, Any] = {
     },
 }
 
-# 'lastPositiveCashFlow' cutOff with `discount` genuinely ABSENT from the API payload (verified
-# live: 366 of 479 real 'last positive' models in project Sample Project E | NonOp | Multi Basin omit
-# it entirely). Model name is real (an ARIES-copied "SAMPLE" model), project Sample Project E.
+# 'lastPositiveCashFlow' cutOff with `discount` genuinely ABSENT from the API payload (some
+# 'last positive' models omit it entirely).
 SAMPLE_LASTPOS_NO_DISCOUNT: Dict[str, Any] = {
     'id': '000000000000000000000018',
     'name': 'SAMPLE_0022',
@@ -288,9 +283,9 @@ SAMPLE_LASTPOS_NO_DISCOUNT: Dict[str, Any] = {
     },
 }
 
-# 'date' cutOff criterion with `alignDependentPhases` genuinely ABSENT (verified live: 4 of the
-# 8 real 'date' models omit it) AND a date-valued `minLife` (`{'date': '2027-03-31'}` -- happens
-# to equal the cutOff date here, but is an independent value live).
+# 'date' cutOff criterion with `alignDependentPhases` genuinely ABSENT (some 'date' models omit
+# it) AND a date-valued `minLife` (`{'date': '2027-03-31'}` -- happens to equal the cutOff date
+# here, but is an independent value).
 BID_TO_LAST_PROD: Dict[str, Any] = {
     'id': '000000000000000000000004',
     'name': 'Bid to Last Prod',
@@ -323,9 +318,9 @@ BID_TO_LAST_PROD: Dict[str, Any] = {
 }
 
 # 'date' cutOff criterion whose fourthFpdSource is ALSO date-valued (`{'date': '2021-09-01'}`,
-# matching the cutOff date here) instead of one of the 4 fixed flag keys -- the only such model
-# in the entire 571-model, 4-project dataset. Every other field is present (full schema), so
-# this round-trips exactly (see test_roundtrip_exact_post_close_afe_date_fpd_source below).
+# matching the cutOff date here) instead of one of the 4 fixed flag keys. Every other field is
+# present (full schema), so this round-trips exactly (see
+# test_roundtrip_exact_post_close_afe_date_fpd_source below).
 POST_CLOSE_AFE: Dict[str, Any] = {
     'id': '000000000000000000000011',
     'name': 'Sample AFE Model',
@@ -362,7 +357,7 @@ POST_CLOSE_AFE: Dict[str, Any] = {
 # 'date' minLife criterion (`cutOff.minLife == {'date': '2026-03-01'}`) paired with the ORDINARY
 # 'max cum' cutOff criterion, isolating the minLife-date shape from the 'date' cutOff-criterion
 # shape above. Full schema (every fixed key present), so this round-trips exactly (see
-# test_roundtrip_exact_minlife_date_full_schema below). Project Sample Project E | NonOp | Multi Basin.
+# test_roundtrip_exact_minlife_date_full_schema below).
 MINLIFE_DATE_FULL: Dict[str, Any] = {
     'id': '000000000000000000000024',
     'name': 'Historical (Sample Project E)',
@@ -479,8 +474,7 @@ def test_to_csv_rows_last_positive_discount_never_renders() -> None:
     assert row['Include CAPEX'] == 'no'
     assert row['Econ Limit Delay'] == '0'
     assert row['Trigger ECL CAPEX (Unecon)'] == 'yes'
-    # Discount is a real 0 in the API but 'last positive' NEVER renders it (verified live: a
-    # real 'last positive' model in this project has discount=15 and still renders blank).
+    # Discount is a real 0 in the API but 'last positive' NEVER renders it.
     assert row['Discount'] == ''
     assert row['Tolerant Negative CF'] == ''
 
@@ -521,9 +515,8 @@ def test_from_csv_rows_requires_exactly_one_row() -> None:
 
 
 def test_roundtrip_exact_location_fully_recoverable() -> None:
-    """'Location' (max cum, full schema) is the one real shape in the 131-model dataset where
-    ALL fields survive a CSV round trip exactly -- see DateSettingsMapper's KNOWN RESIDUAL
-    writeup for why ABD/Historical/INJ do not.
+    """'Location' (max cum, full schema) is a shape where ALL fields survive a CSV round trip
+    exactly -- see DateSettingsMapper's KNOWN RESIDUAL writeup for why ABD/Historical/INJ do not.
     """
     m = DateSettingsMapper()
     rebuilt = m.from_csv_rows(m.to_csv_rows(LOCATION))
@@ -595,10 +588,9 @@ def test_roundtrip_criterion_and_min_life_keys_always_recoverable(
 
 
 def test_legacy_model_missing_production_data_resolution() -> None:
-    """Regression (found by the drift audit): legacy models pre-date
-    `productionDataResolution` and omit it. The forward mapper must render them (blank
-    'Prod Data Resolution') instead of raising ValidationError, and the inverse must
-    reconstruct the field as ABSENT (not '') to match the real API shape."""
+    """Regression: legacy models pre-date `productionDataResolution` and omit it. The forward
+    mapper must render them (blank 'Prod Data Resolution') instead of raising ValidationError,
+    and the inverse must reconstruct the field as ABSENT (not '') to match the real API shape."""
     import copy
 
     legacy = copy.deepcopy(ABD)
@@ -670,10 +662,10 @@ def test_roundtrip_exact_first_negative_cash_flow() -> None:
 
 
 def test_to_csv_rows_lastpositive_missing_discount_key_does_not_raise() -> None:
-    """Regression (drift audit): SAMPLE_LASTPOS_NO_DISCOUNT has NO 'discount' key at all (not
-    null) -- the forward mapper must render it instead of raising ValidationError. 'Discount'
-    is blank regardless (documented residual for 'last positive'), so this is unobservable in
-    the CSV -- the fix is that the mapper doesn't crash."""
+    """Regression: SAMPLE_LASTPOS_NO_DISCOUNT has NO 'discount' key at all (not null) -- the
+    forward mapper must render it instead of raising ValidationError. 'Discount' is blank
+    regardless (documented residual for 'last positive'), so this is unobservable in the CSV --
+    the fix is that the mapper doesn't crash."""
     row = DateSettingsMapper().to_csv_rows(SAMPLE_LASTPOS_NO_DISCOUNT)[0]
     assert row['Cut Off Criteria'] == 'last positive'
     assert row['Discount'] == ''
@@ -706,10 +698,9 @@ def test_roundtrip_documented_residual_flash_lastpositive_missing_discount_key()
 
 
 def test_to_csv_rows_date_cutoff_missing_align_dependent_phases_does_not_raise() -> None:
-    """Regression (drift audit): BID_TO_LAST_PROD has NO 'alignDependentPhases' key at all (not
-    null/false) -- the forward mapper must render it (as 'no', matching CC's own verified CSV
-    rendering for this exact model) instead of raising ValidationError. Also exercises a
-    date-valued minLife alongside a date-valued cutOff criterion."""
+    """Regression: BID_TO_LAST_PROD has NO 'alignDependentPhases' key at all (not null/false) --
+    the forward mapper must render it (as 'no') instead of raising ValidationError. Also
+    exercises a date-valued minLife alongside a date-valued cutOff criterion."""
     row = DateSettingsMapper().to_csv_rows(BID_TO_LAST_PROD)[0]
     assert row['Cut Off Criteria'] == 'date'
     assert row['Cut Off Value'] == '2027-03-31'
@@ -778,10 +769,9 @@ def test_roundtrip_exact_minlife_date_full_schema() -> None:
 
 
 def test_maxcumcashflow_missing_discount_renders_blank_not_crash() -> None:
-    """Regression (code-correctness audit): `discount` is Optional (absent on legacy
-    lastPositiveCashFlow models), so a maxCumCashFlow model that also omits it must render
-    'Discount' blank rather than crash in _num(None). Not present in the audited projects,
-    but type-permitted."""
+    """Regression: `discount` is Optional (absent on legacy lastPositiveCashFlow models), so a
+    maxCumCashFlow model that also omits it must render 'Discount' blank rather than crash in
+    _num(None). Not observed in practice, but type-permitted."""
     import copy
 
     model = copy.deepcopy(LOCATION)  # maxCumCashFlow, normally carries discount

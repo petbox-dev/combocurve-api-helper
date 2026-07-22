@@ -6,8 +6,7 @@ from combocurve_api_helper.econ_models.expenses import ExpensesMapper
 
 
 def _leaf(rows: Any, **overrides: Any) -> Dict[str, Any]:
-    """Real API leaf shape (verified live, model SAMPLE_OPEX_LOOKUP_0001):
-    every listed setting key is always present."""
+    """Real API leaf shape: every listed setting key is always present."""
     base: Dict[str, Any] = {
         'shrinkageCondition': 'shrunk',
         'description': None,
@@ -86,10 +85,8 @@ API: Dict[str, Any] = {
                 rowsCalculationMethod=None,
             ),
         },
-        # 'boe'/'totalFluid' are real phases -- verified against a real Expenses.csv
-        # export (Key='boe'/'total_fluid', Category='opc') AND against the live API
-        # model SAMPLE_OPEX_LOOKUP_0001. Unlike oil/gas/ngl above, their
-        # REAL API shape is DOUBLE-NESTED under the subcat key: raw verified value is
+        # 'boe'/'totalFluid' are real phases. Unlike oil/gas/ngl above, their REAL API
+        # shape is DOUBLE-NESTED under the subcat key:
         # `variableExpenses.boe == {"processing": {"processing": {<leaf>}}}` (identically
         # for totalFluid) -- i.e. `variableExpenses[phase]['processing']['processing']`
         # is the real leaf, not `variableExpenses[phase]['processing']`.
@@ -148,8 +145,8 @@ def test_to_csv_rows_oil_processing() -> None:
     assert oil_processing['Period'] == 'ecl'
     assert oil_processing['Unit'] == '$/bbl'
     assert oil_processing['Description'] == 'OPC/OIL'
-    # Verified against real Expenses.csv: 'Value' always renders with a decimal
-    # point, e.g. '0.0' not '0' (unlike Capex/Differentials/ProductionTaxes).
+    # 'Value' always renders with a decimal point, e.g. '0.0' not '0' (unlike
+    # Capex/Differentials/ProductionTaxes).
     assert oil_processing['Value'] == '0.0'
     assert oil_processing['Cap'] == '500'
     assert oil_processing['Deduct bef Ad Val Tax'] == 'yes'
@@ -199,9 +196,9 @@ def test_to_csv_rows_fixed_monthly_well_cost() -> None:
 
 def test_fixed_expense_before_fpd_false_renders_no_and_round_trips() -> None:
     """Regression (final-review M5): a fixed expense with expenseBeforeFpd=False must
-    render CSV 'no', not '' -- real CC exports carry 'no' on 82+ models. The old
-    yes_blank renderer could only emit ''/'yes', silently corrupting the False case
-    and breaking the CSV round-trip. Stop at Econ Limit follows the same yes/no rule."""
+    render CSV 'no', not '' -- 'no' is real data. The old yes_blank renderer could only
+    emit ''/'yes', silently corrupting the False case and breaking the CSV round-trip.
+    Stop at Econ Limit follows the same yes/no rule."""
     model: Dict[str, Any] = {
         'id': 'e2',
         'name': 'FX',
@@ -250,10 +247,10 @@ def test_to_csv_rows_water_disposal() -> None:
 
 
 def test_to_csv_rows_boe_and_total_fluid_emitted() -> None:
-    """Regression test for the (verified, real-API->CSV) requirement that 'boe'/
-    'total_fluid' variable-expense phases are emitted, not dropped -- exercised here
-    via the shared API fixture's REAL double-nested shape
-    (variableExpenses.boe.processing.processing is the leaf, see API above)."""
+    """Regression test for the requirement that 'boe'/'total_fluid' variable-expense
+    phases are emitted, not dropped -- exercised here via the shared API fixture's REAL
+    double-nested shape (variableExpenses.boe.processing.processing is the leaf, see API
+    above)."""
     rows = ExpensesMapper().to_csv_rows(API)
 
     boe = next(r for r in rows if r['Key'] == 'boe')
@@ -271,10 +268,10 @@ def test_to_csv_rows_boe_and_total_fluid_emitted() -> None:
 
 def _normalize_for_roundtrip_compare(node: Any) -> Any:
     """Normalize a variableExpenses/etc. structure for exact-equality round-trip
-    comparison against a REAL (live-verified) source model. Strips THREE ALREADY-
-    DOCUMENTED, pre-existing CSV-format limitations that are orthogonal to the
-    boe/totalFluid double-nesting bug this module targets, and apply uniformly to
-    every phase (not just boe/totalFluid):
+    comparison against a REAL source model. Strips THREE ALREADY-DOCUMENTED,
+    pre-existing CSV-format limitations that are orthogonal to the boe/totalFluid
+    double-nesting bug this module targets, and apply uniformly to every phase (not
+    just boe/totalFluid):
     (a) rateType/rowsCalculationMethod are never round-tripped (see
         _strip_rate_fields / ExpenseLeaf docstring -- the real CSV always blanks
         both columns);
@@ -282,12 +279,11 @@ def _normalize_for_roundtrip_compare(node: Any) -> Any:
         indistinguishable from a blank CSV cell on the way back, so it always
         reconstructs as `None` -- the same blank-cell-ambiguity class as the
         documented `cap: ''` normalization;
-    (c) `shrinkageCondition` is only present on real oil/gas leaves (verified live,
-        same model: ngl/dripCondensate/boe/totalFluid leaves omit the key entirely),
-        but `from_csv_rows` always reconstructs it (as `None` when the CSV cell is
-        blank) since the CSV format has a 'Shrinkage Condition' column regardless of
-        phase -- so a rebuilt leaf always carries the key even when the source
-        never had it.
+    (c) `shrinkageCondition` is only present on real oil/gas leaves (ngl/dripCondensate/
+        boe/totalFluid leaves omit the key entirely), but `from_csv_rows` always
+        reconstructs it (as `None` when the CSV cell is blank) since the CSV format has
+        a 'Shrinkage Condition' column regardless of phase -- so a rebuilt leaf always
+        carries the key even when the source never had it.
     """
     if isinstance(node, dict):
         if 'rows' in node:
@@ -302,8 +298,7 @@ def _normalize_for_roundtrip_compare(node: Any) -> Any:
 
 
 def test_boe_and_total_fluid_real_double_nested_structure_round_trips() -> None:
-    """Uses the EXACT raw shape verified live against model
-    SAMPLE_OPEX_LOOKUP_0001 (project 'Sample Project E | NonOp | Multi Basin'):
+    """Uses the EXACT raw shape of the double-nested boe/totalFluid phases:
     `variableExpenses.boe == {"processing": {"processing": {<leaf>}}}` (identically for
     `totalFluid`) -- DOUBLE-nested under the subcat key, unlike every other phase's
     single-nested `variableExpenses.<phase>.<subcat> == {<leaf>}`. Before the fix,
@@ -367,10 +362,9 @@ def test_boe_and_total_fluid_real_double_nested_structure_round_trips() -> None:
 
 
 def test_rate_type_and_rows_calculation_method_always_blank() -> None:
-    """Verified against real Expenses.csv: 'Rate Type'/'Rate Rows Calculation Method'
-    are ALWAYS blank, even though every leaf in API carries real
-    rateType='gross_well_head'/rowsCalculationMethod='monotonic' (via the shared
-    _leaf() base). Not round-trippable -- see ExpenseLeaf docstring."""
+    """'Rate Type'/'Rate Rows Calculation Method' are ALWAYS blank, even though every
+    leaf in API carries real rateType='gross_well_head'/rowsCalculationMethod='monotonic'
+    (via the shared _leaf() base). Not round-trippable -- see ExpenseLeaf docstring."""
     rows = ExpensesMapper().to_csv_rows(API)
     assert rows, 'expected at least one row'
     for r in rows:
@@ -381,8 +375,7 @@ def test_rate_type_and_rows_calculation_method_always_blank() -> None:
 def test_to_csv_rows_multi_row_fpd_leaf_only_last_row_is_ecl() -> None:
     """Terminal-row rule (a): within a single leaf, earlier fpd rows render their
     literal month offset; only the LAST row of the leaf's rows list renders 'ecl' --
-    regardless of its numeric value (verified live: real terminal offsets include
-    1104/1140, not just 1200)."""
+    regardless of its numeric value."""
     model: Dict[str, Any] = {
         'name': 'MULTI ROW FPD',
         'unique': False,
@@ -420,9 +413,9 @@ def test_roundtrip_exact_all_four_groups() -> None:
 
 def test_roundtrip_non_canonical_terminal_offset_is_not_exact() -> None:
     """Documented non-exactness: a leaf's terminal offsetToFpd is only recoverable
-    exactly if it happens to equal the inverse canonical placeholder (1200). A
-    real, verified terminal offset like 1104 does NOT round-trip -- it comes back
-    as 1200 instead, not its original value."""
+    exactly if it happens to equal the inverse canonical placeholder (1200). A real
+    terminal offset like 1104 does NOT round-trip -- it comes back as 1200 instead, not
+    its original value."""
     model: Dict[str, Any] = {
         'name': 'NON CANONICAL TERMINAL',
         'unique': False,
@@ -472,10 +465,8 @@ def test_roundtrip_variable_only_exact_no_injected_empty_groups() -> None:
 
 
 def test_to_csv_rows_gas_dollar_per_mmbtu_maps_and_round_trips() -> None:
-    """Regression (drift audit, 146/297 real Expenses models crashed): `dollarPerMmbtu`
-    is a real, previously-unmodeled gas variable-expense value key -- verified live
-    (project 'Sample Project A', models 'Sample Model | Bid' et al.) and against the
-    real Expenses.csv export (Unit '$/mmbtu')."""
+    """Regression (drift audit): `dollarPerMmbtu` is a real, previously-unmodeled gas
+    variable-expense value key (Unit '$/mmbtu')."""
     model: Dict[str, Any] = {
         'name': 'GAS MMBTU',
         'unique': False,
@@ -501,10 +492,8 @@ def test_to_csv_rows_gas_dollar_per_mmbtu_maps_and_round_trips() -> None:
 
 def test_to_csv_rows_fixed_expense_per_well_maps_and_round_trips() -> None:
     """Regression (drift audit): `fixedExpensePerWell` is a real, previously-unmodeled
-    fixedExpenses value key -- verified live (project 'Sample Project A', model
-    'Sample Unit | Bid', fixedExpenses.monthlyWellCost row
-    `{'dates': '2000-01-01', 'fixedExpensePerWell': 9840}`) and against the real
-    Expenses.csv export (Unit '$/well/month', Criteria 'dates', Period '01/01/2000')."""
+    fixedExpenses value key -- CSV Unit '$/well/month', Criteria 'dates', Period
+    '01/01/2000'."""
     model: Dict[str, Any] = {
         'name': 'FIXED PER WELL',
         'unique': False,
@@ -534,14 +523,10 @@ def test_to_csv_rows_fixed_expense_per_well_maps_and_round_trips() -> None:
 
 
 def test_to_csv_rows_water_disposal_dates_criteria_maps_and_round_trips() -> None:
-    """Regression (drift audit): a leaf's rows can use `dates` (dated criteria)
-    instead of `entireWellLife`/`offsetToFpd` -- verified live (project 'Sample Project A',
-    model 'Sample Unit | Bid', waterDisposal rows
-    `{'dates': '2000-01-01', 'dollarPerBbl': 1.155}` /
-    `{'dates': '2025-01-01', 'dollarPerBbl': 0.838}`). Also proves the fpd-only
-    terminal-row 'ecl' rule does not apply to 'dates' rows, even for the last row of
-    the leaf (verified against the real Expenses.csv export, which never renders
-    'ecl' for a 'dates' row)."""
+    """Regression (drift audit): a leaf's rows can use `dates` (dated criteria) instead
+    of `entireWellLife`/`offsetToFpd`. Also proves the fpd-only terminal-row 'ecl' rule
+    does not apply to 'dates' rows, even for the last row of the leaf (a 'dates' row
+    never renders 'ecl')."""
     model: Dict[str, Any] = {
         'name': 'WATER DATES',
         'unique': False,
@@ -569,13 +554,12 @@ def test_to_csv_rows_water_disposal_dates_criteria_maps_and_round_trips() -> Non
 
 
 def test_no_value_key_bbl_leaf_falls_back_to_zero_dollar_per_bbl() -> None:
-    """Regression (drift audit, model 'Sample Model | Bid', project 'Sample Project A |
-    AFE'): a real API row for a $/bbl-denominated leaf (oil/ngl/drip-cond
-    variable expenses, water disposal) can omit EVERY value key entirely --
-    `{'entireWellLife': 'Flat'}` with no dollarPerBbl/etc at all. The real Expenses.csv
-    export still renders these as Value '0' Unit '$/bbl' (not blank/skipped), so the
-    forward mapper must not raise. Covers oil/ngl/dripCondensate/water, the only Keys
-    verified live to exhibit this."""
+    """Regression (drift audit): a real API row for a $/bbl-denominated leaf (oil/ngl/
+    drip-cond variable expenses, water disposal) can omit EVERY value key entirely --
+    `{'entireWellLife': 'Flat'}` with no dollarPerBbl/etc at all. CC's real Expenses.csv
+    still renders these as Value '0' Unit '$/bbl' (not blank/skipped), so the forward
+    mapper must not raise. Covers oil/ngl/dripCondensate/water, the only Keys that
+    exhibit this."""
     model: Dict[str, Any] = {
         'name': 'NO VALUE KEY',
         'unique': False,
@@ -595,11 +579,10 @@ def test_no_value_key_bbl_leaf_falls_back_to_zero_dollar_per_bbl() -> None:
 
 
 def test_no_value_key_gas_leaf_still_raises() -> None:
-    """The no-value fallback is scoped to the verified $/bbl-denominated Keys
-    (oil/ngl/drip cond/water) only -- a gas (or fixed/carbon) leaf with no value key
-    at all has never been observed live, so guessing a fallback unit ($/mcf vs
-    $/mmbtu) would risk silently misreporting the value's real unit. Must still
-    raise."""
+    """The no-value fallback is scoped to the $/bbl-denominated Keys (oil/ngl/drip cond/
+    water) only -- a gas (or fixed/carbon) leaf with no value key at all does not occur,
+    so guessing a fallback unit ($/mcf vs $/mmbtu) would risk silently misreporting the
+    value's real unit. Must still raise."""
     model: Dict[str, Any] = {
         'name': 'NO VALUE KEY GAS',
         'unique': False,

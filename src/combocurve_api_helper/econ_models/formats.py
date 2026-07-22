@@ -73,11 +73,11 @@ def num_to_csv(value: Any) -> str:
 def num_to_csv_float(value: Any) -> str:
     """Like num_to_csv, but always renders with a decimal point.
 
-    Verified against real CC exports: StreamProperties 'Value' and Expenses
-    'Value'/'Paying WI / Earning WI' always display whole numbers as e.g. '100.0',
-    not '100' -- unlike most other numeric columns across the econ-model CSV
-    exports (Capex, Differentials, ProductionTaxes), which drop the trailing '.0'
-    (handled by num_to_csv above). Per-type/per-column, not universal.
+    StreamProperties 'Value' and Expenses 'Value'/'Paying WI / Earning WI' always
+    display whole numbers as e.g. '100.0', not '100' -- unlike most other numeric
+    columns across the econ-model CSV exports (Capex, Differentials, ProductionTaxes),
+    which drop the trailing '.0' (handled by num_to_csv above). Per-type/per-column,
+    not universal.
     """
     s = _float_str(float(value))
     if '.' not in s:
@@ -92,16 +92,16 @@ def csv_to_num(s: str) -> Union[int, float]:
     return f
 
 
-# CC's `entireWellLife` field is the "flat criteria" marker. Verified live across 1044
-# models: 'Flat' dominates, and some Pricing models carry the equivalent 'Entire Well
-# Life' (both denote the same flat criteria). We do not control CC's vocabulary, so any
-# value outside this known set must fail loud rather than be silently mapped to 'flat' --
-# an unrecognized marker then surfaces (to be handled) instead of corrupting the mapping.
+# CC's `entireWellLife` field is the "flat criteria" marker. Both 'Flat' and the
+# equivalent 'Entire Well Life' (carried by some Pricing models) denote the same flat
+# criteria. We do not control CC's vocabulary, so any value outside this known set must
+# fail loud rather than be silently mapped to 'flat' -- an unrecognized marker then
+# surfaces (to be handled) instead of corrupting the mapping.
 ENTIRE_WELL_LIFE_VALUES = frozenset({'Flat', 'Entire Well Life'})
 
 # The literal `entireWellLife` value this package writes back on the inverse (CSV -> API)
 # pass for a 'flat' criteria row -- 'Flat' is one of the two values `ENTIRE_WELL_LIFE_VALUES`
-# accepts on read, and is the only one ever verified as a real API write-back payload.
+# accepts on read, and is the value used for write-back.
 ENTIRE_WELL_LIFE_MARKER = 'Flat'
 
 
@@ -142,11 +142,11 @@ def flat_or_dates_row_kwargs(criteria_csv: str, period_csv: str, marker: str) ->
 
 
 # API model-name value <-> CSV display for 'Escalation' (and, in Capex, 'Depreciation')
-# columns. Verified against real exports: ProductionTaxes.csv and CAPEX.csv render the
-# API 'none' model as the title-cased string 'None' -- NOT lowercase 'none'. Differentials
-# and Expenses CSVs, by contrast, render 'none' unchanged (lowercase) -- pass `title=False`
-# for those. Any other model name passes through unchanged in both modes. Python `None`
-# (the field simply absent/unset) always inverts with '' regardless of `title`.
+# columns. ProductionTaxes and Capex render the API 'none' model as the title-cased
+# string 'None' -- NOT lowercase 'none'. Differentials and Expenses CSVs, by contrast,
+# render 'none' unchanged (lowercase) -- pass `title=False` for those. Any other model
+# name passes through unchanged in both modes. Python `None` (the field simply absent/
+# unset) always inverts with '' regardless of `title`.
 _API_NONE_MODEL = 'none'
 _CSV_NONE_MODEL = 'None'
 
@@ -169,8 +169,8 @@ def escalation_from_csv(s: str, *, title: bool) -> Optional[str]:
 
 # Underscore/space enum-token conversion for columns like ProductionTaxes' 'Rate Type'
 # ('gross_well_head' <-> 'gross well head') and 'Rate Rows Calculation Method'
-# ('non_monotonic' <-> 'non monotonic'). Verified live against NM/TX ProductionTaxes
-# exports. `None`/'' inverts to '' /`None` like every other optional-string column.
+# ('non_monotonic' <-> 'non monotonic'). `None`/'' inverts to '' /`None` like every
+# other optional-string column.
 def enum_to_csv(v: Optional[str]) -> str:
     if v is None:
         return ''
@@ -183,10 +183,9 @@ def enum_from_csv(s: str) -> Optional[str]:
     return s.replace(' ', '_')
 
 
-# API phase (camelCase, e.g. `dripCondensate`) -> CSV display value. Shared, byte-identical
-# table verified against real Differentials.csv and Pricing.csv exports -- both mappers'
-# phase set is exactly {oil, gas, ngl, dripCondensate}. NOT shared with ProductionTaxes/
-# Expenses, which key drip cond as the snake_case `drip_condensate` (a real API difference,
-# not an oversight), nor with StreamProperties, whose phase map is embedded in a larger
-# category table.
+# API phase (camelCase, e.g. `dripCondensate`) -> CSV display value. Shared table used by
+# the Differentials and Pricing mappers -- both mappers' phase set is exactly
+# {oil, gas, ngl, dripCondensate}. NOT shared with ProductionTaxes/Expenses, which key
+# drip cond as the snake_case `drip_condensate` (a real API difference, not an oversight),
+# nor with StreamProperties, whose phase map is embedded in a larger category table.
 PHASE_TO_CSV_CAMEL: Dict[str, str] = {'oil': 'oil', 'gas': 'gas', 'ngl': 'ngl', 'dripCondensate': 'drip cond'}

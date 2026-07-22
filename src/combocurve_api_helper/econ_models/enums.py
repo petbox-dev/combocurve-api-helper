@@ -30,11 +30,9 @@ class OffsetTo(StrEnum):
     DrillEndDate = 'offset_to_drill_end_date'
     CompletionStartDate = 'offset_to_completion_start_date'
     CompletionEndDate = 'offset_to_completion_end_date'
-    # Verified live (project 'Sample Project A | AFE', 9 SAMPLE_LATERAL models): real
-    # otherCapex `fromHeaders` rows carry the abbreviated token 'offset_to_first_prod_date'
-    # (companion API date-key 'firstProdDate'), NOT the longer 'offset_to_first_production_
-    # date' this member previously held (an unverified ported guess with no live consumer --
-    # confirmed via a whole-repo grep before this fix, 2026-07-20).
+    # Real otherCapex `fromHeaders` rows carry the abbreviated token
+    # 'offset_to_first_prod_date' (companion API date-key 'firstProdDate'), NOT the longer
+    # 'offset_to_first_production_date'.
     FirstProductionDate = 'offset_to_first_prod_date'
     TIL = 'offset_to_til'
     RefracDate = 'offset_to_refrac_date'
@@ -78,7 +76,7 @@ class GrossOrNet(StrEnum):
     Net = 'net'
 
 
-# API criteria value -> CSV Criteria string (verified against exports)
+# API criteria value -> CSV Criteria string
 CRITERIA_TO_CSV: Dict[str, str] = {
     Criteria.FromHeaders.value: 'from headers',
     Criteria.FromSchedule.value: 'from schedule',
@@ -95,14 +93,13 @@ CRITERIA_TO_CSV: Dict[str, str] = {
 }
 CRITERIA_FROM_CSV: Dict[str, str] = {v: k for k, v in CRITERIA_TO_CSV.items()}
 
-# OffsetTo value -> CSV display (only the values observed in exports are mapped;
-# extend as new ones surface — an unmapped token raises in the mapper).
+# OffsetTo value -> CSV display (only the mapped values are handled; extend as new ones
+# surface -- an unmapped token raises in the mapper).
 OFFSET_TO_HEADER_CSV: Dict[str, str] = {
     OffsetTo.SpudDate.value: 'Spud Date',
     OffsetTo.CompletionStartDate.value: 'Completion Start Date',
     # 'offset_to_first_prod_date' -> 'First Prod Date': strip the 'offset_to_' prefix and
-    # title-case the remaining words, same convention as the other two entries above --
-    # verified live (project 'Sample Project A | AFE', 9 SAMPLE_LATERAL models).
+    # title-case the remaining words, same convention as the other two entries above.
     OffsetTo.FirstProductionDate.value: 'First Prod Date',
 }
 OFFSET_TO_SCHEDULE_CSV: Dict[str, str] = {
@@ -114,9 +111,9 @@ OFFSET_FROM_SCHEDULE_CSV: Dict[str, str] = {v: k for k, v in OFFSET_TO_SCHEDULE_
 
 # OffsetTo value -> companion API date-header key carried alongside a fromHeaders/
 # fromSchedule otherCapex row (e.g. {'fromHeaders': 'offset_to_spud_date', 'spudDate': 0}).
-# Ported verbatim from cc-afe-sync `models/capex.py` `CapExRow._dateLookup`, re-keyed by
-# the OffsetTo *value* (str) instead of the enum member so it composes with plain dict
-# lookups elsewhere in this package. `_None` is intentionally omitted -- it is not a real
+# Ported verbatim from cc-afe-sync's `CapExRow._dateLookup`, re-keyed by the OffsetTo
+# *value* (str) instead of the enum member so it composes with plain dict lookups
+# elsewhere in this package. `_None` is intentionally omitted -- it is not a real
 # fromHeaders/fromSchedule token.
 OFFSET_TO_API_DATEKEY: Dict[str, str] = {
     OffsetTo.PermitDate.value: 'permitDate',

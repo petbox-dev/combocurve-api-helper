@@ -6,9 +6,8 @@ from combocurve_api_helper.econ_models.production_taxes import ProductionTaxesMa
 
 
 def _severance_row(phase: str, unit: str, value: float) -> Dict[str, Any]:
-    """Real, FULL API shape for a severance_tax row (verified live, models NM/TX,
-    project Sample_Onboarding). Note there is NO 'deductSeveranceTax' key at all --
-    that field only ever appears on ad_val_tax rows."""
+    """FULL API shape for a severance_tax row. Note there is NO 'deductSeveranceTax' key
+    at all -- that field only ever appears on ad_val_tax rows."""
     return {
         'key': phase,
         'category': 'severance_tax',
@@ -25,9 +24,9 @@ def _severance_row(phase: str, unit: str, value: float) -> Dict[str, Any]:
 
 
 def _ad_valorem_row(value: float, deduct_severance_tax: bool) -> Dict[str, Any]:
-    """Real, FULL API shape for an ad_val_tax row. 'category' is 'ad_val_tax'; the
-    constant, recoverable 'key' is 'ad_valorem_tax'. Unlike severance rows, ad valorem
-    rows always carry 'deductSeveranceTax'."""
+    """FULL API shape for an ad_val_tax row. 'category' is 'ad_val_tax'; the constant,
+    recoverable 'key' is 'ad_valorem_tax'. Unlike severance rows, ad valorem rows always
+    carry 'deductSeveranceTax'."""
     return {
         'key': 'ad_valorem_tax',
         'category': 'ad_val_tax',
@@ -91,9 +90,8 @@ _DATES_PERIODS = ['1900-01-01', '2023-07-01', '2024-07-01']
 
 
 def _dates_severance(phase: str, unit: str, values: list[float]) -> Dict[str, Any]:
-    """Real API shape for a 'dates'-criteria severance row (verified live + against CC's
-    CSV export, Sample Project B 'SAMPLE PDP STREAM'). period is a list of ISO dates; the first is
-    CC's 1900-01-01 schedule-start sentinel."""
+    """API shape for a 'dates'-criteria severance row. period is a list of ISO dates; the
+    first is CC's 1900-01-01 schedule-start sentinel."""
     return {
         'key': phase,
         'category': 'severance_tax',
@@ -130,7 +128,7 @@ DATES: Dict[str, Any] = {
 
 def test_dates_criteria_matches_cc_export() -> None:
     """CC renders a 'dates' Period as '%b-%y' ('Jul-23'); the 1900-01-01 sentinel is
-    'Jan-00'. Verified against a CC CSV export of 'SAMPLE PDP STREAM' (Sample Project B)."""
+    'Jan-00'."""
     rows = ProductionTaxesMapper().to_csv_rows(DATES)
     assert len(rows) == 12  # 4 API rows x 3 periods
 

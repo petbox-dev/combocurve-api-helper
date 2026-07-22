@@ -29,8 +29,7 @@ _UNIT_TO_ATTR = {u: attr for attr, u in _VALUE_UNIT}
 
 
 class DifferentialRow(BaseModel):
-    """One `rows[]` element within a differentials tier/phase node (verified against
-    real CC CSV exports).
+    """One `rows[]` element within a differentials tier/phase node.
 
     Carries exactly one of `entire_well_life` (flat criteria) or `dates` (dated
     criteria), and exactly one of the four value/unit fields
@@ -54,11 +53,10 @@ class DifferentialPhaseNode(BaseModel):
     `escalation_model` is deliberately NOT round-tripped via a blanket
     `model_dump(exclude_none=True)` on the inverse pass: CC's real API distinguishes an
     explicit `null` escalationModel from the literal string `'none'`, and
-    `from_csv_rows` must preserve that distinction (commit 3105852) -- a Python `None`
-    must come back as `None`, not be omitted. So `DifferentialsMapper.from_csv_rows`
-    builds the phase-node dict by hand, keeping `escalationModel` present (possibly
-    `None`) while each row is dumped with `exclude_none=True` to drop its unused
-    criteria/value fields.
+    `from_csv_rows` must preserve that distinction -- a Python `None` must come back as
+    `None`, not be omitted. So `DifferentialsMapper.from_csv_rows` builds the phase-node
+    dict by hand, keeping `escalationModel` present (possibly `None`) while each row is
+    dumped with `exclude_none=True` to drop its unused criteria/value fields.
     """
 
     model_config = ConfigDict(populate_by_name=True)

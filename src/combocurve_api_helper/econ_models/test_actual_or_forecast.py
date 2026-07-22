@@ -16,11 +16,10 @@ def _no_timestamp(rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
     return [{k: v for k, v in r.items() if k != 'Last Update'} for r in rows]
 
 
-# Real, FULL API shapes (verified live, project Sample Project A + broader
-# 80-project/381-model account scan). 'Actual' and 'Forecast As Of' are the two
-# fixed, non-deletable built-in model names for this econ-model type (ported from
-# cc-afe-sync's ACTUAL_OR_FORECAST_ASSIGNMENTS) -- both still legacy `{}`-shaped on
-# this project, never migrated to the explicit per-phase form.
+# Real, FULL API shapes. 'Actual' and 'Forecast As Of' are the two fixed,
+# non-deletable built-in model names for this econ-model type (ported from
+# cc-afe-sync's ACTUAL_OR_FORECAST_ASSIGNMENTS) -- both still legacy `{}`-shaped,
+# never migrated to the explicit per-phase form.
 ACTUAL_LEGACY_EMPTY: Dict[str, Any] = {
     'id': '000000000000000000000002',
     'name': 'Actual',
@@ -68,9 +67,8 @@ FORECAST_JULY_24: Dict[str, Any] = {
     },
 }
 
-# Explicit modern shape for the built-ins (verified live, project Sample Project B / Sample
-# Project C): once migrated, 'Actual' carries explicit {"never": true} and
-# 'Forecast As Of' carries explicit {"asOfDate": true} per phase.
+# Explicit modern shape for the built-ins: once migrated, 'Actual' carries explicit
+# {"never": true} and 'Forecast As Of' carries explicit {"asOfDate": true} per phase.
 ACTUAL_MODERN_EXPLICIT: Dict[str, Any] = {
     'id': '000000000000000000000010',
     'name': 'Actual',
@@ -123,7 +121,7 @@ def test_forward_empty_actual_model_is_never() -> None:
 
 def test_forward_empty_forecast_as_of_model_is_as_of_date() -> None:
     # The built-in 'Forecast As Of' model resolves its legacy empty `{}` shape to
-    # "As of Date", NOT "Never" -- name-keyed fallback, verified live.
+    # "As of Date", NOT "Never" -- name-keyed fallback.
     rows = ActualOrForecastMapper().to_csv_rows(FORECAST_AS_OF_LEGACY_EMPTY)
     assert len(rows) == 3
     for r in rows:
@@ -191,8 +189,7 @@ def test_roundtrip_all_never_collapses_to_empty_default_shape() -> None:
     # documented limitation: ignoreHistoryProd has no CSV column and is NOT
     # recoverable -- both the legacy `{}` shape and an explicit modern
     # {"never": true}-per-phase shape render identical CSV rows, and the inverse
-    # always reconstructs the real API's `{}` default (verified live: this is what
-    # Sample Project A' actual 'Actual' model looks like), not the explicit form.
+    # always reconstructs the real API's `{}` default, not the explicit form.
     m = ActualOrForecastMapper()
     for source in (ACTUAL_LEGACY_EMPTY, ACTUAL_MODERN_EXPLICIT, IGNORE_HISTORY):
         rows = m.to_csv_rows(source)

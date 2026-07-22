@@ -6,8 +6,8 @@ from combocurve_api_helper.econ_models import MAPPERS, get_mapper
 from combocurve_api_helper.econ_models.base import Context
 from combocurve_api_helper.econ_models.reserves_category import ReservesCategoryMapper
 
-# Real, FULL API shape (verified live, project Sample Project A): the nested
-# 'reservesCategory' object is the entire model payload -- no rows[], no criteria.
+# Real, FULL API shape: the nested 'reservesCategory' object is the entire model
+# payload -- no rows[], no criteria.
 NON_PRODUCING: Dict[str, Any] = {
     'id': 'rc-non-producing',
     'name': 'Reserves, Proved, Non Producing',

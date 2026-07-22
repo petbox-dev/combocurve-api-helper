@@ -8,8 +8,7 @@ from .csv_columns import COLUMNS
 from .formats import csv_to_num, num_to_csv
 
 # API 'risking' phase key (RiskingModel python attribute name) -> CSV 'Phase' column
-# value, in the verified forward-emission order (project Sample Project A, all 37
-# live models; also verified against the SampleExport_AFE and Sample Project D real CSV exports).
+# value, in forward-emission order.
 _PHASE_ORDER: List[Tuple[str, str]] = [
     ('oil', 'oil'),
     ('gas', 'gas'),
@@ -24,12 +23,10 @@ _WELLS_KEY_CSV = 'wells'
 
 
 class RiskingMultiplierRow(BaseModel):
-    """One `rows[]` element within a Risking phase node (verified live, project Sample
-    Project A, all 37 models; also verified against the SampleExport_AFE and Sample
-    Project D real
-    CSV exports). Every real row carries exactly these two keys -- `entireWellLife` is
-    always the literal string `'Flat'`. No shut-in, offset/dates, or seasonal criteria
-    are observed anywhere; `RiskingMapper` raises `NotImplementedError` on anything else.
+    """One `rows[]` element within a Risking phase node. Every real row carries exactly
+    these two keys -- `entireWellLife` is always the literal string `'Flat'`. No shut-in,
+    offset/dates, or seasonal criteria are supported; `RiskingMapper` raises
+    `NotImplementedError` on anything else.
 
     `multiplier` is typed `Any`, not `Union[int, float]`, so the forward pass carries
     the API's exact value through unchanged (int `97` stays `97`, float `92.816` stays
@@ -52,19 +49,14 @@ class RiskingPhaseNode(BaseModel):
 
 
 class RiskingModel(BaseModel):
-    """The `model['risking']` object -- verified live, project Sample Project A,
-    all 37 models. Structurally unlike every other econ-model type: this data lives at
-    the TOP LEVEL of the model dict (`model['risking']`), never under `model['data']`.
+    """The `model['risking']` object. Structurally unlike every other econ-model type:
+    this data lives at the TOP LEVEL of the model dict (`model['risking']`), never under
+    `model['data']`.
 
     `risk_prod`/`risk_ngl_drip_cond_via_gas_risk` are `Optional[bool]`: absent/`None`
     means "not set", which CC's CSV renders as `'yes'` -- the same display as an
-    explicit `true` (see `RiskingMapper._risk_flag_csv`). `False` IS real, observed data
-    -- project `'Sample Project D | NonOp | MultiBasin'`, model `'SAMPLE_UNIT_2'`:
-    `riskProd: false` -> CSV `'Risk Hist Prod' == 'no'` -- it simply does not occur
-    across the 37 models in the Sample Project A project used for this package's
-    primary ground truth (36 `True` + 1 `None`, 0 `False`).
-    `riskNglDripCondViaGasRisk == False` is unobserved in any of the 39 real models
-    checked across both projects.
+    explicit `true` (see `RiskingMapper._risk_flag_csv`). `False` IS real data --
+    `riskProd: false` -> CSV `'Risk Hist Prod' == 'no'`.
     """
 
     model_config = ConfigDict(populate_by_name=True)
@@ -86,10 +78,10 @@ class RiskingMapper:
     DOCUMENTED LIMITATION -- the CSV 'wells' row: every real CC Risking CSV export also
     contains a constant `Key == 'wells'` row (`Value == '1'`, `Criteria == 'fpd'`,
     `Period == 'ecl'`, every other column blank) on most (not all) models. It is NOT
-    recoverable from the API: two models verified byte-identical in `model['risking']`
-    (SAMPLE WELL 1 7H/8H, both `riskProd == true`) differ in whether the CSV carries a wells
-    row (they don't; SAMPLE UNIT, also `riskProd == true`, does) -- so its presence depends
-    on state the `risking` endpoint does not expose anywhere in the object.
+    recoverable from the API: two models byte-identical in `model['risking']` (both
+    `riskProd == true`) can differ in whether the CSV carries a wells row -- so its
+    presence depends on state the `risking` endpoint does not expose anywhere in the
+    object.
 
     Decision: `to_csv_rows` emits ONLY the 5 phase rows (oil, gas, ngl, drip cond,
     water) and never emits a wells row. `from_csv_rows` IGNORES any `Key == 'wells'`

@@ -5,11 +5,10 @@ import pytest
 from combocurve_api_helper.econ_models import MAPPERS, get_mapper
 from combocurve_api_helper.econ_models.risking import RiskingMapper
 
-# Real, FULL API shape (verified live, project Sample Project A). 'risking' sits at
-# the TOP LEVEL of the model dict -- NOT under 'data' -- unlike every other econ-model
-# type in this package. This model has NO CSV 'wells' row (unlike '3% Downtime'/
-# 'SAMPLE UNIT A P50' in the same project, which do) despite an identical `risking`
-# shape to models that DO -- confirming the wells row is not recoverable from the API.
+# Real, FULL API shape. 'risking' sits at the TOP LEVEL of the model dict -- NOT under
+# 'data' -- unlike every other econ-model type in this package. This model has NO CSV
+# 'wells' row despite an identical `risking` shape to models that DO -- confirming the
+# wells row is not recoverable from the API.
 SAMPLE_WELL_1_P50: Dict[str, Any] = {
     'id': 'risk-rd7h',
     'name': 'SAMPLE WELL 1 P50',
@@ -28,9 +27,8 @@ SAMPLE_WELL_1_P50: Dict[str, Any] = {
     },
 }
 
-# 'Low Proppant' -- riskProd/riskNglDripCondViaGasRisk KEYS ABSENT ENTIRELY (verified
-# live). CC's CSV still renders 'Risk Hist Prod'/'Risk NGL...' as 'yes' -- the documented
-# None -> yes default.
+# riskProd/riskNglDripCondViaGasRisk KEYS ABSENT ENTIRELY. CC's CSV still renders
+# 'Risk Hist Prod'/'Risk NGL...' as 'yes' -- the documented None -> yes default.
 LOW_PROPPANT: Dict[str, Any] = {
     'name': 'Low Proppant',
     'unique': False,
@@ -44,11 +42,8 @@ LOW_PROPPANT: Dict[str, Any] = {
     },
 }
 
-# 'SAMPLE_UNIT_2' -- verified live, project 'Sample Project D | NonOp | MultiBasin'. The only real
-# riskProd == False observed across the 39 models checked (37 in Sample Project A +
-# 2 in Sample Project D) -- confirms the mapper's explicit no/False branch, not just the None
-# default (Sample Project A alone has 0 False, so this case would otherwise be
-# untested).
+# riskProd == False -- exercises the mapper's explicit no/False branch, not just the
+# None default.
 SAMPLE_UNIT_2: Dict[str, Any] = {
     'name': 'SAMPLE_UNIT_2',
     'unique': False,

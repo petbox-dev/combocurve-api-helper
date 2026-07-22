@@ -5,8 +5,7 @@ import pytest
 from combocurve_api_helper.econ_models import MAPPERS, get_mapper
 from combocurve_api_helper.econ_models.ownership_reversion import OwnershipReversionMapper
 
-# Real, FULL API shape (verified live, project 'Sample Project A | AFE', model
-# '8/8ths'): initial-only -- ALL 20 reversion keys explicitly present and null.
+# Initial-only -- ALL 20 reversion keys explicitly present and null.
 EIGHT_EIGHTHS: Dict[str, Any] = {
     'id': '000000000000000000000016',
     'name': '8/8ths',
@@ -49,10 +48,8 @@ EIGHT_EIGHTHS: Dict[str, Any] = {
     },
 }
 
-# Real, FULL API shape (verified live, project 'Sample Project A | AFE', model
-# 'Sample Reversion A w PO'): one active tier (firstReversion). Note firstReversion carries
-# NO 'reversionTiedTo' key at all (real absence) -- see
-# ownership_reversion._REVERSION_TIED_TO_CSV_DEFAULT.
+# One active tier (firstReversion). Note firstReversion carries NO 'reversionTiedTo' key at all
+# (a genuine absence) -- see ownership_reversion._REVERSION_TIED_TO_CSV_DEFAULT.
 SAMPLE_REVERSION_A_W_PO: Dict[str, Any] = {
     'id': '000000000000000000000014',
     'name': 'Sample Reversion A w PO',
@@ -113,9 +110,8 @@ SAMPLE_REVERSION_A_W_PO: Dict[str, Any] = {
     },
 }
 
-# Real, FULL API shape (verified live, project 'Sample Project A | AFE', model
-# 'Sample Well 2 - PO 100%'): one active tier, but here 'reversionTiedTo' IS explicit
-# ({"type": "as_of"}) -- unlike Sample Reversion A w PO above.
+# One active tier, but here 'reversionTiedTo' IS explicit ({"type": "as_of"}) -- unlike
+# SAMPLE_REVERSION_A_W_PO above.
 SAMPLE_WELL_2: Dict[str, Any] = {
     'id': '000000000000000000000015',
     'name': 'Sample Well 2 - PO 100%',
@@ -178,10 +174,8 @@ SAMPLE_WELL_2: Dict[str, Any] = {
 }
 
 
-# Real, FULL API shape (verified live, project 'Sample Project A', model
-# 'sample-model-0001'): a `PayoutWithInvestment` firstReversion tier -- the
-# drift-audit bug where 121/2860 real models raised `NotImplementedError`. Also exercises
-# a `reversionTiedTo` WITH a `value` (`{"type": "date", "value": "2021-10-01"}`), fully
+# A `PayoutWithInvestment` firstReversion tier -- previously raised `NotImplementedError`. Also
+# exercises a `reversionTiedTo` WITH a `value` (`{"type": "date", "value": "2021-10-01"}`), fully
 # distinct from the tier's own dollar-amount `reversionValue`.
 PAYOUT_WITH_INVESTMENT: Dict[str, Any] = {
     'id': '000000000000000000000006',
@@ -244,10 +238,8 @@ PAYOUT_WITH_INVESTMENT: Dict[str, Any] = {
     },
 }
 
-# Real, FULL API shape (verified live, project 'Sample Project A', model
-# 'sample-model-0002'): a `Date` firstReversion tier -- `reversionValue` is a
-# plain ISO date STRING ('2022-09-01'), not a number (the second drift-audit bug, 10/2860
-# real models raising a `ReversionTierData` `ValidationError`). Also: `balance`/
+# A `Date` firstReversion tier -- `reversionValue` is a plain ISO date STRING ('2022-09-01'), not
+# a number (previously raised a `ReversionTierData` `ValidationError`). Also: `balance`/
 # `includeNetProfitInterest` are the empty string (not null/absent), and `reversionTiedTo`
 # carries `{"type": "date", "value": "2023-09-01"}` -- a DIFFERENT date than the tier's own
 # `reversionValue`.
@@ -360,16 +352,16 @@ def test_to_csv_rows_reversion_row_forward_shape() -> None:
     assert reversion_row['Include NPI'] == 'yes'
     assert reversion_row['NPI Type'] == ''
     assert reversion_row['NPI %'] == '0'
-    # Verified live: 'reversionTiedTo' is a real ABSENCE on this model's firstReversion,
-    # yet CC's CSV still renders 'as of' -- the documented display-default fallback.
+    # 'reversionTiedTo' is an ABSENCE on this model's firstReversion, yet CC's CSV still renders
+    # 'as of' -- the documented display-default fallback.
     assert reversion_row['Reversion Tied To'] == 'as of'
     for col in ('Oil NRI %', 'Gas NRI %', 'NGL NRI %', 'Drip Cond. NRI %', 'Rev Basis WI %', 'Rev Basis NRI %'):
         assert reversion_row[col] == ''
 
 
 def test_to_csv_rows_reversion_tied_to_explicit_renders_same_as_absent() -> None:
-    # Sample Well 2 carries an EXPLICIT reversionTiedTo={'type': 'as_of'} (unlike Sample Reversion's
-    # real absence) -- both render the identical CSV cell.
+    # SAMPLE_WELL_2 carries an EXPLICIT reversionTiedTo={'type': 'as_of'} (unlike
+    # SAMPLE_REVERSION_A_W_PO's absence) -- both render the identical CSV cell.
     rows = OwnershipReversionMapper().to_csv_rows(SAMPLE_WELL_2)
     assert rows[1]['Reversion Tied To'] == 'as of'
 
@@ -420,8 +412,8 @@ def test_roundtrip_exact_with_reversion() -> None:
 
 
 def test_roundtrip_reversion_tied_to_absent_reconstructs_as_explicit() -> None:
-    # Documented residual: the CSV cannot distinguish a real absence of
-    # 'reversionTiedTo' (Sample Reversion) from an explicit {"type": "as_of"} (Sample Well 2) --
+    # Documented residual: the CSV cannot distinguish an absence of 'reversionTiedTo'
+    # (SAMPLE_REVERSION_A_W_PO) from an explicit {"type": "as_of"} (SAMPLE_WELL_2) --
     # from_csv_rows always reconstructs the explicit form.
     m = OwnershipReversionMapper()
     rebuilt = m.from_csv_rows(m.to_csv_rows(SAMPLE_REVERSION_A_W_PO))
@@ -457,8 +449,8 @@ def test_to_csv_rows_date_type_forward_shape() -> None:
     assert reversion_row['Reversion Value'] == '09/01/2022'
     assert reversion_row['WI %'] == '23.25'
     assert reversion_row['NRI %'] == '17.4375'
-    # Verified live: balance/includeNetProfitInterest are '' (not null/absent) for a real
-    # 'Date' tier, where neither concept applies.
+    # balance/includeNetProfitInterest are '' (not null/absent) for a 'Date' tier, where neither
+    # concept applies.
     assert reversion_row['Balance'] == ''
     assert reversion_row['Include NPI'] == ''
     # reversionTiedTo={'type': 'date', 'value': '2023-09-01'} -- a DIFFERENT date than the

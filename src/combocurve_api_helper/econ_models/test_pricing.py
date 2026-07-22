@@ -6,9 +6,8 @@ from combocurve_api_helper.econ_models import MAPPERS, get_mapper
 from combocurve_api_helper.econ_models.base import Context
 from combocurve_api_helper.econ_models.pricing import PricingMapper
 
-# Real API shape (verified live, project Sample Project A, model
-# "$70 / $2.50 Flat"): flat pricing on all four phases, `breakeven.basedOnPriceRatio`
-# False (the 'direct' CSV case).
+# API shape: flat pricing on all four phases, `breakeven.basedOnPriceRatio` False (the
+# 'direct' CSV case).
 FLAT_MODEL: Dict[str, Any] = {
     'id': '000000000000000000000001',
     'name': '$70 / $2.50 Flat',
@@ -29,9 +28,9 @@ FLAT_MODEL: Dict[str, Any] = {
     'breakeven': {'basedOnPriceRatio': False, 'npvDiscount': 0, 'priceRatio': None},
 }
 
-# Real API shape (verified live, model "23Q4 Avg Strip"): dated oil/gas prices, flat
-# ngl (% of oil price) AND flat dripCondensate priced DIRECTLY per bbl (`dollarPerBbl`
-# -- NOT `price`, unlike oil), plus a 'based on price ratio' breakeven.
+# API shape: dated oil/gas prices, flat ngl (% of oil price) AND flat dripCondensate
+# priced DIRECTLY per bbl (`dollarPerBbl` -- NOT `price`, unlike oil), plus a 'based on
+# price ratio' breakeven.
 BREAKEVEN_RATIO_MODEL: Dict[str, Any] = {
     'id': '000000000000000000000012',
     'name': '23Q4 Avg Strip',
@@ -145,11 +144,11 @@ def test_to_csv_rows_includes_common_columns_with_context() -> None:
 
 
 def test_gas_component_category_not_implemented() -> None:
-    """CC's real CSV export shows compositional gas-component rows (Category in
-    c1/co2/n2/remaining) for one observed live model ("23Q4 Avg"), but the live API
-    (verified both the list and single-model-by-id GET endpoints) exposes NO field
-    anywhere in `priceModel.gas` to hold this data -- it cannot be reconstructed from
-    a CSV row, so from_csv_rows fails loud rather than silently dropping it."""
+    """CC's CSV export shows compositional gas-component rows (Category in
+    c1/co2/n2/remaining), but the API (the list and single-model-by-id GET endpoints)
+    exposes NO field anywhere in `priceModel.gas` to hold this data -- it cannot be
+    reconstructed from a CSV row, so from_csv_rows fails loud rather than silently
+    dropping it."""
     rows = PricingMapper().to_csv_rows(FLAT_MODEL)
     gas_row = next(r for r in rows if r['Phase'] == 'gas')
     bad_row = dict(gas_row, Category='c1')
@@ -159,10 +158,10 @@ def test_gas_component_category_not_implemented() -> None:
 
 def test_full_stream_category_accepted_as_plain_row_not_round_trippable() -> None:
     """'full_stream' is CC's display label for the plain (non-compositional) gas/ngl
-    price on ~19% of real models -- verified live that the underlying API row is
-    IDENTICAL in shape to the blank-Category case, so from_csv_rows accepts it as an
-    equivalent plain row (numeric data preserved), but the label itself is a
-    CSV-inherent, non-recoverable field: to_csv_rows always emits Category=''."""
+    price -- the underlying API row is IDENTICAL in shape to the blank-Category case, so
+    from_csv_rows accepts it as an equivalent plain row (numeric data preserved), but the
+    label itself is a CSV-inherent, non-recoverable field: to_csv_rows always emits
+    Category=''."""
     rows = PricingMapper().to_csv_rows(FLAT_MODEL)
     gas_row = next(r for r in rows if r['Phase'] == 'gas')
     fs_row = dict(gas_row, Category='full_stream')

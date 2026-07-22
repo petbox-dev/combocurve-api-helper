@@ -7,9 +7,8 @@ from .csv_columns import COLUMNS
 
 
 class ReservesCategoryData(BaseModel):
-    """The `reservesCategory` object on a real ReservesCategory econ model (verified live,
-    project Sample Project A): `{"prmsClass": "reserves", "prmsCategory": "proved",
-    "prmsSubCategory": "producing"}`.
+    """The `reservesCategory` object on a ReservesCategory econ model:
+    `{"prmsClass": "reserves", "prmsCategory": "proved", "prmsSubCategory": "producing"}`.
 
     CC's CSV export renders these three values PASSED THROUGH UNCHANGED -- lowercase,
     including underscores (e.g. `non_producing`) -- with NO underscore-to-space transform,

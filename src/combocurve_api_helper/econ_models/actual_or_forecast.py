@@ -5,14 +5,13 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from .base import Context, common_columns, model_identity
 from .csv_columns import COLUMNS
 
-# CC always emits exactly 3 rows per model, in this order (verified live, project Sample
-# Project A: 18/18 models each render as exactly 3 rows, Key=oil/gas/water).
+# CC always emits exactly 3 rows per model, in this order (Key=oil/gas/water).
 _PHASES: Tuple[str, str, str] = ('oil', 'gas', 'water')
 
 # The econ-model type's two fixed, non-deletable built-in model names (every project
-# has exactly one of each) -- ported from cc-afe-sync's
-# `models/actual_or_forecast.py` ACTUAL_OR_FORECAST_ASSIGNMENTS, which hardcodes these
-# same two names as the only valid qualifier-slot assignments for this type.
+# has exactly one of each) -- ported from cc-afe-sync's ACTUAL_OR_FORECAST_ASSIGNMENTS,
+# which hardcodes these same two names as the only valid qualifier-slot assignments for
+# this type.
 _MODEL_NAME_ACTUAL = 'Actual'
 _MODEL_NAME_FORECAST_AS_OF = 'Forecast As Of'
 
@@ -25,9 +24,8 @@ class PhaseSwitchData(BaseModel):
     """One `replaceActualWithForecast[phase]` node of the real ActualOrForecast API
     shape.
 
-    Verified live (project Sample Project A) and cross-checked against a
-    broader scan of ~380 ActualOrForecast models across 80 projects: exactly one of
-    `date`/`never`/`as_of_date` is ever populated on an explicit (migrated) node --
+    Exactly one of `date`/`never`/`as_of_date` is ever populated on an explicit
+    (migrated) node --
 
     - `{"date": "2026-03-31"}` -- switch on a fixed date (ISO string, passed through
       unchanged -- NOT reformatted to MM/DD/YYYY).
@@ -59,15 +57,12 @@ def _phase_criteria(data: PhaseSwitchData, model_name: str) -> Tuple[str, str]:
         return _CRITERIA_NEVER, ''
     if data.as_of_date is True:
         return _CRITERIA_AS_OF_DATE, ''
-    # No explicit marker -- legacy `{}`/absent-phase representation (verified live:
-    # project Sample Project A' 'Actual' and 'Forecast As Of' models are both
-    # still `actualOrForecast: {}` as of this writing, never migrated to the
-    # explicit per-phase shape). CC's front end resolves this via the model's fixed,
-    # non-deletable built-in name: 'Forecast As Of' always means "replace with
-    # forecast as of the project's As Of Date" even when unmigrated/empty; every
-    # other model (including the other built-in, 'Actual', and ordinary
-    # user-created models such as 'Ignore History' whose `actualOrForecast` carries
-    # only `ignoreHistoryProd`) defaults to Never.
+    # No explicit marker -- legacy `{}`/absent-phase representation. CC's front end
+    # resolves this via the model's fixed, non-deletable built-in name: 'Forecast As Of'
+    # always means "replace with forecast as of the project's As Of Date" even when
+    # unmigrated/empty; every other model (including the other built-in, 'Actual', and
+    # ordinary user-created models such as 'Ignore History' whose `actualOrForecast`
+    # carries only `ignoreHistoryProd`) defaults to Never.
     if model_name == _MODEL_NAME_FORECAST_AS_OF:
         return _CRITERIA_AS_OF_DATE, ''
     return _CRITERIA_NEVER, ''
@@ -141,9 +136,9 @@ class ActualOrForecastMapper:
         #
         # When every phase is Never AND the model is not the built-in
         # 'Forecast As Of', reproduce CC's real legacy/default empty shape
-        # (`actualOrForecast: {}`) exactly -- verified live on project Sample Project A
-        # ('Actual' and ordinary Never-only models alike are `{}`-shaped or
-        # carry only `ignoreHistoryProd`, never an explicit per-phase `never` node).
+        # (`actualOrForecast: {}`) exactly ('Actual' and ordinary Never-only models
+        # alike are `{}`-shaped or carry only `ignoreHistoryProd`, never an explicit
+        # per-phase `never` node).
         # Collapsing to `{}` for a model literally named 'Forecast As Of' would
         # silently flip back to 'As of Date' on the next `to_csv_rows` pass (see
         # `_phase_criteria`'s name-based fallback) -- a round-trip break -- so that

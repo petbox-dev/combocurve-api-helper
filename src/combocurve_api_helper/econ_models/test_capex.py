@@ -6,9 +6,8 @@ import pytest
 
 from combocurve_api_helper.econ_models.capex import CapexMapper
 
-# Real API leaf shape (verified live, Sample_Onboarding / 'Example' + 'D&C CAPEX'
-# models): every listed key is always present on an otherCapex row, plus exactly ONE
-# criterion key (+ companion date-header key for fromHeaders/fromSchedule).
+# API leaf shape: every listed key is always present on an otherCapex row, plus exactly
+# ONE criterion key (+ companion date-header key for fromHeaders/fromSchedule).
 _PROBABILISTIC_DEFAULTS: Dict[str, Any] = {
     'distributionType': 'na',
     'mean': 0,
@@ -79,9 +78,8 @@ def test_to_csv_rows_values() -> None:
     assert abandonment_row['Appear After Econ Limit'] == 'yes'
     assert rows[0]['Appear After Econ Limit'] == 'no'
 
-    # Verified against real CAPEX.csv/CAPEX_per_foot.csv exports: the API 'none'
-    # model renders as the title-cased string 'None' in both Escalation and
-    # Depreciation columns.
+    # The API 'none' model renders as the title-cased string 'None' in both Escalation
+    # and Depreciation columns.
     for r in rows:
         assert r['Depreciation'] == 'None'
         assert r['Escalation'] == 'None'
@@ -96,9 +94,8 @@ def test_to_csv_rows_values() -> None:
 
 
 def test_from_headers_first_prod_date() -> None:
-    """Real otherCapex rows use the abbreviated token 'offset_to_first_prod_date'
-    (companion key 'firstProdDate') -- verified live, project 'Sample Project A |
-    AFE' (9 SAMPLE_LATERAL models). Mirrors the existing 'offset_to_spud_date' handling."""
+    """otherCapex rows use the abbreviated token 'offset_to_first_prod_date' (companion key
+    'firstProdDate'). Mirrors the existing 'offset_to_spud_date' handling."""
     m: Dict[str, Any] = {
         'name': 'FIRST PROD DATE CAPEX',
         'unique': False,
@@ -131,8 +128,8 @@ def test_roundtrip() -> None:
 _DRILLING_COST = 'Drilling Cost ($/ft)'
 _COMPLETION_COST = 'Completion Cost ($/ft)'
 
-# Real live shapes (project 'Sample Project B'/'Sample Project C', 2026-07): drilling's
-# dollarPerFtOfHorizontal is a scalar; completion's is a proppant-loading tier LIST.
+# drilling's dollarPerFtOfHorizontal is a scalar; completion's is a proppant-loading tier
+# LIST.
 _DRILLING_PER_FOOT: Dict[str, Any] = {
     'dollarPerFtOfVertical': 0,
     'dollarPerFtOfHorizontal': 196,
@@ -260,11 +257,9 @@ def test_non_default_probabilistic_fields_warn() -> None:
 
 
 def test_escalation_start_as_of_date() -> None:
-    """escalationStart {'asOfDate': <int>} occurs on 2150 of 9729 real otherCapex rows
-    (Sample Project B / Sample Project C / Sample Project A, verified live 2026-07). The int is a
-    day-offset, mapped like applyToCriteria. The round-trip assertion is label-agnostic
-    (proves to_csv / from_csv are inverses); the 'as of date' display string is CC's
-    escalation-start UI option, verified against a CC CSV export."""
+    """escalationStart {'asOfDate': <int>}: the int is a day-offset, mapped like
+    applyToCriteria. The round-trip assertion is label-agnostic (proves to_csv / from_csv
+    are inverses); the 'as of date' display string is CC's escalation-start UI option."""
     rows_in: List[Dict[str, Any]] = [
         {**_row('drilling', intangible=3000, offsetToFpd=-120), 'escalationStart': {'asOfDate': 5}},
     ]

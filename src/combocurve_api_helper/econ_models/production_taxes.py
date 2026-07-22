@@ -16,18 +16,16 @@ _PHASE_FROM_CSV = {v: k for k, v in _PHASE_TO_CSV.items()}
 _UNIT_TO_CSV = {'pct_of_revenue': '% of rev', 'dollar_per_bbl': '$/bbl', 'dollar_per_mcf': '$/mcf'}
 _UNIT_FROM_CSV = {v: k for k, v in _UNIT_TO_CSV.items()}
 
-# API 'criteria' -> CSV 'Criteria' column value. 'flat'/'fpd' verified live against NM/TX
-# models (project Sample_Onboarding); 'dates' verified against a CC CSV export of
-# 'SAMPLE PDP STREAM' (Sample Project B). Unknown criteria raise.
+# API 'criteria' -> CSV 'Criteria' column value. Unknown criteria raise.
 _CRITERIA_TO_CSV = {'entire_well_life': 'flat', 'offset_to_fpd': 'fpd', 'dates': 'dates'}
 _CRITERIA_FROM_CSV = {v: k for k, v in _CRITERIA_TO_CSV.items()}
 
 # For a 'dates' criteria the Period column is the schedule date rendered as month-abbrev +
-# 2-digit year ('2023-07-01' -> 'Jul-23'), verified against CC's CSV export. Every dates
-# schedule's first period is CC's 1900-01-01 "beginning of time" sentinel, which renders as
-# 'Jan-00'. '%b-%y' cannot carry the century, so that exact string is special-cased on the
-# inverse to keep the round-trip lossless; all other periods are 21st-century first-of-month
-# dates. A fixed English month table keeps output locale-independent.
+# 2-digit year ('2023-07-01' -> 'Jul-23'). Every dates schedule's first period is CC's
+# 1900-01-01 "beginning of time" sentinel, which renders as 'Jan-00'. '%b-%y' cannot carry
+# the century, so that exact string is special-cased on the inverse to keep the round-trip
+# lossless; all other periods are 21st-century first-of-month dates. A fixed English month
+# table keeps output locale-independent.
 _MONTH_ABBRS = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
 _DATES_START_SENTINEL_ISO = '1900-01-01'
 _DATES_START_SENTINEL_CSV = 'Jan-00'
@@ -49,7 +47,7 @@ _SEVERANCE_CATEGORY_API = 'severance_tax'
 _SEVERANCE_CATEGORY_CSV = 'Severance Tax'
 
 # Ad valorem rows: the API 'category' is 'ad_val_tax' (NOT 'ad_valorem_tax' -- that
-# string is instead the constant, recoverable API 'key' on these rows). Verified live:
+# string is instead the constant, recoverable API 'key' on these rows), e.g.
 # {"key": "ad_valorem_tax", "category": "ad_val_tax", ...}.
 _AD_VALOREM_CATEGORY_API = 'ad_val_tax'
 _AD_VALOREM_KEY_API = 'ad_valorem_tax'
@@ -58,8 +56,7 @@ _AD_VALOREM_CATEGORY_CSV = 'Ad Val Tax'
 
 
 class ProductionTaxApiRow(BaseModel):
-    """One `data.rows[]` element of the real ProductionTaxes API shape (verified live,
-    models NM/TX, project Sample_Onboarding).
+    """One `data.rows[]` element of the ProductionTaxes API shape.
 
     `deduct_severance_tax` (API `deductSeveranceTax`) is the structurally interesting
     field: severance rows (`category == 'severance_tax'`) never carry this key at all --

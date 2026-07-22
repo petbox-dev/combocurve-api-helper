@@ -66,14 +66,13 @@ def test_to_csv_rows_values() -> None:
         'bbl/mmcf',
         'unshrunk',
     )
-    # Verified against real Stream Properties.csv: 'Rate Type' / 'Rate Rows Calculation
-    # Method' are ALWAYS blank, even though the API yields/shrinkage/lossFlare groups
-    # carry rateType/rowsCalculationMethod values. Not round-trippable.
+    # 'Rate Type' / 'Rate Rows Calculation Method' are ALWAYS blank, even though the API
+    # yields/shrinkage/lossFlare groups carry rateType/rowsCalculationMethod values. Not
+    # round-trippable.
     assert (ngl['Rate Type'], ngl['Rate Rows Calculation Method']) == ('', '')
 
-    # Verified against real Stream Properties.csv: 'Value' always renders with a
-    # decimal point, e.g. '0.0'/'100.0' not '0'/'100' (unlike Capex/Differentials/
-    # ProductionTaxes, which drop the trailing '.0').
+    # 'Value' always renders with a decimal point, e.g. '0.0'/'100.0' not '0'/'100'
+    # (unlike Capex/Differentials/ProductionTaxes, which drop the trailing '.0').
     drip = next(r for r in rows if r['Key'] == 'yields' and r['Category'] == 'drip cond')
     assert (drip['Value'], drip['Unit'], drip['Gas Shrinkage Condition']) == ('0.0', 'bbl/mmcf', 'unshrunk')
     assert (drip['Rate Type'], drip['Rate Rows Calculation Method']) == ('', '')

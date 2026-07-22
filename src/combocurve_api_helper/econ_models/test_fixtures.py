@@ -1,5 +1,5 @@
 """Ground-truth validation of the forward/inverse direction against REAL ComboCurve
-CSV exports (trimmed fixtures under fixtures/, sourced from cc-api-scripts/examples).
+CSV exports (trimmed fixtures under fixtures/).
 
 Unlike the hand-written API->CSV->API tests in the per-type test modules, this
 module starts from actual CSV rows CC produced and checks that

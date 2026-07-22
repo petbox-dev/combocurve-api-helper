@@ -151,10 +151,10 @@ class StreamPropertiesMapper:
                             'Period': period,
                             'Unit': unit,
                             'Gas Shrinkage Condition': _gas_shrinkage_condition(r),
-                            # Verified against real CC exports: 'Rate Type' / 'Rate Rows
-                            # Calculation Method' are always blank in the Stream
-                            # Properties CSV, even though the API groups carry
-                            # rateType/rowsCalculationMethod. Not round-trippable.
+                            # 'Rate Type' / 'Rate Rows Calculation Method' are always
+                            # blank in the Stream Properties CSV, even though the API
+                            # groups carry rateType/rowsCalculationMethod. Not
+                            # round-trippable.
                             'Rate Type': '',
                             'Rate Rows Calculation Method': '',
                         }

@@ -9,10 +9,8 @@ from .csv_columns import COLUMNS
 from .formats import csv_to_num, escalation_from_csv, escalation_to_csv, num_to_csv, num_to_csv_float
 
 # API phase (variableExpenses top-level key) -> CSV 'Key' column value. `boe`/
-# `totalFluid` ARE real phases -- verified against a real Expenses.csv export
-# (Key='boe'/'total_fluid', Category='opc' rows) and against the live API model
-# `SAMPLE_OPEX_LOOKUP_0001`. Unlike oil/gas/ngl/dripCondensate, their REAL
-# API shape is DOUBLE-NESTED under the subcat key -- verified raw:
+# `totalFluid` ARE real phases. Unlike oil/gas/ngl/dripCondensate, their REAL
+# API shape is DOUBLE-NESTED under the subcat key:
 # `variableExpenses.boe == {"processing": {"processing": {<leaf>}}}` (and identically
 # for `totalFluid`) -- i.e. `variableExpenses[phase][subcat][subcat]` is the real leaf,
 # not `variableExpenses[phase][subcat]` as for every other phase. See
@@ -34,11 +32,11 @@ _PHASE_FROM_CSV = {v: k for k, v in _PHASE_TO_CSV.items()}
 # inverse always re-nests as {subcat: {subcat: leaf}} for these two phases specifically.
 _DOUBLE_NESTED_PHASES = {'boe', 'totalFluid'}
 
-# Real API leaf-identifying keys (verified live): every genuine ExpenseLeaf dict
-# carries at least one of these settings keys (even when its value is null/empty), so
-# checking for ANY of them distinguishes a real leaf from the boe/totalFluid
-# double-nesting wrapper, whose only key is the repeated subcat name (e.g.
-# {'processing': {<leaf>}}) with no leaf-settings keys of its own.
+# Real API leaf-identifying keys: every genuine ExpenseLeaf dict carries at least one
+# of these settings keys (even when its value is null/empty), so checking for ANY of
+# them distinguishes a real leaf from the boe/totalFluid double-nesting wrapper, whose
+# only key is the repeated subcat name (e.g. {'processing': {<leaf>}}) with no
+# leaf-settings keys of its own.
 _LEAF_MARKER_KEYS = {
     'rows',
     'description',
@@ -88,12 +86,10 @@ _CARBON_CATEGORY_CSV = 'co2e'
 
 _WATER_KEY_CSV = 'water'
 
-# Row value key (API alias) -> CSV 'Unit' column value. dollarPerMmbtu/
-# fixedExpensePerWell verified against real Expenses.csv exports (Sample Project A / Sample
-# Project A | AFE projects): dollarPerMmbtu is a gas variable
-# expense (always value 0 in every real row observed, Criteria='flat', across
-# g&p/opc/trn/mkt/other subcats) and fixedExpensePerWell is the per-well variant of
-# fixedExpense on fixedExpenses slots (observed on monthlyWellCost, Criteria='dates').
+# Row value key (API alias) -> CSV 'Unit' column value. dollarPerMmbtu is a gas
+# variable expense (Criteria='flat', across g&p/opc/trn/mkt/other subcats) and
+# fixedExpensePerWell is the per-well variant of fixedExpense on fixedExpenses slots
+# (on monthlyWellCost, Criteria='dates').
 _VALUE_UNIT = [
     ('dollarPerBbl', '$/bbl'),
     ('dollarPerMcf', '$/mcf'),
@@ -111,8 +107,8 @@ _NO_VALUE_BBL_KEYS = {'oil', 'ngl', 'drip cond', _WATER_KEY_CSV}
 # Inverse-only canonical offsetToFpd reconstructed for a CSV Period of 'ecl'. This is
 # NOT a value round-tripped from the real API -- see the terminal-row rule below.
 # Documented non-exact: a source leaf whose real terminal offsetToFpd differs from this
-# constant (verified real values include 1104/1140, not just 1200) will not reproduce
-# its original offsetToFpd through a CSV round trip; it comes back as this constant.
+# constant will not reproduce its original offsetToFpd through a CSV round trip; it
+# comes back as this constant.
 _FPD_ECL_CANONICAL_OFFSET = 1200
 
 
@@ -120,28 +116,24 @@ class ExpenseApiRow(BaseModel):
     """One `rows[]` element within an Expenses leaf (variableExpenses/fixedExpenses/
     carbonExpenses/waterDisposal). A real API row carries exactly one of
     `entireWellLife` (flat criteria), `offsetToFpd` (fpd criteria), or `dates` (dated
-    criteria -- verified live on fixedExpenses/waterDisposal rows, CSV Criteria
-    'dates', Period a literal calendar date, e.g. fixedExpenses.monthlyWellCost /
-    waterDisposal rows with `{'dates': '2000-01-01', ...}`), and (usually) exactly one
-    of `dollarPerBbl`/`dollarPerMcf`/`dollarPerMmbtu`/`fixedExpense`/
-    `fixedExpensePerWell`/`carbonExpense`. Exception (verified live, model
-    'Sample Model | Bid'): a $/bbl-denominated leaf (oil/ngl/drip-cond variable
-    expenses, water disposal) can carry a row with NONE of those value keys at all --
-    CC's real Expenses.csv still renders it as Value '0' Unit '$/bbl', so
-    `_value_unit` falls back to that reading for these specific Keys
-    rather than raising. See `_NO_VALUE_BBL_KEYS`.
+    criteria -- CSV Criteria 'dates', Period a literal calendar date, e.g.
+    fixedExpenses/waterDisposal rows with `{'dates': '2000-01-01', ...}`), and
+    (usually) exactly one of `dollarPerBbl`/`dollarPerMcf`/`dollarPerMmbtu`/
+    `fixedExpense`/`fixedExpensePerWell`/`carbonExpense`. Exception: a $/bbl-denominated
+    leaf (oil/ngl/drip-cond variable expenses, water disposal) can carry a row with
+    NONE of those value keys at all -- CC's real Expenses.csv still renders it as Value
+    '0' Unit '$/bbl', so `_value_unit` falls back to that reading for these specific
+    Keys rather than raising. See `_NO_VALUE_BBL_KEYS`.
 
     Terminal-row 'ecl' rule (CSV Period column, forward direction only -- NOT a field
     on this model): within a single leaf's `rows` list, the CSV renders the LAST row's
     fpd Period as `'ecl'` (economic limit) regardless of its actual `offsetToFpd`
-    value -- verified live: leaked real terminal offsets include 1104 and 1140, not
-    just the previously-assumed constant 1200. Earlier (non-terminal) fpd rows in the
-    same leaf render their literal month offset. A leaf whose only fpd row is
-    terminal (the common case) renders that single row as 'ecl'. See
-    `_criteria` for the position-based implementation and
+    value. Earlier (non-terminal) fpd rows in the same leaf render their literal month
+    offset. A leaf whose only fpd row is terminal (the common case) renders that single
+    row as 'ecl'. See `_criteria` for the position-based implementation and
     `_FPD_ECL_CANONICAL_OFFSET` for the (documented non-exact) inverse reconstruction.
-    This rule is specific to `offsetToFpd`/'fpd' rows -- verified live that 'dates'
-    rows never render 'ecl' regardless of position within the leaf.
+    This rule is specific to `offsetToFpd`/'fpd' rows -- 'dates' rows never render 'ecl'
+    regardless of position within the leaf.
     """
 
     model_config = ConfigDict(populate_by_name=True)
@@ -161,13 +153,12 @@ class ExpenseLeaf(BaseModel):
     """Leaf settings shared by every expense group (variable/fixed/carbon/water).
 
     Every key EXCEPT `stopAtEconLimit`/`expenseBeforeFpd` (fixed-only) is always
-    present on a real API leaf (verified live) -- including `cap`/`description`/etc
-    when their value is null. `from_csv_rows` therefore reconstructs those fields
-    unconditionally (never omits them just because the CSV cell was blank), via an
-    explicit `exclude={...}` set on `model_dump` rather than a blanket
-    `exclude_none=True` -- see `_build_leaf`. `Optional` typing here
-    exists only because a CSV cell can be blank (-> None), not because the key itself
-    is ever genuinely absent.
+    present on a real API leaf -- including `cap`/`description`/etc when their value is
+    null. `from_csv_rows` therefore reconstructs those fields unconditionally (never
+    omits them just because the CSV cell was blank), via an explicit `exclude={...}` set
+    on `model_dump` rather than a blanket `exclude_none=True` -- see `_build_leaf`.
+    `Optional` typing here exists only because a CSV cell can be blank (-> None), not
+    because the key itself is ever genuinely absent.
 
     `rateType`/`rowsCalculationMethod` are parsed (so `model_validate` never chokes on
     a real leaf) but deliberately never read by `to_csv_rows` and never set by
@@ -178,8 +169,8 @@ class ExpenseLeaf(BaseModel):
     dumped API dict.
 
     `stopAtEconLimit`/`expenseBeforeFpd` only exist on real fixedExpenses leaves (never
-    on variable/carbon/water leaves, verified against the OpenAPI Expenses example) --
-    `from_csv_rows` excludes them from the dump for non-fixed leaves.
+    on variable/carbon/water leaves) -- `from_csv_rows` excludes them from the dump for
+    non-fixed leaves.
     """
 
     model_config = ConfigDict(populate_by_name=True)
@@ -203,9 +194,8 @@ class ExpenseLeaf(BaseModel):
     @classmethod
     def _blank_cap_to_none(cls, v: Any) -> Any:
         # Some real API leaves carry cap as '' (empty string) rather than null when
-        # unset (seen in the OpenAPI Expenses example alongside numeric caps like 34/
-        # 500/233) -- normalize both "no cap" sentinels to None so model_validate
-        # never raises on a real leaf.
+        # unset -- normalize both "no cap" sentinels to None so model_validate never
+        # raises on a real leaf.
         return None if v == '' else v
 
 
@@ -242,19 +232,16 @@ def _settings_columns(leaf: ExpenseLeaf, fixed: bool) -> Dict[str, str]:
         'Calculation': '' if leaf.calculation is None else leaf.calculation,
         'Escalation': escalation_to_csv(leaf.escalation_model, title=False),
         'Shrinkage Condition': '' if leaf.shrinkage_condition is None else leaf.shrinkage_condition,
-        # Verified against real Expenses.csv: 'Rate Type'/'Rate Rows Calculation
-        # Method' are ALWAYS blank, even though the API leaf carries real
-        # rateType/rowsCalculationMethod values. Not round-trippable -- see
-        # ExpenseLeaf docstring.
+        # 'Rate Type'/'Rate Rows Calculation Method' are ALWAYS blank, even though the
+        # API leaf carries real rateType/rowsCalculationMethod values. Not
+        # round-trippable -- see ExpenseLeaf docstring.
         'Rate Type': '',
         'Rate Rows Calculation Method': '',
-        # yes/no (not yes/blank): verified against real CC exports -- these boolean
-        # toggles render 'no' for False, not ''. 'Expense bef FPD' = 'no' is present
-        # on 82+ real models; yes_blank silently corrupted the False case and broke
-        # the round-trip (final-review M5). 'Affect Econ Limit' and 'Stop at Econ
-        # Limit' were always True in the exports inspected, but are the same kind of
-        # real boolean toggle as the proven-yes/no 'Deduct bef *' columns, so they
-        # render the same way.
+        # yes/no (not yes/blank): these boolean toggles render 'no' for False, not ''.
+        # 'Expense bef FPD' = 'no' is real data; yes_blank silently corrupted the False
+        # case and broke the round-trip (final-review M5). 'Affect Econ Limit' and
+        # 'Stop at Econ Limit' are the same kind of real boolean toggle as the yes/no
+        # 'Deduct bef *' columns, so they render the same way.
         'Affect Econ Limit': formats.yes_no(leaf.affect_econ_limit),
         'Deduct bef Sev Tax': formats.yes_no(leaf.deduct_before_severance_tax),
         'Deduct bef Ad Val Tax': formats.yes_no(leaf.deduct_before_ad_val_tax),
@@ -284,16 +271,14 @@ def _value_unit(r: ExpenseApiRow, key_csv: str) -> Tuple[Any, str]:
     if r.carbon_expense is not None:
         return r.carbon_expense, '$/MT'
     if key_csv in _NO_VALUE_BBL_KEYS:
-        # Verified live (model 'Sample Model | Bid', Sample Project A | AFE
-        # project): a real API row for a $/bbl-denominated leaf can omit every
-        # value key entirely -- confirmed against the real Expenses.csv export,
-        # which still renders these rows as Value '0' Unit '$/bbl' rather than
-        # blank. Only observed for these bbl-denominated Keys; gas/fixed/carbon
-        # rows always carry an explicit value key (even when the value is 0), so
-        # we do not guess a fallback unit for those -- they still raise below.
-        # Round-trip note: from_csv_rows reconstructs this '0'/'$/bbl' cell the same
-        # way as any $/bbl row -- i.e. as dollarPerBbl=0, not a value-key-less row --
-        # which is CSV-idempotent and matches CC's own export.
+        # A real API row for a $/bbl-denominated leaf can omit every value key
+        # entirely -- CC's real Expenses.csv still renders these rows as Value '0'
+        # Unit '$/bbl' rather than blank. Only these bbl-denominated Keys behave this
+        # way; gas/fixed/carbon rows always carry an explicit value key (even when the
+        # value is 0), so we do not guess a fallback unit for those -- they still raise
+        # below. Round-trip note: from_csv_rows reconstructs this '0'/'$/bbl' cell the
+        # same way as any $/bbl row -- i.e. as dollarPerBbl=0, not a value-key-less row
+        # -- which is CSV-idempotent and matches CC's own export.
         return 0, '$/bbl'
     raise NotImplementedError(f'Unknown expense row value: {r!r}')
 
@@ -356,13 +341,12 @@ def _build_leaf(members: List[Dict[str, str]], fixed: bool) -> Dict[str, Any]:
 
     leaf = ExpenseLeaf.model_validate(kwargs)
     # Real API leaves always carry description/calculation/escalationModel/
-    # shrinkageCondition/cap/dealTerms/affectEconLimit/deductBefore* (verified
-    # live) EVEN WHEN the value is null/false -- so, unlike rateType/
-    # rowsCalculationMethod (never reconstructed) and stopAtEconLimit/
-    # expenseBeforeFpd (only exist on fixed leaves), these fields must NOT be
-    # dropped just because their reconstructed value happens to be None. Hence
-    # `exclude=` (a fixed field-name set) rather than a blanket `exclude_none=True`
-    # on the leaf itself.
+    # shrinkageCondition/cap/dealTerms/affectEconLimit/deductBefore* EVEN WHEN the
+    # value is null/false -- so, unlike rateType/rowsCalculationMethod (never
+    # reconstructed) and stopAtEconLimit/expenseBeforeFpd (only exist on fixed leaves),
+    # these fields must NOT be dropped just because their reconstructed value happens to
+    # be None. Hence `exclude=` (a fixed field-name set) rather than a blanket
+    # `exclude_none=True` on the leaf itself.
     exclude_fields: Set[str] = {'rate_type', 'rows_calculation_method'}
     if not fixed:
         exclude_fields |= {'stop_at_econ_limit', 'expense_before_fpd'}
@@ -423,8 +407,7 @@ class ExpensesMapper:
                 raise NotImplementedError(f'Unknown fixed expense slot: {slot}')
             rows.extend(self._leaf_rows(common, leaf, _FIXED_KEY_CSV, _FIXED_SLOT_TO_CSV[slot], fixed=True))
 
-        # Water is emitted BEFORE carbon -- verified against a real Expenses.csv export
-        # (model SAMPLE_OPEX_LOOKUP_0001): CC's CSV row order is
+        # Water is emitted BEFORE carbon: CC's CSV row order is
         # variable -> fixed -> water -> carbon, not variable -> fixed -> carbon -> water.
         water = model.get('waterDisposal')
         if water:

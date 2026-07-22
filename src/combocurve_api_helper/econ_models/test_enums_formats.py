@@ -96,9 +96,8 @@ def test_num_to_csv_float_always_has_point() -> None:
 
 
 def test_check_entire_well_life() -> None:
-    """Both known CC flat-criteria markers pass (verified live: 'Flat' dominant,
-    'Entire Well Life' occurs in real Pricing models); any other value fails loud
-    rather than being silently mapped to 'flat' (final-review M4)."""
+    """Both known CC flat-criteria markers pass ('Flat', 'Entire Well Life'); any other
+    value fails loud rather than being silently mapped to 'flat'."""
     F.check_entire_well_life('Flat')
     F.check_entire_well_life('Entire Well Life')
     with pytest.raises(NotImplementedError):
