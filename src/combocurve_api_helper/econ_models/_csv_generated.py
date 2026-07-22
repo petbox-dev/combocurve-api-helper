@@ -22,7 +22,7 @@ def actual_forecast_to_csv_rows(model: Dict[str, Any], context: Optional[Context
 
 
 def actual_forecast_from_csv_rows(rows: List[Dict[str, str]]) -> Dict[str, Any]:
-    """Reconstruct a `ActualOrForecast` econ-model API dict from its CSV rows."""
+    """Reconstruct an `ActualOrForecast` econ-model API dict from its CSV rows."""
     return get_mapper('ActualOrForecast').from_csv_rows(rows)
 
 
@@ -32,7 +32,7 @@ def actual_forecast_to_csv(models: List[Dict[str, Any]], context: Optional[Conte
 
 
 def actual_forecast_from_csv(source: Union[str, TextIO]) -> List[Dict[str, Any]]:
-    """Parse a `ActualOrForecast` CSV (string or file-like) into a list of econ-model API dicts."""
+    """Parse an `ActualOrForecast` CSV (string or file-like) into a list of econ-model API dicts."""
     return get_mapper('ActualOrForecast').from_csv(source)
 
 
@@ -122,7 +122,7 @@ def expenses_to_csv_rows(model: Dict[str, Any], context: Optional[Context] = Non
 
 
 def expenses_from_csv_rows(rows: List[Dict[str, str]]) -> Dict[str, Any]:
-    """Reconstruct a `Expenses` econ-model API dict from its CSV rows."""
+    """Reconstruct an `Expenses` econ-model API dict from its CSV rows."""
     return get_mapper('Expenses').from_csv_rows(rows)
 
 
@@ -132,7 +132,7 @@ def expenses_to_csv(models: List[Dict[str, Any]], context: Optional[Context] = N
 
 
 def expenses_from_csv(source: Union[str, TextIO]) -> List[Dict[str, Any]]:
-    """Parse a `Expenses` CSV (string or file-like) into a list of econ-model API dicts."""
+    """Parse an `Expenses` CSV (string or file-like) into a list of econ-model API dicts."""
     return get_mapper('Expenses').from_csv(source)
 
 
@@ -147,7 +147,7 @@ def ownership_reversions_to_csv_rows(model: Dict[str, Any], context: Optional[Co
 
 
 def ownership_reversions_from_csv_rows(rows: List[Dict[str, str]]) -> Dict[str, Any]:
-    """Reconstruct a `OwnershipReversion` econ-model API dict from its CSV rows."""
+    """Reconstruct an `OwnershipReversion` econ-model API dict from its CSV rows."""
     return get_mapper('OwnershipReversion').from_csv_rows(rows)
 
 
@@ -157,7 +157,7 @@ def ownership_reversions_to_csv(models: List[Dict[str, Any]], context: Optional[
 
 
 def ownership_reversions_from_csv(source: Union[str, TextIO]) -> List[Dict[str, Any]]:
-    """Parse a `OwnershipReversion` CSV (string or file-like) into a list of econ-model API dicts."""
+    """Parse an `OwnershipReversion` CSV (string or file-like) into a list of econ-model API dicts."""
     return get_mapper('OwnershipReversion').from_csv(source)
 
 

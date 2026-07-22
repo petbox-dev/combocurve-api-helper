@@ -76,6 +76,6 @@ def test_convenience_functions_delegate_to_mapper(econ_model_type: str) -> None:
         to_csv = getattr(_csv_generated, f'{base}_to_csv')
         from_csv = getattr(_csv_generated, f'{base}_from_csv')
         get_the_mapper = getattr(_csv_generated, f'get_{base}_mapper')
-        assert get_the_mapper() is mapper
-        assert from_csv(text) == mapper.from_csv(text)
-        assert to_csv(mapper.from_csv(text)) == mapper.to_csv(mapper.from_csv(text))
+        assert get_the_mapper() is mapper, f'{econ_model_type} / {filename}'
+        assert from_csv(text) == mapper.from_csv(text), f'{econ_model_type} / {filename}'
+        assert to_csv(mapper.from_csv(text)) == mapper.to_csv(mapper.from_csv(text)), f'{econ_model_type} / {filename}'

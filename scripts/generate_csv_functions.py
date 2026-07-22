@@ -44,7 +44,7 @@ def {method_base}_to_csv_rows(model: Dict[str, Any], context: Optional[Context] 
 
 
 def {method_base}_from_csv_rows(rows: List[Dict[str, str]]) -> Dict[str, Any]:
-    """Reconstruct a `{econ_model_type}` econ-model API dict from its CSV rows."""
+    """Reconstruct {article} `{econ_model_type}` econ-model API dict from its CSV rows."""
     return get_mapper('{econ_model_type}').from_csv_rows(rows)
 
 
@@ -54,7 +54,7 @@ def {method_base}_to_csv(models: List[Dict[str, Any]], context: Optional[Context
 
 
 def {method_base}_from_csv(source: Union[str, TextIO]) -> List[Dict[str, Any]]:
-    """Parse a `{econ_model_type}` CSV (string or file-like) into a list of econ-model API dicts."""
+    """Parse {article} `{econ_model_type}` CSV (string or file-like) into a list of econ-model API dicts."""
     return get_mapper('{econ_model_type}').from_csv(source)
 
 
@@ -74,7 +74,8 @@ def render() -> str:
             continue
         if not method_base:
             raise ValueError(f'econModelType {econ_model_type!r} has a mapper but no methodBase in econModels.json')
-        parts.append(FUNCS.format(method_base=method_base, econ_model_type=econ_model_type))
+        article = 'an' if econ_model_type[:1].upper() in 'AEIOU' else 'a'
+        parts.append(FUNCS.format(method_base=method_base, econ_model_type=econ_model_type, article=article))
         names.extend(
             (
                 f'{method_base}_to_csv_rows',

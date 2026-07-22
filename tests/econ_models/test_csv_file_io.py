@@ -8,7 +8,7 @@ import pathlib
 
 import pytest
 
-from combocurve_api_helper.econ_models import get_mapper
+from combocurve_api_helper.econ_models import Context, get_mapper
 from combocurve_api_helper.econ_models.base import group_rows_by_model_name
 from tests.econ_models.csv_fixture_io import (
     FIXTURE_FILES,
@@ -33,7 +33,12 @@ def test_from_csv_equals_per_model_from_csv_rows(econ_model_type: str) -> None:
 @pytest.mark.parametrize('econ_model_type', sorted(FIXTURE_FILES))
 def test_to_csv_reemits_model_parameter_columns(econ_model_type: str) -> None:
     mapper = get_mapper(econ_model_type)
-    compare_columns = mapper.columns[3:-1]  # exclude Model Id/Created At/Project Name + Last Update
+    # The slice below drops the leading context columns and the trailing Last Update
+    # (none reconstructable from CSV rows). Guard the fixed column shape it relies on so a
+    # future mapper with a different layout fails loudly here rather than comparing the wrong columns.
+    assert mapper.columns[:3] == ['Model Id', 'Created At', 'Project Name'], mapper.econ_model_type
+    assert mapper.columns[-1] == 'Last Update', mapper.econ_model_type
+    compare_columns = mapper.columns[3:-1]  # model-parameter columns only
     for filename in FIXTURE_FILES[econ_model_type]:
         path = os.path.join(FIXTURES_DIR, filename)
         rows = read_csv_rows(path)
@@ -86,3 +91,20 @@ def test_group_rows_by_model_name_preserves_first_seen_order() -> None:
     groups = group_rows_by_model_name(rows)
     assert [g[0]['Model Name'] for g in groups] == ['b', 'a']
     assert [len(g) for g in groups] == [2, 1]
+
+
+def test_to_csv_forwards_shared_context_and_per_model_id() -> None:
+    # A single shared Context applies its Project Name to every row of every model, while each
+    # model's own 'id' still fills 'Model Id' per model (the context.id-or-model['id'] fallback
+    # in common_columns). Uses the multi-model, multi-row ProductionTaxes state fixture.
+    mapper = get_mapper('ProductionTaxes')
+    path = os.path.join(FIXTURES_DIR, 'production_taxes_state.csv')
+    models = mapper.read_csv(path)
+    assert len(models) >= 2, 'fixture must carry multiple models for this test'
+    for index, model in enumerate(models):
+        model['id'] = f'model-{index}'
+
+    reparsed = list(csv.DictReader(io.StringIO(mapper.to_csv(models, Context(project_name='ProjX')))))
+    assert reparsed, 'expected data rows'
+    assert all(row['Project Name'] == 'ProjX' for row in reparsed)
+    assert {row['Model Id'] for row in reparsed} == {f'model-{index}' for index in range(len(models))}
