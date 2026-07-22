@@ -11,7 +11,7 @@ import sys
 
 import pytest
 
-GEN = pathlib.Path(__file__).resolve().parents[2] / 'scripts' / 'generate_docstrings.py'
+GEN = pathlib.Path(__file__).resolve().parents[1] / 'scripts' / 'generate_docstrings.py'
 
 
 def test_docstring_examples_match_spec() -> None:

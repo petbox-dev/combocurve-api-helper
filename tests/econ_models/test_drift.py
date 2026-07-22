@@ -4,12 +4,11 @@ import pathlib
 from types import ModuleType
 
 from combocurve_api_helper.econ_models import MAPPERS, drift
-from combocurve_api_helper.econ_models.test_expenses import API as EXPENSES_API
+from tests.econ_models.test_expenses import API as EXPENSES_API
 
-# Test file lives at <repo>/src/combocurve_api_helper/econ_models/test_drift.py, so the
-# repo root -- which holds scripts/ -- is parents[3] (see test_generated_models.py's
-# analogous comment for the one-level-shallower case at src/combocurve_api_helper/).
-_AUDIT_SCRIPT_PATH = pathlib.Path(__file__).resolve().parents[3] / 'scripts' / 'audit_econ_model_drift.py'
+# Test file lives at <repo>/tests/econ_models/test_drift.py, so the repo root --
+# which holds scripts/ -- is parents[2].
+_AUDIT_SCRIPT_PATH = pathlib.Path(__file__).resolve().parents[2] / 'scripts' / 'audit_econ_model_drift.py'
 
 
 def _load_audit_script() -> ModuleType:

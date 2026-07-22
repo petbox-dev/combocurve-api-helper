@@ -90,7 +90,7 @@ Issues = "https://github.com/petbox-dev/combocurve-api-helper/issues"
 minversion = "7.0"
 addopts = "-ra -q"
 testpaths = [
-    "src",
+    "tests",
 ]
 
 

@@ -61,16 +61,16 @@ qualifier wiring is a CC-UI operation; the grid is read-only.)
 Run from the repo root:
 
 ```bash
-mypy src                               # type check (primary gate; README also documents `mypy --package combocurve_api_helper`)
-ruff check src                         # lint (rules in pyproject.toml [tool.ruff.lint])
-ruff format --check src                # format check (line-length 120, single quotes; drop --check to apply)
-pytest                                 # tests (testpaths = src)
-pytest src/combocurve_api_helper/test_api.py::TestRoot::test_custom_columns   # single test
+mypy src tests                         # type check (primary gate; README also documents `mypy --package combocurve_api_helper`)
+ruff check src tests                   # lint (rules in pyproject.toml [tool.ruff.lint])
+ruff format --check src tests          # format check (line-length 120, single quotes; drop --check to apply)
+pytest                                 # tests (testpaths = tests)
+pytest tests/test_api.py::TestRoot::test_custom_columns   # single test
 ```
 
-`test/test.sh` / `test/test.bat` are the canonical pre-commit checks: both run ruff (`check` +
-`format --check`) then mypy (`test.bat` also runs pytest). Per the README contributing flow, type
-checking must pass before committing.
+`scripts/test.sh` / `scripts/test.ps1` / `scripts/test.bat` are the canonical pre-commit checks --
+all three run ruff (`check` + `format --check`), mypy, then pytest over `src` + `tests`. Per the
+README contributing flow, type checking must pass before committing.
 
 `mypy` is configured strict-ish in `pyproject.toml` (`disallow_untyped_defs`, `disallow_any_generics`,
 `disallow_incomplete_defs`, etc.). Every method needs full parameter and return annotations.
@@ -86,7 +86,9 @@ Importing the package executes `config.py`, which loads two JSON files from `~/.
 be imported without these files present**. Example shapes are in `config-examples/`. To point at
 different files (e.g. dev creds), construct the client with
 `ComboCurveAPI.from_alternate_config(combocurve_json_path, cc_api_config_json_path)` instead of `ComboCurveAPI()`.
-`test_api.py` uses this against `~/.combocurve/dev/`, so the test suite requires live credentials.
+`test_api.py` and `test_assignments_live.py` exercise the live API using dev creds under
+`~/.combocurve/dev/`; both skip unless `CC_LIVE_TEST=1` and those creds are present, so they do not
+run in CI or on machines without dev access.
 
 ## Architecture
 
@@ -155,12 +157,17 @@ header is `econ_models/csv_columns.py` `COLUMNS`. **The `get_mapper` / `MAPPERS`
 
 ## Generated content (do not hand-edit)
 
-Two build-time generators keep source in sync with external sources; each has a freshness test that
-fails when the committed output is stale.
+Three build-time generators keep source in sync with external sources; each has a freshness test that
+fails when the committed output is stale. Run all three at once with `scripts/codegen.sh` (or
+`scripts/codegen.ps1`).
 
 - **`scripts/generate_model_methods.py`** -> `_models_generated.py`: per-type econ-model CRUD +
   assignment methods expanded from `assets/econModels.json`. Edit the JSON, re-run, commit
-  (`test_generated_models.py`).
+  (`tests/test_generated_models.py`).
+- **`scripts/generate_csv_functions.py`** -> `econ_models/_csv_generated.py`: the per-type
+  `<type>_to_csv_rows` / `<type>_from_csv_rows` CSV convenience functions, expanded from
+  `assets/econModels.json` + the mapper registry. Re-run after adding a mapper or changing the JSON,
+  commit (`tests/econ_models/test_csv_generated.py`).
 - **`scripts/generate_docstrings.py`** rewrites the `Example response:` / `Example data:` JSON blocks
   in docstrings -- and the shared module-level `*_response` / `*_data` constants appended via
   `__doc__ +=` -- from the **Postman collection** (a superset of the OpenAPI spec, which is an

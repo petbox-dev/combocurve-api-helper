@@ -64,6 +64,10 @@ cut yet. This entry covers everything merged since `v1.2.0` (2025-09-04).
   `'DateSettings'`), matching its `econModelType` in `econModels.json` and the generated
   CRUD methods. `get_mapper('Dates')` now resolves and `get_mapper('DateSettings')` no
   longer does; the class name (`DateSettingsMapper`) and module are unchanged.
+- Test suite moved out of the installed package to a top-level `tests/` tree; test modules and
+  their CSV fixtures no longer ship in the wheel or appear under the `combocurve_api_helper`
+  import namespace. Dev scripts consolidated under `scripts/` (check-runners `test.sh` /
+  `test.ps1` / `test.bat`, plus `codegen.sh` / `codegen.ps1` to run every generator).
 
 ### Fixed
 

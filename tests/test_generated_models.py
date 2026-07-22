@@ -6,12 +6,12 @@ import inspect
 from combocurve_api_helper import config
 from combocurve_api_helper._models_generated import _GeneratedModelMethods
 
-# Test file lives at <repo>/src/combocurve_api_helper/test_generated_models.py, so
-# the repo root -- which holds scripts/ -- is parents[2], not parents[3] (the
-# value in the brief was off by one for this layout).
-REPO = pathlib.Path(__file__).resolve().parents[2]
+# Test file lives at <repo>/tests/test_generated_models.py, so the repo root --
+# which holds scripts/ and src/ -- is parents[1].
+REPO = pathlib.Path(__file__).resolve().parents[1]
 GEN = REPO / 'scripts' / 'generate_model_methods.py'
-OUT = pathlib.Path(__file__).with_name('_models_generated.py')
+# The generated module stays in the package under src/; only the test moved out.
+OUT = REPO / 'src' / 'combocurve_api_helper' / '_models_generated.py'
 
 
 def _expected_method_names() -> set[str]:
