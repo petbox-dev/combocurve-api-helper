@@ -107,4 +107,8 @@ def test_to_csv_forwards_shared_context_and_per_model_id() -> None:
     reparsed = list(csv.DictReader(io.StringIO(mapper.to_csv(models, Context(project_name='ProjX')))))
     assert reparsed, 'expected data rows'
     assert all(row['Project Name'] == 'ProjX' for row in reparsed)
-    assert {row['Model Id'] for row in reparsed} == {f'model-{index}' for index in range(len(models))}
+    # every model is represented, and each model's own rows carry that model's own id
+    # (not merely the right set of ids) -- proves the per-model context.id-or-model['id'] fallback.
+    id_by_model_name = {model['name']: model['id'] for model in models}
+    assert set(id_by_model_name.values()) == {f'model-{index}' for index in range(len(models))}
+    assert all(row['Model Id'] == id_by_model_name[row['Model Name']] for row in reparsed)
