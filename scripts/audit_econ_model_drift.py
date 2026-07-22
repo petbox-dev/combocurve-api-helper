@@ -33,7 +33,7 @@ GETTERS: Dict[str, str] = {
     'Capex': 'get_capex_models',
     'ReservesCategory': 'get_reserves_categories_models',
     'Pricing': 'get_pricing_models',
-    'DateSettings': 'get_date_settings_models',
+    'Dates': 'get_date_settings_models',
     'OwnershipReversion': 'get_ownership_reversions_models',
     'ActualOrForecast': 'get_actual_forecast_models',
     'Risking': 'get_riskings_models',

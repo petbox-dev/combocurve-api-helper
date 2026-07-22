@@ -247,7 +247,7 @@ _BASELINE_KEYS: Dict[str, FrozenSet[str]] = {
             'rows',
         }
     ),
-    'DateSettings': frozenset(
+    'Dates': frozenset(
         {
             'alignDependentPhases',
             'asOf',

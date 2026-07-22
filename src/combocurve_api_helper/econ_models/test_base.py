@@ -13,7 +13,7 @@ def test_columns_have_all_types_and_lead_with_common() -> None:
         'Capex',
         'ReservesCategory',
         'Pricing',
-        'DateSettings',
+        'Dates',
         'OwnershipReversion',
         'ActualOrForecast',
         'Risking',

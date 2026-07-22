@@ -315,8 +315,8 @@ class DateSettingsMapper:
     string as an unambiguous 5th shape (see `_ISO_DATE_RE`).
     """
 
-    econ_model_type = 'DateSettings'
-    columns = COLUMNS['DateSettings']
+    econ_model_type = 'Dates'
+    columns = COLUMNS['Dates']
 
     def to_csv_rows(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
         common = common_columns(model, context)

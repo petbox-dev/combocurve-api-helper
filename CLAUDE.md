@@ -136,7 +136,7 @@ protocol (`econ_models/base.py`): an invertible pair — `to_csv_rows(model, con
 dict into a list of CSV row dicts, `from_csv_rows(rows)` reconstructs the API payload — plus a `columns` list
 (the exact CSV header) and an `econ_model_type`. Look one up with `get_mapper(econ_model_type)`; `MAPPERS`
 registers all 11 types (StreamProperties, Differentials, ProductionTaxes, Expenses, Capex, ReservesCategory,
-Pricing, DateSettings, OwnershipReversion, ActualOrForecast, Risking). `to_csv_rows` keys every row by the
+Pricing, Dates, OwnershipReversion, ActualOrForecast, Risking). `to_csv_rows` keys every row by the
 full `columns` list, so a CSV round trip is lossless; value formatting (numbers, dates, enums, escalations)
 is centralized in `econ_models/formats.py` with matching `*_to_csv` / `*_from_csv` helpers, and the shared
 header is `econ_models/csv_columns.py` `COLUMNS`. **The `get_mapper` / `MAPPERS` key is the PascalCase

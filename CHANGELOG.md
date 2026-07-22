@@ -21,6 +21,13 @@ cut yet. This entry covers everything merged since `v1.2.0` (2025-09-04).
   `get_scenario_econ_model_assignments()` to read the scenario assignment grid.
 - **Econ-model CSV mapping.** Exact, invertible API <-> CSV column mapping for 11
   econ-model types (`csv_columns`).
+- **Per-type CSV convenience functions.** A `<type>_to_csv_rows` / `<type>_from_csv_rows`
+  pair for each of the 11 mapped econ-model types (e.g. `capex_to_csv_rows`,
+  `date_settings_from_csv_rows`), generated from `econModels.json` + the mapper registry
+  (`scripts/generate_csv_functions.py` -> `econ_models/_csv_generated.py`). They are thin
+  wrappers over `get_mapper(...)`, exposing the per-type function convention used elsewhere
+  in the package instead of requiring the generic dispatcher. `MAPPERS` / `get_mapper` moved
+  to `econ_models/registry.py` (still re-exported from `econ_models`).
 - **Capex $/ft capture.** The Capex CSV mapper now captures the model-level
   `drillingCost` / `completionCost` per-foot objects — which CC's own export omits —
   losslessly as JSON in two extra columns (`Drilling Cost ($/ft)` /
@@ -53,6 +60,10 @@ cut yet. This entry covers everything merged since `v1.2.0` (2025-09-04).
 
 - `put_forecast_parameters()` now chunks at 25 well x phase records per PUT.
 - Migrated lint/format tooling from flake8 to ruff.
+- Econ-model CSV mapper registry key for the Dates model is now `'Dates'` (was
+  `'DateSettings'`), matching its `econModelType` in `econModels.json` and the generated
+  CRUD methods. `get_mapper('Dates')` now resolves and `get_mapper('DateSettings')` no
+  longer does; the class name (`DateSettingsMapper`) and module are unchanged.
 
 ### Fixed
 

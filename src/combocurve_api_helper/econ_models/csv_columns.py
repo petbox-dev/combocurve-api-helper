@@ -138,7 +138,7 @@ COLUMNS: Dict[str, List[str]] = {
         'Escalation',
     ]
     + ['Last Update'],
-    'DateSettings': _COMMON_HEAD
+    'Dates': _COMMON_HEAD
     + [
         'Max Econ Life (Years)',
         'As of Date',

@@ -13,6 +13,7 @@ from .typecurves import TypeCurves
 from .directional import Directional
 
 from .base import Item, ItemList, PrimativeValue, IterableValue
+
 # Explicit re-export (`as`) so downstream `mypy --strict`
 # (--no-implicit-reexport) sees these public types as exported.
 from ._batch import BatchChunk as BatchChunk

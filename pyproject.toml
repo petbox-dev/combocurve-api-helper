@@ -100,6 +100,8 @@ extend-exclude = [
     # Codegen output owned by scripts/generate_model_methods.py and byte-compared
     # by the freshness test -- the formatter must not touch it, or the test breaks.
     '_models_generated.py',
+    # Codegen output owned by scripts/generate_csv_functions.py, likewise byte-compared.
+    '_csv_generated.py',
 ]
 
 [tool.ruff.format]

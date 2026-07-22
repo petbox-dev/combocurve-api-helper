@@ -826,7 +826,7 @@ def test_to_csv_rows_date_cutoff_missing_include_capex_econ_delay_does_not_raise
 
 
 def test_registry_get_mapper() -> None:
-    mapper = get_mapper('DateSettings')
+    mapper = get_mapper('Dates')
     assert isinstance(mapper, DateSettingsMapper)
-    assert mapper is MAPPERS['DateSettings']
-    assert mapper.econ_model_type == 'DateSettings'
+    assert mapper is MAPPERS['Dates']
+    assert mapper.econ_model_type == 'Dates'

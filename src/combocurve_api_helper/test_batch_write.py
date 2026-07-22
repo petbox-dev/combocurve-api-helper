@@ -5,11 +5,12 @@ completion, 207-envelope parsing, in-order stitching, and partial/whole-chunk
 failure accounting deterministically.
 """
 
+import time
 from typing import Any
 
+import requests
 from pytest import MonkeyPatch
 
-import combocurve_api_helper.base as base_mod
 from combocurve_api_helper import BatchWriteResult, ComboCurveAPI
 
 
@@ -47,7 +48,7 @@ def test_request_batched_chunks_and_stitches_207_in_order(monkeypatch: MonkeyPat
             },
         )
 
-    monkeypatch.setattr(base_mod.requests, 'request', fake_request)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     data: list[dict[str, Any]] = [{'well': f'w{i}', 'phase': 'oil', 'segments': []} for i in range(60)]
     result = api._request_batched('put', 'https://x/parameters', data, chunksize=25, max_workers=4)
@@ -72,7 +73,7 @@ def test_request_batched_preserves_partial_and_whole_chunk_failures(monkeypatch:
         results = [{'status': 'Error' if i == 0 else 'Success'} for i in range(n)]
         return _FakeResponse(207, {'successCount': n - 1, 'failedCount': 1, 'results': results, 'generalErrors': []})
 
-    monkeypatch.setattr(base_mod.requests, 'request', fake_request)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     # chunk 0: 25 records, 1 fails in the 207; chunk 1: 25 records, whole-chunk 400.
     data: list[dict[str, Any]] = (
@@ -88,7 +89,7 @@ def test_request_batched_preserves_partial_and_whole_chunk_failures(monkeypatch:
 
 def test_request_batched_empty_data(monkeypatch: MonkeyPatch) -> None:
     api = _make_api(monkeypatch)
-    monkeypatch.setattr(base_mod.requests, 'request', lambda *a, **k: _FakeResponse(207, {}))
+    monkeypatch.setattr(requests, 'request', lambda *a, **k: _FakeResponse(207, {}))
     result = api._request_batched('put', 'https://x/parameters', [], chunksize=25)
     assert result.ok
     assert result.success_count == 0
@@ -98,7 +99,7 @@ def test_request_batched_empty_data(monkeypatch: MonkeyPatch) -> None:
 
 def test_request_batched_retries_transient_gateway_5xx(monkeypatch: MonkeyPatch) -> None:
     api = _make_api(monkeypatch)
-    monkeypatch.setattr(base_mod.time, 'sleep', lambda _s: None)  # skip real backoff
+    monkeypatch.setattr(time, 'sleep', lambda _s: None)  # skip real backoff
     calls = {'n': 0}
 
     def fake_request(method: str, url: str, headers: Any = None, params: Any = None, json: Any = None) -> _FakeResponse:
@@ -110,7 +111,7 @@ def test_request_batched_retries_transient_gateway_5xx(monkeypatch: MonkeyPatch)
             207, {'successCount': n, 'failedCount': 0, 'results': [{} for _ in json], 'generalErrors': []}
         )
 
-    monkeypatch.setattr(base_mod.requests, 'request', fake_request)
+    monkeypatch.setattr(requests, 'request', fake_request)
     data: list[dict[str, Any]] = [{'well': f'w{i}'} for i in range(10)]
     result = api._request_batched('put', 'https://x', data, chunksize=25, max_workers=1)
 
@@ -121,14 +122,14 @@ def test_request_batched_retries_transient_gateway_5xx(monkeypatch: MonkeyPatch)
 
 def test_request_batched_does_not_retry_non_gateway_5xx(monkeypatch: MonkeyPatch) -> None:
     api = _make_api(monkeypatch)
-    monkeypatch.setattr(base_mod.time, 'sleep', lambda _s: None)
+    monkeypatch.setattr(time, 'sleep', lambda _s: None)
     calls = {'n': 0}
 
     def fake_request(method: str, url: str, headers: Any = None, params: Any = None, json: Any = None) -> _FakeResponse:
         calls['n'] += 1
         return _FakeResponse(500, {'error': 'boom'})
 
-    monkeypatch.setattr(base_mod.requests, 'request', fake_request)
+    monkeypatch.setattr(requests, 'request', fake_request)
     result = api._request_batched('put', 'https://x', [{'well': 'w0'}], chunksize=25, max_workers=1)
 
     assert not result.ok

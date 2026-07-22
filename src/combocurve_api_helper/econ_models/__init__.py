@@ -1,7 +1,5 @@
-from typing import Dict
-
-from .actual_or_forecast import ActualOrForecastMapper
 from .base import Context, EconModelMapper
+from .actual_or_forecast import ActualOrForecastMapper
 from .capex import CapexMapper
 from .date_settings import DateSettingsMapper
 from .differentials import DifferentialsMapper
@@ -12,31 +10,9 @@ from .production_taxes import ProductionTaxesMapper
 from .reserves_category import ReservesCategoryMapper
 from .risking import RiskingMapper
 from .stream_properties import StreamPropertiesMapper
-
-MAPPERS: Dict[str, EconModelMapper] = {
-    m.econ_model_type: m
-    for m in (
-        StreamPropertiesMapper(),
-        DifferentialsMapper(),
-        ProductionTaxesMapper(),
-        ExpensesMapper(),
-        CapexMapper(),
-        ReservesCategoryMapper(),
-        PricingMapper(),
-        DateSettingsMapper(),
-        OwnershipReversionMapper(),
-        ActualOrForecastMapper(),
-        RiskingMapper(),
-    )
-}
-
-
-def get_mapper(econ_model_type: str) -> EconModelMapper:
-    try:
-        return MAPPERS[econ_model_type]
-    except KeyError:
-        raise KeyError(f'No econ model mapper registered for econModelType: {econ_model_type!r}') from None
-
+from .registry import MAPPERS, get_mapper
+from . import _csv_generated
+from ._csv_generated import *  # noqa: F401,F403 -- per-type CSV convenience functions
 
 __all__ = [
     'Context',
@@ -54,4 +30,5 @@ __all__ = [
     'OwnershipReversionMapper',
     'ActualOrForecastMapper',
     'RiskingMapper',
+    *_csv_generated.__all__,
 ]
