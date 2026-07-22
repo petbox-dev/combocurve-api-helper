@@ -60,8 +60,8 @@ API: Dict[str, Any] = {
 }
 
 
-def test_to_csv_rows_values() -> None:
-    rows = CapexMapper().to_csv_rows(API)
+def test_to_row_dicts_values() -> None:
+    rows = CapexMapper().to_row_dicts(API)
     assert len(rows) == 6
     criteria = [r['Criteria'] for r in rows]
     values = [r['Value'] for r in rows]
@@ -106,20 +106,20 @@ def test_from_headers_first_prod_date() -> None:
         },
     }
     mapper = CapexMapper()
-    rows = mapper.to_csv_rows(m)
+    rows = mapper.to_row_dicts(m)
     assert len(rows) == 1
     assert rows[0]['Criteria'] == 'from headers'
     assert rows[0]['From Headers'] == 'First Prod Date'
     assert rows[0]['From Schedule'] == ''
     assert rows[0]['Value'] == '185'
 
-    rebuilt = mapper.from_csv_rows(rows)
+    rebuilt = mapper.from_row_dicts(rows)
     assert rebuilt['otherCapex'] == m['otherCapex']
 
 
 def test_roundtrip() -> None:
     mapper = CapexMapper()
-    rebuilt = mapper.from_csv_rows(mapper.to_csv_rows(API))
+    rebuilt = mapper.from_row_dicts(mapper.to_row_dicts(API))
     assert rebuilt['otherCapex'] == API['otherCapex']
     assert rebuilt['name'] == API['name']
     assert rebuilt['unique'] == API['unique']
@@ -156,7 +156,7 @@ _COMPLETION_PER_FOOT: Dict[str, Any] = {
 
 def test_perfoot_columns_declared() -> None:
     """The two extra $/ft columns must be part of the mapper's column set, else
-    to_csv_rows would silently filter their values back out."""
+    to_row_dicts would silently filter their values back out."""
     assert _DRILLING_COST in CapexMapper.columns
     assert _COMPLETION_COST in CapexMapper.columns
 
@@ -176,12 +176,12 @@ def test_drilling_completion_cost_captured_as_json_and_round_trip() -> None:
     mapper = CapexMapper()
     with warnings.catch_warnings():
         warnings.simplefilter('error')  # capturing per-foot must NOT warn
-        rows = mapper.to_csv_rows(m)
+        rows = mapper.to_row_dicts(m)
     assert len(rows) == 1
     assert json.loads(rows[0][_DRILLING_COST]) == _DRILLING_PER_FOOT
     assert json.loads(rows[0][_COMPLETION_COST]) == _COMPLETION_PER_FOOT
 
-    rebuilt = mapper.from_csv_rows(rows)
+    rebuilt = mapper.from_row_dicts(rows)
     assert rebuilt['drillingCost'] == _DRILLING_PER_FOOT
     assert rebuilt['completionCost'] == _COMPLETION_PER_FOOT
     assert rebuilt['otherCapex'] == m['otherCapex']
@@ -197,9 +197,9 @@ def test_perfoot_only_drilling_leaves_completion_absent() -> None:
         'otherCapex': {'rows': [_row('drilling', intangible=3000, offsetToFpd=-120)]},
     }
     mapper = CapexMapper()
-    rows = mapper.to_csv_rows(m)
+    rows = mapper.to_row_dicts(m)
     assert rows[0][_COMPLETION_COST] == ''
-    rebuilt = mapper.from_csv_rows(rows)
+    rebuilt = mapper.from_row_dicts(rows)
     assert rebuilt['drillingCost'] == _DRILLING_PER_FOOT
     assert 'completionCost' not in rebuilt
 
@@ -216,13 +216,13 @@ def test_perfoot_with_no_other_capex_rows_uses_carrier_row() -> None:
         'otherCapex': {'rows': []},
     }
     mapper = CapexMapper()
-    rows = mapper.to_csv_rows(m)
+    rows = mapper.to_row_dicts(m)
     assert len(rows) == 1
     assert rows[0]['Criteria'] == ''
     assert rows[0]['Model Name'] == 'PER FOOT ONLY'
     assert json.loads(rows[0][_DRILLING_COST]) == _DRILLING_PER_FOOT
 
-    rebuilt = mapper.from_csv_rows(rows)
+    rebuilt = mapper.from_row_dicts(rows)
     assert rebuilt['drillingCost'] == _DRILLING_PER_FOOT
     assert rebuilt['otherCapex']['rows'] == []
 
@@ -230,9 +230,9 @@ def test_perfoot_with_no_other_capex_rows_uses_carrier_row() -> None:
 def test_no_perfoot_emits_blank_columns_and_no_key() -> None:
     """The common case (no $/ft objects) leaves both extra columns blank and adds no
     drillingCost/completionCost key on the inverse pass."""
-    rows = CapexMapper().to_csv_rows(API)
+    rows = CapexMapper().to_row_dicts(API)
     assert all(r[_DRILLING_COST] == '' and r[_COMPLETION_COST] == '' for r in rows)
-    rebuilt = CapexMapper().from_csv_rows(rows)
+    rebuilt = CapexMapper().from_row_dicts(rows)
     assert 'drillingCost' not in rebuilt
     assert 'completionCost' not in rebuilt
 
@@ -253,7 +253,7 @@ def test_non_default_probabilistic_fields_warn() -> None:
     }
     mapper = CapexMapper()
     with pytest.warns(UserWarning, match='probabilistic'):
-        mapper.to_csv_rows(m)
+        mapper.to_row_dicts(m)
 
 
 def test_escalation_start_as_of_date() -> None:
@@ -265,10 +265,10 @@ def test_escalation_start_as_of_date() -> None:
     ]
     m: Dict[str, Any] = {'name': 'AS OF DATE ESC', 'unique': False, 'otherCapex': {'rows': rows_in}}
     mapper = CapexMapper()
-    rows = mapper.to_csv_rows(m)
+    rows = mapper.to_row_dicts(m)
     assert rows[0]['Escalation Start Criteria'] == 'as of date'
     assert rows[0]['Escalation Start Value (Days/Date)'] == '5'
-    rebuilt = mapper.from_csv_rows(rows)
+    rebuilt = mapper.from_row_dicts(rows)
     assert rebuilt['otherCapex']['rows'][0]['escalationStart'] == {'asOfDate': 5}
 
 
@@ -284,9 +284,9 @@ def test_escalation_none_python_roundtrip() -> None:
     ]
     m: Dict[str, Any] = {'name': 'NONE MODEL', 'unique': False, 'otherCapex': {'rows': rows_in}}
     mapper = CapexMapper()
-    rows = mapper.to_csv_rows(m)
+    rows = mapper.to_row_dicts(m)
     assert rows[0]['Escalation'] == ''
     assert rows[0]['Depreciation'] == ''
-    rebuilt = mapper.from_csv_rows(rows)
+    rebuilt = mapper.from_row_dicts(rows)
     assert rebuilt['otherCapex']['rows'][0]['escalationModel'] is None
     assert rebuilt['otherCapex']['rows'][0]['depreciationModel'] is None

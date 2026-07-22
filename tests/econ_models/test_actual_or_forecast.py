@@ -9,7 +9,7 @@ from combocurve_api_helper.econ_models.base import Context
 
 def _no_timestamp(rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
     """'Last Update' is sourced from the API model's updatedAt/context, never
-    reconstructed by from_csv_rows (same convention as every other mapper -- see
+    reconstructed by from_row_dicts (same convention as every other mapper -- see
     test_fixtures.py's compare_cols = mapper.columns[3:-1]). Round-trip comparisons
     below drop it so they compare only the model-parameter columns.
     """
@@ -104,14 +104,14 @@ FORECAST_AS_OF_MODERN_EXPLICIT: Dict[str, Any] = {
 }
 
 
-def test_to_csv_rows_emits_exactly_3_rows() -> None:
-    rows = ActualOrForecastMapper().to_csv_rows(FORECAST_JULY_24)
+def test_to_row_dicts_emits_exactly_3_rows() -> None:
+    rows = ActualOrForecastMapper().to_row_dicts(FORECAST_JULY_24)
     assert len(rows) == 3
     assert [r['Key'] for r in rows] == ['oil', 'gas', 'water']
 
 
 def test_forward_empty_actual_model_is_never() -> None:
-    rows = ActualOrForecastMapper().to_csv_rows(ACTUAL_LEGACY_EMPTY)
+    rows = ActualOrForecastMapper().to_row_dicts(ACTUAL_LEGACY_EMPTY)
     assert len(rows) == 3
     for r in rows:
         assert r['Category'] == ''
@@ -122,7 +122,7 @@ def test_forward_empty_actual_model_is_never() -> None:
 def test_forward_empty_forecast_as_of_model_is_as_of_date() -> None:
     # The built-in 'Forecast As Of' model resolves its legacy empty `{}` shape to
     # "As of Date", NOT "Never" -- name-keyed fallback.
-    rows = ActualOrForecastMapper().to_csv_rows(FORECAST_AS_OF_LEGACY_EMPTY)
+    rows = ActualOrForecastMapper().to_row_dicts(FORECAST_AS_OF_LEGACY_EMPTY)
     assert len(rows) == 3
     for r in rows:
         assert r['Criteria'] == 'As of Date'
@@ -132,14 +132,14 @@ def test_forward_empty_forecast_as_of_model_is_as_of_date() -> None:
 def test_forward_ignore_history_prod_only_is_never() -> None:
     # actualOrForecast carries ONLY ignoreHistoryProd (no replaceActualWithForecast
     # at all); a non-built-in model name still defaults to Never.
-    rows = ActualOrForecastMapper().to_csv_rows(IGNORE_HISTORY)
+    rows = ActualOrForecastMapper().to_row_dicts(IGNORE_HISTORY)
     for r in rows:
         assert r['Criteria'] == 'Never'
         assert r['Value'] == ''
 
 
 def test_forward_date_switch_iso_passthrough() -> None:
-    rows = ActualOrForecastMapper().to_csv_rows(FORECAST_JULY_24)
+    rows = ActualOrForecastMapper().to_row_dicts(FORECAST_JULY_24)
     for r in rows:
         assert r['Criteria'] == 'Date'
         # ISO date is passed through UNCHANGED -- not reformatted to MM/DD/YYYY.
@@ -147,20 +147,20 @@ def test_forward_date_switch_iso_passthrough() -> None:
 
 
 def test_forward_modern_explicit_never_and_as_of_date() -> None:
-    rows = ActualOrForecastMapper().to_csv_rows(ACTUAL_MODERN_EXPLICIT)
+    rows = ActualOrForecastMapper().to_row_dicts(ACTUAL_MODERN_EXPLICIT)
     for r in rows:
         assert r['Criteria'] == 'Never'
         assert r['Value'] == ''
 
-    rows = ActualOrForecastMapper().to_csv_rows(FORECAST_AS_OF_MODERN_EXPLICIT)
+    rows = ActualOrForecastMapper().to_row_dicts(FORECAST_AS_OF_MODERN_EXPLICIT)
     for r in rows:
         assert r['Criteria'] == 'As of Date'
         assert r['Value'] == ''
 
 
-def test_to_csv_rows_includes_common_columns_with_context() -> None:
+def test_to_row_dicts_includes_common_columns_with_context() -> None:
     ctx = Context(id=FORECAST_JULY_24['id'], created_at=FORECAST_JULY_24['createdAt'], project_name='Sample Project A')
-    rows = ActualOrForecastMapper().to_csv_rows(FORECAST_JULY_24, context=ctx)
+    rows = ActualOrForecastMapper().to_row_dicts(FORECAST_JULY_24, context=ctx)
     assert rows[0]['Model Id'] == FORECAST_JULY_24['id']
     assert rows[0]['Project Name'] == 'Sample Project A'
     assert rows[0]['Model Name'] == "Forecast July '24"
@@ -170,7 +170,7 @@ def test_to_csv_rows_includes_common_columns_with_context() -> None:
 
 def test_roundtrip_date_switch_reconstructs_explicit_shape() -> None:
     m = ActualOrForecastMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(FORECAST_JULY_24))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(FORECAST_JULY_24))
     assert rebuilt['name'] == FORECAST_JULY_24['name']
     assert rebuilt['unique'] == FORECAST_JULY_24['unique']
     assert rebuilt['actualOrForecast'] == {
@@ -182,7 +182,7 @@ def test_roundtrip_date_switch_reconstructs_explicit_shape() -> None:
         },
     }
     # Round trip is exact at the CSV level (excluding 'Last Update').
-    assert _no_timestamp(m.to_csv_rows(rebuilt)) == _no_timestamp(m.to_csv_rows(FORECAST_JULY_24))
+    assert _no_timestamp(m.to_row_dicts(rebuilt)) == _no_timestamp(m.to_row_dicts(FORECAST_JULY_24))
 
 
 def test_roundtrip_all_never_collapses_to_empty_default_shape() -> None:
@@ -192,10 +192,10 @@ def test_roundtrip_all_never_collapses_to_empty_default_shape() -> None:
     # always reconstructs the real API's `{}` default, not the explicit form.
     m = ActualOrForecastMapper()
     for source in (ACTUAL_LEGACY_EMPTY, ACTUAL_MODERN_EXPLICIT, IGNORE_HISTORY):
-        rows = m.to_csv_rows(source)
-        rebuilt = m.from_csv_rows(rows)
+        rows = m.to_row_dicts(source)
+        rebuilt = m.from_row_dicts(rows)
         assert rebuilt['actualOrForecast'] == {}, source['name']
-        assert _no_timestamp(m.to_csv_rows(rebuilt)) == _no_timestamp(rows)
+        assert _no_timestamp(m.to_row_dicts(rebuilt)) == _no_timestamp(rows)
 
 
 def test_roundtrip_forecast_as_of_all_never_does_not_collapse_to_empty() -> None:
@@ -215,7 +215,7 @@ def test_roundtrip_forecast_as_of_all_never_does_not_collapse_to_empty() -> None
         }
         for phase in ('oil', 'gas', 'water')
     ]
-    rebuilt = m.from_csv_rows(never_rows)
+    rebuilt = m.from_row_dicts(never_rows)
     assert rebuilt['actualOrForecast'] == {
         'ignoreHistoryProd': False,
         'replaceActualWithForecast': {
@@ -225,13 +225,13 @@ def test_roundtrip_forecast_as_of_all_never_does_not_collapse_to_empty() -> None
         },
     }
     # The re-derived CSV still reads back as Never for all 3 phases (round trip holds).
-    for r in m.to_csv_rows(rebuilt):
+    for r in m.to_row_dicts(rebuilt):
         assert r['Criteria'] == 'Never'
 
 
 def test_roundtrip_forecast_as_of_default_matches_real_shape() -> None:
     m = ActualOrForecastMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(FORECAST_AS_OF_LEGACY_EMPTY))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(FORECAST_AS_OF_LEGACY_EMPTY))
     assert rebuilt['actualOrForecast'] == {
         'ignoreHistoryProd': False,
         'replaceActualWithForecast': {
@@ -240,7 +240,7 @@ def test_roundtrip_forecast_as_of_default_matches_real_shape() -> None:
             'water': {'asOfDate': True},
         },
     }
-    assert _no_timestamp(m.to_csv_rows(rebuilt)) == _no_timestamp(m.to_csv_rows(FORECAST_AS_OF_LEGACY_EMPTY))
+    assert _no_timestamp(m.to_row_dicts(rebuilt)) == _no_timestamp(m.to_row_dicts(FORECAST_AS_OF_LEGACY_EMPTY))
 
 
 def test_roundtrip_mixed_phase_criteria() -> None:
@@ -257,20 +257,20 @@ def test_roundtrip_mixed_phase_criteria() -> None:
         },
     }
     m = ActualOrForecastMapper()
-    rows = m.to_csv_rows(model)
+    rows = m.to_row_dicts(model)
     by_key = {r['Key']: r for r in rows}
     assert by_key['oil']['Criteria'] == 'Date' and by_key['oil']['Value'] == '2025-01-31'
     assert by_key['gas']['Criteria'] == 'Never' and by_key['gas']['Value'] == ''
     assert by_key['water']['Criteria'] == 'As of Date' and by_key['water']['Value'] == ''
 
-    rebuilt = m.from_csv_rows(rows)
+    rebuilt = m.from_row_dicts(rows)
     assert rebuilt['actualOrForecast'] == model['actualOrForecast']
 
 
 def test_roundtrip_unique_model_type() -> None:
     model = dict(FORECAST_JULY_24, unique=True)
     m = ActualOrForecastMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(model))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(model))
     assert rebuilt['unique'] is True
 
 
@@ -278,23 +278,23 @@ def test_ignore_history_prod_dropped_and_not_recoverable() -> None:
     # {} and {"ignoreHistoryProd": true} render IDENTICAL CSV rows -- the flag is
     # unrecoverable from the CSV round trip. This is documented, not a bug.
     m = ActualOrForecastMapper()
-    empty_rows = m.to_csv_rows(dict(ACTUAL_LEGACY_EMPTY, name='X'))
-    flagged_rows = m.to_csv_rows(dict(ACTUAL_LEGACY_EMPTY, name='X', actualOrForecast={'ignoreHistoryProd': True}))
+    empty_rows = m.to_row_dicts(dict(ACTUAL_LEGACY_EMPTY, name='X'))
+    flagged_rows = m.to_row_dicts(dict(ACTUAL_LEGACY_EMPTY, name='X', actualOrForecast={'ignoreHistoryProd': True}))
     assert empty_rows == flagged_rows
-    rebuilt_empty = m.from_csv_rows(empty_rows)
-    rebuilt_flagged = m.from_csv_rows(flagged_rows)
+    rebuilt_empty = m.from_row_dicts(empty_rows)
+    rebuilt_flagged = m.from_row_dicts(flagged_rows)
     assert rebuilt_empty == rebuilt_flagged
 
 
-def test_unknown_criteria_on_from_csv_rows_raises() -> None:
+def test_unknown_criteria_on_from_row_dicts_raises() -> None:
     m = ActualOrForecastMapper()
-    rows = m.to_csv_rows(FORECAST_JULY_24)
+    rows = m.to_row_dicts(FORECAST_JULY_24)
     rows[0]['Criteria'] = 'Some Weird Criteria'
     with pytest.raises(NotImplementedError):
-        m.from_csv_rows(rows)
+        m.from_row_dicts(rows)
 
 
-def test_unknown_phase_shape_on_to_csv_rows_raises() -> None:
+def test_unknown_phase_shape_on_to_row_dicts_raises() -> None:
     model: Dict[str, Any] = {
         'name': 'Bad',
         'unique': False,
@@ -308,27 +308,27 @@ def test_unknown_phase_shape_on_to_csv_rows_raises() -> None:
         },
     }
     with pytest.raises(NotImplementedError):
-        ActualOrForecastMapper().to_csv_rows(model)
+        ActualOrForecastMapper().to_row_dicts(model)
 
 
-def test_from_csv_rows_requires_exactly_3_rows() -> None:
+def test_from_row_dicts_requires_exactly_3_rows() -> None:
     m = ActualOrForecastMapper()
     with pytest.raises(NotImplementedError):
-        m.from_csv_rows([])
+        m.from_row_dicts([])
 
-    rows = m.to_csv_rows(FORECAST_JULY_24)
+    rows = m.to_row_dicts(FORECAST_JULY_24)
     with pytest.raises(NotImplementedError):
-        m.from_csv_rows(rows[:2])
+        m.from_row_dicts(rows[:2])
     with pytest.raises(NotImplementedError):
-        m.from_csv_rows(rows + [dict(rows[0])])
+        m.from_row_dicts(rows + [dict(rows[0])])
 
 
-def test_from_csv_rows_requires_all_3_phases() -> None:
+def test_from_row_dicts_requires_all_3_phases() -> None:
     m = ActualOrForecastMapper()
-    rows = m.to_csv_rows(FORECAST_JULY_24)
+    rows = m.to_row_dicts(FORECAST_JULY_24)
     rows[2] = dict(rows[0])  # duplicate 'oil', missing 'water'
     with pytest.raises(NotImplementedError):
-        m.from_csv_rows(rows)
+        m.from_row_dicts(rows)
 
 
 def test_registry_get_mapper() -> None:

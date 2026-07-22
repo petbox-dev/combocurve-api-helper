@@ -66,8 +66,8 @@ BREAKEVEN_RATIO_MODEL: Dict[str, Any] = {
 }
 
 
-def test_to_csv_rows_flat_model_values() -> None:
-    rows = PricingMapper().to_csv_rows(FLAT_MODEL)
+def test_to_row_dicts_flat_model_values() -> None:
+    rows = PricingMapper().to_row_dicts(FLAT_MODEL)
     assert len(rows) == 5
 
     oil = next(r for r in rows if r['Phase'] == 'oil')
@@ -91,8 +91,8 @@ def test_to_csv_rows_flat_model_values() -> None:
     assert breakeven['Category'] == ''
 
 
-def test_to_csv_rows_breakeven_based_on_price_ratio() -> None:
-    rows = PricingMapper().to_csv_rows(BREAKEVEN_RATIO_MODEL)
+def test_to_row_dicts_breakeven_based_on_price_ratio() -> None:
+    rows = PricingMapper().to_row_dicts(BREAKEVEN_RATIO_MODEL)
     breakeven = next(r for r in rows if r['Phase'] == 'breakeven')
     assert breakeven['Criteria'] == 'based on price ratio'
     assert breakeven['Value'] == '15'
@@ -100,18 +100,18 @@ def test_to_csv_rows_breakeven_based_on_price_ratio() -> None:
     assert breakeven['Unit'] == 'npv discount %'
 
 
-def test_to_csv_rows_drip_condensate_dollar_per_bbl_not_confused_with_oil_price() -> None:
+def test_to_row_dicts_drip_condensate_dollar_per_bbl_not_confused_with_oil_price() -> None:
     """dripCondensate's direct-$/bbl row uses API key `dollarPerBbl`, distinct from
     oil's `price` -- both render CSV Unit '$/bbl', but must not collide."""
-    rows = PricingMapper().to_csv_rows(BREAKEVEN_RATIO_MODEL)
+    rows = PricingMapper().to_row_dicts(BREAKEVEN_RATIO_MODEL)
     drip = next(r for r in rows if r['Phase'] == 'drip cond')
     assert (drip['Criteria'], drip['Value'], drip['Unit']) == ('flat', '100', '$/bbl')
     oil_rows = [r for r in rows if r['Phase'] == 'oil']
     assert all(r['Unit'] == '$/bbl' for r in oil_rows)
 
 
-def test_to_csv_rows_dated_criteria() -> None:
-    rows = PricingMapper().to_csv_rows(BREAKEVEN_RATIO_MODEL)
+def test_to_row_dicts_dated_criteria() -> None:
+    rows = PricingMapper().to_row_dicts(BREAKEVEN_RATIO_MODEL)
     oil = [r for r in rows if r['Phase'] == 'oil']
     assert [(r['Criteria'], r['Period'], r['Value']) for r in oil] == [
         ('dates', '01/01/2024', '75.68'),
@@ -121,7 +121,7 @@ def test_to_csv_rows_dated_criteria() -> None:
 
 def test_roundtrip_flat_model_exact() -> None:
     m = PricingMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(FLAT_MODEL))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(FLAT_MODEL))
     assert rebuilt['priceModel'] == FLAT_MODEL['priceModel']
     assert rebuilt['breakeven'] == FLAT_MODEL['breakeven']
     assert rebuilt['name'] == FLAT_MODEL['name']
@@ -130,14 +130,14 @@ def test_roundtrip_flat_model_exact() -> None:
 
 def test_roundtrip_breakeven_ratio_model_exact() -> None:
     m = PricingMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(BREAKEVEN_RATIO_MODEL))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(BREAKEVEN_RATIO_MODEL))
     assert rebuilt['priceModel'] == BREAKEVEN_RATIO_MODEL['priceModel']
     assert rebuilt['breakeven'] == BREAKEVEN_RATIO_MODEL['breakeven']
 
 
-def test_to_csv_rows_includes_common_columns_with_context() -> None:
+def test_to_row_dicts_includes_common_columns_with_context() -> None:
     ctx = Context(id=FLAT_MODEL['id'], created_at=FLAT_MODEL['createdAt'], project_name='Sample Project A')
-    row = PricingMapper().to_csv_rows(FLAT_MODEL, context=ctx)[0]
+    row = PricingMapper().to_row_dicts(FLAT_MODEL, context=ctx)[0]
     assert row['Model Id'] == FLAT_MODEL['id']
     assert row['Project Name'] == 'Sample Project A'
     assert row['Last Update'] == '08/04/2021 01:53:03'
@@ -147,43 +147,43 @@ def test_gas_component_category_not_implemented() -> None:
     """CC's CSV export shows compositional gas-component rows (Category in
     c1/co2/n2/remaining), but the API (the list and single-model-by-id GET endpoints)
     exposes NO field anywhere in `priceModel.gas` to hold this data -- it cannot be
-    reconstructed from a CSV row, so from_csv_rows fails loud rather than silently
+    reconstructed from a CSV row, so from_row_dicts fails loud rather than silently
     dropping it."""
-    rows = PricingMapper().to_csv_rows(FLAT_MODEL)
+    rows = PricingMapper().to_row_dicts(FLAT_MODEL)
     gas_row = next(r for r in rows if r['Phase'] == 'gas')
     bad_row = dict(gas_row, Category='c1')
     with pytest.raises(NotImplementedError):
-        PricingMapper().from_csv_rows([bad_row])
+        PricingMapper().from_row_dicts([bad_row])
 
 
 def test_full_stream_category_accepted_as_plain_row_not_round_trippable() -> None:
     """'full_stream' is CC's display label for the plain (non-compositional) gas/ngl
     price -- the underlying API row is IDENTICAL in shape to the blank-Category case, so
-    from_csv_rows accepts it as an equivalent plain row (numeric data preserved), but the
-    label itself is a CSV-inherent, non-recoverable field: to_csv_rows always emits
+    from_row_dicts accepts it as an equivalent plain row (numeric data preserved), but the
+    label itself is a CSV-inherent, non-recoverable field: to_row_dicts always emits
     Category=''."""
-    rows = PricingMapper().to_csv_rows(FLAT_MODEL)
+    rows = PricingMapper().to_row_dicts(FLAT_MODEL)
     gas_row = next(r for r in rows if r['Phase'] == 'gas')
     fs_row = dict(gas_row, Category='full_stream')
-    rebuilt = PricingMapper().from_csv_rows([fs_row])
+    rebuilt = PricingMapper().from_row_dicts([fs_row])
     assert rebuilt['priceModel']['gas'] == FLAT_MODEL['priceModel']['gas']
-    # Round-tripping back through to_csv_rows loses the 'full_stream' label -- it comes
+    # Round-tripping back through to_row_dicts loses the 'full_stream' label -- it comes
     # back as '', not the original 'full_stream' (documented CSV-inherent limitation).
-    re_rows = PricingMapper().to_csv_rows(rebuilt)
+    re_rows = PricingMapper().to_row_dicts(rebuilt)
     assert re_rows[0]['Category'] == ''
 
 
 def test_unknown_category_raises() -> None:
-    rows = PricingMapper().to_csv_rows(FLAT_MODEL)
+    rows = PricingMapper().to_row_dicts(FLAT_MODEL)
     gas_row = next(r for r in rows if r['Phase'] == 'gas')
     bad_row = dict(gas_row, Category='bogus')
     with pytest.raises(NotImplementedError):
-        PricingMapper().from_csv_rows([bad_row])
+        PricingMapper().from_row_dicts([bad_row])
 
 
 def test_unique_model_type() -> None:
     model = dict(FLAT_MODEL, unique=True)
-    row = PricingMapper().to_csv_rows(model)[0]
+    row = PricingMapper().to_row_dicts(model)[0]
     assert row['Model Type'] == 'unique'
 
 

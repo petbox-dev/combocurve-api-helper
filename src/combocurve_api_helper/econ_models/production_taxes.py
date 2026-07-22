@@ -177,7 +177,7 @@ class ProductionTaxesMapper(EconModelMapper):
     econ_model_type = 'ProductionTaxes'
     columns = COLUMNS['ProductionTaxes']
 
-    def to_csv_rows(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
         common = common_columns(model, context)
         data = model.get('data') or {}
         state = data.get('state', '') or ''
@@ -232,7 +232,7 @@ class ProductionTaxesMapper(EconModelMapper):
                 rows.append({c: csv_row.get(c, '') for c in self.columns})
         return rows
 
-    def from_csv_rows(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
         groups: Dict[Tuple[str, str], List[Dict[str, str]]] = {}
         order: List[Tuple[str, str]] = []
         name, unique = model_identity(rows)

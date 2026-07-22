@@ -29,14 +29,14 @@ class ReservesCategoryMapper(EconModelMapper):
     Unlike the row-based mappers (ProductionTaxes, Expenses, StreamProperties, ...) that
     explode one API model into many `rows[]`-driven CSV rows, ReservesCategory has no
     `rows[]`/criteria at all -- the entire model is a single flat settings object, so
-    `to_csv_rows` always emits exactly ONE row and `from_csv_rows` always consumes exactly
+    `to_row_dicts` always emits exactly ONE row and `from_row_dicts` always consumes exactly
     ONE row.
     """
 
     econ_model_type = 'ReservesCategory'
     columns = COLUMNS['ReservesCategory']
 
-    def to_csv_rows(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
         common = common_columns(model, context)
         data = ReservesCategoryData.model_validate(model.get('reservesCategory') or {})
 
@@ -50,7 +50,7 @@ class ReservesCategoryMapper(EconModelMapper):
         )
         return [{c: row.get(c, '') for c in self.columns}]
 
-    def from_csv_rows(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
         if len(rows) != 1:
             raise NotImplementedError(
                 f'ReservesCategory is one-row-per-model; expected exactly 1 CSV row, got {len(rows)}'

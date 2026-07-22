@@ -1,6 +1,6 @@
 """Generate src/combocurve_api_helper/econ_models/_csv_generated.py.
 
-Emits a `<method_base>_to_csv_rows` / `<method_base>_from_csv_rows` pair for every
+Emits a `<method_base>_to_row_dicts` / `<method_base>_from_row_dicts` pair for every
 econ-model type in econModels.json that has a registered mapper (i.e. `econModelType`
 is a key of `econ_models.registry.MAPPERS`). The pair is thin sugar over
 `get_mapper(econModelType)` -- it exists so each type has an explicit named function,
@@ -23,7 +23,7 @@ HEADER = '''\
 """Per-type CSV convenience functions (generated).
 
 Thin, explicit wrappers over `registry.get_mapper(...)` so each econ-model type has named
-`<type>_to_csv_rows`/`<type>_from_csv_rows` (row level), `<type>_to_csv`/`<type>_from_csv`
+`<type>_to_row_dicts`/`<type>_from_row_dicts` (row level), `<type>_to_csv`/`<type>_from_csv`
 (whole multi-model file, string in/out), and a `get_<type>_mapper()` accessor -- matching the
 per-type function convention used elsewhere in the package rather than requiring callers to reach
 for the generic `get_mapper`.
@@ -38,14 +38,14 @@ from .registry import get_mapper
 
 FUNCS = '''
 
-def {method_base}_to_csv_rows(model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+def {method_base}_to_row_dicts(model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
     """Convert one `{econ_model_type}` econ-model API dict to CSV rows (model-level export shape)."""
-    return get_mapper('{econ_model_type}').to_csv_rows(model, context)
+    return get_mapper('{econ_model_type}').to_row_dicts(model, context)
 
 
-def {method_base}_from_csv_rows(rows: List[Dict[str, str]]) -> Dict[str, Any]:
+def {method_base}_from_row_dicts(rows: List[Dict[str, str]]) -> Dict[str, Any]:
     """Reconstruct {article} `{econ_model_type}` econ-model API dict from its CSV rows."""
-    return get_mapper('{econ_model_type}').from_csv_rows(rows)
+    return get_mapper('{econ_model_type}').from_row_dicts(rows)
 
 
 def {method_base}_to_csv(models: List[Dict[str, Any]], context: Optional[Context] = None) -> str:
@@ -78,8 +78,8 @@ def render() -> str:
         parts.append(FUNCS.format(method_base=method_base, econ_model_type=econ_model_type, article=article))
         names.extend(
             (
-                f'{method_base}_to_csv_rows',
-                f'{method_base}_from_csv_rows',
+                f'{method_base}_to_row_dicts',
+                f'{method_base}_from_row_dicts',
                 f'{method_base}_to_csv',
                 f'{method_base}_from_csv',
                 f'get_{method_base}_mapper',

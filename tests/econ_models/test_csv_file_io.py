@@ -20,13 +20,13 @@ from tests.econ_models.csv_fixture_io import (
 
 
 @pytest.mark.parametrize('econ_model_type', sorted(FIXTURE_FILES))
-def test_from_csv_equals_per_model_from_csv_rows(econ_model_type: str) -> None:
+def test_from_csv_equals_per_model_from_row_dicts(econ_model_type: str) -> None:
     mapper = get_mapper(econ_model_type)
     for filename in FIXTURE_FILES[econ_model_type]:
         path = os.path.join(FIXTURES_DIR, filename)
         text = pathlib.Path(path).read_text(encoding='utf-8')
         rows = read_csv_rows(path)
-        expected = [mapper.from_csv_rows(g) for g in group_by_model_name(rows).values()]
+        expected = [mapper.from_row_dicts(g) for g in group_by_model_name(rows).values()]
         assert mapper.from_csv(text) == expected, f'{econ_model_type} / {filename}'
 
 
@@ -42,7 +42,7 @@ def test_to_csv_reemits_model_parameter_columns(econ_model_type: str) -> None:
     for filename in FIXTURE_FILES[econ_model_type]:
         path = os.path.join(FIXTURES_DIR, filename)
         rows = read_csv_rows(path)
-        models = [mapper.from_csv_rows(g) for g in group_by_model_name(rows).values()]
+        models = [mapper.from_row_dicts(g) for g in group_by_model_name(rows).values()]
         reparsed = list(csv.DictReader(io.StringIO(mapper.to_csv(models))))
         expected = [project_columns(r, compare_columns) for r in rows]
         actual = [project_columns(r, compare_columns) for r in reparsed]

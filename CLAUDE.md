@@ -133,13 +133,16 @@ these build econ-model assumptions. `wells.py` (~30), `production.py` (~24), `sc
 `forecasts.py` (~21) follow. `directional.py` and `typecurves.py` are small.
 
 **Econ-model CSV mappers** live in the `econ_models/` subpackage (hand-written, NOT generated — distinct
-from the generated CRUD methods below). Each econ-model type has a mapper implementing the `EconModelMapper`
-protocol (`econ_models/base.py`): an invertible pair — `to_csv_rows(model, context=None)` turns an API model
-dict into a list of CSV row dicts, `from_csv_rows(rows)` reconstructs the API payload — plus a `columns` list
-(the exact CSV header) and an `econ_model_type`. Look one up with `get_mapper(econ_model_type)`; `MAPPERS`
-registers all 11 types (StreamProperties, Differentials, ProductionTaxes, Expenses, Capex, ReservesCategory,
-Pricing, Dates, OwnershipReversion, ActualOrForecast, Risking). `to_csv_rows` keys every row by the
-full `columns` list, so a CSV round trip is lossless; value formatting (numbers, dates, enums, escalations)
+from the generated CRUD methods below). Each econ-model type has a mapper subclassing the `EconModelMapper`
+ABC (`econ_models/base.py`). Row level (one model): `to_row_dicts(model, context=None)` flattens an API model
+dict into a list of CSV-column-keyed row dicts, `from_row_dicts(rows)` reconstructs the API payload. File
+level (whole multi-model CSV): `to_csv(models, context=None)` / `from_csv(source)` convert to/from CSV text,
+`read_csv(path)` / `write_csv(path, models)` to/from a file — all implemented once on the base over the row
+methods. Plus a `columns` list (the exact CSV header) and an `econ_model_type`. Look one up with
+`get_mapper(econ_model_type)`; `MAPPERS` registers all 11 types (StreamProperties, Differentials,
+ProductionTaxes, Expenses, Capex, ReservesCategory, Pricing, Dates, OwnershipReversion, ActualOrForecast,
+Risking). `to_row_dicts` keys every row by the full `columns` list, so a CSV round trip is lossless; value
+formatting (numbers, dates, enums, escalations)
 is centralized in `econ_models/formats.py` with matching `*_to_csv` / `*_from_csv` helpers, and the shared
 header is `econ_models/csv_columns.py` `COLUMNS`. **The `get_mapper` / `MAPPERS` key is the PascalCase
 `econModelType`** (see the name-forms section above), not the kebab route or camelCase form.
@@ -164,8 +167,9 @@ fails when the committed output is stale. Run all three at once with `scripts/co
 - **`scripts/generate_model_methods.py`** -> `_models_generated.py`: per-type econ-model CRUD +
   assignment methods expanded from `assets/econModels.json`. Edit the JSON, re-run, commit
   (`tests/test_generated_models.py`).
-- **`scripts/generate_csv_functions.py`** -> `econ_models/_csv_generated.py`: the per-type
-  `<type>_to_csv_rows` / `<type>_from_csv_rows` CSV convenience functions, expanded from
+- **`scripts/generate_csv_functions.py`** -> `econ_models/_csv_generated.py`: the per-type CSV
+  convenience functions (`<type>_to_row_dicts` / `<type>_from_row_dicts` row level,
+  `<type>_to_csv` / `<type>_from_csv` whole-file, and `get_<type>_mapper`), expanded from
   `assets/econModels.json` + the mapper registry. Re-run after adding a mapper or changing the JSON,
   commit (`tests/econ_models/test_csv_generated.py`).
 - **`scripts/generate_docstrings.py`** rewrites the `Example response:` / `Example data:` JSON blocks

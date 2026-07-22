@@ -72,7 +72,7 @@ class ActualOrForecastMapper(EconModelMapper):
     econ_model_type = 'ActualOrForecast'
     columns = COLUMNS['ActualOrForecast']
 
-    def to_csv_rows(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
         common = common_columns(model, context)
         model_name = model.get('name', '') or ''
         aof = model.get('actualOrForecast') or {}
@@ -99,7 +99,7 @@ class ActualOrForecastMapper(EconModelMapper):
             rows.append({c: row.get(c, '') for c in self.columns})
         return rows
 
-    def from_csv_rows(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
         if len(rows) != 3:
             raise NotImplementedError(
                 f'ActualOrForecast is 3-rows-per-model (oil/gas/water); expected exactly 3 CSV rows, got {len(rows)}'
@@ -111,7 +111,7 @@ class ActualOrForecastMapper(EconModelMapper):
 
         # Only rows[0] feeds identity -- not all `rows` -- matching this type's original
         # exact behavior (every row of a real model carries the identical 'Model Name'/
-        # 'Model Type', but `from_csv_rows` has never depended on that for the other two
+        # 'Model Type', but `from_row_dicts` has never depended on that for the other two
         # rows).
         name, unique = model_identity([rows[0]])
 
@@ -140,7 +140,7 @@ class ActualOrForecastMapper(EconModelMapper):
         # alike are `{}`-shaped or carry only `ignoreHistoryProd`, never an explicit
         # per-phase `never` node).
         # Collapsing to `{}` for a model literally named 'Forecast As Of' would
-        # silently flip back to 'As of Date' on the next `to_csv_rows` pass (see
+        # silently flip back to 'As of Date' on the next `to_row_dicts` pass (see
         # `_phase_criteria`'s name-based fallback) -- a round-trip break -- so that
         # one case keeps the explicit modern per-phase shape instead.
         if all_never and name != _MODEL_NAME_FORECAST_AS_OF:

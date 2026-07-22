@@ -20,8 +20,8 @@ API = {
 }
 
 
-def test_to_csv_rows_values() -> None:
-    rows = DifferentialsMapper().to_csv_rows(API)
+def test_to_row_dicts_values() -> None:
+    rows = DifferentialsMapper().to_row_dicts(API)
     assert len(rows) == 4
     oil = next(r for r in rows if r['Phase'] == 'oil')
     assert oil['Key'] == 'differentials_1'
@@ -34,7 +34,7 @@ def test_to_csv_rows_values() -> None:
 
 def test_roundtrip() -> None:
     m = DifferentialsMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(API))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(API))
     assert rebuilt['differentials'] == API['differentials']
     assert rebuilt['name'] == 'Sample Differentials' and rebuilt['unique'] is False
 
@@ -60,7 +60,7 @@ def test_escalation_none_roundtrip() -> None:
             'thirdDifferential': {},
         },
     }
-    rebuilt = m.from_csv_rows(m.to_csv_rows(api_model))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(api_model))
     assert rebuilt['differentials']['firstDifferential']['oil']['escalationModel'] is None, (
         "escalationModel=None should roundtrip to None, not 'none'"
     )
@@ -87,7 +87,7 @@ def test_escalation_string_roundtrip() -> None:
             'thirdDifferential': {},
         },
     }
-    rebuilt = m.from_csv_rows(m.to_csv_rows(api_model))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(api_model))
     assert rebuilt['differentials']['firstDifferential']['gas']['escalationModel'] == 'none', (
         "escalationModel='none' (string) should roundtrip to 'none'"
     )

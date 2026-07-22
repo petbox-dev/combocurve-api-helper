@@ -99,8 +99,8 @@ from combocurve_api_helper import ComboCurveAPI
 api = ComboCurveAPI()
 
 # List projects, then scenarios and forecasts within one
-projects = api.get_projects()
-project_id = projects[0]["id"]
+projects = api.get_projects(filters={'name': 'Example Project'})
+project_id = api.extract_id(projects)
 
 scenarios = api.get_scenarios(project_id)
 forecasts = api.get_forecasts(project_id)
@@ -142,12 +142,36 @@ csv_text = expenses_to_csv(models)
 same_models = expenses_from_csv(csv_text)
 ```
 
+For finer-grained, per-model control, drop to the row level. `to_row_dicts` flattens a
+**single** model to its CSV-column-keyed row dicts (no header, no file); `from_row_dicts` rebuilds
+one model from rows. Use these when you want to drive the `csv` writer yourself, edit or filter
+individual rows, or handle models one at a time. The whole-file helpers above are built on them,
+and `mapper.columns` is the exact CSV header.
+
+```python
+import csv
+from combocurve_api_helper.econ_models import get_expenses_mapper
+
+mapper = get_expenses_mapper()
+
+# --- one model -> row dicts -> your own CSV file ---
+with open("expenses.csv", "w", newline="") as f:
+    writer = csv.DictWriter(f, fieldnames=mapper.columns)   # columns == the CSV header
+    writer.writeheader()
+    writer.writerows(mapper.to_row_dicts(model))            # one model's line-item rows
+
+# --- row dicts -> one model ---
+with open("expenses.csv", newline="") as f:
+    rows = list(csv.DictReader(f))
+payload = mapper.from_row_dicts(rows)                       # reconstruct a single API payload
+```
+
 ## Contributing
 
 1. Fork the repository:
     - On this GitHub page, click "Fork" to create a copy under your own account.
 
-2. CLone the forked repo onto on your machine:
+2. Clone the forked repo onto on your machine:
     ```sh
     git clone https://github.com/<your-username>/combocurve-api-helper.git
     cd combocurve-api-helper

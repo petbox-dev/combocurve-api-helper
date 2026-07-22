@@ -33,7 +33,7 @@ API: Dict[str, Any] = {
     },
     # CC's real Stream Properties CSV export has NO 'btu'-Key rows at all (blank 'BTU
     # (MBTU/MCF)' column) even though the API model carries btuContent. Kept here (with
-    # a non-empty value) specifically to prove to_csv_rows drops it rather than emitting
+    # a non-empty value) specifically to prove to_row_dicts drops it rather than emitting
     # 'btu' rows.
     'btuContent': {'unshrunkGas': 1000, 'shrunkGas': 1000},
     'companyCustomStreams': [],
@@ -51,8 +51,8 @@ _BLANK_COLS = (
 )
 
 
-def test_to_csv_rows_values() -> None:
-    rows = StreamPropertiesMapper().to_csv_rows(API)
+def test_to_row_dicts_values() -> None:
+    rows = StreamPropertiesMapper().to_row_dicts(API)
     # 2 yields + 2 shrinkage + 3 lossFlare = 7. NOT 9: btuContent is dropped entirely,
     # matching CC's real export (no 'btu'-Key rows).
     assert len(rows) == 7
@@ -113,7 +113,7 @@ def test_gas_shrinkage_condition_uses_presence_not_truthiness() -> None:
         },
         'companyCustomStreams': [],
     }
-    rows = StreamPropertiesMapper().to_csv_rows(model)
+    rows = StreamPropertiesMapper().to_row_dicts(model)
     ngl = next(r for r in rows if r['Key'] == 'yields' and r['Category'] == 'ngl')
     assert ngl['Gas Shrinkage Condition'] == 'unshrunk'
 
@@ -121,22 +121,22 @@ def test_gas_shrinkage_condition_uses_presence_not_truthiness() -> None:
 def test_csv_rows_roundtrip_exact() -> None:
     # Unlike the API dict round-trip (which loses the exact unshrunkGas literal, plus
     # btuContent and rateType/rowsCalculationMethod entirely -- see test_roundtrip), the
-    # CSV representation itself round-trips exactly through from_csv_rows -> to_csv_rows
+    # CSV representation itself round-trips exactly through from_row_dicts -> to_row_dicts
     # for the stream-properties data columns. 'Last Update' is excluded: it is sourced
-    # from the API model's top-level 'updatedAt'/context, which from_csv_rows does not
+    # from the API model's top-level 'updatedAt'/context, which from_row_dicts does not
     # reconstruct -- a separate, pre-existing gap unrelated to this fix.
     def _strip_last_update(rs: List[Dict[str, str]]) -> List[Dict[str, str]]:
         return [{k: v for k, v in r.items() if k != 'Last Update'} for r in rs]
 
     m = StreamPropertiesMapper()
-    rows = m.to_csv_rows(API)
-    rebuilt_rows = m.to_csv_rows(m.from_csv_rows(rows))
+    rows = m.to_row_dicts(API)
+    rebuilt_rows = m.to_row_dicts(m.from_row_dicts(rows))
     assert _strip_last_update(rebuilt_rows) == _strip_last_update(rows)
 
 
 def test_roundtrip() -> None:
     m = StreamPropertiesMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(API))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(API))
 
     # Documented, permanent losses through the real CC CSV (not bugs):
     # - btuContent has no CSV representation at all (no 'btu'-Key rows) -- omitted
@@ -166,7 +166,7 @@ def test_nonempty_company_custom_streams_raises() -> None:
     m = dict(API)
     m['companyCustomStreams'] = [{'key': 'custom1'}]
     with pytest.raises(NotImplementedError):
-        StreamPropertiesMapper().to_csv_rows(m)
+        StreamPropertiesMapper().to_row_dicts(m)
 
 
 def test_unknown_category_key_raises() -> None:
@@ -180,4 +180,4 @@ def test_unknown_category_key_raises() -> None:
         'plutonium': {'rows': [{'entireWellLife': 'Flat', 'pctRemaining': 99}]},  # unknown category
     }
     with pytest.raises(ValidationError):
-        StreamPropertiesMapper().to_csv_rows(m)
+        StreamPropertiesMapper().to_row_dicts(m)

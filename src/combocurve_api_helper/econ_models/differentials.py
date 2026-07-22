@@ -53,8 +53,8 @@ class DifferentialPhaseNode(BaseModel):
     `escalation_model` is deliberately NOT round-tripped via a blanket
     `model_dump(exclude_none=True)` on the inverse pass: CC's real API distinguishes an
     explicit `null` escalationModel from the literal string `'none'`, and
-    `from_csv_rows` must preserve that distinction -- a Python `None` must come back as
-    `None`, not be omitted. So `DifferentialsMapper.from_csv_rows` builds the phase-node
+    `from_row_dicts` must preserve that distinction -- a Python `None` must come back as
+    `None`, not be omitted. So `DifferentialsMapper.from_row_dicts` builds the phase-node
     dict by hand, keeping `escalationModel` present (possibly `None`) while each row is
     dumped with `exclude_none=True` to drop its unused criteria/value fields.
     """
@@ -81,7 +81,7 @@ class DifferentialsMapper(EconModelMapper):
     econ_model_type = 'Differentials'
     columns = COLUMNS['Differentials']
 
-    def to_csv_rows(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
         common = common_columns(model, context)
         rows: List[Dict[str, str]] = []
         for tier, phases in model.get('differentials', {}).items():
@@ -111,7 +111,7 @@ class DifferentialsMapper(EconModelMapper):
                     rows.append({c: row.get(c, '') for c in self.columns})
         return rows
 
-    def from_csv_rows(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
         diffs: Dict[str, Dict[str, DifferentialPhaseNode]] = {
             'firstDifferential': {},
             'secondDifferential': {},

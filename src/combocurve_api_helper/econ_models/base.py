@@ -28,7 +28,7 @@ def common_columns(model: Dict[str, Any], context: Optional[Context]) -> Dict[st
 
 
 def model_identity(rows: List[Dict[str, str]]) -> Tuple[str, bool]:
-    """Extract `(name, unique)` from a mapper's `from_csv_rows` input, matching the
+    """Extract `(name, unique)` from a mapper's `from_row_dicts` input, matching the
     'Model Name'/'Model Type' convention `common_columns` emits on every row of a model.
 
     `name` is the LAST-seen 'Model Name' across `rows` (default '' if `rows` is empty or
@@ -53,7 +53,7 @@ def group_rows_by_model_name(rows: List[Dict[str, str]]) -> List[List[Dict[str, 
 
     A CC econ-model CSV stacks many models of one type, each spanning one or more rows that
     share a 'Model Name'. This is the production counterpart of the test helper of the same
-    intent; `from_csv` uses it to feed one model's rows at a time to `from_csv_rows`.
+    intent; `from_csv` uses it to feed one model's rows at a time to `from_row_dicts`.
     """
     groups: Dict[str, List[Dict[str, str]]] = {}
     order: List[str] = []
@@ -69,20 +69,20 @@ def group_rows_by_model_name(rows: List[Dict[str, str]]) -> List[List[Dict[str, 
 class EconModelMapper(ABC):
     """Base for econ-model API<->CSV mappers.
 
-    Subclasses supply the type-specific pieces (`econ_model_type`, `columns`, `to_csv_rows`,
-    `from_csv_rows`); this base implements the file-level conversions once in terms of them.
+    Subclasses supply the type-specific pieces (`econ_model_type`, `columns`, `to_row_dicts`,
+    `from_row_dicts`); this base implements the file-level conversions once in terms of them.
     """
 
     econ_model_type: str
     columns: List[str]
 
     @abstractmethod
-    def to_csv_rows(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
         """Convert one econ-model API dict to its CSV rows (each keyed by `self.columns`)."""
         ...
 
     @abstractmethod
-    def from_csv_rows(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
         """Reconstruct one econ-model API dict from the CSV rows of a single model."""
         ...
 
@@ -98,7 +98,7 @@ class EconModelMapper(ABC):
         writer = csv.DictWriter(buffer, fieldnames=self.columns)
         writer.writeheader()
         for model in models:
-            writer.writerows(self.to_csv_rows(model, context))
+            writer.writerows(self.to_row_dicts(model, context))
         return buffer.getvalue()
 
     def from_csv(self, source: Union[str, TextIO]) -> List[Dict[str, Any]]:
@@ -111,7 +111,7 @@ class EconModelMapper(ABC):
         reader = csv.DictReader(io.StringIO(text))
         if reader.fieldnames is None or 'Model Name' not in reader.fieldnames:
             raise ValueError("CSV has no 'Model Name' column; not a ComboCurve econ-model export.")
-        return [self.from_csv_rows(group) for group in group_rows_by_model_name(list(reader))]
+        return [self.from_row_dicts(group) for group in group_rows_by_model_name(list(reader))]
 
     def read_csv(self, path: Union[str, os.PathLike[str]]) -> List[Dict[str, Any]]:
         """Read a multi-model CSV file into a list of econ-model API dicts."""

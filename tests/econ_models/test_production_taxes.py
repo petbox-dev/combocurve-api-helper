@@ -129,7 +129,7 @@ DATES: Dict[str, Any] = {
 def test_dates_criteria_matches_cc_export() -> None:
     """CC renders a 'dates' Period as '%b-%y' ('Jul-23'); the 1900-01-01 sentinel is
     'Jan-00'."""
-    rows = ProductionTaxesMapper().to_csv_rows(DATES)
+    rows = ProductionTaxesMapper().to_row_dicts(DATES)
     assert len(rows) == 12  # 4 API rows x 3 periods
 
     oil_t1 = [r for r in rows if r['Key'] == 'oil' and r['Category'] == 'Severance Tax 1']
@@ -146,12 +146,12 @@ def test_dates_criteria_matches_cc_export() -> None:
 
 def test_dates_criteria_roundtrip() -> None:
     m = ProductionTaxesMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(DATES))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(DATES))
     assert rebuilt['data'] == DATES['data']
 
 
-def test_to_csv_rows_new_mexico_real_shape() -> None:
-    rows = ProductionTaxesMapper().to_csv_rows(NEW_MEXICO)
+def test_to_row_dicts_new_mexico_real_shape() -> None:
+    rows = ProductionTaxesMapper().to_row_dicts(NEW_MEXICO)
     assert len(rows) == 5
 
     ad_val = next(r for r in rows if r['Key'] == 'Ad Valorem Tax')
@@ -183,7 +183,7 @@ def test_to_csv_rows_new_mexico_real_shape() -> None:
 
 def test_roundtrip_exact_new_mexico() -> None:
     m = ProductionTaxesMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(NEW_MEXICO))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(NEW_MEXICO))
     assert rebuilt['data'] == NEW_MEXICO['data']
     assert rebuilt['name'] == NEW_MEXICO['name']
     assert rebuilt['unique'] == NEW_MEXICO['unique']
@@ -200,8 +200,8 @@ def test_roundtrip_exact_new_mexico() -> None:
         assert row['rateRowsCalculationMethod'] == 'non_monotonic'
 
 
-def test_to_csv_rows_texas_two_severance_per_phase() -> None:
-    rows = ProductionTaxesMapper().to_csv_rows(TEXAS)
+def test_to_row_dicts_texas_two_severance_per_phase() -> None:
+    rows = ProductionTaxesMapper().to_row_dicts(TEXAS)
     assert len(rows) == 9
 
     oil_rows = [r for r in rows if r['Key'] == 'oil']
@@ -244,7 +244,7 @@ def test_to_csv_rows_texas_two_severance_per_phase() -> None:
 
 def test_roundtrip_exact_texas() -> None:
     m = ProductionTaxesMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(TEXAS))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(TEXAS))
     assert rebuilt['data'] == TEXAS['data']
     assert rebuilt['name'] == TEXAS['name']
     assert rebuilt['unique'] == TEXAS['unique']
@@ -275,11 +275,11 @@ def test_fpd_criteria_period_roundtrip() -> None:
         },
     }
     m = ProductionTaxesMapper()
-    rows = m.to_csv_rows(model)
+    rows = m.to_row_dicts(model)
     assert rows[0]['Criteria'] == 'fpd'
     assert rows[0]['Period'] == '12'
 
-    rebuilt = m.from_csv_rows(rows)
+    rebuilt = m.from_row_dicts(rows)
     assert rebuilt['data'] == model['data']
 
 
@@ -307,7 +307,7 @@ def test_optional_fields_pass_through_when_present() -> None:
         },
     }
     m = ProductionTaxesMapper()
-    rows = m.to_csv_rows(model)
+    rows = m.to_row_dicts(model)
     row = rows[0]
     assert row['Shrinkage Condition'] == 'shrunk'
     assert row['Escalation'] == 'None'
@@ -316,7 +316,7 @@ def test_optional_fields_pass_through_when_present() -> None:
     assert row['Rate Rows Calculation Method'] == 'monotonic'
     assert row['Unit'] == '$/mcf'
 
-    rebuilt = m.from_csv_rows(rows)
+    rebuilt = m.from_row_dicts(rows)
     assert rebuilt['data'] == model['data']
 
 
@@ -342,7 +342,7 @@ def test_optional_fields_absent_are_not_injected() -> None:
         },
     }
     m = ProductionTaxesMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(model))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(model))
     row = rebuilt['data']['rows'][0]
     assert 'shrinkageCondition' not in row
     assert 'escalation' not in row
@@ -373,7 +373,7 @@ def test_unknown_category_raises() -> None:
         },
     }
     with pytest.raises(NotImplementedError):
-        ProductionTaxesMapper().to_csv_rows(model)
+        ProductionTaxesMapper().to_row_dicts(model)
 
 
 def test_unknown_criteria_raises() -> None:
@@ -387,10 +387,10 @@ def test_unknown_criteria_raises() -> None:
     }
     model['data']['rows'][0]['criteria'] = 'some_weird_criteria'
     with pytest.raises(NotImplementedError):
-        ProductionTaxesMapper().to_csv_rows(model)
+        ProductionTaxesMapper().to_row_dicts(model)
 
 
 def test_common_columns_present() -> None:
-    rows = ProductionTaxesMapper().to_csv_rows(TEXAS)
+    rows = ProductionTaxesMapper().to_row_dicts(TEXAS)
     assert rows[0]['Model Name'] == 'TX Prod Tax'
     assert rows[0]['Model Type'] == 'project'

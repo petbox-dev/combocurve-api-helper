@@ -85,11 +85,11 @@ one-line comment at each import block documenting the three aliases.
 
 ---
 
-## 3. `date_settings.from_csv_rows` does several things (~70 lines) — DONE
+## 3. `date_settings.from_row_dicts` does several things (~70 lines) — DONE
 
 **Done.** The cutOff assembly (criterion + minLife + fixed/conditional keys, with all
 per-criterion gating and provenance comments verbatim) was extracted into a module-level
-`_cutoff_from_csv(row) -> Dict[str, Any]`; `from_csv_rows` now calls it. The
+`_cutoff_from_csv(row) -> Dict[str, Any]`; `from_row_dicts` now calls it. The
 `dateSetting`/`fpdSourceHierarchy` block stayed inline (already cohesive). Pure extraction —
 all round-trip tests unchanged and green.
 

@@ -72,7 +72,7 @@ def _perfoot_from_json(cell: str) -> Optional[Dict[str, Any]]:
 # type/mean/stdev/bounds/mode/seed). These normally sit at a fixed, invariant default --
 # so on the inverse pass we reconstruct that default, giving exact round-trip equality for
 # the common case. A row with non-default probabilistic values will not round-trip;
-# to_csv_rows warns rather than silently dropping the distinction.
+# to_row_dicts warns rather than silently dropping the distinction.
 _PROBABILISTIC_DEFAULTS: Dict[str, Any] = {
     'distributionType': 'na',
     'mean': 0,
@@ -103,7 +103,7 @@ class CapexOtherRow(BaseModel):
 
     `escalation_model`/`depreciation_model` have the same None-vs-'none' round-trip
     quirk as Differentials' escalationModel (see `DifferentialPhaseNode` docstring):
-    CapexMapper.from_csv_rows must keep these keys present (possibly `None`) on the
+    CapexMapper.from_row_dicts must keep these keys present (possibly `None`) on the
     reconstructed row rather than letting a blanket `exclude_none=True` drop them.
     """
 
@@ -211,7 +211,7 @@ def _check_probabilistic(extra: Dict[str, Any]) -> None:
     if mismatched:
         warnings.warn(
             'Capex row has non-default probabilistic fields with no CSV representation; '
-            f'they will not round-trip via from_csv_rows: {mismatched}',
+            f'they will not round-trip via from_row_dicts: {mismatched}',
             stacklevel=2,
         )
 
@@ -220,7 +220,7 @@ class CapexMapper(EconModelMapper):
     econ_model_type = 'Capex'
     columns = COLUMNS['Capex']
 
-    def to_csv_rows(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
         common = common_columns(model, context)
         rows: List[Dict[str, str]] = []
         for r in model.get('otherCapex', {}).get('rows', []):
@@ -228,7 +228,7 @@ class CapexMapper(EconModelMapper):
         # Model-level $/ft objects have no native CC column; capture them losslessly as
         # JSON on the FIRST row. If the model carries them but has no otherCapex rows, emit
         # a single carrier row (blank line-item cells, model identity intact) so nothing is
-        # dropped -- from_csv_rows skips carrier rows (they have no Criteria).
+        # dropped -- from_row_dicts skips carrier rows (they have no Criteria).
         drilling_json = _perfoot_to_json(model.get('drillingCost'))
         completion_json = _perfoot_to_json(model.get('completionCost'))
         if drilling_json or completion_json:
@@ -270,7 +270,7 @@ class CapexMapper(EconModelMapper):
         )
         return {c: row.get(c, '') for c in self.columns}
 
-    def from_csv_rows(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
         name, unique = model_identity(rows)
         other_capex_rows: List[Dict[str, Any]] = []
         drilling: Optional[Dict[str, Any]] = None
@@ -280,7 +280,7 @@ class CapexMapper(EconModelMapper):
                 drilling = _perfoot_from_json(row.get(_DRILLING_COST_COL, ''))
             if completion is None:
                 completion = _perfoot_from_json(row.get(_COMPLETION_COST_COL, ''))
-            # A row with no line-item Criteria is a per-foot carrier row (see to_csv_rows),
+            # A row with no line-item Criteria is a per-foot carrier row (see to_row_dicts),
             # not an otherCapex line item: harvest its JSON above but do not parse it as a
             # row. Real otherCapex rows always carry a Criteria.
             if not (row.get('Criteria') or '').strip():

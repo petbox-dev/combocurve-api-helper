@@ -306,13 +306,13 @@ DATE_TYPE_REVERSION: Dict[str, Any] = {
 }
 
 
-def test_to_csv_rows_initial_only_emits_one_row() -> None:
-    rows = OwnershipReversionMapper().to_csv_rows(EIGHT_EIGHTHS)
+def test_to_row_dicts_initial_only_emits_one_row() -> None:
+    rows = OwnershipReversionMapper().to_row_dicts(EIGHT_EIGHTHS)
     assert len(rows) == 1
 
 
-def test_to_csv_rows_initial_only_forward_shape() -> None:
-    row = OwnershipReversionMapper().to_csv_rows(EIGHT_EIGHTHS)[0]
+def test_to_row_dicts_initial_only_forward_shape() -> None:
+    row = OwnershipReversionMapper().to_row_dicts(EIGHT_EIGHTHS)[0]
     assert row['Key'] == 'initial'
     assert row['WI %'] == '100'
     assert row['NRI %'] == '75'
@@ -335,14 +335,14 @@ def test_to_csv_rows_initial_only_forward_shape() -> None:
     assert row['Model Type'] == 'project'
 
 
-def test_to_csv_rows_with_reversion_emits_two_rows() -> None:
-    rows = OwnershipReversionMapper().to_csv_rows(SAMPLE_REVERSION_A_W_PO)
+def test_to_row_dicts_with_reversion_emits_two_rows() -> None:
+    rows = OwnershipReversionMapper().to_row_dicts(SAMPLE_REVERSION_A_W_PO)
     assert len(rows) == 2
     assert [r['Key'] for r in rows] == ['initial', 'first']
 
 
-def test_to_csv_rows_reversion_row_forward_shape() -> None:
-    rows = OwnershipReversionMapper().to_csv_rows(SAMPLE_REVERSION_A_W_PO)
+def test_to_row_dicts_reversion_row_forward_shape() -> None:
+    rows = OwnershipReversionMapper().to_row_dicts(SAMPLE_REVERSION_A_W_PO)
     reversion_row = rows[1]
     assert reversion_row['Reversion Type'] == 'po'
     assert reversion_row['Reversion Value'] == '12290000'
@@ -360,16 +360,16 @@ def test_to_csv_rows_reversion_row_forward_shape() -> None:
         assert reversion_row[col] == ''
 
 
-def test_to_csv_rows_reversion_tied_to_explicit_renders_same_as_absent() -> None:
+def test_to_row_dicts_reversion_tied_to_explicit_renders_same_as_absent() -> None:
     # SAMPLE_WELL_2 carries an EXPLICIT reversionTiedTo={'type': 'as_of'} (unlike
     # SAMPLE_REVERSION_A_W_PO's absence) -- both render the identical CSV cell.
-    rows = OwnershipReversionMapper().to_csv_rows(SAMPLE_WELL_2)
+    rows = OwnershipReversionMapper().to_row_dicts(SAMPLE_WELL_2)
     assert rows[1]['Reversion Tied To'] == 'as of'
 
 
 def test_roundtrip_exact_initial_only() -> None:
     m = OwnershipReversionMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(EIGHT_EIGHTHS))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(EIGHT_EIGHTHS))
     assert rebuilt['name'] == EIGHT_EIGHTHS['name']
     assert rebuilt['unique'] == EIGHT_EIGHTHS['unique']
     assert rebuilt['ownership'] == EIGHT_EIGHTHS['ownership']
@@ -377,7 +377,7 @@ def test_roundtrip_exact_initial_only() -> None:
 
 def test_roundtrip_null_reversions_stay_null() -> None:
     m = OwnershipReversionMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(EIGHT_EIGHTHS))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(EIGHT_EIGHTHS))
     ownership = rebuilt['ownership']
     for ordinal in (
         'first',
@@ -406,7 +406,7 @@ def test_roundtrip_null_reversions_stay_null() -> None:
 
 def test_roundtrip_exact_with_reversion() -> None:
     m = OwnershipReversionMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(SAMPLE_WELL_2))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(SAMPLE_WELL_2))
     assert rebuilt['name'] == SAMPLE_WELL_2['name']
     assert rebuilt['unique'] == SAMPLE_WELL_2['unique']
     assert rebuilt['ownership'] == SAMPLE_WELL_2['ownership']
@@ -415,9 +415,9 @@ def test_roundtrip_exact_with_reversion() -> None:
 def test_roundtrip_reversion_tied_to_absent_reconstructs_as_explicit() -> None:
     # Documented residual: the CSV cannot distinguish an absence of 'reversionTiedTo'
     # (SAMPLE_REVERSION_A_W_PO) from an explicit {"type": "as_of"} (SAMPLE_WELL_2) --
-    # from_csv_rows always reconstructs the explicit form.
+    # from_row_dicts always reconstructs the explicit form.
     m = OwnershipReversionMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(SAMPLE_REVERSION_A_W_PO))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(SAMPLE_REVERSION_A_W_PO))
     assert rebuilt['ownership']['firstReversion']['reversionTiedTo'] == {'type': 'as_of'}
     assert 'reversionTiedTo' not in SAMPLE_REVERSION_A_W_PO['ownership']['firstReversion']
 
@@ -428,15 +428,15 @@ def test_reversion_tied_to_fpd_round_trips() -> None:
     model = copy.deepcopy(SAMPLE_WELL_2)
     model['ownership']['firstReversion']['reversionTiedTo'] = {'type': 'fpd'}
     m = OwnershipReversionMapper()
-    rows = m.to_csv_rows(model)
+    rows = m.to_row_dicts(model)
     assert rows[1]['Reversion Tied To'] == 'fpd'
-    rebuilt = m.from_csv_rows(rows)
+    rebuilt = m.from_row_dicts(rows)
     assert rebuilt['ownership']['firstReversion']['reversionTiedTo'] == {'type': 'fpd'}
     assert rebuilt['ownership'] == model['ownership']
 
 
-def test_to_csv_rows_payout_with_investment_forward_shape() -> None:
-    rows = OwnershipReversionMapper().to_csv_rows(PAYOUT_WITH_INVESTMENT)
+def test_to_row_dicts_payout_with_investment_forward_shape() -> None:
+    rows = OwnershipReversionMapper().to_row_dicts(PAYOUT_WITH_INVESTMENT)
     reversion_row = rows[1]
     assert reversion_row['Reversion Type'] == 'poi'
     assert reversion_row['Reversion Value'] == '28588998.75'
@@ -451,12 +451,12 @@ def test_to_csv_rows_payout_with_investment_forward_shape() -> None:
 
 def test_roundtrip_exact_payout_with_investment() -> None:
     m = OwnershipReversionMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(PAYOUT_WITH_INVESTMENT))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(PAYOUT_WITH_INVESTMENT))
     assert rebuilt['ownership'] == PAYOUT_WITH_INVESTMENT['ownership']
 
 
-def test_to_csv_rows_date_type_forward_shape() -> None:
-    rows = OwnershipReversionMapper().to_csv_rows(DATE_TYPE_REVERSION)
+def test_to_row_dicts_date_type_forward_shape() -> None:
+    rows = OwnershipReversionMapper().to_row_dicts(DATE_TYPE_REVERSION)
     reversion_row = rows[1]
     assert reversion_row['Reversion Type'] == 'date'
     # reversionValue '2022-09-01' (ISO) -> 'Reversion Value' MM/DD/YYYY.
@@ -474,7 +474,7 @@ def test_to_csv_rows_date_type_forward_shape() -> None:
 
 def test_roundtrip_exact_date_type() -> None:
     m = OwnershipReversionMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(DATE_TYPE_REVERSION))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(DATE_TYPE_REVERSION))
     assert rebuilt['ownership'] == DATE_TYPE_REVERSION['ownership']
 
 
@@ -498,15 +498,15 @@ def test_unknown_reversion_type_raises() -> None:
         },
     }
     with pytest.raises(NotImplementedError):
-        OwnershipReversionMapper().to_csv_rows(model)
+        OwnershipReversionMapper().to_row_dicts(model)
 
 
 def test_rev_basis_columns_populated_raises_on_inverse() -> None:
     m = OwnershipReversionMapper()
-    rows = m.to_csv_rows(EIGHT_EIGHTHS)
+    rows = m.to_row_dicts(EIGHT_EIGHTHS)
     rows[0]['Rev Basis WI %'] = '50'
     with pytest.raises(NotImplementedError):
-        m.from_csv_rows(rows)
+        m.from_row_dicts(rows)
 
 
 def test_registry_get_mapper() -> None:

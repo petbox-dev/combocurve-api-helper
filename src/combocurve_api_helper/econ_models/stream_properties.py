@@ -77,8 +77,8 @@ class StreamPropertyGroup(BaseModel):
 
     `rate_type`/`rows_calculation_method` are carried by the real API but CC's CSV
     export renders 'Rate Type'/'Rate Rows Calculation Method' BLANK regardless -- a
-    documented CSV-format limitation, not a bug. `to_csv_rows` therefore never reads
-    these fields, and `from_csv_rows` never sets them (they come back as `None` and are
+    documented CSV-format limitation, not a bug. `to_row_dicts` therefore never reads
+    these fields, and `from_row_dicts` never sets them (they come back as `None` and are
     excluded on dump).
     """
 
@@ -121,7 +121,7 @@ class StreamPropertiesMapper(EconModelMapper):
     econ_model_type = 'StreamProperties'
     columns = COLUMNS['StreamProperties']
 
-    def to_csv_rows(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
         custom_streams = model.get('companyCustomStreams')
         if custom_streams:
             raise NotImplementedError(f'Non-empty companyCustomStreams not supported: {custom_streams}')
@@ -167,7 +167,7 @@ class StreamPropertiesMapper(EconModelMapper):
 
         return rows
 
-    def from_csv_rows(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
         groups: Dict[str, Dict[str, List[StreamPropertyRow]]] = {'yields': {}, 'shrinkage': {}, 'lossFlare': {}}
         name, unique = model_identity(rows)
 

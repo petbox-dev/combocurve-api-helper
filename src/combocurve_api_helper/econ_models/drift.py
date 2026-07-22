@@ -12,8 +12,8 @@ triaged instead of silently mis-mapped or lost:
 * ``key_drift`` -- compares every key in a payload against a committed per-type baseline
   of keys CC was observed to emit; anything outside the baseline is a key we do not
   handle.
-* ``roundtrip_drift`` -- checks CSV idempotency (``to_csv_rows`` -> ``from_csv_rows`` ->
-  ``to_csv_rows`` reproduces the same CSV). A divergence means the inverse silently lost or
+* ``roundtrip_drift`` -- checks CSV idempotency (``to_row_dicts`` -> ``from_row_dicts`` ->
+  ``to_row_dicts`` reproduces the same CSV). A divergence means the inverse silently lost or
   altered information the forward path emitted -- a class ``value_drift`` (forward-only)
   cannot see.
 
@@ -389,7 +389,7 @@ def value_drift(econ_model_type: str, model: Dict[str, Any]) -> Optional[str]:
     string (unknown category/unit/criteria/enum/``entireWellLife``, or validation error).
     """
     try:
-        get_mapper(econ_model_type).to_csv_rows(model)
+        get_mapper(econ_model_type).to_row_dicts(model)
     except Exception as exc:
         return f'{type(exc).__name__}: {exc}'
     return None
@@ -415,17 +415,17 @@ def roundtrip_drift(econ_model_type: str, model: Dict[str, Any]) -> Optional[str
     """``None`` if the model survives a CSV round-trip unchanged; otherwise a description of
     the first divergence.
 
-    Idempotency check: ``to_csv_rows`` -> ``from_csv_rows`` -> ``to_csv_rows`` must reproduce
+    Idempotency check: ``to_row_dicts`` -> ``from_row_dicts`` -> ``to_row_dicts`` must reproduce
     the same CSV rows on the round-trippable columns. A divergence means the inverse
-    (``from_csv_rows``) lost or altered information the forward path emitted. An exception on
+    (``from_row_dicts``) lost or altered information the forward path emitted. An exception on
     the inverse or the second forward pass is reported too; the FIRST forward pass is
     :func:`value_drift`'s job, so :func:`audit_model` only calls this once that pass succeeds.
     """
     mapper = get_mapper(econ_model_type)
     try:
-        rows1 = mapper.to_csv_rows(model)
-        rebuilt = mapper.from_csv_rows(rows1)
-        rows2 = mapper.to_csv_rows(rebuilt)
+        rows1 = mapper.to_row_dicts(model)
+        rebuilt = mapper.from_row_dicts(rows1)
+        rows2 = mapper.to_row_dicts(rebuilt)
     except Exception as exc:
         return f'inverse/round-trip raised {type(exc).__name__}: {exc}'
     return _roundtrip_diff(rows1, rows2, mapper.columns)

@@ -62,7 +62,7 @@ _REVERSION_TYPE_FROM_CSV = {v: k for k, v in _REVERSION_TYPE_TO_CSV.items()}
 # `{"type": "as_of"}` shape. A tier can carry NO `reversionTiedTo` key at all (a genuine
 # absence, like ProductionTaxes' `deductSeveranceTax` on severance rows), or carry it explicitly
 # as `{"type": "as_of"}` -- yet both render the identical CSV cell `"as of"`. This makes the
-# absent-vs-explicit-'as_of' distinction UNRECOVERABLE from the CSV alone -- from_csv_rows always
+# absent-vs-explicit-'as_of' distinction UNRECOVERABLE from the CSV alone -- from_row_dicts always
 # reconstructs the explicit `{"type": "as_of"}` form (documented residual: it cannot reproduce
 # the exact-absent shape).
 #
@@ -83,7 +83,7 @@ _REVERSION_TIED_TO_FPD_CSV = 'fpd'
 _KNOWN_TIED_TO_TYPES = frozenset({'as_of', 'date', 'fpd'})
 
 # 'Rev Basis WI %'/'Rev Basis NRI %' have never been observed populated, and no backing API
-# field has been identified. to_csv_rows always emits '' for both; from_csv_rows raises if it
+# field has been identified. to_row_dicts always emits '' for both; from_row_dicts raises if it
 # ever sees either cell populated, rather than silently dropping real data.
 _REV_BASIS_COLUMNS = ('Rev Basis WI %', 'Rev Basis NRI %')
 
@@ -113,7 +113,7 @@ class InitialOwnershipData(BaseModel):
     Every field here is ALWAYS present on an API `initialOwnership` object -- including the four
     phase-NRI fields when their value is null (they are carried explicitly as `null`, never
     omitted). `Optional` typing here exists only so a blank CSV cell can round-trip to `None`;
-    `from_csv_rows` dumps with NO `exclude_none`, so a reconstructed `None` still emits its key
+    `from_row_dicts` dumps with NO `exclude_none`, so a reconstructed `None` still emits its key
     (matching the always-present shape) -- see `OwnershipReversionMapper._initial_from_csv`.
     """
 
@@ -157,14 +157,14 @@ class ReversionTierData(BaseModel):
     STRING `""`, not `null` or absent (e.g. `{"reversionType": "Date", "reversionValue":
     "2023-03-01", "balance": "", "includeNetProfitInterest": "", ...}`) -- the same
     "always-present, sentinel-when-N/A" shape as the phase-NRI fields below, just with `""` as the
-    sentinel instead of `null`. `from_csv_rows` therefore reconstructs a blank cell as `""` (not
+    sentinel instead of `null`. `from_row_dicts` therefore reconstructs a blank cell as `""` (not
     `None`) for both, so a `'Date'` tier round-trips exactly.
 
     Every field EXCEPT `reversionTiedTo` is ALWAYS present on a reversion-tier object, including
     the four phase-NRI fields when null (same always-present shape as `InitialOwnershipData`, see
     its docstring). `reversionTiedTo` is the one field that is genuinely, structurally absent
     sometimes -- see `_REVERSION_TIED_TO_CSV_DEFAULT` for the absent-vs-explicit-null case.
-    `from_csv_rows` dumps every other field without `exclude_none` and handles `reversionTiedTo`
+    `from_row_dicts` dumps every other field without `exclude_none` and handles `reversionTiedTo`
     separately -- see `OwnershipReversionMapper._reversion_from_csv`.
     """
 
@@ -274,7 +274,7 @@ class OwnershipReversionMapper(EconModelMapper):
     econ_model_type = 'OwnershipReversion'
     columns = COLUMNS['OwnershipReversion']
 
-    def to_csv_rows(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
         common = common_columns(model, context)
         ownership = model.get('ownership') or {}
 
@@ -343,7 +343,7 @@ class OwnershipReversionMapper(EconModelMapper):
         )
         return {c: row.get(c, '') for c in self.columns}
 
-    def from_csv_rows(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
         name, unique = model_identity(rows)
         by_key: Dict[str, Dict[str, str]] = {}
         for row in rows:

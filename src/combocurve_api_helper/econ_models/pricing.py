@@ -44,8 +44,8 @@ _BREAKEVEN_RATIO_CSV = 'based on price ratio'
 # all (it appears to depend on scenario-level Compositional Economics context that this
 # project-scoped econ-model GET endpoint has no way to surface), and the
 # c1/co2/n2/remaining component rows have no representable slot in `priceModel.gas`
-# whatsoever. `to_csv_rows` therefore ALWAYS emits Category='' (the only constructible
-# value) -- 'full_stream' is a non-round-trippable display label CSV-side. `from_csv_rows`
+# whatsoever. `to_row_dicts` therefore ALWAYS emits Category='' (the only constructible
+# value) -- 'full_stream' is a non-round-trippable display label CSV-side. `from_row_dicts`
 # accepts 'full_stream' as equivalent to '' (same numeric row, label simply not preserved)
 # but raises NotImplementedError for the compositional component categories, which have no
 # known API home.
@@ -133,7 +133,7 @@ class PricingMapper(EconModelMapper):
     econ_model_type = 'Pricing'
     columns = COLUMNS['Pricing']
 
-    def to_csv_rows(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
         common = common_columns(model, context)
         rows: List[Dict[str, str]] = []
         price_model = model.get('priceModel') or {}
@@ -183,7 +183,7 @@ class PricingMapper(EconModelMapper):
 
         return rows
 
-    def from_csv_rows(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
         price_model: Dict[str, Dict[str, Any]] = {}
         breakeven: Optional[Dict[str, Any]] = None
         name, unique = model_identity(rows)

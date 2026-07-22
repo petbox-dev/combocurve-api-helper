@@ -21,13 +21,16 @@ cut yet. This entry covers everything merged since `v1.2.0` (2025-09-04).
   `get_scenario_econ_model_assignments()` to read the scenario assignment grid.
 - **Econ-model CSV mapping.** Exact, invertible API <-> CSV column mapping for 11
   econ-model types (`csv_columns`).
-- **Per-type CSV convenience functions.** A `<type>_to_csv_rows` / `<type>_from_csv_rows`
-  pair for each of the 11 mapped econ-model types (e.g. `capex_to_csv_rows`,
-  `date_settings_from_csv_rows`), generated from `econModels.json` + the mapper registry
-  (`scripts/generate_csv_functions.py` -> `econ_models/_csv_generated.py`). They are thin
-  wrappers over `get_mapper(...)`, exposing the per-type function convention used elsewhere
-  in the package instead of requiring the generic dispatcher. `MAPPERS` / `get_mapper` moved
-  to `econ_models/registry.py` (still re-exported from `econ_models`).
+- **Econ-model CSV file layer + per-type convenience functions.** `EconModelMapper` is a base
+  class (ABC) exposing, for every mapped type, a **row level** — `to_row_dicts(model, context=None)`
+  / `from_row_dicts(rows)` (one model <-> a list of CSV-column-keyed row dicts, for finer-grained
+  per-model control) — and a **whole-file level** — `to_csv(models, context=None)` / `from_csv(source)`
+  for multi-model CSV text, and `read_csv(path)` / `write_csv(path, models)` for files. Per-type free
+  functions (`<type>_to_row_dicts` / `<type>_from_row_dicts` / `<type>_to_csv` / `<type>_from_csv` /
+  `get_<type>_mapper`; e.g. `capex_to_row_dicts`, `expenses_to_csv`) are generated from
+  `econModels.json` + the mapper registry (`scripts/generate_csv_functions.py` ->
+  `econ_models/_csv_generated.py`), thin wrappers over `get_mapper(...)`. `MAPPERS` / `get_mapper`
+  moved to `econ_models/registry.py` (still re-exported from `econ_models`).
 - **Capex $/ft capture.** The Capex CSV mapper now captures the model-level
   `drillingCost` / `completionCost` per-foot objects — which CC's own export omits —
   losslessly as JSON in two extra columns (`Drilling Cost ($/ft)` /
@@ -73,13 +76,13 @@ cut yet. This entry covers everything merged since `v1.2.0` (2025-09-04).
 
 - Capex CSV mapper now handles the `{'asOfDate': <int>}` escalation-start shape
   (renders `'as of date'`), not only `{'applyToCriteria': …}`. Previously
-  `to_csv_rows` raised `NotImplementedError` on ~22% of real capex rows (2,150 of
+  `to_row_dicts` raised `NotImplementedError` on ~22% of real capex rows (2,150 of
   9,729 across three production projects). Verified live and against a CC CSV
   export.
 - ProductionTaxes CSV mapper now handles the `dates` criteria (date-based rate
   schedules), not only `entire_well_life`/`offset_to_fpd`. The `Period` renders as
   CC's `%b-%y` (`Jul-23`); the `1900-01-01` schedule-start sentinel is `Jan-00`
-  and round-trips losslessly. Previously `to_csv_rows` raised `NotImplementedError`
+  and round-trips losslessly. Previously `to_row_dicts` raised `NotImplementedError`
   on 12 production models. Verified live and against a CC CSV export.
 - Econ-model assignment `econName` is the kebab-case route segment, not
   `econModelType`.

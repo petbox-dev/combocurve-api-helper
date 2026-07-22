@@ -44,7 +44,7 @@ def test_generated_file_is_current() -> None:
 def test_every_mapper_has_all_convenience_functions() -> None:
     for econ_model_type in MAPPERS:
         base = _BASE_BY_TYPE[econ_model_type]
-        for suffix in ('to_csv_rows', 'from_csv_rows', 'to_csv', 'from_csv'):
+        for suffix in ('to_row_dicts', 'from_row_dicts', 'to_csv', 'from_csv'):
             assert hasattr(_csv_generated, f'{base}_{suffix}'), (econ_model_type, suffix)
         assert hasattr(_csv_generated, f'get_{base}_mapper'), econ_model_type
 
@@ -52,7 +52,7 @@ def test_every_mapper_has_all_convenience_functions() -> None:
 def test_all_lists_exactly_five_names_per_mapper() -> None:
     assert len(_csv_generated.__all__) == 5 * len(MAPPERS)
     for name in _csv_generated.__all__:
-        assert name.endswith(('_to_csv_rows', '_from_csv_rows', '_to_csv', '_from_csv')) or (
+        assert name.endswith(('_to_row_dicts', '_from_row_dicts', '_to_csv', '_from_csv')) or (
             name.startswith('get_') and name.endswith('_mapper')
         )
         assert callable(getattr(_csv_generated, name))
@@ -61,16 +61,16 @@ def test_all_lists_exactly_five_names_per_mapper() -> None:
 @pytest.mark.parametrize('econ_model_type', sorted(FIXTURE_FILES))
 def test_convenience_functions_delegate_to_mapper(econ_model_type: str) -> None:
     base = _BASE_BY_TYPE[econ_model_type]
-    to_csv_rows = getattr(_csv_generated, f'{base}_to_csv_rows')
-    from_csv_rows = getattr(_csv_generated, f'{base}_from_csv_rows')
+    to_row_dicts = getattr(_csv_generated, f'{base}_to_row_dicts')
+    from_row_dicts = getattr(_csv_generated, f'{base}_from_row_dicts')
     mapper = get_mapper(econ_model_type)
 
     for filename in FIXTURE_FILES[econ_model_type]:
         rows = read_csv_rows(str(pathlib.Path(FIXTURES_DIR) / filename))
         for model_name, model_rows in group_by_model_name(rows).items():
-            api = from_csv_rows(model_rows)
-            assert api == mapper.from_csv_rows(model_rows), f'{econ_model_type} / {filename} / {model_name!r}'
-            assert to_csv_rows(api) == mapper.to_csv_rows(api), f'{econ_model_type} / {filename} / {model_name!r}'
+            api = from_row_dicts(model_rows)
+            assert api == mapper.from_row_dicts(model_rows), f'{econ_model_type} / {filename} / {model_name!r}'
+            assert to_row_dicts(api) == mapper.to_row_dicts(api), f'{econ_model_type} / {filename} / {model_name!r}'
 
         text = (pathlib.Path(FIXTURES_DIR) / filename).read_text(encoding='utf-8')
         to_csv = getattr(_csv_generated, f'{base}_to_csv')

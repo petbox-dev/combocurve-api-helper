@@ -393,13 +393,13 @@ MINLIFE_DATE_FULL: Dict[str, Any] = {
 }
 
 
-def test_to_csv_rows_emits_exactly_one_row() -> None:
-    rows = DateSettingsMapper().to_csv_rows(ABD)
+def test_to_row_dicts_emits_exactly_one_row() -> None:
+    rows = DateSettingsMapper().to_row_dicts(ABD)
     assert len(rows) == 1
 
 
-def test_to_csv_rows_abd_years_from_as_of() -> None:
-    row = DateSettingsMapper().to_csv_rows(ABD)[0]
+def test_to_row_dicts_abd_years_from_as_of() -> None:
+    row = DateSettingsMapper().to_row_dicts(ABD)[0]
     assert row['Max Econ Life (Years)'] == '0'
     assert row['As of Date'] == '2026-06-01'
     assert row['Discount Date'] == '2026-06-01'
@@ -427,9 +427,9 @@ def test_to_csv_rows_abd_years_from_as_of() -> None:
     assert row['Model Name'] == 'ABD'
 
 
-def test_to_csv_rows_includes_common_columns_with_context() -> None:
+def test_to_row_dicts_includes_common_columns_with_context() -> None:
     ctx = Context(id='ds-abd', created_at=ABD['createdAt'], project_name='Sample Project D | NonOp | MultiBasin')
-    row = DateSettingsMapper().to_csv_rows(ABD, context=ctx)[0]
+    row = DateSettingsMapper().to_row_dicts(ABD, context=ctx)[0]
     assert row['Model Id'] == 'ds-abd'
     assert row['Project Name'] == 'Sample Project D | NonOp | MultiBasin'
     assert row['New Name'] == ''
@@ -437,8 +437,8 @@ def test_to_csv_rows_includes_common_columns_with_context() -> None:
     assert row['Last Update'] == '05/27/2026 14:56:59'
 
 
-def test_to_csv_rows_historical_no_cut_off_with_min_life_as_of() -> None:
-    row = DateSettingsMapper().to_csv_rows(HISTORICAL)[0]
+def test_to_row_dicts_historical_no_cut_off_with_min_life_as_of() -> None:
+    row = DateSettingsMapper().to_row_dicts(HISTORICAL)[0]
     assert row['Cut Off Criteria'] == 'no cut off'
     assert row['Cut Off Value'] == ''
     assert row['Min Life Criteria'] == 'as of'
@@ -450,8 +450,8 @@ def test_to_csv_rows_historical_no_cut_off_with_min_life_as_of() -> None:
     assert row['Trigger ECL CAPEX (Unecon)'] == ''
 
 
-def test_to_csv_rows_max_cum_legacy_schema_no_min_life_trigger_tolerate_keys() -> None:
-    row = DateSettingsMapper().to_csv_rows(ARIES_LEGACY)[0]
+def test_to_row_dicts_max_cum_legacy_schema_no_min_life_trigger_tolerate_keys() -> None:
+    row = DateSettingsMapper().to_row_dicts(ARIES_LEGACY)[0]
     assert row['Max Econ Life (Years)'] == '50.583200000000005'
     assert row['1st FPD Source'] == 'forecast'
     assert row['2nd FPD Source'] == 'production data'
@@ -469,8 +469,8 @@ def test_to_csv_rows_max_cum_legacy_schema_no_min_life_trigger_tolerate_keys() -
     assert row['Align Dependent Phases'] == 'no'
 
 
-def test_to_csv_rows_last_positive_discount_never_renders() -> None:
-    row = DateSettingsMapper().to_csv_rows(INJ)[0]
+def test_to_row_dicts_last_positive_discount_never_renders() -> None:
+    row = DateSettingsMapper().to_row_dicts(INJ)[0]
     assert row['Cut Off Criteria'] == 'last positive'
     assert row['Include CAPEX'] == 'no'
     assert row['Econ Limit Delay'] == '0'
@@ -480,8 +480,8 @@ def test_to_csv_rows_last_positive_discount_never_renders() -> None:
     assert row['Tolerant Negative CF'] == ''
 
 
-def test_to_csv_rows_location_max_cum_full_schema() -> None:
-    row = DateSettingsMapper().to_csv_rows(LOCATION)[0]
+def test_to_row_dicts_location_max_cum_full_schema() -> None:
+    row = DateSettingsMapper().to_row_dicts(LOCATION)[0]
     assert row['Cut Off Criteria'] == 'max cum'
     assert row['Align Dependent Phases'] == 'yes'
     assert row['Include CAPEX'] == 'no'
@@ -491,28 +491,28 @@ def test_to_csv_rows_location_max_cum_full_schema() -> None:
     assert row['Tolerant Negative CF'] == ''
 
 
-def test_to_csv_rows_unique_model_type() -> None:
+def test_to_row_dicts_unique_model_type() -> None:
     model = dict(ABD, unique=True)
-    row = DateSettingsMapper().to_csv_rows(model)[0]
+    row = DateSettingsMapper().to_row_dicts(model)[0]
     assert row['Model Type'] == 'unique'
 
 
-def test_to_csv_rows_unknown_cutoff_criterion_raises() -> None:
+def test_to_row_dicts_unknown_cutoff_criterion_raises() -> None:
     model = dict(ABD, cutOff=dict(ABD['cutOff']))
     model['cutOff'].pop('yearsFromAsOf')
     model['cutOff']['someNewCriterion'] = True
     with pytest.raises(NotImplementedError):
-        DateSettingsMapper().to_csv_rows(model)
+        DateSettingsMapper().to_row_dicts(model)
 
 
-def test_from_csv_rows_requires_exactly_one_row() -> None:
+def test_from_row_dicts_requires_exactly_one_row() -> None:
     m = DateSettingsMapper()
     with pytest.raises(NotImplementedError):
-        m.from_csv_rows([])
+        m.from_row_dicts([])
 
-    row = m.to_csv_rows(ABD)[0]
+    row = m.to_row_dicts(ABD)[0]
     with pytest.raises(NotImplementedError):
-        m.from_csv_rows([row, dict(row)])
+        m.from_row_dicts([row, dict(row)])
 
 
 def test_roundtrip_exact_location_fully_recoverable() -> None:
@@ -520,7 +520,7 @@ def test_roundtrip_exact_location_fully_recoverable() -> None:
     exactly -- see DateSettingsMapper's KNOWN RESIDUAL writeup for why ABD/Historical/INJ do not.
     """
     m = DateSettingsMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(LOCATION))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(LOCATION))
     assert set(rebuilt) == {'name', 'unique', 'dateSetting', 'cutOff'}
     assert rebuilt['name'] == LOCATION['name']
     assert rebuilt['unique'] == LOCATION['unique']
@@ -531,7 +531,7 @@ def test_roundtrip_exact_location_fully_recoverable() -> None:
 def test_roundtrip_exact_location_unique_model() -> None:
     model = dict(LOCATION, unique=True)
     m = DateSettingsMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(model))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(model))
     assert rebuilt['unique'] is True
     assert rebuilt['cutOff'] == model['cutOff']
 
@@ -544,7 +544,7 @@ def test_roundtrip_documented_residual_abd_loses_non_cashflow_cutoff_extras() ->
     the criterion/minLife/alignDependentPhases fields are unaffected and DO round-trip exactly.
     """
     m = DateSettingsMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(ABD))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(ABD))
 
     assert rebuilt['dateSetting'] == ABD['dateSetting']
     assert rebuilt['cutOff']['yearsFromAsOf'] == ABD['cutOff']['yearsFromAsOf']
@@ -583,7 +583,7 @@ def test_roundtrip_criterion_and_min_life_keys_always_recoverable(
     'extra' cutOff columns, these always render (and thus always round-trip) regardless of
     which Cut Off Criteria is active."""
     m = DateSettingsMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(model))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(model))
     assert expected_criteria in rebuilt['cutOff']
     assert expected_min_life in rebuilt['cutOff']['minLife']
 
@@ -598,17 +598,17 @@ def test_legacy_model_missing_production_data_resolution() -> None:
     del legacy['dateSetting']['productionDataResolution']
 
     m = DateSettingsMapper()
-    rows = m.to_csv_rows(legacy)
+    rows = m.to_row_dicts(legacy)
     assert rows[0]['Prod Data Resolution'] == ''
 
-    rebuilt = m.from_csv_rows(rows)
+    rebuilt = m.from_row_dicts(rows)
     assert 'productionDataResolution' not in rebuilt['dateSetting']
 
 
-def test_to_csv_rows_date_cutoff_criterion() -> None:
+def test_to_row_dicts_date_cutoff_criterion() -> None:
     """'date' cutOff criterion: Cut Off Value is the ISO date string itself, not a numeric or
     blank flag. Non-cash-flow like 'years from as of'/'no cut off': all 5 extra columns blank."""
-    row = DateSettingsMapper().to_csv_rows(DATE_CUTOFF)[0]
+    row = DateSettingsMapper().to_row_dicts(DATE_CUTOFF)[0]
     assert row['Cut Off Criteria'] == 'date'
     assert row['Cut Off Value'] == '2022-12-31'
     assert row['Align Dependent Phases'] == 'yes'
@@ -626,7 +626,7 @@ def test_roundtrip_documented_residual_date_cutoff_loses_non_cashflow_extras() -
     round trip (True -> reconstructed False). date/minLife/alignDependentPhases/dateSetting are
     unaffected and DO round-trip exactly."""
     m = DateSettingsMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(DATE_CUTOFF))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(DATE_CUTOFF))
 
     assert rebuilt['dateSetting'] == DATE_CUTOFF['dateSetting']
     assert rebuilt['cutOff']['date'] == DATE_CUTOFF['cutOff']['date']
@@ -637,11 +637,11 @@ def test_roundtrip_documented_residual_date_cutoff_loses_non_cashflow_extras() -
     assert rebuilt['cutOff']['triggerEclCapex'] is False
 
 
-def test_to_csv_rows_first_negative_cash_flow_criterion() -> None:
+def test_to_row_dicts_first_negative_cash_flow_criterion() -> None:
     """'firstNegativeCashFlow' cutOff criterion: behaves like the other cash-flow criteria for
     Include CAPEX/Econ Limit Delay/Trigger ECL CAPEX (they render), like 'last positive' for
     Discount (never renders), and UNIQUELY renders a real 'Tolerant Negative CF' value."""
-    row = DateSettingsMapper().to_csv_rows(FIRST_NEGATIVE)[0]
+    row = DateSettingsMapper().to_row_dicts(FIRST_NEGATIVE)[0]
     assert row['Cut Off Criteria'] == 'first negative'
     assert row['Cut Off Value'] == ''
     assert row['Min Life Criteria'] == 'none'
@@ -657,17 +657,17 @@ def test_roundtrip_exact_first_negative_cash_flow() -> None:
     'first negative' is the only criterion where 'Tolerant Negative CF' is recoverable from the
     CSV rather than reconstructed as a residual default."""
     m = DateSettingsMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(FIRST_NEGATIVE))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(FIRST_NEGATIVE))
     assert rebuilt['dateSetting'] == FIRST_NEGATIVE['dateSetting']
     assert rebuilt['cutOff'] == FIRST_NEGATIVE['cutOff']
 
 
-def test_to_csv_rows_lastpositive_missing_discount_key_does_not_raise() -> None:
+def test_to_row_dicts_lastpositive_missing_discount_key_does_not_raise() -> None:
     """Regression: SAMPLE_LASTPOS_NO_DISCOUNT has NO 'discount' key at all (not null) -- the
     forward mapper must render it instead of raising ValidationError. 'Discount' is blank
     regardless (documented residual for 'last positive'), so this is unobservable in the CSV --
     the fix is that the mapper doesn't crash."""
-    row = DateSettingsMapper().to_csv_rows(SAMPLE_LASTPOS_NO_DISCOUNT)[0]
+    row = DateSettingsMapper().to_row_dicts(SAMPLE_LASTPOS_NO_DISCOUNT)[0]
     assert row['Cut Off Criteria'] == 'last positive'
     assert row['Discount'] == ''
     assert row['Include CAPEX'] == 'no'
@@ -679,13 +679,13 @@ def test_to_csv_rows_lastpositive_missing_discount_key_does_not_raise() -> None:
 
 def test_roundtrip_documented_residual_flash_lastpositive_missing_discount_key() -> None:
     """KNOWN RESIDUAL: `discount` is genuinely ABSENT (not 0) on the real API payload, but CC's
-    CSV never carries Discount for 'last positive' regardless, so `from_csv_rows` cannot
+    CSV never carries Discount for 'last positive' regardless, so `from_row_dicts` cannot
     distinguish "absent" from "0" and reconstructs the CC-implied default 0 -- present, not
     absent, in the rebuilt dict. minLife/triggerEclCapex/includeCapex/econLimitDelay/
     alignDependentPhases/dateSetting are all present in the real payload and DO round-trip
     exactly."""
     m = DateSettingsMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(SAMPLE_LASTPOS_NO_DISCOUNT))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(SAMPLE_LASTPOS_NO_DISCOUNT))
 
     assert rebuilt['dateSetting'] == SAMPLE_LASTPOS_NO_DISCOUNT['dateSetting']
     assert rebuilt['cutOff']['minLife'] == SAMPLE_LASTPOS_NO_DISCOUNT['cutOff']['minLife']
@@ -698,11 +698,11 @@ def test_roundtrip_documented_residual_flash_lastpositive_missing_discount_key()
     assert rebuilt['cutOff']['discount'] == 0
 
 
-def test_to_csv_rows_date_cutoff_missing_align_dependent_phases_does_not_raise() -> None:
+def test_to_row_dicts_date_cutoff_missing_align_dependent_phases_does_not_raise() -> None:
     """Regression: BID_TO_LAST_PROD has NO 'alignDependentPhases' key at all (not null/false) --
     the forward mapper must render it (as 'no') instead of raising ValidationError. Also
     exercises a date-valued minLife alongside a date-valued cutOff criterion."""
-    row = DateSettingsMapper().to_csv_rows(BID_TO_LAST_PROD)[0]
+    row = DateSettingsMapper().to_row_dicts(BID_TO_LAST_PROD)[0]
     assert row['Cut Off Criteria'] == 'date'
     assert row['Cut Off Value'] == '2027-03-31'
     assert row['Align Dependent Phases'] == 'no'
@@ -714,11 +714,11 @@ def test_to_csv_rows_date_cutoff_missing_align_dependent_phases_does_not_raise()
 def test_roundtrip_documented_residual_bid_to_last_prod_missing_align_dependent_phases() -> None:
     """KNOWN RESIDUAL: `alignDependentPhases` is genuinely ABSENT (not False) on the real API
     payload, but the CSV renders 'no' for it regardless (`formats.yes_no(None) == 'no'`), so
-    `from_csv_rows` cannot distinguish "absent" from "False" and reconstructs an explicit False.
+    `from_row_dicts` cannot distinguish "absent" from "False" and reconstructs an explicit False.
     The date-valued minLife (`{'date': '2027-03-31'}`) and dateSetting DO round-trip exactly.
     """
     m = DateSettingsMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(BID_TO_LAST_PROD))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(BID_TO_LAST_PROD))
 
     assert rebuilt['dateSetting'] == BID_TO_LAST_PROD['dateSetting']
     assert rebuilt['cutOff']['date'] == BID_TO_LAST_PROD['cutOff']['date']
@@ -728,10 +728,10 @@ def test_roundtrip_documented_residual_bid_to_last_prod_missing_align_dependent_
     assert rebuilt['cutOff']['alignDependentPhases'] is False
 
 
-def test_to_csv_rows_date_valued_fpd_source() -> None:
+def test_to_row_dicts_date_valued_fpd_source() -> None:
     """A date-valued fpdSourceHierarchy slot (`{'date': 'YYYY-MM-DD'}`) renders as the raw date
     string itself, not one of the 4 fixed labels."""
-    row = DateSettingsMapper().to_csv_rows(POST_CLOSE_AFE)[0]
+    row = DateSettingsMapper().to_row_dicts(POST_CLOSE_AFE)[0]
     assert row['4th FPD Source'] == '2021-09-01'
     assert row['1st FPD Source'] == 'well header'
     assert row['2nd FPD Source'] == 'production data'
@@ -743,17 +743,17 @@ def test_roundtrip_exact_post_close_afe_date_fpd_source() -> None:
     date-valued -- every field (including the date-valued FPD source and the 'date' cutOff
     criterion) round-trips exactly."""
     m = DateSettingsMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(POST_CLOSE_AFE))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(POST_CLOSE_AFE))
     assert set(rebuilt) == {'name', 'unique', 'dateSetting', 'cutOff'}
     assert rebuilt['dateSetting'] == POST_CLOSE_AFE['dateSetting']
     assert rebuilt['cutOff'] == POST_CLOSE_AFE['cutOff']
 
 
-def test_to_csv_rows_minlife_date_criterion() -> None:
+def test_to_row_dicts_minlife_date_criterion() -> None:
     """'date' minLife criterion (`cutOff.minLife == {'date': 'YYYY-MM-DD'}`), paired with the
     ordinary 'max cum' cutOff criterion -- isolates the minLife-date shape from the 'date'
     cutOff-criterion shape."""
-    row = DateSettingsMapper().to_csv_rows(MINLIFE_DATE_FULL)[0]
+    row = DateSettingsMapper().to_row_dicts(MINLIFE_DATE_FULL)[0]
     assert row['Cut Off Criteria'] == 'max cum'
     assert row['Min Life Criteria'] == 'date'
     assert row['Min Life Value'] == '2026-03-01'
@@ -763,7 +763,7 @@ def test_roundtrip_exact_minlife_date_full_schema() -> None:
     """MINLIFE_DATE_FULL is full-schema (every fixed cutOff key present), so it round-trips
     exactly, including the date-valued minLife."""
     m = DateSettingsMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(MINLIFE_DATE_FULL))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(MINLIFE_DATE_FULL))
     assert set(rebuilt) == {'name', 'unique', 'dateSetting', 'cutOff'}
     assert rebuilt['dateSetting'] == MINLIFE_DATE_FULL['dateSetting']
     assert rebuilt['cutOff'] == MINLIFE_DATE_FULL['cutOff']
@@ -778,46 +778,46 @@ def test_maxcumcashflow_missing_discount_renders_blank_not_crash() -> None:
     model = copy.deepcopy(LOCATION)  # maxCumCashFlow, normally carries discount
     del model['cutOff']['discount']
 
-    rows = DateSettingsMapper().to_csv_rows(model)
+    rows = DateSettingsMapper().to_row_dicts(model)
     assert rows[0]['Cut Off Criteria'] == 'max cum'
     assert rows[0]['Discount'] == ''
 
 
-def test_to_csv_rows_date_anchor_fpd_round_trips() -> None:
+def test_to_row_dicts_date_anchor_fpd_round_trips() -> None:
     """asOfDate/discountDate can be {'fpd': true} (anchored to first production date) instead of
     {'date': ...} -- rendered as the literal 'fpd' and round-tripped losslessly."""
     model = copy.deepcopy(ABD)
     model['dateSetting']['asOfDate'] = {'fpd': True}
     model['dateSetting']['discountDate'] = {'fpd': True}
     m = DateSettingsMapper()
-    row = m.to_csv_rows(model)[0]
+    row = m.to_row_dicts(model)[0]
     assert row['As of Date'] == 'fpd'
     assert row['Discount Date'] == 'fpd'
-    rebuilt = m.from_csv_rows(m.to_csv_rows(model))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(model))
     assert rebuilt['dateSetting']['asOfDate'] == {'fpd': True}
     assert rebuilt['dateSetting']['discountDate'] == {'fpd': True}
 
 
-def test_to_csv_rows_minlife_endhist_round_trips() -> None:
+def test_to_row_dicts_minlife_endhist_round_trips() -> None:
     """cutOff.minLife can be {'endHist': true} (min life = end of historical production) -- a flag
     like {'none': true}; renders 'end hist' with a blank Min Life Value and round-trips."""
     model = copy.deepcopy(ABD)
     model['cutOff']['minLife'] = {'endHist': True}
     m = DateSettingsMapper()
-    row = m.to_csv_rows(model)[0]
+    row = m.to_row_dicts(model)[0]
     assert row['Min Life Criteria'] == 'end hist'
     assert row['Min Life Value'] == ''
-    rebuilt = m.from_csv_rows(m.to_csv_rows(model))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(model))
     assert rebuilt['cutOff']['minLife'] == {'endHist': True}
 
 
-def test_to_csv_rows_date_cutoff_missing_include_capex_econ_delay_does_not_raise() -> None:
+def test_to_row_dicts_date_cutoff_missing_include_capex_econ_delay_does_not_raise() -> None:
     """A 'date'-criterion cutOff omits includeCapex/econLimitDelay entirely (only date/minLife/
     alignDependentPhases present). The forward mapper must render (both blank -- non-cash-flow)
     instead of raising a ValidationError on the now-Optional required-field absence."""
     model = copy.deepcopy(ABD)
     model['cutOff'] = {'date': '2024-10-01', 'minLife': {'none': True}, 'alignDependentPhases': False}
-    row = DateSettingsMapper().to_csv_rows(model)[0]
+    row = DateSettingsMapper().to_row_dicts(model)[0]
     assert row['Cut Off Criteria'] == 'date'
     assert row['Cut Off Value'] == '2024-10-01'
     assert row['Include CAPEX'] == ''

@@ -23,13 +23,13 @@ NON_PRODUCING: Dict[str, Any] = {
 }
 
 
-def test_to_csv_rows_emits_exactly_one_row() -> None:
-    rows = ReservesCategoryMapper().to_csv_rows(NON_PRODUCING)
+def test_to_row_dicts_emits_exactly_one_row() -> None:
+    rows = ReservesCategoryMapper().to_row_dicts(NON_PRODUCING)
     assert len(rows) == 1
 
 
-def test_to_csv_rows_forward_passthrough() -> None:
-    rows = ReservesCategoryMapper().to_csv_rows(NON_PRODUCING)
+def test_to_row_dicts_forward_passthrough() -> None:
+    rows = ReservesCategoryMapper().to_row_dicts(NON_PRODUCING)
     row = rows[0]
     assert row['PRMS Class'] == 'reserves'
     assert row['PRMS Category'] == 'proved'
@@ -40,9 +40,9 @@ def test_to_csv_rows_forward_passthrough() -> None:
     assert row['Model Name'] == 'Reserves, Proved, Non Producing'
 
 
-def test_to_csv_rows_includes_common_columns_with_context() -> None:
+def test_to_row_dicts_includes_common_columns_with_context() -> None:
     ctx = Context(id='rc-non-producing', created_at=NON_PRODUCING['createdAt'], project_name='Sample Project A')
-    row = ReservesCategoryMapper().to_csv_rows(NON_PRODUCING, context=ctx)[0]
+    row = ReservesCategoryMapper().to_row_dicts(NON_PRODUCING, context=ctx)[0]
     assert row['Model Id'] == 'rc-non-producing'
     assert row['Project Name'] == 'Sample Project A'
     assert row['New Name'] == ''
@@ -50,9 +50,9 @@ def test_to_csv_rows_includes_common_columns_with_context() -> None:
     assert row['Last Update'] == '05/10/2026 03:11:41'
 
 
-def test_to_csv_rows_unique_model_type() -> None:
+def test_to_row_dicts_unique_model_type() -> None:
     model = dict(NON_PRODUCING, unique=True)
-    row = ReservesCategoryMapper().to_csv_rows(model)[0]
+    row = ReservesCategoryMapper().to_row_dicts(model)[0]
     assert row['Model Type'] == 'unique'
 
 
@@ -65,7 +65,7 @@ def test_to_csv_rows_unique_model_type() -> None:
         ('prospective', 'probable', 'undeveloped'),
     ],
 )
-def test_to_csv_rows_passthrough_all_verified_ground_truth_values(
+def test_to_row_dicts_passthrough_all_verified_ground_truth_values(
     prms_class: str, prms_category: str, prms_sub_category: str
 ) -> None:
     model: Dict[str, Any] = {
@@ -77,7 +77,7 @@ def test_to_csv_rows_passthrough_all_verified_ground_truth_values(
             'prmsSubCategory': prms_sub_category,
         },
     }
-    row = ReservesCategoryMapper().to_csv_rows(model)[0]
+    row = ReservesCategoryMapper().to_row_dicts(model)[0]
     assert row['PRMS Class'] == prms_class
     assert row['PRMS Category'] == prms_category
     assert row['PRMS Sub Category'] == prms_sub_category
@@ -85,7 +85,7 @@ def test_to_csv_rows_passthrough_all_verified_ground_truth_values(
 
 def test_roundtrip_exact() -> None:
     m = ReservesCategoryMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(NON_PRODUCING))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(NON_PRODUCING))
     assert set(rebuilt) == {'name', 'unique', 'reservesCategory'}
     assert rebuilt == {
         'name': NON_PRODUCING['name'],
@@ -97,19 +97,19 @@ def test_roundtrip_exact() -> None:
 def test_roundtrip_exact_unique_model() -> None:
     model = dict(NON_PRODUCING, unique=True)
     m = ReservesCategoryMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(model))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(model))
     assert rebuilt['unique'] is True
     assert rebuilt['reservesCategory'] == model['reservesCategory']
 
 
-def test_from_csv_rows_requires_exactly_one_row() -> None:
+def test_from_row_dicts_requires_exactly_one_row() -> None:
     m = ReservesCategoryMapper()
     with pytest.raises(NotImplementedError):
-        m.from_csv_rows([])
+        m.from_row_dicts([])
 
-    row = m.to_csv_rows(NON_PRODUCING)[0]
+    row = m.to_row_dicts(NON_PRODUCING)[0]
     with pytest.raises(NotImplementedError):
-        m.from_csv_rows([row, dict(row)])
+        m.from_row_dicts([row, dict(row)])
 
 
 def test_registry_get_mapper() -> None:

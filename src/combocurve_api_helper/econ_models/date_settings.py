@@ -266,8 +266,8 @@ def _cutoff_from_csv(row: Dict[str, str]) -> Dict[str, Any]:
 class DateSettingsMapper(EconModelMapper):
     """One-row-per-model mapper for the DateSettings ('Dates') econ-model type.
 
-    Like ReservesCategory, there is no `rows[]`/criteria fan-out -- `to_csv_rows` always emits
-    exactly ONE row and `from_csv_rows` always consumes exactly ONE row. Unlike ReservesCategory,
+    Like ReservesCategory, there is no `rows[]`/criteria fan-out -- `to_row_dicts` always emits
+    exactly ONE row and `from_row_dicts` always consumes exactly ONE row. Unlike ReservesCategory,
     the model has two nested API objects (`dateSetting`, `cutOff`) and THREE independent
     criterion-as-key structures: the `cutOff` criterion itself, `cutOff.minLife`, and each of the
     four `fpdSourceHierarchy` source slots.
@@ -285,14 +285,14 @@ class DateSettingsMapper(EconModelMapper):
       - For 'first negative' (firstNegativeCashFlow): Include CAPEX/Econ Limit Delay/Trigger ECL
         CAPEX render (same as the other two cash-flow criteria); Discount never renders (like
         'last positive'). UNIQUELY, this is the only criterion where 'Tolerant Negative CF' DOES
-        render -- `to_csv_rows`/`from_csv_rows` render/recover this value exactly for this
+        render -- `to_row_dicts`/`from_row_dicts` render/recover this value exactly for this
         criterion only.
       - For 'years from as of' / 'no cut off' / 'date' (non-cash-flow criteria): ALL FIVE render
         blank, even though the API cutOff object may still carry non-default values for some of
         them.
     This means CC's own CSV export is LOSSY for these 5 fields whenever the model's Cut Off
     Criteria is not 'max cum' (Discount) / not 'first negative' (Tolerant Negative CF) / not
-    cash-flow-based at all (Include CAPEX/Econ Limit Delay/Trigger ECL CAPEX) -- `from_csv_rows`
+    cash-flow-based at all (Include CAPEX/Econ Limit Delay/Trigger ECL CAPEX) -- `from_row_dicts`
     cannot recover the true original values in that case and instead reconstructs the CC-implied
     defaults (False/0). This is a genuine limitation of CC's export, reproduced faithfully rather
     than papered over; see test_date_settings.py for an explicit test documenting it.
@@ -318,7 +318,7 @@ class DateSettingsMapper(EconModelMapper):
     econ_model_type = 'Dates'
     columns = COLUMNS['Dates']
 
-    def to_csv_rows(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
         common = common_columns(model, context)
         date_setting = DateSettingData.model_validate(model.get('dateSetting') or {})
         cutoff_raw = model.get('cutOff') or {}
@@ -398,7 +398,7 @@ class DateSettingsMapper(EconModelMapper):
         value = min_life[key]
         return _MIN_LIFE_CRITERION_TO_CSV[key], _flag_or_value_to_csv(value)
 
-    def from_csv_rows(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
         if len(rows) != 1:
             raise NotImplementedError(f'DateSettings is one-row-per-model; expected exactly 1 CSV row, got {len(rows)}')
         row = rows[0]

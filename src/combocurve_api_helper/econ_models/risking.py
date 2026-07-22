@@ -83,10 +83,10 @@ class RiskingMapper(EconModelMapper):
     presence depends on state the `risking` endpoint does not expose anywhere in the
     object.
 
-    Decision: `to_csv_rows` emits ONLY the 5 phase rows (oil, gas, ngl, drip cond,
-    water) and never emits a wells row. `from_csv_rows` IGNORES any `Key == 'wells'`
+    Decision: `to_row_dicts` emits ONLY the 5 phase rows (oil, gas, ngl, drip cond,
+    water) and never emits a wells row. `from_row_dicts` IGNORES any `Key == 'wells'`
     rows on input -- there is no API field to route them to. This means
-    `to_csv_rows(from_csv_rows(rows))` will not reproduce a wells row present in the
+    `to_row_dicts(from_row_dicts(rows))` will not reproduce a wells row present in the
     original `rows`; that is expected and is the sole forward/round-trip gap for this
     type (see forward_diff.py and test_fixtures.py).
     """
@@ -94,7 +94,7 @@ class RiskingMapper(EconModelMapper):
     econ_model_type = 'Risking'
     columns = COLUMNS['Risking']
 
-    def to_csv_rows(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
         common = common_columns(model, context)
         data = RiskingModel.model_validate(model.get('risking') or {})
 
@@ -137,7 +137,7 @@ class RiskingMapper(EconModelMapper):
     def _risk_flag_csv(value: Optional[bool]) -> str:
         return formats.yes_no(True if value is None else value)
 
-    def from_csv_rows(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
         name, unique = model_identity(rows)
         risk_prod_csv: Optional[str] = None
         risk_ngl_csv: Optional[str] = None

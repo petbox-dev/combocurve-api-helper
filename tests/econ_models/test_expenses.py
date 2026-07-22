@@ -29,7 +29,7 @@ def _strip_rate_fields(node: Any) -> Any:
     """'Rate Type'/'Rate Rows Calculation Method' never round-trip through the CSV --
     CC's real Expenses export blanks both columns unconditionally even though the API
     leaf carries real rateType/rowsCalculationMethod values (see ExpenseLeaf
-    docstring), so from_csv_rows never reconstructs them. Strip them recursively
+    docstring), so from_row_dicts never reconstructs them. Strip them recursively
     before comparing a rebuilt variableExpenses/fixedExpenses/carbonExpenses/
     waterDisposal structure back against a source API dict that has them."""
     if isinstance(node, dict):
@@ -138,8 +138,8 @@ API: Dict[str, Any] = {
 }
 
 
-def test_to_csv_rows_oil_processing() -> None:
-    rows = ExpensesMapper().to_csv_rows(API)
+def test_to_row_dicts_oil_processing() -> None:
+    rows = ExpensesMapper().to_row_dicts(API)
     oil_processing = next(r for r in rows if r['Key'] == 'oil' and r['Category'] == 'opc')
     assert oil_processing['Criteria'] == 'fpd'
     assert oil_processing['Period'] == 'ecl'
@@ -152,8 +152,8 @@ def test_to_csv_rows_oil_processing() -> None:
     assert oil_processing['Deduct bef Ad Val Tax'] == 'yes'
 
 
-def test_to_csv_rows_gas_processing() -> None:
-    rows = ExpensesMapper().to_csv_rows(API)
+def test_to_row_dicts_gas_processing() -> None:
+    rows = ExpensesMapper().to_row_dicts(API)
     gas_processing = next(r for r in rows if r['Key'] == 'gas' and r['Category'] == 'opc')
     assert gas_processing['Criteria'] == 'fpd'
     assert gas_processing['Period'] == 'ecl'
@@ -164,26 +164,26 @@ def test_to_csv_rows_gas_processing() -> None:
     assert gas_processing['Escalation'] == ''
 
 
-def test_to_csv_rows_oil_gathering_flat() -> None:
-    rows = ExpensesMapper().to_csv_rows(API)
+def test_to_row_dicts_oil_gathering_flat() -> None:
+    rows = ExpensesMapper().to_row_dicts(API)
     oil_gathering = next(r for r in rows if r['Key'] == 'oil' and r['Category'] == 'g&p')
     assert oil_gathering['Criteria'] == 'flat'
     assert oil_gathering['Period'] == ''
     assert oil_gathering['Unit'] == '$/bbl'
 
 
-def test_to_csv_rows_ngl_marketing_single_fpd_row_is_terminal_ecl() -> None:
+def test_to_row_dicts_ngl_marketing_single_fpd_row_is_terminal_ecl() -> None:
     # A leaf whose only fpd row is terminal (the common case) renders that single row
     # as 'ecl' -- position-based (last row of the leaf), not value-based.
-    rows = ExpensesMapper().to_csv_rows(API)
+    rows = ExpensesMapper().to_row_dicts(API)
     ngl_marketing = next(r for r in rows if r['Key'] == 'ngl' and r['Category'] == 'mkt')
     assert ngl_marketing['Criteria'] == 'fpd'
     assert ngl_marketing['Period'] == 'ecl'
     assert ngl_marketing['Value'] == '1.25'
 
 
-def test_to_csv_rows_fixed_monthly_well_cost() -> None:
-    rows = ExpensesMapper().to_csv_rows(API)
+def test_to_row_dicts_fixed_monthly_well_cost() -> None:
+    rows = ExpensesMapper().to_row_dicts(API)
     fixed = next(r for r in rows if r['Key'] == 'fixed')
     assert fixed['Category'] == 'fixed1'
     assert fixed['Unit'] == '$/month'
@@ -219,17 +219,17 @@ def test_fixed_expense_before_fpd_false_renders_no_and_round_trips() -> None:
         },
     }
     m = ExpensesMapper()
-    rows = m.to_csv_rows(model)
+    rows = m.to_row_dicts(model)
     fixed = next(r for r in rows if r['Key'] == 'fixed')
     assert fixed['Expense bef FPD'] == 'no'
     assert fixed['Stop at Econ Limit'] == 'no'
-    back = next(r for r in m.to_csv_rows(m.from_csv_rows(rows)) if r['Key'] == 'fixed')
+    back = next(r for r in m.to_row_dicts(m.from_row_dicts(rows)) if r['Key'] == 'fixed')
     assert back['Expense bef FPD'] == 'no'
     assert back['Stop at Econ Limit'] == 'no'
 
 
-def test_to_csv_rows_carbon_co2() -> None:
-    rows = ExpensesMapper().to_csv_rows(API)
+def test_to_row_dicts_carbon_co2() -> None:
+    rows = ExpensesMapper().to_row_dicts(API)
     co2 = next(r for r in rows if r['Key'] == 'co2')
     assert co2['Category'] == 'co2e'
     assert co2['Unit'] == '$/MT'
@@ -237,8 +237,8 @@ def test_to_csv_rows_carbon_co2() -> None:
     assert co2['Value'] == '0.0'
 
 
-def test_to_csv_rows_water_disposal() -> None:
-    rows = ExpensesMapper().to_csv_rows(API)
+def test_to_row_dicts_water_disposal() -> None:
+    rows = ExpensesMapper().to_row_dicts(API)
     water = next(r for r in rows if r['Key'] == 'water')
     assert water['Category'] == ''
     assert water['Unit'] == '$/bbl'
@@ -246,12 +246,12 @@ def test_to_csv_rows_water_disposal() -> None:
     assert water['Value'] == '0.0'
 
 
-def test_to_csv_rows_boe_and_total_fluid_emitted() -> None:
+def test_to_row_dicts_boe_and_total_fluid_emitted() -> None:
     """Regression test for the requirement that 'boe'/'total_fluid' variable-expense
     phases are emitted, not dropped -- exercised here via the shared API fixture's REAL
     double-nested shape (variableExpenses.boe.processing.processing is the leaf, see API
     above)."""
-    rows = ExpensesMapper().to_csv_rows(API)
+    rows = ExpensesMapper().to_row_dicts(API)
 
     boe = next(r for r in rows if r['Key'] == 'boe')
     assert boe['Category'] == 'opc'
@@ -280,7 +280,7 @@ def _normalize_for_roundtrip_compare(node: Any) -> Any:
         reconstructs as `None` -- the same blank-cell-ambiguity class as the
         documented `cap: ''` normalization;
     (c) `shrinkageCondition` is only present on real oil/gas leaves (ngl/dripCondensate/
-        boe/totalFluid leaves omit the key entirely), but `from_csv_rows` always
+        boe/totalFluid leaves omit the key entirely), but `from_row_dicts` always
         reconstructs it (as `None` when the CSV cell is blank) since the CSV format has
         a 'Shrinkage Condition' column regardless of phase -- so a rebuilt leaf always
         carries the key even when the source never had it.
@@ -304,7 +304,7 @@ def test_boe_and_total_fluid_real_double_nested_structure_round_trips() -> None:
     single-nested `variableExpenses.<phase>.<subcat> == {<leaf>}`. Before the fix,
     `ExpensesMapper` treated `{"processing": {<leaf>}}` itself as the leaf (no `rows`
     key at that level -> zero rows emitted); this proves boe/total_fluid rows are now
-    emitted AND that from_csv_rows reconstructs the real double-nested shape (not the
+    emitted AND that from_row_dicts reconstructs the real double-nested shape (not the
     normal single-nested one)."""
     leaf = {
         'description': '',
@@ -328,7 +328,7 @@ def test_boe_and_total_fluid_real_double_nested_structure_round_trips() -> None:
         },
     }
     mapper = ExpensesMapper()
-    rows = mapper.to_csv_rows(model)
+    rows = mapper.to_row_dicts(model)
 
     boe_rows = [r for r in rows if r['Key'] == 'boe']
     assert len(boe_rows) == 1
@@ -344,7 +344,7 @@ def test_boe_and_total_fluid_real_double_nested_structure_round_trips() -> None:
     assert total_fluid_rows[0]['Criteria'] == 'flat'
     assert total_fluid_rows[0]['Value'] == '0.0'
 
-    rebuilt = mapper.from_csv_rows(rows)
+    rebuilt = mapper.from_row_dicts(rows)
     # The nesting depth/shape itself must match exactly, unnormalized -- this is the
     # actual bug under test.
     assert set(rebuilt['variableExpenses']['boe'].keys()) == {'processing'}
@@ -365,14 +365,14 @@ def test_rate_type_and_rows_calculation_method_always_blank() -> None:
     """'Rate Type'/'Rate Rows Calculation Method' are ALWAYS blank, even though every
     leaf in API carries real rateType='gross_well_head'/rowsCalculationMethod='monotonic'
     (via the shared _leaf() base). Not round-trippable -- see ExpenseLeaf docstring."""
-    rows = ExpensesMapper().to_csv_rows(API)
+    rows = ExpensesMapper().to_row_dicts(API)
     assert rows, 'expected at least one row'
     for r in rows:
         assert r['Rate Type'] == ''
         assert r['Rate Rows Calculation Method'] == ''
 
 
-def test_to_csv_rows_multi_row_fpd_leaf_only_last_row_is_ecl() -> None:
+def test_to_row_dicts_multi_row_fpd_leaf_only_last_row_is_ecl() -> None:
     """Terminal-row rule (a): within a single leaf, earlier fpd rows render their
     literal month offset; only the LAST row of the leaf's rows list renders 'ecl' --
     regardless of its numeric value."""
@@ -393,14 +393,14 @@ def test_to_csv_rows_multi_row_fpd_leaf_only_last_row_is_ecl() -> None:
             },
         },
     }
-    rows = ExpensesMapper().to_csv_rows(model)
+    rows = ExpensesMapper().to_row_dicts(model)
     assert [r['Period'] for r in rows] == ['12', '36', 'ecl']
     assert [r['Value'] for r in rows] == ['1.0', '2.0', '3.0']
 
 
 def test_roundtrip_exact_all_four_groups() -> None:
     m = ExpensesMapper()
-    rebuilt = m.from_csv_rows(m.to_csv_rows(API))
+    rebuilt = m.from_row_dicts(m.to_row_dicts(API))
     # 'Rate Type'/'Rate Rows Calculation Method' are documented as never
     # round-tripping (always blanked in the CSV) -- strip before comparing.
     assert _strip_rate_fields(rebuilt['variableExpenses']) == _strip_rate_fields(API['variableExpenses'])
@@ -426,20 +426,20 @@ def test_roundtrip_non_canonical_terminal_offset_is_not_exact() -> None:
         },
     }
     mapper = ExpensesMapper()
-    rebuilt = mapper.from_csv_rows(mapper.to_csv_rows(model))
+    rebuilt = mapper.from_row_dicts(mapper.to_row_dicts(model))
     rebuilt_offset = rebuilt['variableExpenses']['oil']['processing']['rows'][0]['offsetToFpd']
     assert rebuilt_offset == 1200
     assert rebuilt_offset != 1104
 
 
 def test_common_columns_present() -> None:
-    rows = ExpensesMapper().to_csv_rows(API)
+    rows = ExpensesMapper().to_row_dicts(API)
     assert rows[0]['Model Name'] == 'OPEX'
     assert rows[0]['Model Type'] == 'project'
 
 
 def test_roundtrip_variable_only_exact_no_injected_empty_groups() -> None:
-    """A model with only variableExpenses must round-trip without from_csv_rows
+    """A model with only variableExpenses must round-trip without from_row_dicts
     injecting empty fixedExpenses/carbonExpenses/waterDisposal containers -- those
     groups never existed on the source model and shouldn't be fabricated."""
     m: Dict[str, Any] = {
@@ -455,7 +455,7 @@ def test_roundtrip_variable_only_exact_no_injected_empty_groups() -> None:
         },
     }
     mapper = ExpensesMapper()
-    rebuilt = mapper.from_csv_rows(mapper.to_csv_rows(m))
+    rebuilt = mapper.from_row_dicts(mapper.to_row_dicts(m))
     assert _strip_rate_fields(rebuilt['variableExpenses']) == _strip_rate_fields(m['variableExpenses'])
     assert rebuilt['name'] == m['name']
     assert rebuilt['unique'] == m['unique']
@@ -464,7 +464,7 @@ def test_roundtrip_variable_only_exact_no_injected_empty_groups() -> None:
     assert 'waterDisposal' not in rebuilt
 
 
-def test_to_csv_rows_gas_dollar_per_mmbtu_maps_and_round_trips() -> None:
+def test_to_row_dicts_gas_dollar_per_mmbtu_maps_and_round_trips() -> None:
     """Regression (drift audit): `dollarPerMmbtu` is a real, previously-unmodeled gas
     variable-expense value key (Unit '$/mmbtu')."""
     model: Dict[str, Any] = {
@@ -480,17 +480,17 @@ def test_to_csv_rows_gas_dollar_per_mmbtu_maps_and_round_trips() -> None:
         },
     }
     mapper = ExpensesMapper()
-    rows = mapper.to_csv_rows(model)
+    rows = mapper.to_row_dicts(model)
     gas_mkt = next(r for r in rows if r['Key'] == 'gas' and r['Category'] == 'mkt')
     assert gas_mkt['Criteria'] == 'flat'
     assert gas_mkt['Unit'] == '$/mmbtu'
     assert gas_mkt['Value'] == '0.05'
 
-    rebuilt = mapper.from_csv_rows(rows)
+    rebuilt = mapper.from_row_dicts(rows)
     assert _strip_rate_fields(rebuilt['variableExpenses']) == _strip_rate_fields(model['variableExpenses'])
 
 
-def test_to_csv_rows_fixed_expense_per_well_maps_and_round_trips() -> None:
+def test_to_row_dicts_fixed_expense_per_well_maps_and_round_trips() -> None:
     """Regression (drift audit): `fixedExpensePerWell` is a real, previously-unmodeled
     fixedExpenses value key -- CSV Unit '$/well/month', Criteria 'dates', Period
     '01/01/2000'."""
@@ -510,7 +510,7 @@ def test_to_csv_rows_fixed_expense_per_well_maps_and_round_trips() -> None:
         },
     }
     mapper = ExpensesMapper()
-    rows = mapper.to_csv_rows(model)
+    rows = mapper.to_row_dicts(model)
     fixed = next(r for r in rows if r['Key'] == 'fixed')
     assert fixed['Category'] == 'fixed1'
     assert fixed['Criteria'] == 'dates'
@@ -518,11 +518,11 @@ def test_to_csv_rows_fixed_expense_per_well_maps_and_round_trips() -> None:
     assert fixed['Unit'] == '$/well/month'
     assert fixed['Value'] == '9840.0'
 
-    rebuilt = mapper.from_csv_rows(rows)
+    rebuilt = mapper.from_row_dicts(rows)
     assert _strip_rate_fields(rebuilt['fixedExpenses']) == _strip_rate_fields(model['fixedExpenses'])
 
 
-def test_to_csv_rows_water_disposal_dates_criteria_maps_and_round_trips() -> None:
+def test_to_row_dicts_water_disposal_dates_criteria_maps_and_round_trips() -> None:
     """Regression (drift audit): a leaf's rows can use `dates` (dated criteria) instead
     of `entireWellLife`/`offsetToFpd`. Also proves the fpd-only terminal-row 'ecl' rule
     does not apply to 'dates' rows, even for the last row of the leaf (a 'dates' row
@@ -542,14 +542,14 @@ def test_to_csv_rows_water_disposal_dates_criteria_maps_and_round_trips() -> Non
         ),
     }
     mapper = ExpensesMapper()
-    rows = mapper.to_csv_rows(model)
+    rows = mapper.to_row_dicts(model)
     water_rows = [r for r in rows if r['Key'] == 'water']
     assert [r['Criteria'] for r in water_rows] == ['dates', 'dates']
     assert [r['Period'] for r in water_rows] == ['01/01/2000', '01/01/2025']
     assert [r['Value'] for r in water_rows] == ['1.155', '0.838']
     assert [r['Unit'] for r in water_rows] == ['$/bbl', '$/bbl']
 
-    rebuilt = mapper.from_csv_rows(rows)
+    rebuilt = mapper.from_row_dicts(rows)
     assert _strip_rate_fields(rebuilt['waterDisposal']) == _strip_rate_fields(model['waterDisposal'])
 
 
@@ -570,7 +570,7 @@ def test_no_value_key_bbl_leaf_falls_back_to_zero_dollar_per_bbl() -> None:
         },
         'waterDisposal': _leaf([{'entireWellLife': 'Flat'}]),
     }
-    rows = ExpensesMapper().to_csv_rows(model)
+    rows = ExpensesMapper().to_row_dicts(model)
     for key, category in [('oil', 'g&p'), ('ngl', 'mkt'), ('drip cond', 'other'), ('water', '')]:
         row = next(r for r in rows if r['Key'] == key and r['Category'] == category)
         assert row['Criteria'] == 'flat'
@@ -589,13 +589,13 @@ def test_no_value_key_gas_leaf_still_raises() -> None:
         'variableExpenses': {'gas': {'gathering': _leaf([{'entireWellLife': 'Flat'}])}},
     }
     with pytest.raises(NotImplementedError, match='Unknown expense row value'):
-        ExpensesMapper().to_csv_rows(model)
+        ExpensesMapper().to_row_dicts(model)
 
 
 def test_carbon_scalar_only_warns_and_emits_no_rows() -> None:
     """carbonExpenses.category is a scalar with no CSV column. If it's the only
     thing present (no species leaves), the block can't be represented in the CSV
-    at all -- to_csv_rows should warn rather than silently dropping it."""
+    at all -- to_row_dicts should warn rather than silently dropping it."""
     m: Dict[str, Any] = {
         'name': 'CARBON SCALAR ONLY',
         'unique': False,
@@ -603,5 +603,5 @@ def test_carbon_scalar_only_warns_and_emits_no_rows() -> None:
     }
     mapper = ExpensesMapper()
     with pytest.warns(UserWarning, match='carbonExpenses'):
-        rows = mapper.to_csv_rows(m)
+        rows = mapper.to_row_dicts(m)
     assert not any(r['Key'] in ('ch4', 'co2', 'co2e', 'n2o') for r in rows)

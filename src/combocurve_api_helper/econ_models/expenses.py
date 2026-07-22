@@ -15,7 +15,7 @@ from .formats import csv_to_num, escalation_from_csv, escalation_to_csv, num_to_
 # for `totalFluid`) -- i.e. `variableExpenses[phase][subcat][subcat]` is the real leaf,
 # not `variableExpenses[phase][subcat]` as for every other phase. See
 # `_DOUBLE_NESTED_PHASES` / `_unwrap_variable_leaf` (forward unwrap, structural
-# detection) and `from_csv_rows` (inverse re-nesting, phase-name-gated since only
+# detection) and `from_row_dicts` (inverse re-nesting, phase-name-gated since only
 # these two phases need it).
 _PHASE_TO_CSV = {
     'oil': 'oil',
@@ -78,9 +78,9 @@ _CARBON_SPECIES_FROM_CSV = {v: k for k, v in _CARBON_SPECIES_TO_CSV.items()}
 # known, documented CSV-format limitation (like StreamProperties.unshrunkGas or
 # Capex $/ft): there is no CSV column for it, so it cannot be round-tripped from
 # a CSV cell. On the inverse pass we reconstruct it as the constant 'co2e'
-# whenever at least one carbon species row exists (see from_csv_rows). If a
+# whenever at least one carbon species row exists (see from_row_dicts). If a
 # source model's carbonExpenses has ONLY this scalar (no species leaves, so no
-# CSV rows are emitted at all), to_csv_rows warns that the block is dropped.
+# CSV rows are emitted at all), to_row_dicts warns that the block is dropped.
 _CARBON_CATEGORY_API = 'category'
 _CARBON_CATEGORY_CSV = 'co2e'
 
@@ -154,22 +154,22 @@ class ExpenseLeaf(BaseModel):
 
     Every key EXCEPT `stopAtEconLimit`/`expenseBeforeFpd` (fixed-only) is always
     present on a real API leaf -- including `cap`/`description`/etc when their value is
-    null. `from_csv_rows` therefore reconstructs those fields unconditionally (never
+    null. `from_row_dicts` therefore reconstructs those fields unconditionally (never
     omits them just because the CSV cell was blank), via an explicit `exclude={...}` set
     on `model_dump` rather than a blanket `exclude_none=True` -- see `_build_leaf`.
     `Optional` typing here exists only because a CSV cell can be blank (-> None), not
     because the key itself is ever genuinely absent.
 
     `rateType`/`rowsCalculationMethod` are parsed (so `model_validate` never chokes on
-    a real leaf) but deliberately never read by `to_csv_rows` and never set by
-    `from_csv_rows`: CC's real Expenses CSV renders 'Rate Type'/'Rate Rows Calculation
+    a real leaf) but deliberately never read by `to_row_dicts` and never set by
+    `from_row_dicts`: CC's real Expenses CSV renders 'Rate Type'/'Rate Rows Calculation
     Method' BLANK unconditionally, even though the API leaf carries real values (e.g.
     'gross_well_head'/'non_monotonic') -- a documented, non-round-trippable CSV-format
     limitation, exactly like StreamProperties. These two are always excluded from the
     dumped API dict.
 
     `stopAtEconLimit`/`expenseBeforeFpd` only exist on real fixedExpenses leaves (never
-    on variable/carbon/water leaves) -- `from_csv_rows` excludes them from the dump for
+    on variable/carbon/water leaves) -- `from_row_dicts` excludes them from the dump for
     non-fixed leaves.
     """
 
@@ -276,7 +276,7 @@ def _value_unit(r: ExpenseApiRow, key_csv: str) -> Tuple[Any, str]:
         # Unit '$/bbl' rather than blank. Only these bbl-denominated Keys behave this
         # way; gas/fixed/carbon rows always carry an explicit value key (even when the
         # value is 0), so we do not guess a fallback unit for those -- they still raise
-        # below. Round-trip note: from_csv_rows reconstructs this '0'/'$/bbl' cell the
+        # below. Round-trip note: from_row_dicts reconstructs this '0'/'$/bbl' cell the
         # same way as any $/bbl row -- i.e. as dollarPerBbl=0, not a value-key-less row
         # -- which is CSV-idempotent and matches CC's own export.
         return 0, '$/bbl'
@@ -386,7 +386,7 @@ class ExpensesMapper(EconModelMapper):
     econ_model_type = 'Expenses'
     columns = COLUMNS['Expenses']
 
-    def to_csv_rows(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
         common = common_columns(model, context)
         rows: List[Dict[str, str]] = []
 
@@ -458,7 +458,7 @@ class ExpensesMapper(EconModelMapper):
             out.append({c: row.get(c, '') for c in self.columns})
         return out
 
-    def from_csv_rows(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
         groups: Dict[Tuple[str, str], List[Dict[str, str]]] = {}
         order: List[Tuple[str, str]] = []
         name, unique = model_identity(rows)
