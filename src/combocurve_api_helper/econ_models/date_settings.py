@@ -4,7 +4,7 @@ from typing import Annotated, Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import formats
-from .base import Context, common_columns, model_identity
+from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
 from .formats import csv_to_num, enum_from_csv, enum_to_csv, num_to_csv
 
@@ -263,7 +263,7 @@ def _cutoff_from_csv(row: Dict[str, str]) -> Dict[str, Any]:
     return cutoff_dict
 
 
-class DateSettingsMapper:
+class DateSettingsMapper(EconModelMapper):
     """One-row-per-model mapper for the DateSettings ('Dates') econ-model type.
 
     Like ReservesCategory, there is no `rows[]`/criteria fan-out -- `to_csv_rows` always emits

@@ -2,7 +2,7 @@ from typing import Annotated, Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from .base import Context, common_columns, model_identity
+from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
 
 # CC always emits exactly 3 rows per model, in this order (Key=oil/gas/water).
@@ -68,7 +68,7 @@ def _phase_criteria(data: PhaseSwitchData, model_name: str) -> Tuple[str, str]:
     return _CRITERIA_NEVER, ''
 
 
-class ActualOrForecastMapper:
+class ActualOrForecastMapper(EconModelMapper):
     econ_model_type = 'ActualOrForecast'
     columns = COLUMNS['ActualOrForecast']
 

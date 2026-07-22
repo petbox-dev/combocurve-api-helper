@@ -4,7 +4,7 @@ from typing import Annotated, Any, Dict, List, NamedTuple, Optional, Set, Tuple,
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from . import formats
-from .base import Context, common_columns, model_identity
+from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
 from .formats import csv_to_num, escalation_from_csv, escalation_to_csv, num_to_csv, num_to_csv_float
 
@@ -382,7 +382,7 @@ def _row_from_csv(m: Dict[str, str]) -> Dict[str, Any]:
     return ExpenseApiRow.model_validate(row_dict).model_dump(by_alias=True, exclude_none=True)
 
 
-class ExpensesMapper:
+class ExpensesMapper(EconModelMapper):
     econ_model_type = 'Expenses'
     columns = COLUMNS['Expenses']
 

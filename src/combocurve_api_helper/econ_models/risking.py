@@ -3,7 +3,7 @@ from typing import Annotated, Any, Dict, List, Optional, Tuple
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import formats
-from .base import Context, common_columns, model_identity
+from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
 from .formats import csv_to_num, num_to_csv
 
@@ -72,7 +72,7 @@ class RiskingModel(BaseModel):
     water: RiskingPhaseNode = Field(default_factory=RiskingPhaseNode)
 
 
-class RiskingMapper:
+class RiskingMapper(EconModelMapper):
     """Row-based mapper for the Risking econ-model type.
 
     DOCUMENTED LIMITATION -- the CSV 'wells' row: every real CC Risking CSV export also

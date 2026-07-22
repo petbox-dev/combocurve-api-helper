@@ -3,7 +3,7 @@ from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import formats
-from .base import Context, common_columns, model_identity
+from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
 from .formats import PHASE_TO_CSV_CAMEL as _PHASE_TO_CSV
 from .formats import csv_to_num, escalation_from_csv, escalation_to_csv, num_to_csv
@@ -129,7 +129,7 @@ def _breakeven_from_csv(row: Dict[str, str]) -> Dict[str, Any]:
     raise NotImplementedError(f'Unknown Pricing breakeven Criteria: {criteria!r}')
 
 
-class PricingMapper:
+class PricingMapper(EconModelMapper):
     econ_model_type = 'Pricing'
     columns = COLUMNS['Pricing']
 

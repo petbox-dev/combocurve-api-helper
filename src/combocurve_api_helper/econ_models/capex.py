@@ -5,7 +5,7 @@ from typing import Annotated, Any, Dict, List, NamedTuple, Optional, Tuple, Unio
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import formats
-from .base import Context, common_columns, model_identity
+from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
 from .enums import (
     CRITERIA_FROM_CSV,
@@ -216,7 +216,7 @@ def _check_probabilistic(extra: Dict[str, Any]) -> None:
         )
 
 
-class CapexMapper:
+class CapexMapper(EconModelMapper):
     econ_model_type = 'Capex'
     columns = COLUMNS['Capex']
 

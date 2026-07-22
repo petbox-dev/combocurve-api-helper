@@ -2,7 +2,7 @@ from typing import Annotated, Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .base import Context, common_columns, model_identity
+from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
 from .formats import csv_to_num, from_csv_date, num_to_csv, to_csv_date
 
@@ -265,7 +265,7 @@ def _tied_to_from_csv(cell: str) -> Optional[ReversionTiedTo]:
     return ReversionTiedTo(type='date', value=iso)
 
 
-class OwnershipReversionMapper:
+class OwnershipReversionMapper(EconModelMapper):
     """One CSV row per ownership tier: the 'initial' row (from `initialOwnership`) plus
     one row per POPULATED reversion tier (`firstReversion`..`twentiethReversion`, in
     ordinal order, skipping `null` tiers). See the module-level comments above for details.

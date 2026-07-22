@@ -4,7 +4,7 @@ from typing import Annotated, Any, Dict, List, NamedTuple, Optional, Tuple
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import formats
-from .base import Context, common_columns, model_identity
+from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
 from .formats import csv_to_num, enum_from_csv, enum_to_csv, escalation_from_csv, escalation_to_csv, num_to_csv
 
@@ -173,7 +173,7 @@ def _build_api_row(key_csv: str, category_csv: str, members: List[Dict[str, str]
     return ProductionTaxApiRow(**row_kwargs).model_dump(by_alias=True, exclude_none=True)
 
 
-class ProductionTaxesMapper:
+class ProductionTaxesMapper(EconModelMapper):
     econ_model_type = 'ProductionTaxes'
     columns = COLUMNS['ProductionTaxes']
 

@@ -2,7 +2,7 @@ from typing import Annotated, Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .base import Context, common_columns, model_identity
+from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
 
 
@@ -23,7 +23,7 @@ class ReservesCategoryData(BaseModel):
     prms_sub_category: Annotated[str, Field(alias='prmsSubCategory')]
 
 
-class ReservesCategoryMapper:
+class ReservesCategoryMapper(EconModelMapper):
     """The v3 pilot for the 'settings' (one-row-per-model) econ-model pattern.
 
     Unlike the row-based mappers (ProductionTaxes, Expenses, StreamProperties, ...) that
