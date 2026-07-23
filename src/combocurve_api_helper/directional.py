@@ -40,6 +40,41 @@ class Directional(APIBase):
         Returns a list of directional survey items.
 
         https://docs.api.combocurve.com/api/get-directional-surveys
+
+        Example response:
+        [
+            {
+                "id": "5e272d38b78910dd2a1bd691",
+                "well": "string",
+                "measuredDepth": [
+                    123.45
+                ],
+                "trueVerticalDepth": [
+                    123.45
+                ],
+                "azimuth": [
+                    123.45
+                ],
+                "inclination": [
+                    123.45
+                ],
+                "deviationNS": [
+                    123.45
+                ],
+                "deviationEW": [
+                    123.45
+                ],
+                "latitude": [
+                    123.45
+                ],
+                "longitude": [
+                    123.45
+                ],
+                "project": "string",
+                "createdAt": "2020-01-01T00:00:00.000Z",
+                "updatedAt": "2020-01-01T00:00:00.000Z"
+            }
+        ]
         """
         url = self.get_directional_surveys_url(filters)
         params = {'take': GET_LIMIT}
@@ -52,6 +87,39 @@ class Directional(APIBase):
         Returns a directional survey item from its id.
 
         https://docs.api.combocurve.com/api/get-directional-surveys-by-id
+
+        Example response:
+        {
+            "id": "5e272d38b78910dd2a1bd691",
+            "well": "string",
+            "measuredDepth": [
+                123.45
+            ],
+            "trueVerticalDepth": [
+                123.45
+            ],
+            "azimuth": [
+                123.45
+            ],
+            "inclination": [
+                123.45
+            ],
+            "deviationNS": [
+                123.45
+            ],
+            "deviationEW": [
+                123.45
+            ],
+            "latitude": [
+                123.45
+            ],
+            "longitude": [
+                123.45
+            ],
+            "project": "string",
+            "createdAt": "2020-01-01T00:00:00.000Z",
+            "updatedAt": "2020-01-01T00:00:00.000Z"
+        }
         """
         url = self.get_directional_survey_by_id_url(directional_survey_id)
         directional_surveys = self._get_items(url)
@@ -65,6 +133,53 @@ class Directional(APIBase):
         `projectID` (the project is specified in the body, not the URL).
 
         https://docs.api.combocurve.com/api/post-directional-surveys
+
+        Example data:
+        {
+            "chosenID": "string",
+            "dataSource": "string",
+            "spatialDataType": "NAD83",
+            "measuredDepth": [
+                123.45
+            ],
+            "trueVerticalDepth": [
+                123.45
+            ],
+            "azimuth": [
+                123.45
+            ],
+            "inclination": [
+                123.45
+            ],
+            "deviationEW": [
+                123.45
+            ],
+            "deviationNS": [
+                123.45
+            ],
+            "latitude": [
+                123.45
+            ],
+            "longitude": [
+                123.45
+            ],
+            "projectID": "string"
+        }
+
+        Example response:
+        {
+            "status": "string",
+            "code": 123.45,
+            "chosenID": "string",
+            "errors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string",
+                    "chosenID": "string"
+                }
+            ]
+        }
         """
         # The endpoint receives a single object body, not a list, so
         # `self._post_items` (which chunks a list) does not apply.
@@ -82,6 +197,82 @@ class Directional(APIBase):
         carries `spatialDataType`, `dataSource`, and `update` / `add` blocks.
 
         https://docs.api.combocurve.com/api/put-directional-surveys
+
+        Example data:
+        {
+            "spatialDataType": "NAD27",
+            "dataSource": "string",
+            "update": {
+                "measuredDepth": [
+                    123.45
+                ],
+                "trueVerticalDepth": [
+                    123.45
+                ],
+                "latitude": [
+                    123.45
+                ],
+                "longitude": [
+                    123.45
+                ],
+                "azimuth": [
+                    123.45
+                ],
+                "inclination": [
+                    123.45
+                ],
+                "deviationEW": [
+                    123.45
+                ],
+                "deviationNS": [
+                    123.45
+                ]
+            },
+            "add": {
+                "measuredDepth": [
+                    123.45
+                ],
+                "trueVerticalDepth": [
+                    123.45
+                ],
+                "azimuth": [
+                    123.45
+                ],
+                "inclination": [
+                    123.45
+                ],
+                "deviationEW": [
+                    123.45
+                ],
+                "deviationNS": [
+                    123.45
+                ],
+                "latitude": [
+                    123.45
+                ],
+                "longitude": [
+                    123.45
+                ]
+            },
+            "remove": [
+                123.45
+            ]
+        }
+
+        Example response:
+        {
+            "status": "string",
+            "code": 123.45,
+            "chosenID": "string",
+            "errors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string",
+                    "chosenID": "string"
+                }
+            ]
+        }
         """
         # The endpoint receives a single object body, not a list.
         headers = self.auth.get_auth_headers()

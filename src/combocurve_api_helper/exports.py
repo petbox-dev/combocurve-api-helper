@@ -119,6 +119,21 @@ class Exports(APIBase):
         {'exportType': ..., 'expirationHours': ...}); returns the export job.
 
         https://docs.api.combocurve.com/api/post-exports
+
+        Example data:
+        {
+            "exportType": "monthlyProductionVolumeExport",
+            "expirationHours": 24
+        }
+
+        Example response:
+        {
+            "exportType": "string",
+            "fileType": "string",
+            "fileUrls": [
+                "string"
+            ]
+        }
         """
         headers = self.auth.get_auth_headers()
         url = self.get_exports_url()

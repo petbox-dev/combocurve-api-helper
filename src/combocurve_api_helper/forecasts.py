@@ -299,6 +299,26 @@ class Forecasts(APIBase):
         id and forecast id.
 
         https://docs.api.combocurve.com/api/patch-forecast
+
+        Example data:
+        {
+            "name": "Example"
+        }
+
+        Example response:
+        {
+            "status": "string",
+            "code": 123,
+            "forecastId": "5e272d38b78910dd2a1bd691",
+            "name": "Example",
+            "errors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string"
+                }
+            ]
+        }
         """
         # The by-id PATCH endpoint receives a single object body (e.g. {'name': ...}),
         # not a list, so `self._patch_items` (which chunks a list) does not apply.

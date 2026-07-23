@@ -223,6 +223,25 @@ class Root(APIBase):
         Returns a list of company users and their roles.
 
         https://docs.api.combocurve.com/api/get-users-roles
+
+        Example response:
+        [
+            {
+                "userId": "5e272d38b78910dd2a1bd691",
+                "firstName": "string",
+                "lastName": "string",
+                "email": "string",
+                "resourceRoles": [
+                    {
+                        "resourceId": "5e272d38b78910dd2a1bd691",
+                        "resourceType": "string",
+                        "roles": [
+                            "string"
+                        ]
+                    }
+                ]
+            }
+        ]
         """
         url = self.get_users_roles_url()
         params = {'take': GET_LIMIT}
@@ -237,6 +256,15 @@ class Root(APIBase):
         to `get_custom_columns`.
 
         https://docs.api.combocurve.com/api/get-project-custom-columns
+
+        Example response:
+        [
+            {
+                "headerName": "string",
+                "headerType": "string",
+                "headerLabel": "string"
+            }
+        ]
         """
         url = self.get_project_custom_columns_url(project_id, collection, filters)
         columns = self._get_items(url)
