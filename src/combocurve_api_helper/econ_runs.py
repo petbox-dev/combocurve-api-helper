@@ -95,13 +95,20 @@ class EconRuns(APIBase):
         base_url = self.get_econ_run_onelines_url(project_id, scenario_id, econ_run_id)
         return f'{base_url}/{oneline_id}'
 
-    def get_econ_run_monthly_econ_results_url(self, project_id: str, scenario_id: str, econ_run_id: str) -> str:
+    def get_econ_run_monthly_econ_results_url(
+        self, project_id: str, scenario_id: str, econ_run_id: str, filters: Optional[Dict[str, str]] = None
+    ) -> str:
         """
         Returns the API url for monthly econ results for a specific project id,
         scenario id, and econ run id.
         """
         base_url = self.get_econ_run_by_id_url(project_id, scenario_id, econ_run_id)
-        return f'{base_url}/monthly-econ-results'
+        url = f'{base_url}/monthly-econ-results'
+        if filters is None:
+            return url
+
+        url += self._build_params_string(filters)
+        return url
 
     ###########
     # API calls
@@ -193,15 +200,26 @@ class EconRuns(APIBase):
 
         return cast(Item, flatten_outputs(items[0]))
 
-    def get_econ_run_monthly_econ_results(self, project_id: str, scenario_id: str, econ_run_id: str) -> ItemList:
+    def get_econ_run_monthly_econ_results(
+        self, project_id: str, scenario_id: str, econ_run_id: str, columns: List[str]
+    ) -> ItemList:
         """
         Returns the monthly econ results for a specific project id, scenario id,
-        and econ run id (the synchronous read; for large runs prefer the async
-        monthly-export flow).
+        and econ run id.
+
+        `columns` is REQUIRED by the API -- a request without it returns
+        `MonthlyEconResultBadRequestError: "Columns are required"`. Pass the
+        snake_case result column names to return, e.g.
+        ['gross_oil_well_head_volume', 'net_income']; an invalid name returns a
+        `MonthlyEconResultBadRequestError` naming a suggested column.
 
         https://docs.api.combocurve.com/api/get-econ-run-monthly-econ-results
         """
-        url = self.get_econ_run_monthly_econ_results_url(project_id, scenario_id, econ_run_id)
+        if not columns:
+            raise ValueError('columns is required; the API rejects a monthly-econ-results request without columns')
+
+        filters = {'columns': ','.join(columns)}
+        url = self.get_econ_run_monthly_econ_results_url(project_id, scenario_id, econ_run_id, filters)
         params = {'take': GET_LIMIT}
 
         return self._get_items(url, params)

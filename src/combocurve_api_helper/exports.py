@@ -5,7 +5,6 @@ from .base import APIBase, Item
 
 # The async export routes live under /v2 (every other route in this package is /v1);
 # their URLs use `APIBase.API_BASE_URL_V2`.
-_V2_EXPORT_KINDS = ('forecast-parameters', 'forecast-volumes', 'econ-monthly', 'econ-one-liners')
 
 
 class Exports(APIBase):
@@ -16,7 +15,7 @@ class Exports(APIBase):
     def get_v2_export_url(self, kind: str) -> str:
         """
         Returns the API url for submitting a v2 async export of the given kind
-        (one of `_V2_EXPORT_KINDS`).
+        ('forecast-parameters', 'forecast-volumes', 'econ-monthly', 'econ-one-liners').
         """
         return f'{self.API_BASE_URL_V2}/exports/{kind}'
 
