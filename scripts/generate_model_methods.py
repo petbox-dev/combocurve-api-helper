@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Sequence, Union
 
 from requests import Response
 
-from .base import Item, ItemList
+from .base import Item, ItemList, WriteResponse
 from ._econ_model_base import _EconModelMethodsBase
 
 
@@ -41,10 +41,10 @@ CRUD = """
     def get_{method_base}_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "{econ_model_type}", model_id)
 
-    def post_{method_base}_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_{method_base}_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "{econ_model_type}", data)
 
-    def put_{method_base}_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_{method_base}_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "{econ_model_type}", data)
 
     def delete_{method_base}_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -60,10 +60,14 @@ ASSIGN = """
     def get_{method_base}_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "{econ_model_type}", model_id)
 
-    def post_{method_base}_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_{method_base}_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "{econ_model_type}", model_id, data)
 
-    def put_{method_base}_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_{method_base}_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "{econ_model_type}", model_id, data)
 
     def delete_{method_base}_assignments_by_id(

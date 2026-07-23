@@ -1,6 +1,6 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, cast, List
 
-from .base import APIBase, Item, ItemList
+from .base import APIBase, Item, ItemList, WriteResponse
 
 
 GET_LIMIT = 200
@@ -57,7 +57,7 @@ class ForecastConfigurations(APIBase):
         url = self.get_forecast_configuration_by_id_url(forecast_configuration_id)
         return self._get_items(url)[0]
 
-    def post_forecast_configurations(self, data: ItemList) -> ItemList:
+    def post_forecast_configurations(self, data: ItemList) -> List[WriteResponse]:
         """
         Creates one or more forecast configurations.
 
@@ -66,9 +66,9 @@ class ForecastConfigurations(APIBase):
         The example request and response are large; see them on the docs page linked above.
         """
         url = self.get_forecast_configurations_url()
-        return self._post_items(url, data)
+        return cast(List[WriteResponse], self._post_items(url, data))
 
-    def put_forecast_configurations(self, data: ItemList) -> ItemList:
+    def put_forecast_configurations(self, data: ItemList) -> List[WriteResponse]:
         """
         Upserts one or more forecast configurations.
 
@@ -77,9 +77,9 @@ class ForecastConfigurations(APIBase):
         The example request and response are large; see them on the docs page linked above.
         """
         url = self.get_forecast_configurations_url()
-        return self._put_items(url, data)
+        return cast(List[WriteResponse], self._put_items(url, data))
 
-    def patch_forecast_configurations(self, data: ItemList) -> ItemList:
+    def patch_forecast_configurations(self, data: ItemList) -> List[WriteResponse]:
         """
         Partially updates one or more forecast configurations.
 
@@ -88,7 +88,7 @@ class ForecastConfigurations(APIBase):
         The example request and response are large; see them on the docs page linked above.
         """
         url = self.get_forecast_configurations_url()
-        return self._patch_items(url, data)
+        return cast(List[WriteResponse], self._patch_items(url, data))
 
     def delete_forecast_configuration_by_id(self, forecast_configuration_id: str) -> ItemList:
         """

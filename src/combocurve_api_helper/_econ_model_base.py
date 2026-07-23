@@ -1,8 +1,8 @@
-from typing import Dict, List, Optional, Sequence, Union
+from typing import Dict, List, Optional, Sequence, Union, cast
 
 from requests import Response
 
-from .base import APIBase, Item, ItemList
+from .base import APIBase, Item, ItemList, WriteResponse
 
 
 GET_LIMIT = 200
@@ -151,21 +151,21 @@ class _EconModelMethodsBase(APIBase):
 
         return econ_model[0]
 
-    def post_econ_models_by_type(self, project_id: str, econ_model_type: str, data: ItemList) -> ItemList:
+    def post_econ_models_by_type(self, project_id: str, econ_model_type: str, data: ItemList) -> List[WriteResponse]:
         """
         Creates econ models of a specific type. Allows `econModelType` passed as
         a parameter rather than calling a different function for each model type.
         """
         url = self.get_econ_models_by_type_url(project_id, econ_model_type)
-        return self._post_items(url, data)
+        return cast(List[WriteResponse], self._post_items(url, data))
 
-    def put_econ_models_by_type(self, project_id: str, econ_model_type: str, data: ItemList) -> ItemList:
+    def put_econ_models_by_type(self, project_id: str, econ_model_type: str, data: ItemList) -> List[WriteResponse]:
         """
         Upserts econ models of a specific type. Allows `econModelType` passed as
         a parameter rather than calling a different function for each model type.
         """
         url = self.get_econ_models_by_type_url(project_id, econ_model_type)
-        return self._put_items(url, data)
+        return cast(List[WriteResponse], self._put_items(url, data))
 
     def delete_econ_model_by_type_by_id(self, project_id: str, econ_model_type: str, model_id: str) -> List[Response]:
         """
@@ -194,17 +194,17 @@ class _EconModelMethodsBase(APIBase):
 
     def post_econ_model_assignments_by_type_by_id(
         self, project_id: str, econ_model_type: str, model_id: str, data: ItemList
-    ) -> ItemList:
+    ) -> List[WriteResponse]:
         """Create assignments for a specific econ model (by type + id)."""
         url = self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
-        return self._post_items(url, data)
+        return cast(List[WriteResponse], self._post_items(url, data))
 
     def put_econ_model_assignments_by_type_by_id(
         self, project_id: str, econ_model_type: str, model_id: str, data: ItemList
-    ) -> ItemList:
+    ) -> List[WriteResponse]:
         """Upsert assignments for a specific econ model (by type + id)."""
         url = self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
-        return self._put_items(url, data)
+        return cast(List[WriteResponse], self._put_items(url, data))
 
     def delete_econ_model_assignments_by_type_by_id(
         self,

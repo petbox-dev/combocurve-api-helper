@@ -5,8 +5,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from itertools import chain
 from more_itertools import chunked
-from typing import Callable, List, Dict, Optional, Tuple, Union, Any, Iterable, Iterator, Mapping
-from typing_extensions import Self, TypeAlias
+from typing import Callable, List, Dict, Optional, Sequence, Tuple, Union, Any, Iterable, Iterator, Mapping
+from typing_extensions import Self, TypeAlias, TypedDict
 
 import requests
 from requests import Response
@@ -17,12 +17,51 @@ from . import config
 from ._batch import BatchChunk, BatchWriteResult, _RateLimitState
 
 
-PrimativeValue: TypeAlias = Union[str, int, float, bool]
-IterableValue: TypeAlias = Union[
-    List[str], List[int], List[float], List[bool], Dict[str, Union[PrimativeValue, 'IterableValue']]
-]
-Item: TypeAlias = Dict[str, Union[PrimativeValue, IterableValue]]
+# A single JSON value: the recursive union of everything `json.loads` can yield.
+# Models real API payloads faithfully -- `null` (None), arrays of objects, and
+# nested objects are all representable, which the former `PrimativeValue` /
+# `IterableValue` split could not express (it allowed lists of scalars only, and
+# no nulls). The container arms are the COVARIANT `Sequence` / `Mapping`, not
+# `List` / `Dict`: because `List`/`Dict` are invariant, a concrete `list[str]` or
+# `list[dict[...]]` (e.g. a payload built by a caller, or a `list[str]` variable
+# assigned into an item) is NOT a `List[JsonValue]` and would fail to type-check;
+# `Sequence`/`Mapping` accept them. Self-references are quoted forward refs; mypy
+# resolves the recursive alias.
+JsonValue: TypeAlias = Union[None, str, int, float, bool, Sequence['JsonValue'], Mapping[str, 'JsonValue']]
+
+# One API object (a JSON object) and a list of them -- the shapes every endpoint
+# method takes and returns. These stay the mutable, invariant `Dict`/`List` (we
+# build, extend, and index them internally); only the nested value arms above are
+# the read-covariant `Sequence`/`Mapping`. Responses stay plain dicts, not custom
+# model classes.
+Item: TypeAlias = Dict[str, JsonValue]
 ItemList: TypeAlias = List[Item]
+
+
+class WriteError(TypedDict, total=False):
+    """One entry in a write response's `generalErrors` list."""
+
+    name: str
+    message: str
+    location: str
+
+
+class WriteResponse(TypedDict):
+    """The 207 envelope every create/update endpoint (POST/PUT/PATCH) returns.
+
+    `_post_items` / `_put_items` / `_patch_items` yield one of these per request
+    chunk, so a write method returns `List[WriteResponse]` (usually one element).
+
+    `results` stays the generic `Item`: the per-record shape varies by resource
+    (its id key is `id`, `forecastId`, `wellId`, ...; productions add `date`/`well`,
+    wells add `chosenID`/`dataSource`, etc.), so no single TypedDict fits it and a
+    generic dict avoids forcing casts to read a resource's own id/fields.
+    """
+
+    successCount: int
+    failedCount: int
+    results: ItemList
+    generalErrors: List[WriteError]
 
 
 # HTTP retry policy. Two retryable conditions:
@@ -541,7 +580,7 @@ class APIBase:
                     except KeyError as e:
                         chosen_id = item.get('chosenId')
                         # print(f'Error for Chosen Id `{chosen_id}`:', e)
-                        item.setdefault(k, None)  # type: ignore[arg-type]
+                        item.setdefault(k, None)
                         keys += (k,)
                         values += (None,)
 

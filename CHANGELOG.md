@@ -5,6 +5,41 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-07-23
+
+Type-precision release. Runtime behavior is unchanged throughout (same dicts flow
+through); every change below is to the static types, but two of them remove/alter
+public type names, so this is a major bump.
+
+### Changed (breaking — types only)
+
+- **`PrimativeValue` and `IterableValue` are removed; `JsonValue` replaces them.**
+  The old aliases could not model real API payloads: `IterableValue` allowed only lists
+  of scalars (no arrays of objects, no nested arrays) and nothing could be `null`, so a
+  dict containing `None`, a `rows: [{…}]` array, or a nested list was not a valid `Item`.
+  `Item` is now `Dict[str, JsonValue]` where `JsonValue` is the full recursive JSON union:
+  `None | str | int | float | bool | Sequence[JsonValue] | Mapping[str, JsonValue]`. The
+  container arms are the **covariant** `Sequence` / `Mapping` (not `List` / `Dict`) so that
+  a concrete `list[str]` / `list[dict[…]]` payload — or a `list[str]` variable assigned into
+  an item — type-checks despite `List` / `Dict` invariance. `JsonValue` is re-exported from
+  the package root; `PrimativeValue` / `IterableValue` imports must be dropped (they had no
+  valid replacement in the old model — use `JsonValue`, or `str | int | float | bool` for a
+  scalar). `Item` / `ItemList` keep their names and their mutable `Dict` / `List` spelling.
+- **Write methods return `List[WriteResponse]`** instead of the generic `ItemList`.
+  `WriteResponse` is a TypedDict for the 207 create/update envelope: `successCount` /
+  `failedCount` (ints), `generalErrors` (`List[WriteError]`), and `results` — kept as the
+  generic `ItemList` because the per-record shape varies by resource (id key is
+  `id`/`forecastId`/`wellId`/…, productions add `date`/`well`, etc.), so a rigid per-record
+  TypedDict would force casts to read a resource's own fields. Applied to all POST/PUT/PATCH
+  methods (hand-written + the `generate_model_methods.py` template for the generated ones);
+  `WriteResponse` / `WriteError` are re-exported from the package root. GET-list methods keep
+  `ItemList`; the generic `_post_items` / `_put_items` / `_patch_items` dispatchers keep
+  `ItemList` (POST isn't always a write envelope, e.g. `post_econ_run_monthly_export`), so
+  each write method casts at its boundary.
+- Package-root re-exports of `Item` / `ItemList` / `JsonValue` / `WriteResponse` / `WriteError`
+  now use the explicit `from .base import X as X` form so downstream `mypy --strict`
+  (`--no-implicit-reexport`) sees them as exported (previously only `_batch`'s exports did).
+
 ## [1.4.0] - 2026-07-23
 
 ### Added

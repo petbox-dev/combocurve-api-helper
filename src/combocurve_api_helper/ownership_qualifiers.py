@@ -1,6 +1,6 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, cast, List
 
-from .base import APIBase, Item, ItemList
+from .base import APIBase, Item, ItemList, WriteResponse
 
 
 GET_LIMIT = 200
@@ -57,7 +57,7 @@ class OwnershipQualifiers(APIBase):
         url = self.get_ownership_qualifier_by_id_url(ownership_qualifier_id)
         return self._get_items(url)[0]
 
-    def post_ownership_qualifiers(self, data: ItemList) -> ItemList:
+    def post_ownership_qualifiers(self, data: ItemList) -> List[WriteResponse]:
         """
         Creates one or more ownership qualifiers.
 
@@ -66,9 +66,9 @@ class OwnershipQualifiers(APIBase):
         The example request and response are large; see them on the docs page linked above.
         """
         url = self.get_ownership_qualifiers_url()
-        return self._post_items(url, data)
+        return cast(List[WriteResponse], self._post_items(url, data))
 
-    def put_ownership_qualifiers(self, data: ItemList) -> ItemList:
+    def put_ownership_qualifiers(self, data: ItemList) -> List[WriteResponse]:
         """
         Upserts one or more ownership qualifiers.
 
@@ -77,4 +77,4 @@ class OwnershipQualifiers(APIBase):
         The example request and response are large; see them on the docs page linked above.
         """
         url = self.get_ownership_qualifiers_url()
-        return self._put_items(url, data)
+        return cast(List[WriteResponse], self._put_items(url, data))

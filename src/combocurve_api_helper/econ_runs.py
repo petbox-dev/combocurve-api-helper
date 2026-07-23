@@ -23,7 +23,7 @@ def flatten_outputs(result: Item) -> Optional[Item]:
     # ownership model. In this case some basic header information exists,
     # but the 'output' key is None. We return only the header data.
     if output is None:
-        return {**result}  # type: ignore[unreachable]
+        return {**result}
 
     if not isinstance(output, dict):
         raise TypeError(f'Expected output to be a dict, got {type(output)}')
@@ -186,9 +186,7 @@ class EconRuns(APIBase):
 
         return onelines  # type: ignore[return-value]
 
-    def get_econ_run_oneline_by_id(
-        self, project_id: str, scenario_id: str, econ_run_id: str, oneline_id: str
-    ) -> Item:
+    def get_econ_run_oneline_by_id(self, project_id: str, scenario_id: str, econ_run_id: str, oneline_id: str) -> Item:
         """
         Returns a specific oneline from its project id, scenario id, econ run id,
         and oneline id.

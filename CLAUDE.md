@@ -110,9 +110,14 @@ which splits `data` into `chunksize` batches (via `more_itertools.chunked`). Pag
 both loops follow `get_next_page_url(response.headers)` from the upstream `combocurve-api-v1` package until
 exhausted. Auth headers are re-fetched (`self.auth.get_auth_headers()`) before every individual request.
 
-**Type vocabulary** (defined in `base.py`, re-exported from `__init__.py`): `PrimativeValue` (str/int/float/bool),
-`IterableValue`, `Item` (= `Dict[str, ...]`, one API object), `ItemList` (= `List[Item]`). Endpoint methods
-take and return these, not custom model classes — responses stay as plain dicts.
+**Type vocabulary** (defined in `base.py`, re-exported from `__init__.py`): `JsonValue` — the recursive
+JSON-value union (`None | str | int | float | bool | Sequence[JsonValue] | Mapping[str, JsonValue]`; the
+container arms are the covariant `Sequence`/`Mapping` so concrete `list[...]`/`dict[...]` payloads type-check
+despite `List`/`Dict` invariance) — `Item` (= `Dict[str, JsonValue]`, one API object), `ItemList`
+(= `List[Item]`). Endpoint methods take and return these, not custom model classes — responses stay as plain
+dicts. Write methods (POST/PUT/PATCH) return `List[WriteResponse]` (the 207 envelope), not `ItemList`.
+(`PrimativeValue`/`IterableValue` were removed in 2.0.0 — they could not express `null`, arrays of objects,
+or nested arrays; `JsonValue` subsumes both.)
 
 **Per-endpoint pattern.** Within each module, every endpoint is expressed as a pair: a `*_url(...)` builder
 that assembles the path (and appends query string via `_build_params_string`), and the public API method

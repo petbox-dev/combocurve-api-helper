@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Sequence, Union
 
 from requests import Response
 
-from .base import Item, ItemList
+from .base import Item, ItemList, WriteResponse
 from ._econ_model_base import _EconModelMethodsBase
 
 
@@ -26,10 +26,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_general_options_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "GeneralOptions", model_id)
 
-    def post_general_options_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_general_options_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "GeneralOptions", data)
 
-    def put_general_options_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_general_options_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "GeneralOptions", data)
 
     def delete_general_options_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -48,10 +48,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_actual_forecast_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "ActualOrForecast", model_id)
 
-    def post_actual_forecast_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_actual_forecast_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "ActualOrForecast", data)
 
-    def put_actual_forecast_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_actual_forecast_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "ActualOrForecast", data)
 
     def delete_actual_forecast_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -64,10 +64,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_actual_forecast_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "ActualOrForecast", model_id)
 
-    def post_actual_forecast_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_actual_forecast_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "ActualOrForecast", model_id, data)
 
-    def put_actual_forecast_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_actual_forecast_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "ActualOrForecast", model_id, data)
 
     def delete_actual_forecast_assignments_by_id(
@@ -90,10 +94,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_capex_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "Capex", model_id)
 
-    def post_capex_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_capex_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "Capex", data)
 
-    def put_capex_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_capex_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "Capex", data)
 
     def delete_capex_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -106,10 +110,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_capex_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Capex", model_id)
 
-    def post_capex_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_capex_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "Capex", model_id, data)
 
-    def put_capex_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_capex_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Capex", model_id, data)
 
     def delete_capex_assignments_by_id(
@@ -132,10 +140,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_date_settings_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "Dates", model_id)
 
-    def post_date_settings_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_date_settings_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "Dates", data)
 
-    def put_date_settings_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_date_settings_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "Dates", data)
 
     def delete_date_settings_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -148,10 +156,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_date_settings_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Dates", model_id)
 
-    def post_date_settings_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_date_settings_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "Dates", model_id, data)
 
-    def put_date_settings_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_date_settings_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Dates", model_id, data)
 
     def delete_date_settings_assignments_by_id(
@@ -174,10 +186,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_depreciation_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "Depreciation", model_id)
 
-    def post_depreciation_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_depreciation_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "Depreciation", data)
 
-    def put_depreciation_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_depreciation_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "Depreciation", data)
 
     def delete_depreciation_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -190,10 +202,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_depreciation_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Depreciation", model_id)
 
-    def post_depreciation_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_depreciation_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "Depreciation", model_id, data)
 
-    def put_depreciation_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_depreciation_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Depreciation", model_id, data)
 
     def delete_depreciation_assignments_by_id(
@@ -216,10 +232,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_differentials_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "Differentials", model_id)
 
-    def post_differentials_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_differentials_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "Differentials", data)
 
-    def put_differentials_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_differentials_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "Differentials", data)
 
     def delete_differentials_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -232,10 +248,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_differentials_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Differentials", model_id)
 
-    def post_differentials_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_differentials_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "Differentials", model_id, data)
 
-    def put_differentials_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_differentials_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Differentials", model_id, data)
 
     def delete_differentials_assignments_by_id(
@@ -258,10 +278,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_emissions_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "Emission", model_id)
 
-    def post_emissions_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_emissions_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "Emission", data)
 
-    def put_emissions_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_emissions_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "Emission", data)
 
     def delete_emissions_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -274,10 +294,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_emissions_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Emission", model_id)
 
-    def post_emissions_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_emissions_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "Emission", model_id, data)
 
-    def put_emissions_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_emissions_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Emission", model_id, data)
 
     def delete_emissions_assignments_by_id(
@@ -300,10 +324,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_escalations_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "Escalation", model_id)
 
-    def post_escalations_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_escalations_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "Escalation", data)
 
-    def put_escalations_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_escalations_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "Escalation", data)
 
     def delete_escalations_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -316,10 +340,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_escalations_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Escalation", model_id)
 
-    def post_escalations_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_escalations_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "Escalation", model_id, data)
 
-    def put_escalations_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_escalations_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Escalation", model_id, data)
 
     def delete_escalations_assignments_by_id(
@@ -342,10 +370,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_expenses_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "Expenses", model_id)
 
-    def post_expenses_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_expenses_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "Expenses", data)
 
-    def put_expenses_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_expenses_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "Expenses", data)
 
     def delete_expenses_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -358,10 +386,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_expenses_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Expenses", model_id)
 
-    def post_expenses_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_expenses_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "Expenses", model_id, data)
 
-    def put_expenses_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_expenses_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Expenses", model_id, data)
 
     def delete_expenses_assignments_by_id(
@@ -384,10 +416,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_fluid_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "FluidModel", model_id)
 
-    def post_fluid_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_fluid_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "FluidModel", data)
 
-    def put_fluid_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_fluid_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "FluidModel", data)
 
     def delete_fluid_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -400,10 +432,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_fluid_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "FluidModel", model_id)
 
-    def post_fluid_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_fluid_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "FluidModel", model_id, data)
 
-    def put_fluid_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_fluid_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "FluidModel", model_id, data)
 
     def delete_fluid_assignments_by_id(
@@ -426,10 +462,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_operations_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "Operations", model_id)
 
-    def post_operations_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_operations_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "Operations", data)
 
-    def put_operations_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_operations_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "Operations", data)
 
     def delete_operations_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -442,10 +478,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_operations_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Operations", model_id)
 
-    def post_operations_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_operations_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "Operations", model_id, data)
 
-    def put_operations_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_operations_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Operations", model_id, data)
 
     def delete_operations_assignments_by_id(
@@ -468,10 +508,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_ownership_reversions_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "OwnershipReversion", model_id)
 
-    def post_ownership_reversions_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_ownership_reversions_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "OwnershipReversion", data)
 
-    def put_ownership_reversions_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_ownership_reversions_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "OwnershipReversion", data)
 
     def delete_ownership_reversions_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -484,10 +524,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "OwnershipReversion", model_id)
 
-    def post_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_ownership_reversions_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "OwnershipReversion", model_id, data)
 
-    def put_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_ownership_reversions_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "OwnershipReversion", model_id, data)
 
     def delete_ownership_reversions_assignments_by_id(
@@ -510,10 +554,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_pricing_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "Pricing", model_id)
 
-    def post_pricing_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_pricing_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "Pricing", data)
 
-    def put_pricing_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_pricing_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "Pricing", data)
 
     def delete_pricing_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -526,10 +570,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_pricing_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Pricing", model_id)
 
-    def post_pricing_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_pricing_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "Pricing", model_id, data)
 
-    def put_pricing_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_pricing_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Pricing", model_id, data)
 
     def delete_pricing_assignments_by_id(
@@ -552,10 +600,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_production_taxes_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "ProductionTaxes", model_id)
 
-    def post_production_taxes_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_production_taxes_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "ProductionTaxes", data)
 
-    def put_production_taxes_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_production_taxes_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "ProductionTaxes", data)
 
     def delete_production_taxes_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -568,10 +616,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_production_taxes_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "ProductionTaxes", model_id)
 
-    def post_production_taxes_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_production_taxes_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "ProductionTaxes", model_id, data)
 
-    def put_production_taxes_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_production_taxes_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "ProductionTaxes", model_id, data)
 
     def delete_production_taxes_assignments_by_id(
@@ -594,10 +646,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_reserves_categories_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "ReservesCategory", model_id)
 
-    def post_reserves_categories_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_reserves_categories_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "ReservesCategory", data)
 
-    def put_reserves_categories_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_reserves_categories_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "ReservesCategory", data)
 
     def delete_reserves_categories_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -610,10 +662,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_reserves_categories_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "ReservesCategory", model_id)
 
-    def post_reserves_categories_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_reserves_categories_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "ReservesCategory", model_id, data)
 
-    def put_reserves_categories_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_reserves_categories_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "ReservesCategory", model_id, data)
 
     def delete_reserves_categories_assignments_by_id(
@@ -636,10 +692,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_riskings_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "Risking", model_id)
 
-    def post_riskings_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_riskings_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "Risking", data)
 
-    def put_riskings_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_riskings_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "Risking", data)
 
     def delete_riskings_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -652,10 +708,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_riskings_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Risking", model_id)
 
-    def post_riskings_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_riskings_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "Risking", model_id, data)
 
-    def put_riskings_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_riskings_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "Risking", model_id, data)
 
     def delete_riskings_assignments_by_id(
@@ -678,10 +738,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_stream_properties_model_by_id(self, project_id: str, model_id: str) -> Union[Item, None]:
         return self.get_econ_model_by_type_by_id(project_id, "StreamProperties", model_id)
 
-    def post_stream_properties_models(self, project_id: str, data: ItemList) -> ItemList:
+    def post_stream_properties_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.post_econ_models_by_type(project_id, "StreamProperties", data)
 
-    def put_stream_properties_models(self, project_id: str, data: ItemList) -> ItemList:
+    def put_stream_properties_models(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         return self.put_econ_models_by_type(project_id, "StreamProperties", data)
 
     def delete_stream_properties_model_by_id(self, project_id: str, model_id: str) -> List[Response]:
@@ -694,10 +754,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_stream_properties_assignments_by_id(self, project_id: str, model_id: str) -> Union[ItemList, None]:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "StreamProperties", model_id)
 
-    def post_stream_properties_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def post_stream_properties_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.post_econ_model_assignments_by_type_by_id(project_id, "StreamProperties", model_id, data)
 
-    def put_stream_properties_assignments_by_id(self, project_id: str, model_id: str, data: ItemList) -> ItemList:
+    def put_stream_properties_assignments_by_id(
+        self, project_id: str, model_id: str, data: ItemList
+    ) -> List[WriteResponse]:
         return self.put_econ_model_assignments_by_type_by_id(project_id, "StreamProperties", model_id, data)
 
     def delete_stream_properties_assignments_by_id(

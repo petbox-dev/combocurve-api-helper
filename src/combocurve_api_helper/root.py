@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional, Union, Any, Iterator, Mapping, TypedDict, cast
 
-from .base import APIBase, Item, ItemList
+from .base import APIBase, Item, ItemList, WriteResponse
 
 
 GET_LIMIT = 200
@@ -135,7 +135,7 @@ class Root(APIBase):
         """
         return self.get_custom_columns('monthly-productions', filters)
 
-    def patch_well_identifiers(self, data: ItemList) -> ItemList:
+    def patch_well_identifiers(self, data: ItemList) -> List[WriteResponse]:
         """
         Update well identifiers.
 
@@ -156,7 +156,7 @@ class Root(APIBase):
         ]
         """
         url = self.get_well_identifiers_url()
-        return self._patch_items(url, data)
+        return cast(List[WriteResponse], self._patch_items(url, data))
 
     def get_tags(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """

@@ -1,8 +1,8 @@
-from typing import List, Dict, Optional, Union, Any, Iterator, Mapping
+from typing import List, Dict, Optional, Union, Any, Iterator, Mapping, cast
 
 from requests import Response
 
-from .base import APIBase, Item, ItemList
+from .base import APIBase, Item, ItemList, WriteResponse
 
 
 GET_LIMIT = 200
@@ -357,23 +357,23 @@ class CompanyModels(APIBase):
 
         return econ_model[0]
 
-    def post_company_econ_models_by_type(self, econ_model_type: str, data: ItemList) -> ItemList:
+    def post_company_econ_models_by_type(self, econ_model_type: str, data: ItemList) -> List[WriteResponse]:
         """
         Creates company econ models of a specific type. Allows `econModelType`
         passed as a parameter rather than calling a different function for each
         model type.
         """
         url = self.get_company_econ_models_by_type_url(econ_model_type)
-        return self._post_items(url, data)
+        return cast(List[WriteResponse], self._post_items(url, data))
 
-    def put_company_econ_models_by_type(self, econ_model_type: str, data: ItemList) -> ItemList:
+    def put_company_econ_models_by_type(self, econ_model_type: str, data: ItemList) -> List[WriteResponse]:
         """
         Upserts company econ models of a specific type. Allows `econModelType`
         passed as a parameter rather than calling a different function for each
         model type.
         """
         url = self.get_company_econ_models_by_type_url(econ_model_type)
-        return self._put_items(url, data)
+        return cast(List[WriteResponse], self._put_items(url, data))
 
     def delete_company_econ_model_by_type_by_id(self, econ_model_type: str, model_id: str) -> List[Response]:
         """

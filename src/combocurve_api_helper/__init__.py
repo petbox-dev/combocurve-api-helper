@@ -1,4 +1,4 @@
-__version__ = '1.4.0'
+__version__ = '2.0.0'
 
 from .root import Root
 from .projects import Projects
@@ -15,10 +15,13 @@ from .forecast_configurations import ForecastConfigurations
 from .ownership_qualifiers import OwnershipQualifiers
 from .exports import Exports
 
-from .base import Item, ItemList, PrimativeValue, IterableValue
-
 # Explicit re-export (`as`) so downstream `mypy --strict`
 # (--no-implicit-reexport) sees these public types as exported.
+from .base import Item as Item
+from .base import ItemList as ItemList
+from .base import JsonValue as JsonValue
+from .base import WriteResponse as WriteResponse
+from .base import WriteError as WriteError
 from ._batch import BatchChunk as BatchChunk
 from ._batch import BatchWriteResult as BatchWriteResult
 

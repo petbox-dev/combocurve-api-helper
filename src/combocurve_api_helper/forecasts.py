@@ -1,10 +1,10 @@
 import warnings
-from typing import Callable, List, Dict, Optional, Union, Any, Iterator, Mapping
+from typing import Callable, List, Dict, Optional, Union, Any, Iterator, Mapping, cast
 
 import requests
 from more_itertools import chunked
 
-from .base import APIBase, Item, ItemList
+from .base import APIBase, Item, ItemList, WriteResponse
 from ._batch import BatchChunk, BatchWriteResult
 
 
@@ -173,7 +173,7 @@ class Forecasts(APIBase):
         }
         return self._keysort(forecasts, order)
 
-    def post_forecasts(self, project_id: str, data: ItemList) -> ItemList:
+    def post_forecasts(self, project_id: str, data: ItemList) -> List[WriteResponse]:
         """
         Creates new forecasts for a specific project id.
 
@@ -216,7 +216,7 @@ class Forecasts(APIBase):
         }
         """
         url = self.get_forecasts_url(project_id)
-        forecasts = self._post_items(url, data)
+        forecasts = cast(List[WriteResponse], self._post_items(url, data))
 
         return forecasts
 
@@ -1000,7 +1000,7 @@ class Forecasts(APIBase):
 
     def post_forecast_segment_parameters(
         self, project_id: str, forecast_id: str, well_id: str, phase: str, series: str, data: ItemList
-    ) -> ItemList:
+    ) -> List[WriteResponse]:
         """
         Inserts a specific well's forecast parameters from its forecast id,
         well id, phase, and series.
@@ -1035,13 +1035,13 @@ class Forecasts(APIBase):
         }
         """
         url = self.get_forecast_segment_parameters_url(project_id, forecast_id, well_id, phase, series)
-        segments = self._post_items(url, data)
+        segments = cast(List[WriteResponse], self._post_items(url, data))
 
         return segments
 
     def put_forecast_segment_parameters(
         self, project_id: str, forecast_id: str, well_id: str, phase: str, series: str, data: ItemList
-    ) -> ItemList:
+    ) -> List[WriteResponse]:
         """
         Updates a specific well's forecast parameters from its forecast id,
         well id, phase, and series.
@@ -1076,7 +1076,7 @@ class Forecasts(APIBase):
         }
         """
         url = self.get_forecast_segment_parameters_url(project_id, forecast_id, well_id, phase, series)
-        segments = self._put_items(url, data)
+        segments = cast(List[WriteResponse], self._put_items(url, data))
 
         return segments
 
@@ -1106,7 +1106,7 @@ class Forecasts(APIBase):
 
     def put_forecast_parameters(
         self, project_id: str, forecast_id: str, data: ItemList, *, chunksize: int = 25
-    ) -> ItemList:
+    ) -> List[WriteResponse]:
         """
         Upserts forecast parameters in bulk for a specific forecast. Each item in
         `data` is one well x phase record ({well, phase, series, forecastType,
@@ -1120,7 +1120,7 @@ class Forecasts(APIBase):
         no separate per-segment limit.
         """
         url = self.get_forecast_parameters_url(project_id, forecast_id)
-        return self._put_items(url, data, chunksize)
+        return cast(List[WriteResponse], self._put_items(url, data, chunksize))
 
     def put_forecast_parameters_batched(
         self,

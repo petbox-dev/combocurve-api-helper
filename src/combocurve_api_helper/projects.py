@@ -1,6 +1,6 @@
-from typing import List, Dict, Optional, Union, Any, Iterator, Mapping
+from typing import List, Dict, Optional, Union, Any, Iterator, Mapping, cast
 
-from .base import APIBase, Item, ItemList
+from .base import APIBase, Item, ItemList, WriteResponse
 
 
 GET_LIMIT = 200
@@ -61,7 +61,7 @@ class Projects(APIBase):
         }
         return self._keysort(projects, order)
 
-    def post_projects(self, data: ItemList) -> ItemList:
+    def post_projects(self, data: ItemList) -> List[WriteResponse]:
         """
         Creates a new project.
 
@@ -103,7 +103,7 @@ class Projects(APIBase):
         }
         """
         url = self.get_projects_url()
-        projects = self._post_items(url, data)
+        projects = cast(List[WriteResponse], self._post_items(url, data))
 
         return projects
 
