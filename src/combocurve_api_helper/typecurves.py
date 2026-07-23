@@ -59,6 +59,48 @@ class TypeCurves(APIBase):
     # API calls
     ###########
 
+    def post_type_curves(self, project_id: str, data: ItemList) -> ItemList:
+        """
+        Creates one or more type curves for a specific project id.
+
+        https://docs.api.combocurve.com/api/post-type-curves
+        """
+        url = self.get_type_curves_url(project_id)
+        return self._post_items(url, data)
+
+    def put_type_curves(self, project_id: str, data: ItemList) -> ItemList:
+        """
+        Upserts one or more type curves for a specific project id.
+
+        https://docs.api.combocurve.com/api/put-type-curves
+        """
+        url = self.get_type_curves_url(project_id)
+        return self._put_items(url, data)
+
+    def delete_type_curves(
+        self, project_id: str, name: Optional[str] = None, id: Optional[str] = None
+    ) -> CaseInsensitiveDict[str]:
+        """
+        Deletes type curves for a specific project id, filtered by `name` or `id`
+        (at least one is required; the API rejects an unfiltered delete). Returns
+        the delete response headers, where 'X-Delete-Count' is the number deleted.
+
+        https://docs.api.combocurve.com/api/delete-type-curves
+        """
+        if (name or id) is None:
+            raise ValueError('Must provide at least one of name or id')
+
+        filters: Dict[str, str] = {}
+        if name is not None:
+            filters['name'] = name
+        if id is not None:
+            filters['id'] = id
+
+        url = self.get_type_curves_url(project_id, filters)
+        responses = self._delete_responses(url, data=[])
+
+        return responses[0].headers
+
     def get_type_curves(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
         """
         Returns a list of type curves for a specific project id.
@@ -72,510 +114,6 @@ class TypeCurves(APIBase):
                     "gas": {
                         "align": true,
                         "resolution": "monthly",
-                        "normalize": true,
-                        "best": {
-                            "segments": [
-                                {
-                                    "b": 123.45,
-                                    "diEffSec": 123.45,
-                                    "diNominal": 123.45,
-                                    "endDate": "2020-01-01",
-                                    "qEnd": 123.45,
-                                    "qStart": 123.45,
-                                    "realizedDSwEffSec": 123.45,
-                                    "targetDSwEffSec": 123.45,
-                                    "segmentIndex": 123,
-                                    "segmentType": "exp_dec",
-                                    "startDate": "2020-01-01",
-                                    "swDate": "2020-01-01",
-                                    "slope": 123.45,
-                                    "flatValue": 123.45,
-                                    "qSw": 123.45
-                                }
-                            ]
-                        },
-                        "p10": {
-                            "segments": [
-                                {
-                                    "b": 123.45,
-                                    "diEffSec": 123.45,
-                                    "diNominal": 123.45,
-                                    "endDate": "2020-01-01",
-                                    "qEnd": 123.45,
-                                    "qStart": 123.45,
-                                    "realizedDSwEffSec": 123.45,
-                                    "targetDSwEffSec": 123.45,
-                                    "segmentIndex": 123,
-                                    "segmentType": "linear",
-                                    "startDate": "2020-01-01",
-                                    "swDate": "2020-01-01",
-                                    "slope": 123.45,
-                                    "flatValue": 123.45,
-                                    "qSw": 123.45
-                                }
-                            ]
-                        },
-                        "p50": {
-                            "segments": [
-                                {
-                                    "b": 123.45,
-                                    "diEffSec": 123.45,
-                                    "diNominal": 123.45,
-                                    "endDate": "2020-01-01",
-                                    "qEnd": 123.45,
-                                    "qStart": 123.45,
-                                    "realizedDSwEffSec": 123.45,
-                                    "targetDSwEffSec": 123.45,
-                                    "segmentIndex": 123,
-                                    "segmentType": "arps_inc",
-                                    "startDate": "2020-01-01",
-                                    "swDate": "2020-01-01",
-                                    "slope": 123.45,
-                                    "flatValue": 123.45,
-                                    "qSw": 123.45
-                                }
-                            ]
-                        },
-                        "p90": {
-                            "segments": [
-                                {
-                                    "b": 123.45,
-                                    "diEffSec": 123.45,
-                                    "diNominal": 123.45,
-                                    "endDate": "2020-01-01",
-                                    "qEnd": 123.45,
-                                    "qStart": 123.45,
-                                    "realizedDSwEffSec": 123.45,
-                                    "targetDSwEffSec": 123.45,
-                                    "segmentIndex": 123,
-                                    "segmentType": "arps",
-                                    "startDate": "2020-01-01",
-                                    "swDate": "2020-01-01",
-                                    "slope": 123.45,
-                                    "flatValue": 123.45,
-                                    "qSw": 123.45
-                                }
-                            ]
-                        },
-                        "type": "rate",
-                        "ratio": {
-                            "best": {
-                                "segments": [
-                                    {
-                                        "b": 123.45,
-                                        "diEffSec": 123.45,
-                                        "diNominal": 123.45,
-                                        "endDate": "2020-01-01",
-                                        "qEnd": 123.45,
-                                        "qStart": 123.45,
-                                        "realizedDSwEffSec": 123.45,
-                                        "targetDSwEffSec": 123.45,
-                                        "segmentIndex": 123,
-                                        "segmentType": "linear",
-                                        "startDate": "2020-01-01",
-                                        "swDate": "2020-01-01",
-                                        "slope": 123.45,
-                                        "flatValue": 123.45,
-                                        "qSw": 123.45
-                                    }
-                                ],
-                                "basePhase": "gas"
-                            },
-                            "p10": {
-                                "segments": [
-                                    {
-                                        "b": 123.45,
-                                        "diEffSec": 123.45,
-                                        "diNominal": 123.45,
-                                        "endDate": "2020-01-01",
-                                        "qEnd": 123.45,
-                                        "qStart": 123.45,
-                                        "realizedDSwEffSec": 123.45,
-                                        "targetDSwEffSec": 123.45,
-                                        "segmentIndex": 123,
-                                        "segmentType": "arps",
-                                        "startDate": "2020-01-01",
-                                        "swDate": "2020-01-01",
-                                        "slope": 123.45,
-                                        "flatValue": 123.45,
-                                        "qSw": 123.45
-                                    }
-                                ],
-                                "basePhase": "water"
-                            },
-                            "p50": {
-                                "segments": [
-                                    {
-                                        "b": 123.45,
-                                        "diEffSec": 123.45,
-                                        "diNominal": 123.45,
-                                        "endDate": "2020-01-01",
-                                        "qEnd": 123.45,
-                                        "qStart": 123.45,
-                                        "realizedDSwEffSec": 123.45,
-                                        "targetDSwEffSec": 123.45,
-                                        "segmentIndex": 123,
-                                        "segmentType": "arps",
-                                        "startDate": "2020-01-01",
-                                        "swDate": "2020-01-01",
-                                        "slope": 123.45,
-                                        "flatValue": 123.45,
-                                        "qSw": 123.45
-                                    }
-                                ],
-                                "basePhase": "oil"
-                            },
-                            "p90": {
-                                "segments": [
-                                    {
-                                        "b": 123.45,
-                                        "diEffSec": 123.45,
-                                        "diNominal": 123.45,
-                                        "endDate": "2020-01-01",
-                                        "qEnd": 123.45,
-                                        "qStart": 123.45,
-                                        "realizedDSwEffSec": 123.45,
-                                        "targetDSwEffSec": 123.45,
-                                        "segmentIndex": 123,
-                                        "segmentType": "flat",
-                                        "startDate": "2020-01-01",
-                                        "swDate": "2020-01-01",
-                                        "slope": 123.45,
-                                        "flatValue": 123.45,
-                                        "qSw": 123.45
-                                    }
-                                ],
-                                "basePhase": "water"
-                            }
-                        },
-                        "normalizations": {
-                            "perfLateralLength": 123.45,
-                            "normalizationType": "eur_and_q_peak",
-                            "eur": {
-                                "type": "no_normalization",
-                                "slope": 123.45,
-                                "intercept": 123.45,
-                                "coefficient": 123.45,
-                                "exponent": 123.45,
-                                "base": "eur_vs_numerical",
-                                "selectedNumericalTarget": "first_6_boe_per_perforated_interval",
-                                "target": {
-                                    "eur": 123.45,
-                                    "acre_spacing": 123.45,
-                                    "azimuth": 123.45,
-                                    "casing_id": 123.45,
-                                    "choke_size": 123.45,
-                                    "cluster_count": 123.45,
-                                    "cum_boe": 123.45,
-                                    "cum_boe_per_perforated_interval": 123.45,
-                                    "cum_gas": 123.45,
-                                    "cum_gas_per_perforated_interval": 123.45,
-                                    "cum_gor": 123.45,
-                                    "cum_mmcfge": 123.45,
-                                    "cum_mmcfge_per_perforated_interval": 123.45,
-                                    "cum_oil": 123.45,
-                                    "cum_oil_per_perforated_interval": 123.45,
-                                    "cum_water": 123.45,
-                                    "cum_water_per_perforated_interval": 123.45,
-                                    "custom_number_0": 123.45,
-                                    "custom_number_1": 123.45,
-                                    "custom_number_10": 123.45,
-                                    "custom_number_11": 123.45,
-                                    "custom_number_12": 123.45,
-                                    "custom_number_13": 123.45,
-                                    "custom_number_14": 123.45,
-                                    "custom_number_15": 123.45,
-                                    "custom_number_16": 123.45,
-                                    "custom_number_17": 123.45,
-                                    "custom_number_18": 123.45,
-                                    "custom_number_19": 123.45,
-                                    "custom_number_2": 123.45,
-                                    "custom_number_3": 123.45,
-                                    "custom_number_4": 123.45,
-                                    "custom_number_5": 123.45,
-                                    "custom_number_6": 123.45,
-                                    "custom_number_7": 123.45,
-                                    "custom_number_8": 123.45,
-                                    "custom_number_9": 123.45,
-                                    "distance_from_base_of_zone": 123.45,
-                                    "distance_from_top_of_zone": 123.45,
-                                    "elevation": 123.45,
-                                    "first_12_boe": 123.45,
-                                    "first_12_boe_per_perforated_interval": 123.45,
-                                    "first_12_gas": 123.45,
-                                    "first_12_gas_per_perforated_interval": 123.45,
-                                    "first_12_gor": 123.45,
-                                    "first_12_mmcfge": 123.45,
-                                    "first_12_mmcfge_per_perforated_interval": 123.45,
-                                    "first_12_oil": 123.45,
-                                    "first_12_oil_per_perforated_interval": 123.45,
-                                    "first_12_water": 123.45,
-                                    "first_12_water_per_perforated_interval": 123.45,
-                                    "first_6_boe": 123.45,
-                                    "first_6_boe_per_perforated_interval": 123.45,
-                                    "first_6_gas": 123.45,
-                                    "first_6_gas_per_perforated_interval": 123.45,
-                                    "first_6_gor": 123.45,
-                                    "first_6_mmcfge": 123.45,
-                                    "first_6_mmcfge_per_perforated_interval": 123.45,
-                                    "first_6_oil": 123.45,
-                                    "first_6_oil_per_perforated_interval": 123.45,
-                                    "first_6_water": 123.45,
-                                    "first_6_water_per_perforated_interval": 123.45,
-                                    "first_additive_volume": 123.45,
-                                    "first_cluster_count": 123.45,
-                                    "first_fluid_per_perforated_interval": 123.45,
-                                    "first_fluid_volume": 123.45,
-                                    "first_max_injection_pressure": 123.45,
-                                    "first_max_injection_rate": 123.45,
-                                    "first_prop_weight": 123.45,
-                                    "first_proppant_per_fluid": 123.45,
-                                    "first_proppant_per_perforated_interval": 123.45,
-                                    "first_stage_count": 123.45,
-                                    "first_test_flow_tbg_press": 123.45,
-                                    "first_test_gas_vol": 123.45,
-                                    "first_test_gor": 123.45,
-                                    "first_test_oil_vol": 123.45,
-                                    "first_test_water_vol": 123.45,
-                                    "footage_in_landing_zone": 123.45,
-                                    "formation_thickness_mean": 123.45,
-                                    "gas_specific_gravity": 123.45,
-                                    "ground_elevation": 123.45,
-                                    "hz_well_spacing_any_zone": 123.45,
-                                    "hz_well_spacing_same_zone": 123.45,
-                                    "initial_respress": 123.45,
-                                    "initial_restemp": 123.45,
-                                    "landing_zone_base": 123.45,
-                                    "landing_zone_top": 123.45,
-                                    "last_12_boe": 123.45,
-                                    "last_12_boe_per_perforated_interval": 123.45,
-                                    "last_12_gas": 123.45,
-                                    "last_12_gas_per_perforated_interval": 123.45,
-                                    "last_12_gor": 123.45,
-                                    "last_12_mmcfge": 123.45,
-                                    "last_12_mmcfge_per_perforated_interval": 123.45,
-                                    "last_12_oil": 123.45,
-                                    "last_12_oil_per_perforated_interval": 123.45,
-                                    "last_12_water": 123.45,
-                                    "last_12_water_per_perforated_interval": 123.45,
-                                    "last_month_boe": 123.45,
-                                    "last_month_boe_per_perforated_interval": 123.45,
-                                    "last_month_gas": 123.45,
-                                    "last_month_gas_per_perforated_interval": 123.45,
-                                    "last_month_gor": 123.45,
-                                    "last_month_mmcfge": 123.45,
-                                    "last_month_mmcfge_per_perforated_interval": 123.45,
-                                    "last_month_oil": 123.45,
-                                    "last_month_oil_per_perforated_interval": 123.45,
-                                    "last_month_water": 123.45,
-                                    "last_month_water_per_perforated_interval": 123.45,
-                                    "lateral_length": 123.45,
-                                    "lease_number": 123.45,
-                                    "lower_perforation": 123.45,
-                                    "matrix_permeability": 123.45,
-                                    "measured_depth": 123.45,
-                                    "month_produced": 123.45,
-                                    "num_treatment_records": 123.45,
-                                    "oil_api_gravity": 123.45,
-                                    "oil_specific_gravity": 123.45,
-                                    "perf_lateral_length": 123.45,
-                                    "refrac_additive_volume": 123.45,
-                                    "refrac_cluster_count": 123.45,
-                                    "refrac_fluid_per_perforated_interval": 123.45,
-                                    "refrac_fluid_volume": 123.45,
-                                    "refrac_max_injection_pressure": 123.45,
-                                    "refrac_max_injection_rate": 123.45,
-                                    "refrac_prop_weight": 123.45,
-                                    "refrac_proppant_per_fluid": 123.45,
-                                    "refrac_proppant_per_perforated_interval": 123.45,
-                                    "refrac_stage_count": 123.45,
-                                    "stage_spacing": 123.45,
-                                    "surfaceLatitude": 123.45,
-                                    "surfaceLongitude": 123.45,
-                                    "thickness": 123.45,
-                                    "toeLatitude": 123.45,
-                                    "toeLongitude": 123.45,
-                                    "total_additive_volume": 123.45,
-                                    "total_cluster_count": 123.45,
-                                    "total_fluid_per_perforated_interval": 123.45,
-                                    "total_fluid_volume": 123.45,
-                                    "total_prop_weight": 123.45,
-                                    "total_proppant_per_fluid": 123.45,
-                                    "total_proppant_per_perforated_interval": 123.45,
-                                    "total_stage_count": 123.45,
-                                    "true_vertical_depth": 123.45,
-                                    "tubing_depth": 123.45,
-                                    "tubing_id": 123.45,
-                                    "upper_perforation": 123.45,
-                                    "vt_well_spacing_any_zone": 123.45,
-                                    "vt_well_spacing_same_zone": 123.45
-                                }
-                            },
-                            "peak": {
-                                "type": "linear",
-                                "slope": 123.45,
-                                "intercept": 123.45,
-                                "coefficient": 123.45,
-                                "exponent": 123.45,
-                                "base": "prop/pll_eur/pll",
-                                "selectedNumericalTarget": "custom_number_11",
-                                "target": {
-                                    "eur": 123.45,
-                                    "acre_spacing": 123.45,
-                                    "azimuth": 123.45,
-                                    "casing_id": 123.45,
-                                    "choke_size": 123.45,
-                                    "cluster_count": 123.45,
-                                    "cum_boe": 123.45,
-                                    "cum_boe_per_perforated_interval": 123.45,
-                                    "cum_gas": 123.45,
-                                    "cum_gas_per_perforated_interval": 123.45,
-                                    "cum_gor": 123.45,
-                                    "cum_mmcfge": 123.45,
-                                    "cum_mmcfge_per_perforated_interval": 123.45,
-                                    "cum_oil": 123.45,
-                                    "cum_oil_per_perforated_interval": 123.45,
-                                    "cum_water": 123.45,
-                                    "cum_water_per_perforated_interval": 123.45,
-                                    "custom_number_0": 123.45,
-                                    "custom_number_1": 123.45,
-                                    "custom_number_10": 123.45,
-                                    "custom_number_11": 123.45,
-                                    "custom_number_12": 123.45,
-                                    "custom_number_13": 123.45,
-                                    "custom_number_14": 123.45,
-                                    "custom_number_15": 123.45,
-                                    "custom_number_16": 123.45,
-                                    "custom_number_17": 123.45,
-                                    "custom_number_18": 123.45,
-                                    "custom_number_19": 123.45,
-                                    "custom_number_2": 123.45,
-                                    "custom_number_3": 123.45,
-                                    "custom_number_4": 123.45,
-                                    "custom_number_5": 123.45,
-                                    "custom_number_6": 123.45,
-                                    "custom_number_7": 123.45,
-                                    "custom_number_8": 123.45,
-                                    "custom_number_9": 123.45,
-                                    "distance_from_base_of_zone": 123.45,
-                                    "distance_from_top_of_zone": 123.45,
-                                    "elevation": 123.45,
-                                    "first_12_boe": 123.45,
-                                    "first_12_boe_per_perforated_interval": 123.45,
-                                    "first_12_gas": 123.45,
-                                    "first_12_gas_per_perforated_interval": 123.45,
-                                    "first_12_gor": 123.45,
-                                    "first_12_mmcfge": 123.45,
-                                    "first_12_mmcfge_per_perforated_interval": 123.45,
-                                    "first_12_oil": 123.45,
-                                    "first_12_oil_per_perforated_interval": 123.45,
-                                    "first_12_water": 123.45,
-                                    "first_12_water_per_perforated_interval": 123.45,
-                                    "first_6_boe": 123.45,
-                                    "first_6_boe_per_perforated_interval": 123.45,
-                                    "first_6_gas": 123.45,
-                                    "first_6_gas_per_perforated_interval": 123.45,
-                                    "first_6_gor": 123.45,
-                                    "first_6_mmcfge": 123.45,
-                                    "first_6_mmcfge_per_perforated_interval": 123.45,
-                                    "first_6_oil": 123.45,
-                                    "first_6_oil_per_perforated_interval": 123.45,
-                                    "first_6_water": 123.45,
-                                    "first_6_water_per_perforated_interval": 123.45,
-                                    "first_additive_volume": 123.45,
-                                    "first_cluster_count": 123.45,
-                                    "first_fluid_per_perforated_interval": 123.45,
-                                    "first_fluid_volume": 123.45,
-                                    "first_max_injection_pressure": 123.45,
-                                    "first_max_injection_rate": 123.45,
-                                    "first_prop_weight": 123.45,
-                                    "first_proppant_per_fluid": 123.45,
-                                    "first_proppant_per_perforated_interval": 123.45,
-                                    "first_stage_count": 123.45,
-                                    "first_test_flow_tbg_press": 123.45,
-                                    "first_test_gas_vol": 123.45,
-                                    "first_test_gor": 123.45,
-                                    "first_test_oil_vol": 123.45,
-                                    "first_test_water_vol": 123.45,
-                                    "footage_in_landing_zone": 123.45,
-                                    "formation_thickness_mean": 123.45,
-                                    "gas_specific_gravity": 123.45,
-                                    "ground_elevation": 123.45,
-                                    "hz_well_spacing_any_zone": 123.45,
-                                    "hz_well_spacing_same_zone": 123.45,
-                                    "initial_respress": 123.45,
-                                    "initial_restemp": 123.45,
-                                    "landing_zone_base": 123.45,
-                                    "landing_zone_top": 123.45,
-                                    "last_12_boe": 123.45,
-                                    "last_12_boe_per_perforated_interval": 123.45,
-                                    "last_12_gas": 123.45,
-                                    "last_12_gas_per_perforated_interval": 123.45,
-                                    "last_12_gor": 123.45,
-                                    "last_12_mmcfge": 123.45,
-                                    "last_12_mmcfge_per_perforated_interval": 123.45,
-                                    "last_12_oil": 123.45,
-                                    "last_12_oil_per_perforated_interval": 123.45,
-                                    "last_12_water": 123.45,
-                                    "last_12_water_per_perforated_interval": 123.45,
-                                    "last_month_boe": 123.45,
-                                    "last_month_boe_per_perforated_interval": 123.45,
-                                    "last_month_gas": 123.45,
-                                    "last_month_gas_per_perforated_interval": 123.45,
-                                    "last_month_gor": 123.45,
-                                    "last_month_mmcfge": 123.45,
-                                    "last_month_mmcfge_per_perforated_interval": 123.45,
-                                    "last_month_oil": 123.45,
-                                    "last_month_oil_per_perforated_interval": 123.45,
-                                    "last_month_water": 123.45,
-                                    "last_month_water_per_perforated_interval": 123.45,
-                                    "lateral_length": 123.45,
-                                    "lease_number": 123.45,
-                                    "lower_perforation": 123.45,
-                                    "matrix_permeability": 123.45,
-                                    "measured_depth": 123.45,
-                                    "month_produced": 123.45,
-                                    "num_treatment_records": 123.45,
-                                    "oil_api_gravity": 123.45,
-                                    "oil_specific_gravity": 123.45,
-                                    "perf_lateral_length": 123.45,
-                                    "refrac_additive_volume": 123.45,
-                                    "refrac_cluster_count": 123.45,
-                                    "refrac_fluid_per_perforated_interval": 123.45,
-                                    "refrac_fluid_volume": 123.45,
-                                    "refrac_max_injection_pressure": 123.45,
-                                    "refrac_max_injection_rate": 123.45,
-                                    "refrac_prop_weight": 123.45,
-                                    "refrac_proppant_per_fluid": 123.45,
-                                    "refrac_proppant_per_perforated_interval": 123.45,
-                                    "refrac_stage_count": 123.45,
-                                    "stage_spacing": 123.45,
-                                    "surfaceLatitude": 123.45,
-                                    "surfaceLongitude": 123.45,
-                                    "thickness": 123.45,
-                                    "toeLatitude": 123.45,
-                                    "toeLongitude": 123.45,
-                                    "total_additive_volume": 123.45,
-                                    "total_cluster_count": 123.45,
-                                    "total_fluid_per_perforated_interval": 123.45,
-                                    "total_fluid_volume": 123.45,
-                                    "total_prop_weight": 123.45,
-                                    "total_proppant_per_fluid": 123.45,
-                                    "total_proppant_per_perforated_interval": 123.45,
-                                    "total_stage_count": 123.45,
-                                    "true_vertical_depth": 123.45,
-                                    "tubing_depth": 123.45,
-                                    "tubing_id": 123.45,
-                                    "upper_perforation": 123.45,
-                                    "vt_well_spacing_any_zone": 123.45,
-                                    "vt_well_spacing_same_zone": 123.45
-                                }
-                            }
-                        }
-                    },
-                    "oil": {
-                        "align": true,
-                        "resolution": "daily",
                         "normalize": true,
                         "best": {
                             "segments": [
@@ -610,7 +148,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "exp_dec",
+                                    "segmentType": "empty",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -631,7 +169,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "arps",
+                                    "segmentType": "flat",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -652,7 +190,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "arps",
+                                    "segmentType": "exp_dec",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -675,7 +213,7 @@ class TypeCurves(APIBase):
                                         "realizedDSwEffSec": 123.45,
                                         "targetDSwEffSec": 123.45,
                                         "segmentIndex": 123,
-                                        "segmentType": "arps",
+                                        "segmentType": "arps_modified",
                                         "startDate": "2020-01-01",
                                         "swDate": "2020-01-01",
                                         "slope": 123.45,
@@ -697,7 +235,7 @@ class TypeCurves(APIBase):
                                         "realizedDSwEffSec": 123.45,
                                         "targetDSwEffSec": 123.45,
                                         "segmentIndex": 123,
-                                        "segmentType": "arps_modified",
+                                        "segmentType": "empty",
                                         "startDate": "2020-01-01",
                                         "swDate": "2020-01-01",
                                         "slope": 123.45,
@@ -705,7 +243,7 @@ class TypeCurves(APIBase):
                                         "qSw": 123.45
                                     }
                                 ],
-                                "basePhase": "gas"
+                                "basePhase": "oil"
                             },
                             "p50": {
                                 "segments": [
@@ -719,7 +257,7 @@ class TypeCurves(APIBase):
                                         "realizedDSwEffSec": 123.45,
                                         "targetDSwEffSec": 123.45,
                                         "segmentIndex": 123,
-                                        "segmentType": "empty",
+                                        "segmentType": "flat",
                                         "startDate": "2020-01-01",
                                         "swDate": "2020-01-01",
                                         "slope": 123.45,
@@ -727,7 +265,7 @@ class TypeCurves(APIBase):
                                         "qSw": 123.45
                                     }
                                 ],
-                                "basePhase": "oil"
+                                "basePhase": "water"
                             },
                             "p90": {
                                 "segments": [
@@ -749,20 +287,20 @@ class TypeCurves(APIBase):
                                         "qSw": 123.45
                                     }
                                 ],
-                                "basePhase": "oil"
+                                "basePhase": "water"
                             }
                         },
                         "normalizations": {
                             "perfLateralLength": 123.45,
-                            "normalizationType": "eur",
+                            "normalizationType": "eur_and_q_peak",
                             "eur": {
                                 "type": "1_to_1",
                                 "slope": 123.45,
                                 "intercept": 123.45,
                                 "coefficient": 123.45,
                                 "exponent": 123.45,
-                                "base": "eur_pll",
-                                "selectedNumericalTarget": "lease_number",
+                                "base": "fluid/pll_eur/pll",
+                                "selectedNumericalTarget": "refrac_proppant_per_fluid",
                                 "target": {
                                     "eur": 123.45,
                                     "acre_spacing": 123.45,
@@ -921,8 +459,512 @@ class TypeCurves(APIBase):
                                 "intercept": 123.45,
                                 "coefficient": 123.45,
                                 "exponent": 123.45,
-                                "base": "eur_vs_numerical",
-                                "selectedNumericalTarget": "initial_respress",
+                                "base": "prop/pll/hz",
+                                "selectedNumericalTarget": "total_proppant_per_fluid",
+                                "target": {
+                                    "eur": 123.45,
+                                    "acre_spacing": 123.45,
+                                    "azimuth": 123.45,
+                                    "casing_id": 123.45,
+                                    "choke_size": 123.45,
+                                    "cluster_count": 123.45,
+                                    "cum_boe": 123.45,
+                                    "cum_boe_per_perforated_interval": 123.45,
+                                    "cum_gas": 123.45,
+                                    "cum_gas_per_perforated_interval": 123.45,
+                                    "cum_gor": 123.45,
+                                    "cum_mmcfge": 123.45,
+                                    "cum_mmcfge_per_perforated_interval": 123.45,
+                                    "cum_oil": 123.45,
+                                    "cum_oil_per_perforated_interval": 123.45,
+                                    "cum_water": 123.45,
+                                    "cum_water_per_perforated_interval": 123.45,
+                                    "custom_number_0": 123.45,
+                                    "custom_number_1": 123.45,
+                                    "custom_number_10": 123.45,
+                                    "custom_number_11": 123.45,
+                                    "custom_number_12": 123.45,
+                                    "custom_number_13": 123.45,
+                                    "custom_number_14": 123.45,
+                                    "custom_number_15": 123.45,
+                                    "custom_number_16": 123.45,
+                                    "custom_number_17": 123.45,
+                                    "custom_number_18": 123.45,
+                                    "custom_number_19": 123.45,
+                                    "custom_number_2": 123.45,
+                                    "custom_number_3": 123.45,
+                                    "custom_number_4": 123.45,
+                                    "custom_number_5": 123.45,
+                                    "custom_number_6": 123.45,
+                                    "custom_number_7": 123.45,
+                                    "custom_number_8": 123.45,
+                                    "custom_number_9": 123.45,
+                                    "distance_from_base_of_zone": 123.45,
+                                    "distance_from_top_of_zone": 123.45,
+                                    "elevation": 123.45,
+                                    "first_12_boe": 123.45,
+                                    "first_12_boe_per_perforated_interval": 123.45,
+                                    "first_12_gas": 123.45,
+                                    "first_12_gas_per_perforated_interval": 123.45,
+                                    "first_12_gor": 123.45,
+                                    "first_12_mmcfge": 123.45,
+                                    "first_12_mmcfge_per_perforated_interval": 123.45,
+                                    "first_12_oil": 123.45,
+                                    "first_12_oil_per_perforated_interval": 123.45,
+                                    "first_12_water": 123.45,
+                                    "first_12_water_per_perforated_interval": 123.45,
+                                    "first_6_boe": 123.45,
+                                    "first_6_boe_per_perforated_interval": 123.45,
+                                    "first_6_gas": 123.45,
+                                    "first_6_gas_per_perforated_interval": 123.45,
+                                    "first_6_gor": 123.45,
+                                    "first_6_mmcfge": 123.45,
+                                    "first_6_mmcfge_per_perforated_interval": 123.45,
+                                    "first_6_oil": 123.45,
+                                    "first_6_oil_per_perforated_interval": 123.45,
+                                    "first_6_water": 123.45,
+                                    "first_6_water_per_perforated_interval": 123.45,
+                                    "first_additive_volume": 123.45,
+                                    "first_cluster_count": 123.45,
+                                    "first_fluid_per_perforated_interval": 123.45,
+                                    "first_fluid_volume": 123.45,
+                                    "first_max_injection_pressure": 123.45,
+                                    "first_max_injection_rate": 123.45,
+                                    "first_prop_weight": 123.45,
+                                    "first_proppant_per_fluid": 123.45,
+                                    "first_proppant_per_perforated_interval": 123.45,
+                                    "first_stage_count": 123.45,
+                                    "first_test_flow_tbg_press": 123.45,
+                                    "first_test_gas_vol": 123.45,
+                                    "first_test_gor": 123.45,
+                                    "first_test_oil_vol": 123.45,
+                                    "first_test_water_vol": 123.45,
+                                    "footage_in_landing_zone": 123.45,
+                                    "formation_thickness_mean": 123.45,
+                                    "gas_specific_gravity": 123.45,
+                                    "ground_elevation": 123.45,
+                                    "hz_well_spacing_any_zone": 123.45,
+                                    "hz_well_spacing_same_zone": 123.45,
+                                    "initial_respress": 123.45,
+                                    "initial_restemp": 123.45,
+                                    "landing_zone_base": 123.45,
+                                    "landing_zone_top": 123.45,
+                                    "last_12_boe": 123.45,
+                                    "last_12_boe_per_perforated_interval": 123.45,
+                                    "last_12_gas": 123.45,
+                                    "last_12_gas_per_perforated_interval": 123.45,
+                                    "last_12_gor": 123.45,
+                                    "last_12_mmcfge": 123.45,
+                                    "last_12_mmcfge_per_perforated_interval": 123.45,
+                                    "last_12_oil": 123.45,
+                                    "last_12_oil_per_perforated_interval": 123.45,
+                                    "last_12_water": 123.45,
+                                    "last_12_water_per_perforated_interval": 123.45,
+                                    "last_month_boe": 123.45,
+                                    "last_month_boe_per_perforated_interval": 123.45,
+                                    "last_month_gas": 123.45,
+                                    "last_month_gas_per_perforated_interval": 123.45,
+                                    "last_month_gor": 123.45,
+                                    "last_month_mmcfge": 123.45,
+                                    "last_month_mmcfge_per_perforated_interval": 123.45,
+                                    "last_month_oil": 123.45,
+                                    "last_month_oil_per_perforated_interval": 123.45,
+                                    "last_month_water": 123.45,
+                                    "last_month_water_per_perforated_interval": 123.45,
+                                    "lateral_length": 123.45,
+                                    "lease_number": 123.45,
+                                    "lower_perforation": 123.45,
+                                    "matrix_permeability": 123.45,
+                                    "measured_depth": 123.45,
+                                    "month_produced": 123.45,
+                                    "num_treatment_records": 123.45,
+                                    "oil_api_gravity": 123.45,
+                                    "oil_specific_gravity": 123.45,
+                                    "perf_lateral_length": 123.45,
+                                    "refrac_additive_volume": 123.45,
+                                    "refrac_cluster_count": 123.45,
+                                    "refrac_fluid_per_perforated_interval": 123.45,
+                                    "refrac_fluid_volume": 123.45,
+                                    "refrac_max_injection_pressure": 123.45,
+                                    "refrac_max_injection_rate": 123.45,
+                                    "refrac_prop_weight": 123.45,
+                                    "refrac_proppant_per_fluid": 123.45,
+                                    "refrac_proppant_per_perforated_interval": 123.45,
+                                    "refrac_stage_count": 123.45,
+                                    "stage_spacing": 123.45,
+                                    "surfaceLatitude": 123.45,
+                                    "surfaceLongitude": 123.45,
+                                    "thickness": 123.45,
+                                    "toeLatitude": 123.45,
+                                    "toeLongitude": 123.45,
+                                    "total_additive_volume": 123.45,
+                                    "total_cluster_count": 123.45,
+                                    "total_fluid_per_perforated_interval": 123.45,
+                                    "total_fluid_volume": 123.45,
+                                    "total_prop_weight": 123.45,
+                                    "total_proppant_per_fluid": 123.45,
+                                    "total_proppant_per_perforated_interval": 123.45,
+                                    "total_stage_count": 123.45,
+                                    "true_vertical_depth": 123.45,
+                                    "tubing_depth": 123.45,
+                                    "tubing_id": 123.45,
+                                    "upper_perforation": 123.45,
+                                    "vt_well_spacing_any_zone": 123.45,
+                                    "vt_well_spacing_same_zone": 123.45
+                                }
+                            }
+                        }
+                    },
+                    "oil": {
+                        "align": true,
+                        "resolution": "monthly",
+                        "normalize": true,
+                        "best": {
+                            "segments": [
+                                {
+                                    "b": 123.45,
+                                    "diEffSec": 123.45,
+                                    "diNominal": 123.45,
+                                    "endDate": "2020-01-01",
+                                    "qEnd": 123.45,
+                                    "qStart": 123.45,
+                                    "realizedDSwEffSec": 123.45,
+                                    "targetDSwEffSec": 123.45,
+                                    "segmentIndex": 123,
+                                    "segmentType": "empty",
+                                    "startDate": "2020-01-01",
+                                    "swDate": "2020-01-01",
+                                    "slope": 123.45,
+                                    "flatValue": 123.45,
+                                    "qSw": 123.45
+                                }
+                            ]
+                        },
+                        "p10": {
+                            "segments": [
+                                {
+                                    "b": 123.45,
+                                    "diEffSec": 123.45,
+                                    "diNominal": 123.45,
+                                    "endDate": "2020-01-01",
+                                    "qEnd": 123.45,
+                                    "qStart": 123.45,
+                                    "realizedDSwEffSec": 123.45,
+                                    "targetDSwEffSec": 123.45,
+                                    "segmentIndex": 123,
+                                    "segmentType": "flat",
+                                    "startDate": "2020-01-01",
+                                    "swDate": "2020-01-01",
+                                    "slope": 123.45,
+                                    "flatValue": 123.45,
+                                    "qSw": 123.45
+                                }
+                            ]
+                        },
+                        "p50": {
+                            "segments": [
+                                {
+                                    "b": 123.45,
+                                    "diEffSec": 123.45,
+                                    "diNominal": 123.45,
+                                    "endDate": "2020-01-01",
+                                    "qEnd": 123.45,
+                                    "qStart": 123.45,
+                                    "realizedDSwEffSec": 123.45,
+                                    "targetDSwEffSec": 123.45,
+                                    "segmentIndex": 123,
+                                    "segmentType": "flat",
+                                    "startDate": "2020-01-01",
+                                    "swDate": "2020-01-01",
+                                    "slope": 123.45,
+                                    "flatValue": 123.45,
+                                    "qSw": 123.45
+                                }
+                            ]
+                        },
+                        "p90": {
+                            "segments": [
+                                {
+                                    "b": 123.45,
+                                    "diEffSec": 123.45,
+                                    "diNominal": 123.45,
+                                    "endDate": "2020-01-01",
+                                    "qEnd": 123.45,
+                                    "qStart": 123.45,
+                                    "realizedDSwEffSec": 123.45,
+                                    "targetDSwEffSec": 123.45,
+                                    "segmentIndex": 123,
+                                    "segmentType": "empty",
+                                    "startDate": "2020-01-01",
+                                    "swDate": "2020-01-01",
+                                    "slope": 123.45,
+                                    "flatValue": 123.45,
+                                    "qSw": 123.45
+                                }
+                            ]
+                        },
+                        "type": "ratio",
+                        "ratio": {
+                            "best": {
+                                "segments": [
+                                    {
+                                        "b": 123.45,
+                                        "diEffSec": 123.45,
+                                        "diNominal": 123.45,
+                                        "endDate": "2020-01-01",
+                                        "qEnd": 123.45,
+                                        "qStart": 123.45,
+                                        "realizedDSwEffSec": 123.45,
+                                        "targetDSwEffSec": 123.45,
+                                        "segmentIndex": 123,
+                                        "segmentType": "flat",
+                                        "startDate": "2020-01-01",
+                                        "swDate": "2020-01-01",
+                                        "slope": 123.45,
+                                        "flatValue": 123.45,
+                                        "qSw": 123.45
+                                    }
+                                ],
+                                "basePhase": "gas"
+                            },
+                            "p10": {
+                                "segments": [
+                                    {
+                                        "b": 123.45,
+                                        "diEffSec": 123.45,
+                                        "diNominal": 123.45,
+                                        "endDate": "2020-01-01",
+                                        "qEnd": 123.45,
+                                        "qStart": 123.45,
+                                        "realizedDSwEffSec": 123.45,
+                                        "targetDSwEffSec": 123.45,
+                                        "segmentIndex": 123,
+                                        "segmentType": "flat",
+                                        "startDate": "2020-01-01",
+                                        "swDate": "2020-01-01",
+                                        "slope": 123.45,
+                                        "flatValue": 123.45,
+                                        "qSw": 123.45
+                                    }
+                                ],
+                                "basePhase": "gas"
+                            },
+                            "p50": {
+                                "segments": [
+                                    {
+                                        "b": 123.45,
+                                        "diEffSec": 123.45,
+                                        "diNominal": 123.45,
+                                        "endDate": "2020-01-01",
+                                        "qEnd": 123.45,
+                                        "qStart": 123.45,
+                                        "realizedDSwEffSec": 123.45,
+                                        "targetDSwEffSec": 123.45,
+                                        "segmentIndex": 123,
+                                        "segmentType": "arps_inc",
+                                        "startDate": "2020-01-01",
+                                        "swDate": "2020-01-01",
+                                        "slope": 123.45,
+                                        "flatValue": 123.45,
+                                        "qSw": 123.45
+                                    }
+                                ],
+                                "basePhase": "water"
+                            },
+                            "p90": {
+                                "segments": [
+                                    {
+                                        "b": 123.45,
+                                        "diEffSec": 123.45,
+                                        "diNominal": 123.45,
+                                        "endDate": "2020-01-01",
+                                        "qEnd": 123.45,
+                                        "qStart": 123.45,
+                                        "realizedDSwEffSec": 123.45,
+                                        "targetDSwEffSec": 123.45,
+                                        "segmentIndex": 123,
+                                        "segmentType": "exp_inc",
+                                        "startDate": "2020-01-01",
+                                        "swDate": "2020-01-01",
+                                        "slope": 123.45,
+                                        "flatValue": 123.45,
+                                        "qSw": 123.45
+                                    }
+                                ],
+                                "basePhase": "gas"
+                            }
+                        },
+                        "normalizations": {
+                            "perfLateralLength": 123.45,
+                            "normalizationType": "eur",
+                            "eur": {
+                                "type": "no_normalization",
+                                "slope": 123.45,
+                                "intercept": 123.45,
+                                "coefficient": 123.45,
+                                "exponent": 123.45,
+                                "base": "peak_pll",
+                                "selectedNumericalTarget": "last_month_oil",
+                                "target": {
+                                    "eur": 123.45,
+                                    "acre_spacing": 123.45,
+                                    "azimuth": 123.45,
+                                    "casing_id": 123.45,
+                                    "choke_size": 123.45,
+                                    "cluster_count": 123.45,
+                                    "cum_boe": 123.45,
+                                    "cum_boe_per_perforated_interval": 123.45,
+                                    "cum_gas": 123.45,
+                                    "cum_gas_per_perforated_interval": 123.45,
+                                    "cum_gor": 123.45,
+                                    "cum_mmcfge": 123.45,
+                                    "cum_mmcfge_per_perforated_interval": 123.45,
+                                    "cum_oil": 123.45,
+                                    "cum_oil_per_perforated_interval": 123.45,
+                                    "cum_water": 123.45,
+                                    "cum_water_per_perforated_interval": 123.45,
+                                    "custom_number_0": 123.45,
+                                    "custom_number_1": 123.45,
+                                    "custom_number_10": 123.45,
+                                    "custom_number_11": 123.45,
+                                    "custom_number_12": 123.45,
+                                    "custom_number_13": 123.45,
+                                    "custom_number_14": 123.45,
+                                    "custom_number_15": 123.45,
+                                    "custom_number_16": 123.45,
+                                    "custom_number_17": 123.45,
+                                    "custom_number_18": 123.45,
+                                    "custom_number_19": 123.45,
+                                    "custom_number_2": 123.45,
+                                    "custom_number_3": 123.45,
+                                    "custom_number_4": 123.45,
+                                    "custom_number_5": 123.45,
+                                    "custom_number_6": 123.45,
+                                    "custom_number_7": 123.45,
+                                    "custom_number_8": 123.45,
+                                    "custom_number_9": 123.45,
+                                    "distance_from_base_of_zone": 123.45,
+                                    "distance_from_top_of_zone": 123.45,
+                                    "elevation": 123.45,
+                                    "first_12_boe": 123.45,
+                                    "first_12_boe_per_perforated_interval": 123.45,
+                                    "first_12_gas": 123.45,
+                                    "first_12_gas_per_perforated_interval": 123.45,
+                                    "first_12_gor": 123.45,
+                                    "first_12_mmcfge": 123.45,
+                                    "first_12_mmcfge_per_perforated_interval": 123.45,
+                                    "first_12_oil": 123.45,
+                                    "first_12_oil_per_perforated_interval": 123.45,
+                                    "first_12_water": 123.45,
+                                    "first_12_water_per_perforated_interval": 123.45,
+                                    "first_6_boe": 123.45,
+                                    "first_6_boe_per_perforated_interval": 123.45,
+                                    "first_6_gas": 123.45,
+                                    "first_6_gas_per_perforated_interval": 123.45,
+                                    "first_6_gor": 123.45,
+                                    "first_6_mmcfge": 123.45,
+                                    "first_6_mmcfge_per_perforated_interval": 123.45,
+                                    "first_6_oil": 123.45,
+                                    "first_6_oil_per_perforated_interval": 123.45,
+                                    "first_6_water": 123.45,
+                                    "first_6_water_per_perforated_interval": 123.45,
+                                    "first_additive_volume": 123.45,
+                                    "first_cluster_count": 123.45,
+                                    "first_fluid_per_perforated_interval": 123.45,
+                                    "first_fluid_volume": 123.45,
+                                    "first_max_injection_pressure": 123.45,
+                                    "first_max_injection_rate": 123.45,
+                                    "first_prop_weight": 123.45,
+                                    "first_proppant_per_fluid": 123.45,
+                                    "first_proppant_per_perforated_interval": 123.45,
+                                    "first_stage_count": 123.45,
+                                    "first_test_flow_tbg_press": 123.45,
+                                    "first_test_gas_vol": 123.45,
+                                    "first_test_gor": 123.45,
+                                    "first_test_oil_vol": 123.45,
+                                    "first_test_water_vol": 123.45,
+                                    "footage_in_landing_zone": 123.45,
+                                    "formation_thickness_mean": 123.45,
+                                    "gas_specific_gravity": 123.45,
+                                    "ground_elevation": 123.45,
+                                    "hz_well_spacing_any_zone": 123.45,
+                                    "hz_well_spacing_same_zone": 123.45,
+                                    "initial_respress": 123.45,
+                                    "initial_restemp": 123.45,
+                                    "landing_zone_base": 123.45,
+                                    "landing_zone_top": 123.45,
+                                    "last_12_boe": 123.45,
+                                    "last_12_boe_per_perforated_interval": 123.45,
+                                    "last_12_gas": 123.45,
+                                    "last_12_gas_per_perforated_interval": 123.45,
+                                    "last_12_gor": 123.45,
+                                    "last_12_mmcfge": 123.45,
+                                    "last_12_mmcfge_per_perforated_interval": 123.45,
+                                    "last_12_oil": 123.45,
+                                    "last_12_oil_per_perforated_interval": 123.45,
+                                    "last_12_water": 123.45,
+                                    "last_12_water_per_perforated_interval": 123.45,
+                                    "last_month_boe": 123.45,
+                                    "last_month_boe_per_perforated_interval": 123.45,
+                                    "last_month_gas": 123.45,
+                                    "last_month_gas_per_perforated_interval": 123.45,
+                                    "last_month_gor": 123.45,
+                                    "last_month_mmcfge": 123.45,
+                                    "last_month_mmcfge_per_perforated_interval": 123.45,
+                                    "last_month_oil": 123.45,
+                                    "last_month_oil_per_perforated_interval": 123.45,
+                                    "last_month_water": 123.45,
+                                    "last_month_water_per_perforated_interval": 123.45,
+                                    "lateral_length": 123.45,
+                                    "lease_number": 123.45,
+                                    "lower_perforation": 123.45,
+                                    "matrix_permeability": 123.45,
+                                    "measured_depth": 123.45,
+                                    "month_produced": 123.45,
+                                    "num_treatment_records": 123.45,
+                                    "oil_api_gravity": 123.45,
+                                    "oil_specific_gravity": 123.45,
+                                    "perf_lateral_length": 123.45,
+                                    "refrac_additive_volume": 123.45,
+                                    "refrac_cluster_count": 123.45,
+                                    "refrac_fluid_per_perforated_interval": 123.45,
+                                    "refrac_fluid_volume": 123.45,
+                                    "refrac_max_injection_pressure": 123.45,
+                                    "refrac_max_injection_rate": 123.45,
+                                    "refrac_prop_weight": 123.45,
+                                    "refrac_proppant_per_fluid": 123.45,
+                                    "refrac_proppant_per_perforated_interval": 123.45,
+                                    "refrac_stage_count": 123.45,
+                                    "stage_spacing": 123.45,
+                                    "surfaceLatitude": 123.45,
+                                    "surfaceLongitude": 123.45,
+                                    "thickness": 123.45,
+                                    "toeLatitude": 123.45,
+                                    "toeLongitude": 123.45,
+                                    "total_additive_volume": 123.45,
+                                    "total_cluster_count": 123.45,
+                                    "total_fluid_per_perforated_interval": 123.45,
+                                    "total_fluid_volume": 123.45,
+                                    "total_prop_weight": 123.45,
+                                    "total_proppant_per_fluid": 123.45,
+                                    "total_proppant_per_perforated_interval": 123.45,
+                                    "total_stage_count": 123.45,
+                                    "true_vertical_depth": 123.45,
+                                    "tubing_depth": 123.45,
+                                    "tubing_id": 123.45,
+                                    "upper_perforation": 123.45,
+                                    "vt_well_spacing_any_zone": 123.45,
+                                    "vt_well_spacing_same_zone": 123.45
+                                }
+                            },
+                            "peak": {
+                                "type": "1_to_1",
+                                "slope": 123.45,
+                                "intercept": 123.45,
+                                "coefficient": 123.45,
+                                "exponent": 123.45,
+                                "base": "prop/pll_eur/pll",
+                                "selectedNumericalTarget": "custom_number_3",
                                 "target": {
                                     "eur": 123.45,
                                     "acre_spacing": 123.45,
@@ -1079,7 +1121,7 @@ class TypeCurves(APIBase):
                     },
                     "water": {
                         "align": true,
-                        "resolution": "monthly",
+                        "resolution": "daily",
                         "normalize": true,
                         "best": {
                             "segments": [
@@ -1093,7 +1135,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "arps_inc",
+                                    "segmentType": "empty",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -1114,7 +1156,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "linear",
+                                    "segmentType": "exp_inc",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -1135,7 +1177,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "exp_dec",
+                                    "segmentType": "linear",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -1156,7 +1198,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "arps",
+                                    "segmentType": "flat",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -1165,7 +1207,7 @@ class TypeCurves(APIBase):
                                 }
                             ]
                         },
-                        "type": "ratio",
+                        "type": "rate",
                         "ratio": {
                             "best": {
                                 "segments": [
@@ -1179,7 +1221,7 @@ class TypeCurves(APIBase):
                                         "realizedDSwEffSec": 123.45,
                                         "targetDSwEffSec": 123.45,
                                         "segmentIndex": 123,
-                                        "segmentType": "empty",
+                                        "segmentType": "linear",
                                         "startDate": "2020-01-01",
                                         "swDate": "2020-01-01",
                                         "slope": 123.45,
@@ -1187,7 +1229,7 @@ class TypeCurves(APIBase):
                                         "qSw": 123.45
                                     }
                                 ],
-                                "basePhase": "oil"
+                                "basePhase": "water"
                             },
                             "p10": {
                                 "segments": [
@@ -1209,7 +1251,7 @@ class TypeCurves(APIBase):
                                         "qSw": 123.45
                                     }
                                 ],
-                                "basePhase": "water"
+                                "basePhase": "gas"
                             },
                             "p50": {
                                 "segments": [
@@ -1245,7 +1287,7 @@ class TypeCurves(APIBase):
                                         "realizedDSwEffSec": 123.45,
                                         "targetDSwEffSec": 123.45,
                                         "segmentIndex": 123,
-                                        "segmentType": "empty",
+                                        "segmentType": "arps",
                                         "startDate": "2020-01-01",
                                         "swDate": "2020-01-01",
                                         "slope": 123.45,
@@ -1253,20 +1295,20 @@ class TypeCurves(APIBase):
                                         "qSw": 123.45
                                     }
                                 ],
-                                "basePhase": "oil"
+                                "basePhase": "gas"
                             }
                         },
                         "normalizations": {
                             "perfLateralLength": 123.45,
                             "normalizationType": "eur_and_q_peak",
                             "eur": {
-                                "type": "no_normalization",
+                                "type": "linear",
                                 "slope": 123.45,
                                 "intercept": 123.45,
                                 "coefficient": 123.45,
                                 "exponent": 123.45,
                                 "base": "eur_pll",
-                                "selectedNumericalTarget": "first_12_gas",
+                                "selectedNumericalTarget": "first_6_gor",
                                 "target": {
                                     "eur": 123.45,
                                     "acre_spacing": 123.45,
@@ -1420,13 +1462,13 @@ class TypeCurves(APIBase):
                                 }
                             },
                             "peak": {
-                                "type": "linear",
+                                "type": "1_to_1",
                                 "slope": 123.45,
                                 "intercept": 123.45,
                                 "coefficient": 123.45,
                                 "exponent": 123.45,
-                                "base": "peak_pll",
-                                "selectedNumericalTarget": "custom_number_8",
+                                "base": "fluid/pll_eur/pll",
+                                "selectedNumericalTarget": "vt_well_spacing_same_zone",
                                 "target": {
                                     "eur": 123.45,
                                     "acre_spacing": 123.45,
@@ -1587,7 +1629,7 @@ class TypeCurves(APIBase):
                 "name": "Example",
                 "updatedAt": "2020-01-01",
                 "createdAt": "2020-01-01",
-                "regressionType": "cum",
+                "regressionType": "rate",
                 "wells": [
                     "string"
                 ]
@@ -1631,7 +1673,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "exp_inc",
+                                "segmentType": "arps_modified",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -1652,7 +1694,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "empty",
+                                "segmentType": "arps_inc",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -1703,31 +1745,9 @@ class TypeCurves(APIBase):
                             }
                         ]
                     },
-                    "type": "rate",
+                    "type": "ratio",
                     "ratio": {
                         "best": {
-                            "segments": [
-                                {
-                                    "b": 123.45,
-                                    "diEffSec": 123.45,
-                                    "diNominal": 123.45,
-                                    "endDate": "2020-01-01",
-                                    "qEnd": 123.45,
-                                    "qStart": 123.45,
-                                    "realizedDSwEffSec": 123.45,
-                                    "targetDSwEffSec": 123.45,
-                                    "segmentIndex": 123,
-                                    "segmentType": "exp_dec",
-                                    "startDate": "2020-01-01",
-                                    "swDate": "2020-01-01",
-                                    "slope": 123.45,
-                                    "flatValue": 123.45,
-                                    "qSw": 123.45
-                                }
-                            ],
-                            "basePhase": "oil"
-                        },
-                        "p10": {
                             "segments": [
                                 {
                                     "b": 123.45,
@@ -1749,6 +1769,28 @@ class TypeCurves(APIBase):
                             ],
                             "basePhase": "gas"
                         },
+                        "p10": {
+                            "segments": [
+                                {
+                                    "b": 123.45,
+                                    "diEffSec": 123.45,
+                                    "diNominal": 123.45,
+                                    "endDate": "2020-01-01",
+                                    "qEnd": 123.45,
+                                    "qStart": 123.45,
+                                    "realizedDSwEffSec": 123.45,
+                                    "targetDSwEffSec": 123.45,
+                                    "segmentIndex": 123,
+                                    "segmentType": "empty",
+                                    "startDate": "2020-01-01",
+                                    "swDate": "2020-01-01",
+                                    "slope": 123.45,
+                                    "flatValue": 123.45,
+                                    "qSw": 123.45
+                                }
+                            ],
+                            "basePhase": "gas"
+                        },
                         "p50": {
                             "segments": [
                                 {
@@ -1761,7 +1803,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "arps_inc",
+                                    "segmentType": "exp_dec",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -1769,7 +1811,7 @@ class TypeCurves(APIBase):
                                     "qSw": 123.45
                                 }
                             ],
-                            "basePhase": "water"
+                            "basePhase": "oil"
                         },
                         "p90": {
                             "segments": [
@@ -1783,7 +1825,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "arps_modified",
+                                    "segmentType": "exp_dec",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -1791,7 +1833,7 @@ class TypeCurves(APIBase):
                                     "qSw": 123.45
                                 }
                             ],
-                            "basePhase": "gas"
+                            "basePhase": "water"
                         }
                     },
                     "normalizations": {
@@ -1803,8 +1845,8 @@ class TypeCurves(APIBase):
                             "intercept": 123.45,
                             "coefficient": 123.45,
                             "exponent": 123.45,
-                            "base": "fluid/acre",
-                            "selectedNumericalTarget": "cum_oil_per_perforated_interval",
+                            "base": "fluid/pll/hz",
+                            "selectedNumericalTarget": "casing_id",
                             "target": {
                                 "eur": 123.45,
                                 "acre_spacing": 123.45,
@@ -1958,13 +2000,13 @@ class TypeCurves(APIBase):
                             }
                         },
                         "peak": {
-                            "type": "1_to_1",
+                            "type": "no_normalization",
                             "slope": 123.45,
                             "intercept": 123.45,
                             "coefficient": 123.45,
                             "exponent": 123.45,
-                            "base": "fluid/pll/hz",
-                            "selectedNumericalTarget": "first_max_injection_pressure",
+                            "base": "fluid/pll_eur/pll",
+                            "selectedNumericalTarget": "first_max_injection_rate",
                             "target": {
                                 "eur": 123.45,
                                 "acre_spacing": 123.45,
@@ -2135,7 +2177,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "arps_inc",
+                                "segmentType": "empty",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -2156,7 +2198,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "flat",
+                                "segmentType": "exp_dec",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -2177,7 +2219,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "arps_inc",
+                                "segmentType": "exp_dec",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -2198,7 +2240,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "empty",
+                                "segmentType": "arps_inc",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -2207,7 +2249,7 @@ class TypeCurves(APIBase):
                             }
                         ]
                     },
-                    "type": "ratio",
+                    "type": "rate",
                     "ratio": {
                         "best": {
                             "segments": [
@@ -2221,7 +2263,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "arps_inc",
+                                    "segmentType": "arps_modified",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -2243,7 +2285,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "linear",
+                                    "segmentType": "exp_inc",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -2251,7 +2293,7 @@ class TypeCurves(APIBase):
                                     "qSw": 123.45
                                 }
                             ],
-                            "basePhase": "water"
+                            "basePhase": "gas"
                         },
                         "p50": {
                             "segments": [
@@ -2265,7 +2307,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "flat",
+                                    "segmentType": "arps",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -2273,7 +2315,7 @@ class TypeCurves(APIBase):
                                     "qSw": 123.45
                                 }
                             ],
-                            "basePhase": "oil"
+                            "basePhase": "water"
                         },
                         "p90": {
                             "segments": [
@@ -2287,7 +2329,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "exp_inc",
+                                    "segmentType": "arps_inc",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -2307,8 +2349,8 @@ class TypeCurves(APIBase):
                             "intercept": 123.45,
                             "coefficient": 123.45,
                             "exponent": 123.45,
-                            "base": "peak_pll",
-                            "selectedNumericalTarget": "cum_gor",
+                            "base": "eur_pll",
+                            "selectedNumericalTarget": "total_fluid_per_perforated_interval",
                             "target": {
                                 "eur": 123.45,
                                 "acre_spacing": 123.45,
@@ -2462,13 +2504,13 @@ class TypeCurves(APIBase):
                             }
                         },
                         "peak": {
-                            "type": "power_law_fit",
+                            "type": "no_normalization",
                             "slope": 123.45,
                             "intercept": 123.45,
                             "coefficient": 123.45,
                             "exponent": 123.45,
-                            "base": "prop/pll/hz",
-                            "selectedNumericalTarget": "first_12_oil_per_perforated_interval",
+                            "base": "prop/pll_eur/pll",
+                            "selectedNumericalTarget": "last_month_boe_per_perforated_interval",
                             "target": {
                                 "eur": 123.45,
                                 "acre_spacing": 123.45,
@@ -2639,7 +2681,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "empty",
+                                "segmentType": "linear",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -2660,7 +2702,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "exp_dec",
+                                "segmentType": "arps_inc",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -2681,7 +2723,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "linear",
+                                "segmentType": "exp_inc",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -2702,7 +2744,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "flat",
+                                "segmentType": "exp_inc",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -2725,7 +2767,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "flat",
+                                    "segmentType": "arps",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -2733,31 +2775,9 @@ class TypeCurves(APIBase):
                                     "qSw": 123.45
                                 }
                             ],
-                            "basePhase": "water"
+                            "basePhase": "oil"
                         },
                         "p10": {
-                            "segments": [
-                                {
-                                    "b": 123.45,
-                                    "diEffSec": 123.45,
-                                    "diNominal": 123.45,
-                                    "endDate": "2020-01-01",
-                                    "qEnd": 123.45,
-                                    "qStart": 123.45,
-                                    "realizedDSwEffSec": 123.45,
-                                    "targetDSwEffSec": 123.45,
-                                    "segmentIndex": 123,
-                                    "segmentType": "linear",
-                                    "startDate": "2020-01-01",
-                                    "swDate": "2020-01-01",
-                                    "slope": 123.45,
-                                    "flatValue": 123.45,
-                                    "qSw": 123.45
-                                }
-                            ],
-                            "basePhase": "gas"
-                        },
-                        "p50": {
                             "segments": [
                                 {
                                     "b": 123.45,
@@ -2777,9 +2797,9 @@ class TypeCurves(APIBase):
                                     "qSw": 123.45
                                 }
                             ],
-                            "basePhase": "water"
+                            "basePhase": "oil"
                         },
-                        "p90": {
+                        "p50": {
                             "segments": [
                                 {
                                     "b": 123.45,
@@ -2799,20 +2819,42 @@ class TypeCurves(APIBase):
                                     "qSw": 123.45
                                 }
                             ],
-                            "basePhase": "water"
+                            "basePhase": "oil"
+                        },
+                        "p90": {
+                            "segments": [
+                                {
+                                    "b": 123.45,
+                                    "diEffSec": 123.45,
+                                    "diNominal": 123.45,
+                                    "endDate": "2020-01-01",
+                                    "qEnd": 123.45,
+                                    "qStart": 123.45,
+                                    "realizedDSwEffSec": 123.45,
+                                    "targetDSwEffSec": 123.45,
+                                    "segmentIndex": 123,
+                                    "segmentType": "arps_modified",
+                                    "startDate": "2020-01-01",
+                                    "swDate": "2020-01-01",
+                                    "slope": 123.45,
+                                    "flatValue": 123.45,
+                                    "qSw": 123.45
+                                }
+                            ],
+                            "basePhase": "oil"
                         }
                     },
                     "normalizations": {
                         "perfLateralLength": 123.45,
-                        "normalizationType": "eur_and_q_peak",
+                        "normalizationType": "eur",
                         "eur": {
-                            "type": "no_normalization",
+                            "type": "1_to_1",
                             "slope": 123.45,
                             "intercept": 123.45,
                             "coefficient": 123.45,
                             "exponent": 123.45,
-                            "base": "fluid/acre",
-                            "selectedNumericalTarget": "last_month_mmcfge",
+                            "base": "eur_vs_numerical",
+                            "selectedNumericalTarget": "first_proppant_per_fluid",
                             "target": {
                                 "eur": 123.45,
                                 "acre_spacing": 123.45,
@@ -2972,7 +3014,7 @@ class TypeCurves(APIBase):
                             "coefficient": 123.45,
                             "exponent": 123.45,
                             "base": "fluid/pll_eur/pll",
-                            "selectedNumericalTarget": "last_12_boe",
+                            "selectedNumericalTarget": "custom_number_8",
                             "target": {
                                 "eur": 123.45,
                                 "acre_spacing": 123.45,
@@ -3133,7 +3175,7 @@ class TypeCurves(APIBase):
             "name": "Example",
             "updatedAt": "2020-01-01",
             "createdAt": "2020-01-01",
-            "regressionType": "cum",
+            "regressionType": "rate",
             "wells": [
                 "string"
             ]

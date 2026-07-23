@@ -1,4 +1,4 @@
-__version__ = '1.3.1'
+__version__ = '1.4.0'
 
 from .root import Root
 from .projects import Projects
@@ -11,6 +11,9 @@ from .company_models import CompanyModels
 from .forecasts import Forecasts
 from .typecurves import TypeCurves
 from .directional import Directional
+from .forecast_configurations import ForecastConfigurations
+from .ownership_qualifiers import OwnershipQualifiers
+from .exports import Exports
 
 from .base import Item, ItemList, PrimativeValue, IterableValue
 
@@ -21,7 +24,20 @@ from ._batch import BatchWriteResult as BatchWriteResult
 
 
 class ComboCurveAPI(
-    Root, Projects, Scenarios, Production, EconRuns, Wells, Models, CompanyModels, Forecasts, TypeCurves, Directional
+    Root,
+    Projects,
+    Scenarios,
+    Production,
+    EconRuns,
+    Wells,
+    Models,
+    CompanyModels,
+    Forecasts,
+    TypeCurves,
+    Directional,
+    ForecastConfigurations,
+    OwnershipQualifiers,
+    Exports,
 ):
     """
     This class is the primary interface for interacting with the Combo Curve

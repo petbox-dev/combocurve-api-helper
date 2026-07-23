@@ -284,6 +284,32 @@ class Forecasts(APIBase):
 
         return forecasts[0]
 
+    def delete_forecast_by_id(self, project_id: str, forecast_id: str) -> ItemList:
+        """
+        Deletes a specific forecast from its project id and forecast id.
+
+        https://docs.api.combocurve.com/api/delete-forecast-by-id
+        """
+        url = self.get_forecast_by_id_url(project_id, forecast_id)
+        return self._delete_items(url, data=[])
+
+    def patch_forecast_by_id(self, project_id: str, forecast_id: str, data: Item) -> Item:
+        """
+        Partially updates a specific forecast (e.g. its `name`) from its project
+        id and forecast id.
+
+        https://docs.api.combocurve.com/api/patch-forecast-by-id
+        """
+        # The by-id PATCH endpoint receives a single object body (e.g. {'name': ...}),
+        # not a list, so `self._patch_items` (which chunks a list) does not apply.
+        headers = self.auth.get_auth_headers()
+        url = self.get_forecast_by_id_url(project_id, forecast_id)
+
+        response = requests.patch(url, headers=headers, json=data)
+        response.raise_for_status()
+
+        return self._extract_json(response)[0]
+
     def get_forecast_aries(
         self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
     ) -> ItemList:
@@ -623,40 +649,16 @@ class Forecasts(APIBase):
             {
                 "project": "string",
                 "forecast": "string",
-                "forecastType": "probabilistic",
+                "forecastType": "deterministic",
                 "well": "string",
-                "resolution": "daily",
+                "resolution": "monthly",
                 "phases": [
                     {
-                        "phase": "customNumber4",
+                        "phase": "customNumber2",
                         "series": [
                             {
                                 "eur": 123.45,
                                 "series": "P50",
-                                "startDate": "2020-01-01",
-                                "endDate": "2020-01-01",
-                                "volumes": [
-                                    123.45
-                                ]
-                            }
-                        ],
-                        "forecastOutputId": "5e272d38b78910dd2a1bd691",
-                        "ratio": {
-                            "eur": 123.45,
-                            "basePhase": "water",
-                            "startDate": "2020-01-01",
-                            "endDate": "2020-01-01",
-                            "volumes": [
-                                123.45
-                            ]
-                        }
-                    },
-                    {
-                        "phase": "oil",
-                        "series": [
-                            {
-                                "eur": 123.45,
-                                "series": "best",
                                 "startDate": "2020-01-01",
                                 "endDate": "2020-01-01",
                                 "volumes": [
@@ -676,7 +678,40 @@ class Forecasts(APIBase):
                         "forecastOutputId": "5e272d38b78910dd2a1bd691",
                         "ratio": {
                             "eur": 123.45,
-                            "basePhase": "gas",
+                            "basePhase": "water",
+                            "startDate": "2020-01-01",
+                            "endDate": "2020-01-01",
+                            "volumes": [
+                                123.45
+                            ]
+                        }
+                    },
+                    {
+                        "phase": "_project_custom_stream_17",
+                        "series": [
+                            {
+                                "eur": 123.45,
+                                "series": "P50",
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
+                                "volumes": [
+                                    123.45
+                                ]
+                            },
+                            {
+                                "eur": 123.45,
+                                "series": "best",
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
+                                "volumes": [
+                                    123.45
+                                ]
+                            }
+                        ],
+                        "forecastOutputId": "5e272d38b78910dd2a1bd691",
+                        "ratio": {
+                            "eur": 123.45,
+                            "basePhase": "oil",
                             "startDate": "2020-01-01",
                             "endDate": "2020-01-01",
                             "volumes": [
@@ -689,16 +724,16 @@ class Forecasts(APIBase):
             {
                 "project": "string",
                 "forecast": "string",
-                "forecastType": "probabilistic",
+                "forecastType": "deterministic",
                 "well": "string",
-                "resolution": "monthly",
+                "resolution": "daily",
                 "phases": [
                     {
-                        "phase": "customNumber3",
+                        "phase": "_project_custom_stream_16",
                         "series": [
                             {
                                 "eur": 123.45,
-                                "series": "P50",
+                                "series": "P10",
                                 "startDate": "2020-01-01",
                                 "endDate": "2020-01-01",
                                 "volumes": [
@@ -727,11 +762,11 @@ class Forecasts(APIBase):
                         }
                     },
                     {
-                        "phase": "_project_custom_stream_16",
+                        "phase": "customNumber12",
                         "series": [
                             {
                                 "eur": 123.45,
-                                "series": "P90",
+                                "series": "P10",
                                 "startDate": "2020-01-01",
                                 "endDate": "2020-01-01",
                                 "volumes": [
@@ -740,7 +775,7 @@ class Forecasts(APIBase):
                             },
                             {
                                 "eur": 123.45,
-                                "series": "P10",
+                                "series": "best",
                                 "startDate": "2020-01-01",
                                 "endDate": "2020-01-01",
                                 "volumes": [
@@ -785,40 +820,16 @@ class Forecasts(APIBase):
             {
                 "project": "string",
                 "forecast": "string",
-                "forecastType": "probabilistic",
+                "forecastType": "deterministic",
                 "well": "string",
-                "resolution": "daily",
+                "resolution": "monthly",
                 "phases": [
                     {
-                        "phase": "customNumber4",
+                        "phase": "customNumber2",
                         "series": [
                             {
                                 "eur": 123.45,
                                 "series": "P50",
-                                "startDate": "2020-01-01",
-                                "endDate": "2020-01-01",
-                                "volumes": [
-                                    123.45
-                                ]
-                            }
-                        ],
-                        "forecastOutputId": "5e272d38b78910dd2a1bd691",
-                        "ratio": {
-                            "eur": 123.45,
-                            "basePhase": "water",
-                            "startDate": "2020-01-01",
-                            "endDate": "2020-01-01",
-                            "volumes": [
-                                123.45
-                            ]
-                        }
-                    },
-                    {
-                        "phase": "oil",
-                        "series": [
-                            {
-                                "eur": 123.45,
-                                "series": "best",
                                 "startDate": "2020-01-01",
                                 "endDate": "2020-01-01",
                                 "volumes": [
@@ -838,7 +849,40 @@ class Forecasts(APIBase):
                         "forecastOutputId": "5e272d38b78910dd2a1bd691",
                         "ratio": {
                             "eur": 123.45,
-                            "basePhase": "gas",
+                            "basePhase": "water",
+                            "startDate": "2020-01-01",
+                            "endDate": "2020-01-01",
+                            "volumes": [
+                                123.45
+                            ]
+                        }
+                    },
+                    {
+                        "phase": "_project_custom_stream_17",
+                        "series": [
+                            {
+                                "eur": 123.45,
+                                "series": "P50",
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
+                                "volumes": [
+                                    123.45
+                                ]
+                            },
+                            {
+                                "eur": 123.45,
+                                "series": "best",
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
+                                "volumes": [
+                                    123.45
+                                ]
+                            }
+                        ],
+                        "forecastOutputId": "5e272d38b78910dd2a1bd691",
+                        "ratio": {
+                            "eur": 123.45,
+                            "basePhase": "oil",
                             "startDate": "2020-01-01",
                             "endDate": "2020-01-01",
                             "volumes": [
@@ -851,16 +895,16 @@ class Forecasts(APIBase):
             {
                 "project": "string",
                 "forecast": "string",
-                "forecastType": "probabilistic",
+                "forecastType": "deterministic",
                 "well": "string",
-                "resolution": "monthly",
+                "resolution": "daily",
                 "phases": [
                     {
-                        "phase": "customNumber3",
+                        "phase": "_project_custom_stream_16",
                         "series": [
                             {
                                 "eur": 123.45,
-                                "series": "P50",
+                                "series": "P10",
                                 "startDate": "2020-01-01",
                                 "endDate": "2020-01-01",
                                 "volumes": [
@@ -889,11 +933,11 @@ class Forecasts(APIBase):
                         }
                     },
                     {
-                        "phase": "_project_custom_stream_16",
+                        "phase": "customNumber12",
                         "series": [
                             {
                                 "eur": 123.45,
-                                "series": "P90",
+                                "series": "P10",
                                 "startDate": "2020-01-01",
                                 "endDate": "2020-01-01",
                                 "volumes": [
@@ -902,7 +946,7 @@ class Forecasts(APIBase):
                             },
                             {
                                 "eur": 123.45,
-                                "series": "P10",
+                                "series": "best",
                                 "startDate": "2020-01-01",
                                 "endDate": "2020-01-01",
                                 "volumes": [

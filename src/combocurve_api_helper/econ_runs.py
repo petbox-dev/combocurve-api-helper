@@ -86,6 +86,23 @@ class EconRuns(APIBase):
         base_url = self.get_econ_run_monthly_export_id_url(project_id, scenario_id, econ_run_id)
         return f'{base_url}/{monthly_export_id}'
 
+    def get_econ_run_oneline_by_id_url(
+        self, project_id: str, scenario_id: str, econ_run_id: str, oneline_id: str
+    ) -> str:
+        """
+        Returns the API url for a specific oneline from its oneline id.
+        """
+        base_url = self.get_econ_run_onelines_url(project_id, scenario_id, econ_run_id)
+        return f'{base_url}/{oneline_id}'
+
+    def get_econ_run_monthly_econ_results_url(self, project_id: str, scenario_id: str, econ_run_id: str) -> str:
+        """
+        Returns the API url for monthly econ results for a specific project id,
+        scenario id, and econ run id.
+        """
+        base_url = self.get_econ_run_by_id_url(project_id, scenario_id, econ_run_id)
+        return f'{base_url}/monthly-econ-results'
+
     ###########
     # API calls
     ###########
@@ -161,6 +178,33 @@ class EconRuns(APIBase):
         ]
 
         return onelines  # type: ignore[return-value]
+
+    def get_econ_run_oneline_by_id(
+        self, project_id: str, scenario_id: str, econ_run_id: str, oneline_id: str
+    ) -> Item:
+        """
+        Returns a specific oneline from its project id, scenario id, econ run id,
+        and oneline id.
+
+        https://docs.api.combocurve.com/api/get-econ-run-one-liner-by-id
+        """
+        url = self.get_econ_run_oneline_by_id_url(project_id, scenario_id, econ_run_id, oneline_id)
+        items = self._get_items(url)
+
+        return cast(Item, flatten_outputs(items[0]))
+
+    def get_econ_run_monthly_econ_results(self, project_id: str, scenario_id: str, econ_run_id: str) -> ItemList:
+        """
+        Returns the monthly econ results for a specific project id, scenario id,
+        and econ run id (the synchronous read; for large runs prefer the async
+        monthly-export flow).
+
+        https://docs.api.combocurve.com/api/get-econ-run-monthly-econ-results
+        """
+        url = self.get_econ_run_monthly_econ_results_url(project_id, scenario_id, econ_run_id)
+        params = {'take': GET_LIMIT}
+
+        return self._get_items(url, params)
 
     def update_econ_run_combo_names(self, econruns: ItemList, project_id: str, scenario_id: str) -> None:
         """

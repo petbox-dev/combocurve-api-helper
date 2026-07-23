@@ -78,6 +78,25 @@ class Root(APIBase):
         url += self._build_params_string(filters)
         return url
 
+    def get_users_roles_url(self) -> str:
+        """
+        Returns the API url for company users and their roles.
+        """
+        return f'{self.API_BASE_URL}/users/roles'
+
+    def get_project_custom_columns_url(
+        self, project_id: str, collection: str, filters: Optional[Dict[str, str]] = None
+    ) -> str:
+        """
+        Returns the API url for a project's custom columns for a given collection.
+        """
+        url = f'{self.API_BASE_URL}/projects/{project_id}/custom-columns/{collection}'
+        if filters is None:
+            return url
+
+        url += self._build_params_string(filters)
+        return url
+
     ###########
     # API calls
     ###########
@@ -198,3 +217,27 @@ class Root(APIBase):
         url = self.get_root_forecast_monthly_volumes_url(filters)
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
+
+    def get_users_roles(self) -> ItemList:
+        """
+        Returns a list of company users and their roles.
+
+        https://docs.api.combocurve.com/api/get-users-roles
+        """
+        url = self.get_users_roles_url()
+        params = {'take': GET_LIMIT}
+        return self._get_items(url, params)
+
+    def get_project_custom_columns(
+        self, project_id: str, collection: str, filters: Optional[Dict[str, str]] = None
+    ) -> Item:
+        """
+        Returns a project's custom columns for a given collection (e.g. 'wells',
+        'daily-productions', 'monthly-productions'). The project-scoped counterpart
+        to `get_custom_columns`.
+
+        https://docs.api.combocurve.com/api/get-project-custom-columns
+        """
+        url = self.get_project_custom_columns_url(project_id, collection, filters)
+        columns = self._get_items(url)
+        return columns[0]

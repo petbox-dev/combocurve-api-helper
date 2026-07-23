@@ -70,6 +70,7 @@ def _retry_delay_seconds(response: Response, attempt: int) -> Optional[float]:
 
 class APIBase:
     API_BASE_URL = 'https://api.combocurve.com/v1'
+    API_BASE_URL_V2 = 'https://api.combocurve.com/v2'  # async export routes are the only /v2 routes
     REFERENCE_WELLHEADER = config.REFERENCE_WELLHEADER
     WELLHEADER_COLUMNS = {k.lower(): k for k in config.REFERENCE_WELLHEADER.keys()}
     ECON_MODELS = config.ECON_MODELS

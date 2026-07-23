@@ -5,11 +5,44 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-07-23
+
+### Added
+
+- **Broader REST route coverage.** Wrappers for previously-unwrapped routes:
+  - **v2 async exports** (`exports.py`): `post_export_*` / `get_export_*_by_job_id` for
+    `forecast-parameters`, `forecast-volumes`, `econ-monthly`, `econ-one-liners` (submit +
+    poll, mirroring `post_forecast_run` / `get_forecast_run_by_job_id`), plus the v1
+    top-level `post_export`. These are the only `/v2` routes in the API.
+  - **Forecast configurations** (`forecast_configurations.py`): list / get-by-id / create /
+    upsert / patch / delete-by-id — the reusable presets referenced by `post_forecast_run`.
+  - **Ownership qualifiers** (`ownership_qualifiers.py`): list / get-by-id / create / upsert
+    (distinct from scenario qualifiers).
+  - **Type-curve writes**: `post_type_curves`, `put_type_curves`, `delete_type_curves`
+    (query-filter delete by `name` / `id`; delete mechanism verified against the dev API).
+  - **Directional-survey writes**: `post_directional_surveys`, `put_directional_survey_by_id`,
+    `delete_directional_survey_by_id` (top-level routes, verified against the dev API).
+  - **Econ-run detail reads**: `get_econ_run_monthly_econ_results`, `get_econ_run_oneline_by_id`.
+  - **Singletons**: `delete_project_by_id`; `delete_forecast_by_id` / `patch_forecast_by_id`;
+    `get_users_roles`; `get_project_custom_columns` (project-scoped custom columns).
+  - `ComboCurveAPI` now also mixes in `ForecastConfigurations`, `OwnershipQualifiers`, `Exports`.
+  - `DELETE .../scenarios/head` is intentionally NOT wrapped: it appears in the Postman
+    collection but returns 404 on the live API (a phantom entry). Scenario deletion is the
+    existing `delete_scenarios` (collection query-filter). **No route-coverage gaps remain.**
+
+### Fixed
+
+- **Directional-survey reads migrated to the top-level routes (breaking).**
+  `get_directional_surveys` / `get_directional_survey_by_id` built project-scoped URLs
+  (`/projects/{id}/directional-surveys`) that the live API now returns 404 for ("Method does
+  not exist"); they now hit the top-level `/directional-surveys` routes and **dropped their
+  `project_id` parameter** (the project is a body field on create). The old signatures never
+  worked against the current API.
+
 ## [1.3.1] - 2026-07-22
 
-Version `__version__` is set to `1.3.1`; a matching `v1.3.1` git tag has not been
-cut yet. This entry covers everything merged since `v1.2.0` (2025-09-04) and
-supersedes the never-tagged `1.3.0` dev version. (The per-type CSV convenience
+Released as `v1.3.1`. This entry covers everything merged since `v1.2.0`
+(2025-09-04) and supersedes the never-tagged `1.3.0` dev version. (The per-type CSV convenience
 functions were briefly on `main` as `<type>_to_csv_rows` / `<type>_from_csv_rows`
 before being renamed to `<type>_to_row_dicts` / `<type>_from_row_dicts` for 1.3.1.)
 

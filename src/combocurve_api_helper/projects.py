@@ -125,3 +125,12 @@ class Projects(APIBase):
         projects = self._get_items(url)
 
         return projects[0]
+
+    def delete_project_by_id(self, id: str) -> ItemList:
+        """
+        Deletes a specific project from its project id.
+
+        https://docs.api.combocurve.com/api/delete-project-by-id
+        """
+        url = self.get_project_by_id_url(id)
+        return self._delete_items(url, data=[])
