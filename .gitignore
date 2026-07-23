@@ -154,6 +154,10 @@ cython_debug/
 # Public CC Postman collection - fetched on demand, not vendored
 docs/*.postman_collection.json
 
+# Local-only working docs (not published to this public repo)
+docs/superpowers/
+docs/local/
+
 # ignore temporary files used for debugging
 tmp/
 
