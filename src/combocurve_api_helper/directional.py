@@ -81,7 +81,7 @@ class Directional(APIBase):
         Updates a specific directional survey from its id. The single-object body
         carries `spatialDataType`, `dataSource`, and `update` / `add` blocks.
 
-        https://docs.api.combocurve.com/api/put-directional-surveys-by-id
+        https://docs.api.combocurve.com/api/put-directional-surveys
         """
         # The endpoint receives a single object body, not a list.
         headers = self.auth.get_auth_headers()

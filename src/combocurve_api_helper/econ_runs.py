@@ -95,7 +95,7 @@ class EconRuns(APIBase):
         base_url = self.get_econ_run_onelines_url(project_id, scenario_id, econ_run_id)
         return f'{base_url}/{oneline_id}'
 
-    def get_econ_run_monthly_econ_results_url(
+    def get_econ_run_monthly_econ_result_by_id_url(
         self, project_id: str, scenario_id: str, econ_run_id: str, filters: Optional[Dict[str, str]] = None
     ) -> str:
         """
@@ -193,14 +193,14 @@ class EconRuns(APIBase):
         Returns a specific oneline from its project id, scenario id, econ run id,
         and oneline id.
 
-        https://docs.api.combocurve.com/api/get-econ-run-one-liner-by-id
+        https://docs.api.combocurve.com/api/get-one-liner-by-id
         """
         url = self.get_econ_run_oneline_by_id_url(project_id, scenario_id, econ_run_id, oneline_id)
         items = self._get_items(url)
 
         return cast(Item, flatten_outputs(items[0]))
 
-    def get_econ_run_monthly_econ_results(
+    def get_econ_run_monthly_econ_result_by_id(
         self, project_id: str, scenario_id: str, econ_run_id: str, columns: List[str]
     ) -> ItemList:
         """
@@ -213,13 +213,13 @@ class EconRuns(APIBase):
         ['gross_oil_well_head_volume', 'net_income']; an invalid name returns a
         `MonthlyEconResultBadRequestError` naming a suggested column.
 
-        https://docs.api.combocurve.com/api/get-econ-run-monthly-econ-results
+        https://docs.api.combocurve.com/api/get-monthly-econ-result-by-id
         """
         if not columns:
             raise ValueError('columns is required; the API rejects a monthly-econ-results request without columns')
 
         filters = {'columns': ','.join(columns)}
-        url = self.get_econ_run_monthly_econ_results_url(project_id, scenario_id, econ_run_id, filters)
+        url = self.get_econ_run_monthly_econ_result_by_id_url(project_id, scenario_id, econ_run_id, filters)
         params = {'take': GET_LIMIT}
 
         return self._get_items(url, params)

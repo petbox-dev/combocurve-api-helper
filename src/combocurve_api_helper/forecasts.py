@@ -298,7 +298,7 @@ class Forecasts(APIBase):
         Partially updates a specific forecast (e.g. its `name`) from its project
         id and forecast id.
 
-        https://docs.api.combocurve.com/api/patch-forecast-by-id
+        https://docs.api.combocurve.com/api/patch-forecast
         """
         # The by-id PATCH endpoint receives a single object body (e.g. {'name': ...}),
         # not a list, so `self._patch_items` (which chunks a list) does not apply.

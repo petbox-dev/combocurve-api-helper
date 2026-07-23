@@ -22,7 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     (query-filter delete by `name` / `id`; delete mechanism verified against the dev API).
   - **Directional-survey writes**: `post_directional_surveys`, `put_directional_survey_by_id`,
     `delete_directional_survey_by_id` (top-level routes, verified against the dev API).
-  - **Econ-run detail reads**: `get_econ_run_monthly_econ_results`, `get_econ_run_oneline_by_id`.
+  - **Econ-run detail reads**: `get_econ_run_monthly_econ_result_by_id` (requires `columns`),
+    `get_econ_run_oneline_by_id`.
   - **Singletons**: `delete_project_by_id`; `delete_forecast_by_id` / `patch_forecast_by_id`;
     `get_users_roles`; `get_project_custom_columns` (project-scoped custom columns).
   - `ComboCurveAPI` now also mixes in `ForecastConfigurations`, `OwnershipQualifiers`, `Exports`.

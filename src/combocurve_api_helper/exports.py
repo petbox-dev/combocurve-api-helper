@@ -65,16 +65,12 @@ class Exports(APIBase):
         """
         Submits an async forecast-parameters export; returns the job (with its job
         id). Poll `get_export_forecast_parameters_by_job_id` for status/results.
-
-        https://docs.api.combocurve.com/api/post-v2-exports-forecast-parameters
         """
         return self._post_v2_export('forecast-parameters', data)
 
     def get_export_forecast_parameters_by_job_id(self, job_id: str) -> Item:
         """
         Returns the status/result of a forecast-parameters export job.
-
-        https://docs.api.combocurve.com/api/get-v2-exports-forecast-parameters-by-job-id
         """
         return self._get_v2_export('forecast-parameters', job_id)
 
@@ -82,16 +78,12 @@ class Exports(APIBase):
         """
         Submits an async forecast-volumes export; returns the job (with its job id).
         Poll `get_export_forecast_volumes_by_job_id` for status/results.
-
-        https://docs.api.combocurve.com/api/post-v2-exports-forecast-volumes
         """
         return self._post_v2_export('forecast-volumes', data)
 
     def get_export_forecast_volumes_by_job_id(self, job_id: str) -> Item:
         """
         Returns the status/result of a forecast-volumes export job.
-
-        https://docs.api.combocurve.com/api/get-v2-exports-forecast-volumes-by-job-id
         """
         return self._get_v2_export('forecast-volumes', job_id)
 
@@ -99,16 +91,12 @@ class Exports(APIBase):
         """
         Submits an async econ-monthly export; returns the job (with its job id).
         Poll `get_export_econ_monthly_by_job_id` for status/results.
-
-        https://docs.api.combocurve.com/api/post-v2-exports-econ-monthly
         """
         return self._post_v2_export('econ-monthly', data)
 
     def get_export_econ_monthly_by_job_id(self, job_id: str) -> Item:
         """
         Returns the status/result of an econ-monthly export job.
-
-        https://docs.api.combocurve.com/api/get-v2-exports-econ-monthly-by-job-id
         """
         return self._get_v2_export('econ-monthly', job_id)
 
@@ -116,16 +104,12 @@ class Exports(APIBase):
         """
         Submits an async econ-one-liners export; returns the job (with its job id).
         Poll `get_export_econ_one_liners_by_job_id` for status/results.
-
-        https://docs.api.combocurve.com/api/post-v2-exports-econ-one-liners
         """
         return self._post_v2_export('econ-one-liners', data)
 
     def get_export_econ_one_liners_by_job_id(self, job_id: str) -> Item:
         """
         Returns the status/result of an econ-one-liners export job.
-
-        https://docs.api.combocurve.com/api/get-v2-exports-econ-one-liners-by-job-id
         """
         return self._get_v2_export('econ-one-liners', job_id)
 

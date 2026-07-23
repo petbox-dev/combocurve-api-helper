@@ -48,7 +48,7 @@ class OwnershipQualifiers(APIBase):
         """
         Returns a specific ownership qualifier from its id.
 
-        https://docs.api.combocurve.com/api/get-ownership-qualifier-by-id
+        https://docs.api.combocurve.com/api/get-ownership-qualifiers-by-id
         """
         url = self.get_ownership_qualifier_by_id_url(ownership_qualifier_id)
         return self._get_items(url)[0]
