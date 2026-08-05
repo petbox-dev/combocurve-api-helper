@@ -1,7 +1,6 @@
-from typing import Dict, Optional, cast, List
+from typing import Optional, cast
 
 from .base import APIBase, Item, ItemList, WriteResponse
-
 
 GET_LIMIT = 200
 
@@ -11,7 +10,7 @@ class ForecastConfigurations(APIBase):
     # URLs
     ######
 
-    def get_forecast_configurations_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_forecast_configurations_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for forecast configurations.
         """
@@ -33,7 +32,7 @@ class ForecastConfigurations(APIBase):
     # API calls
     ###########
 
-    def get_forecast_configurations(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_forecast_configurations(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of forecast configurations. These are the reusable
         forecast-run presets referenced by `post_forecast_run`.
@@ -57,7 +56,7 @@ class ForecastConfigurations(APIBase):
         url = self.get_forecast_configuration_by_id_url(forecast_configuration_id)
         return self._get_items(url)[0]
 
-    def post_forecast_configurations(self, data: ItemList) -> List[WriteResponse]:
+    def post_forecast_configurations(self, data: ItemList) -> list[WriteResponse]:
         """
         Creates one or more forecast configurations.
 
@@ -66,9 +65,9 @@ class ForecastConfigurations(APIBase):
         The example request and response are large; see them on the docs page linked above.
         """
         url = self.get_forecast_configurations_url()
-        return cast(List[WriteResponse], self._post_items(url, data))
+        return cast('list[WriteResponse]', self._post_items(url, data))
 
-    def put_forecast_configurations(self, data: ItemList) -> List[WriteResponse]:
+    def put_forecast_configurations(self, data: ItemList) -> list[WriteResponse]:
         """
         Upserts one or more forecast configurations.
 
@@ -77,9 +76,9 @@ class ForecastConfigurations(APIBase):
         The example request and response are large; see them on the docs page linked above.
         """
         url = self.get_forecast_configurations_url()
-        return cast(List[WriteResponse], self._put_items(url, data))
+        return cast('list[WriteResponse]', self._put_items(url, data))
 
-    def patch_forecast_configurations(self, data: ItemList) -> List[WriteResponse]:
+    def patch_forecast_configurations(self, data: ItemList) -> list[WriteResponse]:
         """
         Partially updates one or more forecast configurations.
 
@@ -88,7 +87,7 @@ class ForecastConfigurations(APIBase):
         The example request and response are large; see them on the docs page linked above.
         """
         url = self.get_forecast_configurations_url()
-        return cast(List[WriteResponse], self._patch_items(url, data))
+        return cast('list[WriteResponse]', self._patch_items(url, data))
 
     def delete_forecast_configuration_by_id(self, forecast_configuration_id: str) -> ItemList:
         """

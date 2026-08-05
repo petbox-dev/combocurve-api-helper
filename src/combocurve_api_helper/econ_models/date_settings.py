@@ -1,5 +1,5 @@
 import re
-from typing import Annotated, Any, Dict, List, Optional, Tuple
+from typing import Annotated, Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -92,14 +92,14 @@ _CUTOFF_FIXED_KEYS = {
 }
 
 
-def _single_key(d: Dict[str, Any]) -> str:
+def _single_key(d: dict[str, Any]) -> str:
     keys = list(d)
     if len(keys) != 1:
         raise NotImplementedError(f'Expected exactly one key, got: {keys}')
     return keys[0]
 
 
-def _extract_cutoff_criterion(cutoff: Dict[str, Any]) -> Tuple[str, Any]:
+def _extract_cutoff_criterion(cutoff: dict[str, Any]) -> tuple[str, Any]:
     crit_keys = [k for k in cutoff if k not in _CUTOFF_FIXED_KEYS]
     if len(crit_keys) != 1:
         raise NotImplementedError(f'Expected exactly one cutOff criterion key, got: {crit_keys}')
@@ -110,7 +110,7 @@ def _extract_cutoff_criterion(cutoff: Dict[str, Any]) -> Tuple[str, Any]:
 _DATE_ANCHOR_FPD_CSV = 'fpd'
 
 
-def _date_anchor_to_csv(anchor: Dict[str, Any]) -> str:
+def _date_anchor_to_csv(anchor: dict[str, Any]) -> str:
     """`asOfDate`/`discountDate`: either `{'date': 'YYYY-MM-DD'}` -- rendered on the CSV UNCHANGED
     (no MM/DD/YYYY reformatting, unlike 'Created At'/'Last Update') -- or `{'fpd': true}`, anchored
     to first production date, rendered as the literal 'fpd'. Other anchor kinds raise.
@@ -123,13 +123,13 @@ def _date_anchor_to_csv(anchor: Dict[str, Any]) -> str:
     raise NotImplementedError(f'Unknown DateSettings date-anchor key: {key!r}')
 
 
-def _date_anchor_from_csv(s: str) -> Dict[str, Any]:
+def _date_anchor_from_csv(s: str) -> dict[str, Any]:
     if s == _DATE_ANCHOR_FPD_CSV:
         return {'fpd': True}
     return {'date': s}
 
 
-def _fpd_label_to_csv(source: Dict[str, Any]) -> str:
+def _fpd_label_to_csv(source: dict[str, Any]) -> str:
     """A source slot is normally a single-key `{<fixed-key>: True}` flag dict (see
     `_FPD_SOURCE_TO_CSV`); the exception is a single-key `{'date': 'YYYY-MM-DD'}` dict, rendered
     as the raw date string itself.
@@ -142,7 +142,7 @@ def _fpd_label_to_csv(source: Dict[str, Any]) -> str:
     return _FPD_SOURCE_TO_CSV[key]
 
 
-def _fpd_label_from_csv(label: str) -> Dict[str, Any]:
+def _fpd_label_from_csv(label: str) -> dict[str, Any]:
     if label in _FPD_SOURCE_FROM_CSV:
         return {_FPD_SOURCE_FROM_CSV[label]: True}
     if _ISO_DATE_RE.match(label):
@@ -154,15 +154,15 @@ class FpdSourceHierarchyData(BaseModel):
     """The `dateSetting.fpdSourceHierarchy` object: four ranked FPD-source slots, each a
     single-key dict, plus a sibling bool. Each slot is normally `{<key>: True}` for one of the 4
     fixed keys in `_FPD_SOURCE_TO_CSV`; a slot may instead be date-valued `{'date': 'YYYY-MM-DD'}`
-    (see `_fpd_label_to_csv`) -- hence `Dict[str, Any]` rather than `Dict[str, bool]`.
+    (see `_fpd_label_to_csv`) -- hence `dict[str, Any]` rather than `dict[str, bool]`.
     """
 
     model_config = ConfigDict(populate_by_name=True)
 
-    first_fpd_source: Annotated[Dict[str, Any], Field(alias='firstFpdSource')]
-    second_fpd_source: Annotated[Dict[str, Any], Field(alias='secondFpdSource')]
-    third_fpd_source: Annotated[Dict[str, Any], Field(alias='thirdFpdSource')]
-    fourth_fpd_source: Annotated[Dict[str, Any], Field(alias='fourthFpdSource')]
+    first_fpd_source: Annotated[dict[str, Any], Field(alias='firstFpdSource')]
+    second_fpd_source: Annotated[dict[str, Any], Field(alias='secondFpdSource')]
+    third_fpd_source: Annotated[dict[str, Any], Field(alias='thirdFpdSource')]
+    fourth_fpd_source: Annotated[dict[str, Any], Field(alias='fourthFpdSource')]
     use_forecast_schedule: Annotated[bool, Field(alias='useForecastSchedule')]
 
 
@@ -177,8 +177,8 @@ class DateSettingData(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     max_well_life: Annotated[float, Field(alias='maxWellLife')]
-    as_of_date: Annotated[Dict[str, Any], Field(alias='asOfDate')]
-    discount_date: Annotated[Dict[str, Any], Field(alias='discountDate')]
+    as_of_date: Annotated[dict[str, Any], Field(alias='asOfDate')]
+    discount_date: Annotated[dict[str, Any], Field(alias='discountDate')]
     cash_flow_prior_as_of_date: Annotated[bool, Field(alias='cashFlowPriorAsOfDate')]
     production_data_resolution: Annotated[Optional[str], Field(alias='productionDataResolution')] = None
     fpd_source_hierarchy: Annotated[FpdSourceHierarchyData, Field(alias='fpdSourceHierarchy')]
@@ -207,7 +207,7 @@ class CutOffFixedData(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    min_life: Annotated[Optional[Dict[str, Any]], Field(alias='minLife')] = None
+    min_life: Annotated[Optional[dict[str, Any]], Field(alias='minLife')] = None
     trigger_ecl_capex: Annotated[Optional[bool], Field(alias='triggerEclCapex')] = None
     include_capex: Annotated[Optional[bool], Field(alias='includeCapex')] = None
     discount: Optional[float] = None
@@ -216,7 +216,7 @@ class CutOffFixedData(BaseModel):
     tolerate_negative_cf: Annotated[Optional[float], Field(alias='tolerateNegativeCF')] = None
 
 
-def _cutoff_from_csv(row: Dict[str, str]) -> Dict[str, Any]:
+def _cutoff_from_csv(row: dict[str, str]) -> dict[str, Any]:
     criteria_csv = row['Cut Off Criteria']
     if criteria_csv not in _CUTOFF_CRITERION_FROM_CSV:
         raise NotImplementedError(f'Unknown DateSettings Cut Off Criteria: {criteria_csv!r}')
@@ -318,7 +318,7 @@ class DateSettingsMapper(EconModelMapper):
     econ_model_type = 'Dates'
     columns = COLUMNS['Dates']
 
-    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)
         date_setting = DateSettingData.model_validate(model.get('dateSetting') or {})
         cutoff_raw = model.get('cutOff') or {}
@@ -389,7 +389,7 @@ class DateSettingsMapper(EconModelMapper):
         return [{c: row.get(c, '') for c in self.columns}]
 
     @staticmethod
-    def _min_life_csv(min_life: Optional[Dict[str, Any]]) -> Tuple[str, str]:
+    def _min_life_csv(min_life: Optional[dict[str, Any]]) -> tuple[str, str]:
         if min_life is None:
             return 'none', ''
         key = _single_key(min_life)
@@ -398,7 +398,7 @@ class DateSettingsMapper(EconModelMapper):
         value = min_life[key]
         return _MIN_LIFE_CRITERION_TO_CSV[key], _flag_or_value_to_csv(value)
 
-    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: list[dict[str, str]]) -> dict[str, Any]:
         if len(rows) != 1:
             raise NotImplementedError(f'DateSettings is one-row-per-model; expected exactly 1 CSV row, got {len(rows)}')
         row = rows[0]

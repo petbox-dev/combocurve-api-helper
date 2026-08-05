@@ -1,6 +1,6 @@
 import json
 import warnings
-from typing import Annotated, Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Annotated, Any, NamedTuple, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -17,8 +17,7 @@ from .enums import (
     OFFSET_TO_SCHEDULE_CSV,
     Criteria,
 )
-from .formats import csv_to_num, enum_from_csv, enum_to_csv, escalation_from_csv, escalation_to_csv
-from .formats import num_to_csv
+from .formats import csv_to_num, enum_from_csv, enum_to_csv, escalation_from_csv, escalation_to_csv, num_to_csv
 
 # otherCapex `fromHeaders` rows carry the token 'offset_to_first_prod_date' with companion
 # API date-key 'firstProdDate' (e.g. {'fromHeaders': 'offset_to_first_prod_date',
@@ -36,11 +35,11 @@ from .formats import num_to_csv
 # (rendered blank by _escalation_start_to_csv). Both values are integer day-offsets, so
 # num_to_csv is correct for each. 'apply to criteria' and 'as of date' are CC's two
 # escalation-start UI options, lowercased. Fail loud on any other shape.
-_ESCALATION_START_KEY_TO_CSV: Dict[str, str] = {
+_ESCALATION_START_KEY_TO_CSV: dict[str, str] = {
     'applyToCriteria': 'apply to criteria',
     'asOfDate': 'as of date',
 }
-_ESCALATION_START_KEY_FROM_CSV: Dict[str, str] = {v: k for k, v in _ESCALATION_START_KEY_TO_CSV.items()}
+_ESCALATION_START_KEY_FROM_CSV: dict[str, str] = {v: k for k, v in _ESCALATION_START_KEY_TO_CSV.items()}
 
 # CC's CSV export OMITS the model-level $/ft `drillingCost`/`completionCost` objects.
 # Rather than drop them, CapexMapper captures each as a compact JSON blob in an extra
@@ -50,7 +49,7 @@ _DRILLING_COST_COL = 'Drilling Cost ($/ft)'
 _COMPLETION_COST_COL = 'Completion Cost ($/ft)'
 
 
-def _perfoot_to_json(obj: Optional[Dict[str, Any]]) -> str:
+def _perfoot_to_json(obj: Optional[dict[str, Any]]) -> str:
     """Serialize a model-level $/ft object (drillingCost/completionCost) to a compact,
     key-sorted JSON string; '' when absent. Lossless -- preserves the nested `rows[]`
     timing schedule and completion's tiered `dollarPerFtOfHorizontal` list."""
@@ -59,12 +58,12 @@ def _perfoot_to_json(obj: Optional[Dict[str, Any]]) -> str:
     return json.dumps(obj, separators=(',', ':'), sort_keys=True)
 
 
-def _perfoot_from_json(cell: str) -> Optional[Dict[str, Any]]:
+def _perfoot_from_json(cell: str) -> Optional[dict[str, Any]]:
     """Inverse of `_perfoot_to_json`: parse a $/ft JSON cell back to its object, or None
     when the cell is blank."""
     if not cell:
         return None
-    parsed: Dict[str, Any] = json.loads(cell)
+    parsed: dict[str, Any] = json.loads(cell)
     return parsed
 
 
@@ -73,7 +72,7 @@ def _perfoot_from_json(cell: str) -> Optional[Dict[str, Any]]:
 # so on the inverse pass we reconstruct that default, giving exact round-trip equality for
 # the common case. A row with non-default probabilistic values will not round-trip;
 # to_row_dicts warns rather than silently dropping the distinction.
-_PROBABILISTIC_DEFAULTS: Dict[str, Any] = {
+_PROBABILISTIC_DEFAULTS: dict[str, Any] = {
     'distributionType': 'na',
     'mean': 0,
     'standardDeviation': 0,
@@ -117,12 +116,12 @@ class CapexOtherRow(BaseModel):
     after_econ_limit: Annotated[Optional[bool], Field(alias='afterEconLimit')] = None
     calculation: Optional[str] = None
     escalation_model: Annotated[Optional[str], Field(alias='escalationModel')] = None
-    escalation_start: Annotated[Optional[Dict[str, Any]], Field(alias='escalationStart')] = None
+    escalation_start: Annotated[Optional[dict[str, Any]], Field(alias='escalationStart')] = None
     depreciation_model: Annotated[Optional[str], Field(alias='depreciationModel')] = None
     deal_terms: Annotated[Union[int, float], Field(alias='dealTerms')] = 1
 
 
-def _escalation_start_to_csv(escalation_start: Optional[Dict[str, Any]]) -> Tuple[str, str]:
+def _escalation_start_to_csv(escalation_start: Optional[dict[str, Any]]) -> tuple[str, str]:
     if not escalation_start:
         return '', ''
     if len(escalation_start) != 1:
@@ -133,7 +132,7 @@ def _escalation_start_to_csv(escalation_start: Optional[Dict[str, Any]]) -> Tupl
     return _ESCALATION_START_KEY_TO_CSV[api_key], num_to_csv(value)
 
 
-def _escalation_start_from_csv(criteria_csv: str, value_csv: str) -> Dict[str, Any]:
+def _escalation_start_from_csv(criteria_csv: str, value_csv: str) -> dict[str, Any]:
     if not criteria_csv:
         return {}
     if criteria_csv not in _ESCALATION_START_KEY_FROM_CSV:
@@ -142,7 +141,7 @@ def _escalation_start_from_csv(criteria_csv: str, value_csv: str) -> Dict[str, A
     return {api_key: csv_to_num(value_csv or '0')}
 
 
-def _detect_criterion(extra: Dict[str, Any]) -> Criteria:
+def _detect_criterion(extra: dict[str, Any]) -> Criteria:
     for criterion in Criteria:
         if criterion.value in extra:
             return criterion
@@ -158,7 +157,7 @@ class CriteriaValueHeaders(NamedTuple):
     from_schedule: str  # 'From Schedule' column (only populated for a fromSchedule row)
 
 
-def _criteria_value_headers(extra: Dict[str, Any], criterion: Criteria) -> CriteriaValueHeaders:
+def _criteria_value_headers(extra: dict[str, Any], criterion: Criteria) -> CriteriaValueHeaders:
     """Returns (Criteria, Value, From Headers, From Schedule) CSV cell strings for the
     row's single criterion."""
     csv_criteria = CRITERIA_TO_CSV[criterion.value]
@@ -187,7 +186,7 @@ def _criteria_from_csv_label(label: str) -> Criteria:
     return Criteria(api_value)
 
 
-def _criterion_from_csv(row: Dict[str, str]) -> Dict[str, Any]:
+def _criterion_from_csv(row: dict[str, str]) -> dict[str, Any]:
     criterion = _criteria_from_csv_label(row.get('Criteria', ''))
     value_cell = row.get('Value', '') or '0'
     if criterion == Criteria.Date:
@@ -206,7 +205,7 @@ def _criterion_from_csv(row: Dict[str, str]) -> Dict[str, Any]:
     return {criterion.value: csv_to_num(value_cell)}
 
 
-def _check_probabilistic(extra: Dict[str, Any]) -> None:
+def _check_probabilistic(extra: dict[str, Any]) -> None:
     mismatched = {k: extra[k] for k, default in _PROBABILISTIC_DEFAULTS.items() if k in extra and extra[k] != default}
     if mismatched:
         warnings.warn(
@@ -220,9 +219,9 @@ class CapexMapper(EconModelMapper):
     econ_model_type = 'Capex'
     columns = COLUMNS['Capex']
 
-    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)
-        rows: List[Dict[str, str]] = []
+        rows: list[dict[str, str]] = []
         for r in model.get('otherCapex', {}).get('rows', []):
             rows.append(self._row_to_csv(common, r))
         # Model-level $/ft objects have no native CC column; capture them losslessly as
@@ -240,7 +239,7 @@ class CapexMapper(EconModelMapper):
             rows[0][_COMPLETION_COST_COL] = completion_json
         return rows
 
-    def _row_to_csv(self, common: Dict[str, str], r: Dict[str, Any]) -> Dict[str, str]:
+    def _row_to_csv(self, common: dict[str, str], r: dict[str, Any]) -> dict[str, str]:
         row_model = CapexOtherRow.model_validate(r)
         extra = row_model.model_extra or {}
         _check_probabilistic(extra)
@@ -270,11 +269,11 @@ class CapexMapper(EconModelMapper):
         )
         return {c: row.get(c, '') for c in self.columns}
 
-    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: list[dict[str, str]]) -> dict[str, Any]:
         name, unique = model_identity(rows)
-        other_capex_rows: List[Dict[str, Any]] = []
-        drilling: Optional[Dict[str, Any]] = None
-        completion: Optional[Dict[str, Any]] = None
+        other_capex_rows: list[dict[str, Any]] = []
+        drilling: Optional[dict[str, Any]] = None
+        completion: Optional[dict[str, Any]] = None
         for row in rows:
             if drilling is None:
                 drilling = _perfoot_from_json(row.get(_DRILLING_COST_COL, ''))
@@ -286,7 +285,7 @@ class CapexMapper(EconModelMapper):
             if not (row.get('Criteria') or '').strip():
                 continue
             other_capex_rows.append(self._row_from_csv(row))
-        model: Dict[str, Any] = {'name': name, 'unique': unique, 'otherCapex': {'rows': other_capex_rows}}
+        model: dict[str, Any] = {'name': name, 'unique': unique, 'otherCapex': {'rows': other_capex_rows}}
         if drilling is not None:
             model['drillingCost'] = drilling
         if completion is not None:
@@ -294,8 +293,8 @@ class CapexMapper(EconModelMapper):
         return model
 
     @staticmethod
-    def _row_from_csv(row: Dict[str, str]) -> Dict[str, Any]:
-        row_kwargs: Dict[str, Any] = {
+    def _row_from_csv(row: dict[str, str]) -> dict[str, Any]:
+        row_kwargs: dict[str, Any] = {
             # `enum_from_csv` maps a blank cell to `None`, but `category` is a required
             # API field that's always a (possibly-empty) string on the raw dict form --
             # the `or ''` guard preserves that, matching the original

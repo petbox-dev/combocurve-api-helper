@@ -1,7 +1,6 @@
-from typing import List, Dict, Optional, Union, Any, Iterator, Mapping, cast
+from typing import Optional, cast
 
-from .base import APIBase, Item, ItemList, WriteResponse
-
+from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
 
 GET_LIMIT = 200
 
@@ -11,7 +10,7 @@ class Projects(APIBase):
     # URLs
     ######
 
-    def get_projects_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_projects_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for projects.
         """
@@ -33,7 +32,7 @@ class Projects(APIBase):
     # API calls
     ###########
 
-    def get_projects(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_projects(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of projects.
 
@@ -53,15 +52,9 @@ class Projects(APIBase):
         params = {'take': GET_LIMIT}
         projects = self._get_items(url, params=params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(projects, order)
+        return self._keysort(projects, LIST_SORT_ORDER)
 
-    def post_projects(self, data: ItemList) -> List[WriteResponse]:
+    def post_projects(self, data: ItemList) -> list[WriteResponse]:
         """
         Creates a new project.
 
@@ -103,7 +96,7 @@ class Projects(APIBase):
         }
         """
         url = self.get_projects_url()
-        projects = cast(List[WriteResponse], self._post_items(url, data))
+        projects = cast('list[WriteResponse]', self._post_items(url, data))
 
         return projects
 

@@ -1,16 +1,20 @@
-from typing import Dict, List, Optional, Tuple
+from __future__ import annotations
 
-import pytest
+from typing import TYPE_CHECKING
 
-from combocurve_api_helper.base import ItemList
 from combocurve_api_helper.models import Models
+
+if TYPE_CHECKING:
+    import pytest
+
+    from combocurve_api_helper.base import ItemList
 
 
 def test_post_put_delete_assignment_generics_delegate(monkeypatch: pytest.MonkeyPatch) -> None:
     m = Models.__new__(Models)  # no auth/__init__
-    captured_url_calls: List[Tuple[str, str, str, Optional[Dict[str, str]]]] = []
+    captured_url_calls: list[tuple[str, str, str, dict[str, str] | None]] = []
 
-    def fake_url(pid: str, t: str, mid: str, filters: Optional[Dict[str, str]] = None) -> str:
+    def fake_url(pid: str, t: str, mid: str, filters: dict[str, str] | None = None) -> str:
         captured_url_calls.append((pid, t, mid, filters))
         return f'URL/{pid}/{t}/{mid}'
 

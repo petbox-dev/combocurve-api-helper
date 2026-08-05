@@ -1,20 +1,17 @@
-from typing import List, Dict, Optional, Union, Any, Iterator, Mapping, cast
+from typing import Optional, Union, cast
 
 from requests import Response
 
-from .base import APIBase, Item, ItemList, WriteResponse
-
+from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
 
 GET_LIMIT = 200
 POST_LIMIT = 500
 PUT_LIMIT = 500
 
-SORT_ORDER = {
-    'name': 0,
-    'id': 3,
-    'createdAt': 2,
-    'updatedAt': 1,
-}
+# Backwards-compatible alias: this module-level name is importable, so it stays
+# bound rather than being deleted in a minor release. `base.LIST_SORT_ORDER` is
+# the single definition.
+SORT_ORDER = LIST_SORT_ORDER
 
 
 class CompanyModels(APIBase):
@@ -22,7 +19,7 @@ class CompanyModels(APIBase):
     # URLs
     ######
 
-    def get_company_econ_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_econ_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of company econ models.
         """
@@ -34,7 +31,7 @@ class CompanyModels(APIBase):
         return url
 
     def get_company_econ_models_by_type_url(
-        self, econ_model_type: str, filters: Optional[Dict[str, str]] = None
+        self, econ_model_type: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url of econ models for a specific project id and model
@@ -59,7 +56,7 @@ class CompanyModels(APIBase):
         return url
 
     def get_company_econ_model_by_type_by_id_url(
-        self, econ_model_type: str, model_id: str, filters: Optional[Dict[str, str]] = None
+        self, econ_model_type: str, model_id: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url of a sepcific econ model for a specific project id
@@ -74,7 +71,7 @@ class CompanyModels(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_company_general_options_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_general_options_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of general options models for a specific project id.
         """
@@ -89,7 +86,7 @@ class CompanyModels(APIBase):
         econ_model_type = 'GeneralOptions'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
-    def get_company_actual_forecast_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_actual_forecast_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of actual-forecast models for a specific project id.
         """
@@ -104,7 +101,7 @@ class CompanyModels(APIBase):
         econ_model_type = 'ActualOrForecast'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
-    def get_company_capex_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_capex_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of capex models for a specific project id.
         """
@@ -119,7 +116,7 @@ class CompanyModels(APIBase):
         econ_model_type = 'Capex'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
-    def get_company_date_settings_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_date_settings_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of date settings models for a specific project id.
         """
@@ -134,7 +131,7 @@ class CompanyModels(APIBase):
         econ_model_type = 'Dates'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
-    def get_company_depreciation_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_depreciation_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of depreciation models for a specific project id.
         """
@@ -149,7 +146,7 @@ class CompanyModels(APIBase):
         econ_model_type = 'Depreciation'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
-    def get_company_differentials_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_differentials_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of differentials models for a specific project id.
         """
@@ -164,7 +161,7 @@ class CompanyModels(APIBase):
         econ_model_type = 'Differentials'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
-    def get_company_emissions_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_emissions_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of emissions models for a specific project id.
         """
@@ -179,7 +176,7 @@ class CompanyModels(APIBase):
         econ_model_type = 'Emission'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
-    def get_company_escalations_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_escalations_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of escalations models for a specific project id.
         """
@@ -194,7 +191,7 @@ class CompanyModels(APIBase):
         econ_model_type = 'Escalation'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
-    def get_company_expenses_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_expenses_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of expenses models for a specific project id.
         """
@@ -209,7 +206,7 @@ class CompanyModels(APIBase):
         econ_model_type = 'Expenses'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
-    def get_company_fluid_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_fluid_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of fluid models for a specific project id.
         """
@@ -224,7 +221,7 @@ class CompanyModels(APIBase):
         econ_model_type = 'FluidModel'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
-    def get_company_ownership_reversions_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_ownership_reversions_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of ownership reversions models for a specific
         project id.
@@ -240,7 +237,7 @@ class CompanyModels(APIBase):
         econ_model_type = 'OwnershipReversion'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
-    def get_company_pricing_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_pricing_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of pricing models for a specific project id.
         """
@@ -255,7 +252,7 @@ class CompanyModels(APIBase):
         econ_model_type = 'Pricing'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
-    def get_company_production_taxes_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_production_taxes_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of production taxes models for a specific
         project id.
@@ -271,7 +268,7 @@ class CompanyModels(APIBase):
         econ_model_type = 'ProductionTaxes'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
-    def get_company_reserves_categories_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_reserves_categories_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of reserves categories models for a specific
         project id.
@@ -287,7 +284,7 @@ class CompanyModels(APIBase):
         econ_model_type = 'ReservesCategory'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
-    def get_company_riskings_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_riskings_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of riskings models for a specific project id.
         """
@@ -302,7 +299,7 @@ class CompanyModels(APIBase):
         econ_model_type = 'Risking'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
-    def get_company_stream_properties_models_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_stream_properties_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of stream properties models for a specific
         project id.
@@ -322,7 +319,7 @@ class CompanyModels(APIBase):
     # API calls
     ###########
 
-    def get_company_econ_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_econ_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of company econ models.
         """
@@ -333,7 +330,7 @@ class CompanyModels(APIBase):
         return self._keysort(econ_models, SORT_ORDER)
 
     def get_company_econ_models_by_type(
-        self, econ_model_type: str, filters: Optional[Dict[str, str]] = None
+        self, econ_model_type: str, filters: Optional[dict[str, str]] = None
     ) -> ItemList:
         """
         Returns a list of econ models by type. Allows `econModelType` passed as
@@ -357,25 +354,25 @@ class CompanyModels(APIBase):
 
         return econ_model[0]
 
-    def post_company_econ_models_by_type(self, econ_model_type: str, data: ItemList) -> List[WriteResponse]:
+    def post_company_econ_models_by_type(self, econ_model_type: str, data: ItemList) -> list[WriteResponse]:
         """
         Creates company econ models of a specific type. Allows `econModelType`
         passed as a parameter rather than calling a different function for each
         model type.
         """
         url = self.get_company_econ_models_by_type_url(econ_model_type)
-        return cast(List[WriteResponse], self._post_items(url, data))
+        return cast('list[WriteResponse]', self._post_items(url, data))
 
-    def put_company_econ_models_by_type(self, econ_model_type: str, data: ItemList) -> List[WriteResponse]:
+    def put_company_econ_models_by_type(self, econ_model_type: str, data: ItemList) -> list[WriteResponse]:
         """
         Upserts company econ models of a specific type. Allows `econModelType`
         passed as a parameter rather than calling a different function for each
         model type.
         """
         url = self.get_company_econ_models_by_type_url(econ_model_type)
-        return cast(List[WriteResponse], self._put_items(url, data))
+        return cast('list[WriteResponse]', self._put_items(url, data))
 
-    def delete_company_econ_model_by_type_by_id(self, econ_model_type: str, model_id: str) -> List[Response]:
+    def delete_company_econ_model_by_type_by_id(self, econ_model_type: str, model_id: str) -> list[Response]:
         """
         Deletes a specific company econ model by type + id. Allows
         `econModelType` passed as a parameter rather than calling a different
@@ -384,7 +381,7 @@ class CompanyModels(APIBase):
         url = self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
         return self._delete_responses(url, data=[])
 
-    def get_company_general_options_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_general_options_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of general options models.
         """
@@ -403,7 +400,7 @@ class CompanyModels(APIBase):
 
         return general_options[0]
 
-    def get_company_actual_forecast_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_actual_forecast_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of actual-forecast models.
         """
@@ -422,7 +419,7 @@ class CompanyModels(APIBase):
 
         return actual_forecast[0]
 
-    def get_company_reserves_categories_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_reserves_categories_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of reserves categories models.
         """
@@ -441,7 +438,7 @@ class CompanyModels(APIBase):
 
         return reserves_categories[0]
 
-    def get_company_escalation_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_escalation_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of escalations models.
         """
@@ -460,7 +457,7 @@ class CompanyModels(APIBase):
 
         return escalations[0]
 
-    def get_company_differential_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_differential_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of differentials models.
         """
@@ -479,7 +476,7 @@ class CompanyModels(APIBase):
 
         return differentials[0]
 
-    def get_company_pricing_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_pricing_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of pricing models.
         """
@@ -498,7 +495,7 @@ class CompanyModels(APIBase):
 
         return pricing[0]
 
-    def get_company_ownership_reversions_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_ownership_reversions_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of ownership reversions models.
         """
@@ -517,7 +514,7 @@ class CompanyModels(APIBase):
 
         return ownership_reversions[0]
 
-    def get_company_production_taxes_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_production_taxes_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of production taxes models.
         """
@@ -536,7 +533,7 @@ class CompanyModels(APIBase):
 
         return production_taxes[0]
 
-    def get_company_risking_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_risking_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of riskings models.
         """
@@ -555,7 +552,7 @@ class CompanyModels(APIBase):
 
         return riskings[0]
 
-    def get_company_stream_properties_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_stream_properties_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of stream properties models.
         """
@@ -574,7 +571,7 @@ class CompanyModels(APIBase):
 
         return stream_properties[0]
 
-    def get_company_expense_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_expense_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of expenses models.
         """
@@ -593,7 +590,7 @@ class CompanyModels(APIBase):
 
         return expenses[0]
 
-    def get_company_emission_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_emission_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of emissions models.
         """
@@ -612,7 +609,7 @@ class CompanyModels(APIBase):
 
         return emissions[0]
 
-    def get_company_fluid_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_fluid_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of fluid models.
         """
@@ -631,7 +628,7 @@ class CompanyModels(APIBase):
 
         return fluid_models[0]
 
-    def get_company_capex_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_capex_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of capex models.
         """
@@ -650,7 +647,7 @@ class CompanyModels(APIBase):
 
         return capex[0]
 
-    def get_company_date_settings_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_date_settings_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of date settings models.
         """
@@ -669,7 +666,7 @@ class CompanyModels(APIBase):
 
         return date_settings[0]
 
-    def get_company_depreciation_models(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_depreciation_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of depreciation models.
         """

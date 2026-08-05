@@ -10,28 +10,30 @@ for the generic `get_mapper`.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, TextIO, Union
+from typing import TYPE_CHECKING, Any, TextIO
 
-from .base import Context, EconModelMapper
 from .registry import get_mapper
 
+if TYPE_CHECKING:
+    from .base import Context, EconModelMapper
 
-def actual_forecast_to_row_dicts(model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+
+def actual_forecast_to_row_dicts(model: dict[str, Any], context: Context | None = None) -> list[dict[str, str]]:
     """Convert one `ActualOrForecast` econ-model API dict to CSV rows (model-level export shape)."""
     return get_mapper('ActualOrForecast').to_row_dicts(model, context)
 
 
-def actual_forecast_from_row_dicts(rows: List[Dict[str, str]]) -> Dict[str, Any]:
+def actual_forecast_from_row_dicts(rows: list[dict[str, str]]) -> dict[str, Any]:
     """Reconstruct an `ActualOrForecast` econ-model API dict from its CSV rows."""
     return get_mapper('ActualOrForecast').from_row_dicts(rows)
 
 
-def actual_forecast_to_csv(models: List[Dict[str, Any]], context: Optional[Context] = None) -> str:
+def actual_forecast_to_csv(models: list[dict[str, Any]], context: Context | None = None) -> str:
     """Serialize a list of `ActualOrForecast` econ-model API dicts to a multi-model CSV string."""
     return get_mapper('ActualOrForecast').to_csv(models, context)
 
 
-def actual_forecast_from_csv(source: Union[str, TextIO]) -> List[Dict[str, Any]]:
+def actual_forecast_from_csv(source: str | TextIO) -> list[dict[str, Any]]:
     """Parse an `ActualOrForecast` CSV (string or file-like) into a list of econ-model API dicts."""
     return get_mapper('ActualOrForecast').from_csv(source)
 
@@ -41,22 +43,22 @@ def get_actual_forecast_mapper() -> EconModelMapper:
     return get_mapper('ActualOrForecast')
 
 
-def capex_to_row_dicts(model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+def capex_to_row_dicts(model: dict[str, Any], context: Context | None = None) -> list[dict[str, str]]:
     """Convert one `Capex` econ-model API dict to CSV rows (model-level export shape)."""
     return get_mapper('Capex').to_row_dicts(model, context)
 
 
-def capex_from_row_dicts(rows: List[Dict[str, str]]) -> Dict[str, Any]:
+def capex_from_row_dicts(rows: list[dict[str, str]]) -> dict[str, Any]:
     """Reconstruct a `Capex` econ-model API dict from its CSV rows."""
     return get_mapper('Capex').from_row_dicts(rows)
 
 
-def capex_to_csv(models: List[Dict[str, Any]], context: Optional[Context] = None) -> str:
+def capex_to_csv(models: list[dict[str, Any]], context: Context | None = None) -> str:
     """Serialize a list of `Capex` econ-model API dicts to a multi-model CSV string."""
     return get_mapper('Capex').to_csv(models, context)
 
 
-def capex_from_csv(source: Union[str, TextIO]) -> List[Dict[str, Any]]:
+def capex_from_csv(source: str | TextIO) -> list[dict[str, Any]]:
     """Parse a `Capex` CSV (string or file-like) into a list of econ-model API dicts."""
     return get_mapper('Capex').from_csv(source)
 
@@ -66,22 +68,22 @@ def get_capex_mapper() -> EconModelMapper:
     return get_mapper('Capex')
 
 
-def date_settings_to_row_dicts(model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+def date_settings_to_row_dicts(model: dict[str, Any], context: Context | None = None) -> list[dict[str, str]]:
     """Convert one `Dates` econ-model API dict to CSV rows (model-level export shape)."""
     return get_mapper('Dates').to_row_dicts(model, context)
 
 
-def date_settings_from_row_dicts(rows: List[Dict[str, str]]) -> Dict[str, Any]:
+def date_settings_from_row_dicts(rows: list[dict[str, str]]) -> dict[str, Any]:
     """Reconstruct a `Dates` econ-model API dict from its CSV rows."""
     return get_mapper('Dates').from_row_dicts(rows)
 
 
-def date_settings_to_csv(models: List[Dict[str, Any]], context: Optional[Context] = None) -> str:
+def date_settings_to_csv(models: list[dict[str, Any]], context: Context | None = None) -> str:
     """Serialize a list of `Dates` econ-model API dicts to a multi-model CSV string."""
     return get_mapper('Dates').to_csv(models, context)
 
 
-def date_settings_from_csv(source: Union[str, TextIO]) -> List[Dict[str, Any]]:
+def date_settings_from_csv(source: str | TextIO) -> list[dict[str, Any]]:
     """Parse a `Dates` CSV (string or file-like) into a list of econ-model API dicts."""
     return get_mapper('Dates').from_csv(source)
 
@@ -91,22 +93,22 @@ def get_date_settings_mapper() -> EconModelMapper:
     return get_mapper('Dates')
 
 
-def differentials_to_row_dicts(model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+def differentials_to_row_dicts(model: dict[str, Any], context: Context | None = None) -> list[dict[str, str]]:
     """Convert one `Differentials` econ-model API dict to CSV rows (model-level export shape)."""
     return get_mapper('Differentials').to_row_dicts(model, context)
 
 
-def differentials_from_row_dicts(rows: List[Dict[str, str]]) -> Dict[str, Any]:
+def differentials_from_row_dicts(rows: list[dict[str, str]]) -> dict[str, Any]:
     """Reconstruct a `Differentials` econ-model API dict from its CSV rows."""
     return get_mapper('Differentials').from_row_dicts(rows)
 
 
-def differentials_to_csv(models: List[Dict[str, Any]], context: Optional[Context] = None) -> str:
+def differentials_to_csv(models: list[dict[str, Any]], context: Context | None = None) -> str:
     """Serialize a list of `Differentials` econ-model API dicts to a multi-model CSV string."""
     return get_mapper('Differentials').to_csv(models, context)
 
 
-def differentials_from_csv(source: Union[str, TextIO]) -> List[Dict[str, Any]]:
+def differentials_from_csv(source: str | TextIO) -> list[dict[str, Any]]:
     """Parse a `Differentials` CSV (string or file-like) into a list of econ-model API dicts."""
     return get_mapper('Differentials').from_csv(source)
 
@@ -116,22 +118,22 @@ def get_differentials_mapper() -> EconModelMapper:
     return get_mapper('Differentials')
 
 
-def expenses_to_row_dicts(model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+def expenses_to_row_dicts(model: dict[str, Any], context: Context | None = None) -> list[dict[str, str]]:
     """Convert one `Expenses` econ-model API dict to CSV rows (model-level export shape)."""
     return get_mapper('Expenses').to_row_dicts(model, context)
 
 
-def expenses_from_row_dicts(rows: List[Dict[str, str]]) -> Dict[str, Any]:
+def expenses_from_row_dicts(rows: list[dict[str, str]]) -> dict[str, Any]:
     """Reconstruct an `Expenses` econ-model API dict from its CSV rows."""
     return get_mapper('Expenses').from_row_dicts(rows)
 
 
-def expenses_to_csv(models: List[Dict[str, Any]], context: Optional[Context] = None) -> str:
+def expenses_to_csv(models: list[dict[str, Any]], context: Context | None = None) -> str:
     """Serialize a list of `Expenses` econ-model API dicts to a multi-model CSV string."""
     return get_mapper('Expenses').to_csv(models, context)
 
 
-def expenses_from_csv(source: Union[str, TextIO]) -> List[Dict[str, Any]]:
+def expenses_from_csv(source: str | TextIO) -> list[dict[str, Any]]:
     """Parse an `Expenses` CSV (string or file-like) into a list of econ-model API dicts."""
     return get_mapper('Expenses').from_csv(source)
 
@@ -141,22 +143,22 @@ def get_expenses_mapper() -> EconModelMapper:
     return get_mapper('Expenses')
 
 
-def ownership_reversions_to_row_dicts(model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+def ownership_reversions_to_row_dicts(model: dict[str, Any], context: Context | None = None) -> list[dict[str, str]]:
     """Convert one `OwnershipReversion` econ-model API dict to CSV rows (model-level export shape)."""
     return get_mapper('OwnershipReversion').to_row_dicts(model, context)
 
 
-def ownership_reversions_from_row_dicts(rows: List[Dict[str, str]]) -> Dict[str, Any]:
+def ownership_reversions_from_row_dicts(rows: list[dict[str, str]]) -> dict[str, Any]:
     """Reconstruct an `OwnershipReversion` econ-model API dict from its CSV rows."""
     return get_mapper('OwnershipReversion').from_row_dicts(rows)
 
 
-def ownership_reversions_to_csv(models: List[Dict[str, Any]], context: Optional[Context] = None) -> str:
+def ownership_reversions_to_csv(models: list[dict[str, Any]], context: Context | None = None) -> str:
     """Serialize a list of `OwnershipReversion` econ-model API dicts to a multi-model CSV string."""
     return get_mapper('OwnershipReversion').to_csv(models, context)
 
 
-def ownership_reversions_from_csv(source: Union[str, TextIO]) -> List[Dict[str, Any]]:
+def ownership_reversions_from_csv(source: str | TextIO) -> list[dict[str, Any]]:
     """Parse an `OwnershipReversion` CSV (string or file-like) into a list of econ-model API dicts."""
     return get_mapper('OwnershipReversion').from_csv(source)
 
@@ -166,22 +168,22 @@ def get_ownership_reversions_mapper() -> EconModelMapper:
     return get_mapper('OwnershipReversion')
 
 
-def pricing_to_row_dicts(model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+def pricing_to_row_dicts(model: dict[str, Any], context: Context | None = None) -> list[dict[str, str]]:
     """Convert one `Pricing` econ-model API dict to CSV rows (model-level export shape)."""
     return get_mapper('Pricing').to_row_dicts(model, context)
 
 
-def pricing_from_row_dicts(rows: List[Dict[str, str]]) -> Dict[str, Any]:
+def pricing_from_row_dicts(rows: list[dict[str, str]]) -> dict[str, Any]:
     """Reconstruct a `Pricing` econ-model API dict from its CSV rows."""
     return get_mapper('Pricing').from_row_dicts(rows)
 
 
-def pricing_to_csv(models: List[Dict[str, Any]], context: Optional[Context] = None) -> str:
+def pricing_to_csv(models: list[dict[str, Any]], context: Context | None = None) -> str:
     """Serialize a list of `Pricing` econ-model API dicts to a multi-model CSV string."""
     return get_mapper('Pricing').to_csv(models, context)
 
 
-def pricing_from_csv(source: Union[str, TextIO]) -> List[Dict[str, Any]]:
+def pricing_from_csv(source: str | TextIO) -> list[dict[str, Any]]:
     """Parse a `Pricing` CSV (string or file-like) into a list of econ-model API dicts."""
     return get_mapper('Pricing').from_csv(source)
 
@@ -191,22 +193,22 @@ def get_pricing_mapper() -> EconModelMapper:
     return get_mapper('Pricing')
 
 
-def production_taxes_to_row_dicts(model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+def production_taxes_to_row_dicts(model: dict[str, Any], context: Context | None = None) -> list[dict[str, str]]:
     """Convert one `ProductionTaxes` econ-model API dict to CSV rows (model-level export shape)."""
     return get_mapper('ProductionTaxes').to_row_dicts(model, context)
 
 
-def production_taxes_from_row_dicts(rows: List[Dict[str, str]]) -> Dict[str, Any]:
+def production_taxes_from_row_dicts(rows: list[dict[str, str]]) -> dict[str, Any]:
     """Reconstruct a `ProductionTaxes` econ-model API dict from its CSV rows."""
     return get_mapper('ProductionTaxes').from_row_dicts(rows)
 
 
-def production_taxes_to_csv(models: List[Dict[str, Any]], context: Optional[Context] = None) -> str:
+def production_taxes_to_csv(models: list[dict[str, Any]], context: Context | None = None) -> str:
     """Serialize a list of `ProductionTaxes` econ-model API dicts to a multi-model CSV string."""
     return get_mapper('ProductionTaxes').to_csv(models, context)
 
 
-def production_taxes_from_csv(source: Union[str, TextIO]) -> List[Dict[str, Any]]:
+def production_taxes_from_csv(source: str | TextIO) -> list[dict[str, Any]]:
     """Parse a `ProductionTaxes` CSV (string or file-like) into a list of econ-model API dicts."""
     return get_mapper('ProductionTaxes').from_csv(source)
 
@@ -216,22 +218,22 @@ def get_production_taxes_mapper() -> EconModelMapper:
     return get_mapper('ProductionTaxes')
 
 
-def reserves_categories_to_row_dicts(model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+def reserves_categories_to_row_dicts(model: dict[str, Any], context: Context | None = None) -> list[dict[str, str]]:
     """Convert one `ReservesCategory` econ-model API dict to CSV rows (model-level export shape)."""
     return get_mapper('ReservesCategory').to_row_dicts(model, context)
 
 
-def reserves_categories_from_row_dicts(rows: List[Dict[str, str]]) -> Dict[str, Any]:
+def reserves_categories_from_row_dicts(rows: list[dict[str, str]]) -> dict[str, Any]:
     """Reconstruct a `ReservesCategory` econ-model API dict from its CSV rows."""
     return get_mapper('ReservesCategory').from_row_dicts(rows)
 
 
-def reserves_categories_to_csv(models: List[Dict[str, Any]], context: Optional[Context] = None) -> str:
+def reserves_categories_to_csv(models: list[dict[str, Any]], context: Context | None = None) -> str:
     """Serialize a list of `ReservesCategory` econ-model API dicts to a multi-model CSV string."""
     return get_mapper('ReservesCategory').to_csv(models, context)
 
 
-def reserves_categories_from_csv(source: Union[str, TextIO]) -> List[Dict[str, Any]]:
+def reserves_categories_from_csv(source: str | TextIO) -> list[dict[str, Any]]:
     """Parse a `ReservesCategory` CSV (string or file-like) into a list of econ-model API dicts."""
     return get_mapper('ReservesCategory').from_csv(source)
 
@@ -241,22 +243,22 @@ def get_reserves_categories_mapper() -> EconModelMapper:
     return get_mapper('ReservesCategory')
 
 
-def riskings_to_row_dicts(model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+def riskings_to_row_dicts(model: dict[str, Any], context: Context | None = None) -> list[dict[str, str]]:
     """Convert one `Risking` econ-model API dict to CSV rows (model-level export shape)."""
     return get_mapper('Risking').to_row_dicts(model, context)
 
 
-def riskings_from_row_dicts(rows: List[Dict[str, str]]) -> Dict[str, Any]:
+def riskings_from_row_dicts(rows: list[dict[str, str]]) -> dict[str, Any]:
     """Reconstruct a `Risking` econ-model API dict from its CSV rows."""
     return get_mapper('Risking').from_row_dicts(rows)
 
 
-def riskings_to_csv(models: List[Dict[str, Any]], context: Optional[Context] = None) -> str:
+def riskings_to_csv(models: list[dict[str, Any]], context: Context | None = None) -> str:
     """Serialize a list of `Risking` econ-model API dicts to a multi-model CSV string."""
     return get_mapper('Risking').to_csv(models, context)
 
 
-def riskings_from_csv(source: Union[str, TextIO]) -> List[Dict[str, Any]]:
+def riskings_from_csv(source: str | TextIO) -> list[dict[str, Any]]:
     """Parse a `Risking` CSV (string or file-like) into a list of econ-model API dicts."""
     return get_mapper('Risking').from_csv(source)
 
@@ -266,22 +268,22 @@ def get_riskings_mapper() -> EconModelMapper:
     return get_mapper('Risking')
 
 
-def stream_properties_to_row_dicts(model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+def stream_properties_to_row_dicts(model: dict[str, Any], context: Context | None = None) -> list[dict[str, str]]:
     """Convert one `StreamProperties` econ-model API dict to CSV rows (model-level export shape)."""
     return get_mapper('StreamProperties').to_row_dicts(model, context)
 
 
-def stream_properties_from_row_dicts(rows: List[Dict[str, str]]) -> Dict[str, Any]:
+def stream_properties_from_row_dicts(rows: list[dict[str, str]]) -> dict[str, Any]:
     """Reconstruct a `StreamProperties` econ-model API dict from its CSV rows."""
     return get_mapper('StreamProperties').from_row_dicts(rows)
 
 
-def stream_properties_to_csv(models: List[Dict[str, Any]], context: Optional[Context] = None) -> str:
+def stream_properties_to_csv(models: list[dict[str, Any]], context: Context | None = None) -> str:
     """Serialize a list of `StreamProperties` econ-model API dicts to a multi-model CSV string."""
     return get_mapper('StreamProperties').to_csv(models, context)
 
 
-def stream_properties_from_csv(source: Union[str, TextIO]) -> List[Dict[str, Any]]:
+def stream_properties_from_csv(source: str | TextIO) -> list[dict[str, Any]]:
     """Parse a `StreamProperties` CSV (string or file-like) into a list of econ-model API dicts."""
     return get_mapper('StreamProperties').from_csv(source)
 
@@ -292,59 +294,59 @@ def get_stream_properties_mapper() -> EconModelMapper:
 
 
 __all__ = [
-    'actual_forecast_to_row_dicts',
+    'actual_forecast_from_csv',
     'actual_forecast_from_row_dicts',
     'actual_forecast_to_csv',
-    'actual_forecast_from_csv',
-    'get_actual_forecast_mapper',
-    'capex_to_row_dicts',
+    'actual_forecast_to_row_dicts',
+    'capex_from_csv',
     'capex_from_row_dicts',
     'capex_to_csv',
-    'capex_from_csv',
-    'get_capex_mapper',
-    'date_settings_to_row_dicts',
+    'capex_to_row_dicts',
+    'date_settings_from_csv',
     'date_settings_from_row_dicts',
     'date_settings_to_csv',
-    'date_settings_from_csv',
-    'get_date_settings_mapper',
-    'differentials_to_row_dicts',
+    'date_settings_to_row_dicts',
+    'differentials_from_csv',
     'differentials_from_row_dicts',
     'differentials_to_csv',
-    'differentials_from_csv',
-    'get_differentials_mapper',
-    'expenses_to_row_dicts',
+    'differentials_to_row_dicts',
+    'expenses_from_csv',
     'expenses_from_row_dicts',
     'expenses_to_csv',
-    'expenses_from_csv',
+    'expenses_to_row_dicts',
+    'get_actual_forecast_mapper',
+    'get_capex_mapper',
+    'get_date_settings_mapper',
+    'get_differentials_mapper',
     'get_expenses_mapper',
-    'ownership_reversions_to_row_dicts',
+    'get_ownership_reversions_mapper',
+    'get_pricing_mapper',
+    'get_production_taxes_mapper',
+    'get_reserves_categories_mapper',
+    'get_riskings_mapper',
+    'get_stream_properties_mapper',
+    'ownership_reversions_from_csv',
     'ownership_reversions_from_row_dicts',
     'ownership_reversions_to_csv',
-    'ownership_reversions_from_csv',
-    'get_ownership_reversions_mapper',
-    'pricing_to_row_dicts',
+    'ownership_reversions_to_row_dicts',
+    'pricing_from_csv',
     'pricing_from_row_dicts',
     'pricing_to_csv',
-    'pricing_from_csv',
-    'get_pricing_mapper',
-    'production_taxes_to_row_dicts',
+    'pricing_to_row_dicts',
+    'production_taxes_from_csv',
     'production_taxes_from_row_dicts',
     'production_taxes_to_csv',
-    'production_taxes_from_csv',
-    'get_production_taxes_mapper',
-    'reserves_categories_to_row_dicts',
+    'production_taxes_to_row_dicts',
+    'reserves_categories_from_csv',
     'reserves_categories_from_row_dicts',
     'reserves_categories_to_csv',
-    'reserves_categories_from_csv',
-    'get_reserves_categories_mapper',
-    'riskings_to_row_dicts',
+    'reserves_categories_to_row_dicts',
+    'riskings_from_csv',
     'riskings_from_row_dicts',
     'riskings_to_csv',
-    'riskings_from_csv',
-    'get_riskings_mapper',
-    'stream_properties_to_row_dicts',
+    'riskings_to_row_dicts',
+    'stream_properties_from_csv',
     'stream_properties_from_row_dicts',
     'stream_properties_to_csv',
-    'stream_properties_from_csv',
-    'get_stream_properties_mapper',
+    'stream_properties_to_row_dicts',
 ]

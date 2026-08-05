@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 
@@ -7,7 +7,7 @@ from combocurve_api_helper.econ_models.actual_or_forecast import ActualOrForecas
 from combocurve_api_helper.econ_models.base import Context
 
 
-def _no_timestamp(rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
+def _no_timestamp(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     """'Last Update' is sourced from the API model's updatedAt/context, never
     reconstructed by from_row_dicts (same convention as every other mapper -- see
     test_fixtures.py's compare_cols = mapper.columns[3:-1]). Round-trip comparisons
@@ -20,7 +20,7 @@ def _no_timestamp(rows: List[Dict[str, str]]) -> List[Dict[str, str]]:
 # non-deletable built-in model names for this econ-model type (ported from
 # cc-afe-sync's ACTUAL_OR_FORECAST_ASSIGNMENTS) -- both still legacy `{}`-shaped,
 # never migrated to the explicit per-phase form.
-ACTUAL_LEGACY_EMPTY: Dict[str, Any] = {
+ACTUAL_LEGACY_EMPTY: dict[str, Any] = {
     'id': '000000000000000000000002',
     'name': 'Actual',
     'unique': False,
@@ -30,7 +30,7 @@ ACTUAL_LEGACY_EMPTY: Dict[str, Any] = {
     'actualOrForecast': {},
 }
 
-FORECAST_AS_OF_LEGACY_EMPTY: Dict[str, Any] = {
+FORECAST_AS_OF_LEGACY_EMPTY: dict[str, Any] = {
     'id': '000000000000000000000003',
     'name': 'Forecast As Of',
     'unique': False,
@@ -40,7 +40,7 @@ FORECAST_AS_OF_LEGACY_EMPTY: Dict[str, Any] = {
     'actualOrForecast': {},
 }
 
-IGNORE_HISTORY: Dict[str, Any] = {
+IGNORE_HISTORY: dict[str, Any] = {
     'id': '000000000000000000000008',
     'name': 'Ignore History',
     'unique': False,
@@ -50,7 +50,7 @@ IGNORE_HISTORY: Dict[str, Any] = {
     'actualOrForecast': {'ignoreHistoryProd': True},
 }
 
-FORECAST_JULY_24: Dict[str, Any] = {
+FORECAST_JULY_24: dict[str, Any] = {
     'id': '000000000000000000000013',
     'name': "Forecast July '24",
     'unique': False,
@@ -69,7 +69,7 @@ FORECAST_JULY_24: Dict[str, Any] = {
 
 # Explicit modern shape for the built-ins: once migrated, 'Actual' carries explicit
 # {"never": true} and 'Forecast As Of' carries explicit {"asOfDate": true} per phase.
-ACTUAL_MODERN_EXPLICIT: Dict[str, Any] = {
+ACTUAL_MODERN_EXPLICIT: dict[str, Any] = {
     'id': '000000000000000000000010',
     'name': 'Actual',
     'unique': False,
@@ -86,7 +86,7 @@ ACTUAL_MODERN_EXPLICIT: Dict[str, Any] = {
     },
 }
 
-FORECAST_AS_OF_MODERN_EXPLICIT: Dict[str, Any] = {
+FORECAST_AS_OF_MODERN_EXPLICIT: dict[str, Any] = {
     'id': '000000000000000000000009',
     'name': 'Forecast As Of',
     'unique': False,
@@ -244,7 +244,7 @@ def test_roundtrip_forecast_as_of_default_matches_real_shape() -> None:
 
 
 def test_roundtrip_mixed_phase_criteria() -> None:
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'Mixed',
         'unique': False,
         'actualOrForecast': {
@@ -295,7 +295,7 @@ def test_unknown_criteria_on_from_row_dicts_raises() -> None:
 
 
 def test_unknown_phase_shape_on_to_row_dicts_raises() -> None:
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'Bad',
         'unique': False,
         'actualOrForecast': {
@@ -320,7 +320,7 @@ def test_from_row_dicts_requires_exactly_3_rows() -> None:
     with pytest.raises(NotImplementedError):
         m.from_row_dicts(rows[:2])
     with pytest.raises(NotImplementedError):
-        m.from_row_dicts(rows + [dict(rows[0])])
+        m.from_row_dicts([*rows, dict(rows[0])])
 
 
 def test_from_row_dicts_requires_all_3_phases() -> None:

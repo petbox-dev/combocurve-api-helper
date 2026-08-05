@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
+from typing import Annotated, Any, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -30,7 +30,7 @@ _CATEGORY_FROM_CSV = {v: k for k, v in _CATEGORY_TO_CSV.items()}
 
 # (StreamPropertyGroup python attribute name, API category key), in the same canonical
 # order as _CATEGORY_TO_CSV -- this is the order categories are emitted in real CC CSVs.
-_GROUP_CATEGORY_FIELDS: List[Tuple[str, str]] = [
+_GROUP_CATEGORY_FIELDS: list[tuple[str, str]] = [
     ('oil', 'oil'),
     ('gas', 'gas'),
     ('water', 'water'),
@@ -41,7 +41,7 @@ _GROUP_CATEGORY_FIELDS: List[Tuple[str, str]] = [
     ('gas_flare', 'gasFlare'),
 ]
 # API category key -> StreamPropertyGroup python attribute name (inverse direction).
-_CATEGORY_TO_ATTR: Dict[str, str] = {api_key: attr for attr, api_key in _GROUP_CATEGORY_FIELDS}
+_CATEGORY_TO_ATTR: dict[str, str] = {api_key: attr for attr, api_key in _GROUP_CATEGORY_FIELDS}
 
 
 class StreamPropertyRow(BaseModel):
@@ -69,7 +69,7 @@ class StreamPropertyCategory(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    rows: List[StreamPropertyRow] = Field(default_factory=list)
+    rows: list[StreamPropertyRow] = Field(default_factory=list)
 
 
 class StreamPropertyGroup(BaseModel):
@@ -96,7 +96,7 @@ class StreamPropertyGroup(BaseModel):
     gas_flare: Annotated[Optional[StreamPropertyCategory], Field(alias='gasFlare')] = None
 
 
-def _value_unit(group_key: str, r: StreamPropertyRow) -> Tuple[Any, str]:
+def _value_unit(group_key: str, r: StreamPropertyRow) -> tuple[Any, str]:
     if group_key == 'yields':
         if r.yield_ is None:
             raise NotImplementedError(f'Unknown yields row: {r!r}')
@@ -106,7 +106,7 @@ def _value_unit(group_key: str, r: StreamPropertyRow) -> Tuple[Any, str]:
     return r.pct_remaining, '% remaining'
 
 
-def _criteria(r: StreamPropertyRow) -> Tuple[str, str]:
+def _criteria(r: StreamPropertyRow) -> tuple[str, str]:
     return formats.flat_or_dates_criteria(r.entire_well_life, r.dates, what='StreamProperties row')
 
 
@@ -121,13 +121,13 @@ class StreamPropertiesMapper(EconModelMapper):
     econ_model_type = 'StreamProperties'
     columns = COLUMNS['StreamProperties']
 
-    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         custom_streams = model.get('companyCustomStreams')
         if custom_streams:
             raise NotImplementedError(f'Non-empty companyCustomStreams not supported: {custom_streams}')
 
         common = common_columns(model, context)
-        rows: List[Dict[str, str]] = []
+        rows: list[dict[str, str]] = []
 
         for group_key in ('yields', 'shrinkage', 'lossFlare'):
             raw_group = model.get(group_key)
@@ -167,8 +167,8 @@ class StreamPropertiesMapper(EconModelMapper):
 
         return rows
 
-    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
-        groups: Dict[str, Dict[str, List[StreamPropertyRow]]] = {'yields': {}, 'shrinkage': {}, 'lossFlare': {}}
+    def from_row_dicts(self, rows: list[dict[str, str]]) -> dict[str, Any]:
+        groups: dict[str, dict[str, list[StreamPropertyRow]]] = {'yields': {}, 'shrinkage': {}, 'lossFlare': {}}
         name, unique = model_identity(rows)
 
         for row in rows:
@@ -181,7 +181,7 @@ class StreamPropertiesMapper(EconModelMapper):
                 raise NotImplementedError(f'Unknown Category: {row["Category"]}')
             category = _CATEGORY_FROM_CSV[row['Category']]
 
-            row_kwargs: Dict[str, Any] = formats.flat_or_dates_row_kwargs(
+            row_kwargs: dict[str, Any] = formats.flat_or_dates_row_kwargs(
                 row['Criteria'], row['Period'], formats.ENTIRE_WELL_LIFE_MARKER
             )
 
@@ -205,9 +205,9 @@ class StreamPropertiesMapper(EconModelMapper):
         # are excluded on dump. `btuContent` cannot be reconstructed at all -- there are
         # no 'btu'-Key rows in the CSV to read it back from -- so it is omitted entirely
         # from the result.
-        result: Dict[str, Any] = {'name': name, 'unique': unique}
+        result: dict[str, Any] = {'name': name, 'unique': unique}
         for group_key in ('yields', 'shrinkage', 'lossFlare'):
-            group_kwargs: Dict[str, Any] = {
+            group_kwargs: dict[str, Any] = {
                 _CATEGORY_TO_ATTR[category]: StreamPropertyCategory(rows=category_rows)
                 for category, category_rows in groups[group_key].items()
             }

@@ -26,20 +26,21 @@ This module has NO network dependency -- it audits already-fetched model dicts, 
 logic is unit-tested. ``scripts/audit_econ_model_drift.py`` is the live-API runner.
 """
 
-from typing import Any, Dict, FrozenSet, List, NamedTuple, Optional, Sequence, Set
+from collections.abc import Sequence
+from typing import Any, NamedTuple, Optional
 
 from . import get_mapper
 
 # Columns the inverse cannot reconstruct from CSV param cells (context/timestamp supplied
 # out-of-band via `Context`), so they are excluded from the round-trip comparison -- the same
 # set the forward-fidelity harness excludes.
-_NON_ROUNDTRIP_COLUMNS: FrozenSet[str] = frozenset(
+_NON_ROUNDTRIP_COLUMNS: frozenset[str] = frozenset(
     {'Model Id', 'Created At', 'Project Name', 'Last Update', 'Embedded Lookup Table'}
 )
 
 # Present on every econ model regardless of type; not type-specific parameters, so they
 # never count as drift.
-ENVELOPE_KEYS: FrozenSet[str] = frozenset(
+ENVELOPE_KEYS: frozenset[str] = frozenset(
     {
         'id',
         'copiedFrom',
@@ -63,7 +64,7 @@ ENVELOPE_KEYS: FrozenSet[str] = frozenset(
 # consumed by a mapper or a documented CSV/API limitation. A payload key outside this set
 # (and outside ENVELOPE_KEYS) is drift -- CC emitted something the mappers were not
 # written against.
-_BASELINE_KEYS: Dict[str, FrozenSet[str]] = {
+_BASELINE_KEYS: dict[str, frozenset[str]] = {
     'StreamProperties': frozenset(
         {
             'btuContent',
@@ -356,9 +357,9 @@ _BASELINE_KEYS: Dict[str, FrozenSet[str]] = {
 }
 
 
-def collect_keys(payload: Any) -> FrozenSet[str]:
+def collect_keys(payload: Any) -> frozenset[str]:
     """Every ``dict`` key appearing anywhere in ``payload`` (recursively)."""
-    found: Set[str] = set()
+    found: set[str] = set()
 
     def walk(node: Any) -> None:
         if isinstance(node, dict):
@@ -373,7 +374,7 @@ def collect_keys(payload: Any) -> FrozenSet[str]:
     return frozenset(found)
 
 
-def key_drift(econ_model_type: str, model: Dict[str, Any]) -> List[str]:
+def key_drift(econ_model_type: str, model: dict[str, Any]) -> list[str]:
     """Payload keys not in the type's baseline (envelope keys excluded), sorted.
 
     A non-empty result means CC emitted a key the mappers do not recognize. If the type
@@ -384,7 +385,7 @@ def key_drift(econ_model_type: str, model: Dict[str, Any]) -> List[str]:
     return sorted(present - baseline - ENVELOPE_KEYS)
 
 
-def value_drift(econ_model_type: str, model: Dict[str, Any]) -> Optional[str]:
+def value_drift(econ_model_type: str, model: dict[str, Any]) -> Optional[str]:
     """``None`` if the forward mapper renders ``model`` cleanly; otherwise the exception
     string (unknown category/unit/criteria/enum/``entireWellLife``, or validation error).
     """
@@ -396,7 +397,7 @@ def value_drift(econ_model_type: str, model: Dict[str, Any]) -> Optional[str]:
 
 
 def _roundtrip_diff(
-    rows1: Sequence[Dict[str, str]], rows2: Sequence[Dict[str, str]], columns: Sequence[str]
+    rows1: Sequence[dict[str, str]], rows2: Sequence[dict[str, str]], columns: Sequence[str]
 ) -> Optional[str]:
     """Describe the first difference between two CSV renderings on the round-trippable
     columns (context/timestamp columns excluded), or ``None`` if they match. Pure; unit-tested
@@ -411,7 +412,7 @@ def _roundtrip_diff(
     return None
 
 
-def roundtrip_drift(econ_model_type: str, model: Dict[str, Any]) -> Optional[str]:
+def roundtrip_drift(econ_model_type: str, model: dict[str, Any]) -> Optional[str]:
     """``None`` if the model survives a CSV round-trip unchanged; otherwise a description of
     the first divergence.
 
@@ -435,12 +436,12 @@ class DriftFinding(NamedTuple):
     econ_model_type: str
     model_id: str
     model_name: str
-    unknown_keys: List[str]
+    unknown_keys: list[str]
     map_error: Optional[str]
     roundtrip_error: Optional[str] = None
 
 
-def audit_model(econ_model_type: str, model: Dict[str, Any]) -> Optional[DriftFinding]:
+def audit_model(econ_model_type: str, model: dict[str, Any]) -> Optional[DriftFinding]:
     """A :class:`DriftFinding` if ``model`` shows any kind of drift, else ``None``.
 
     Round-trip is checked only when the forward pass (``value_drift``) succeeds -- a forward
@@ -461,9 +462,9 @@ def audit_model(econ_model_type: str, model: Dict[str, Any]) -> Optional[DriftFi
     )
 
 
-def audit_models(econ_model_type: str, models: Sequence[Dict[str, Any]]) -> List[DriftFinding]:
+def audit_models(econ_model_type: str, models: Sequence[dict[str, Any]]) -> list[DriftFinding]:
     """Audit a batch of models of one type; return only the ones with drift."""
-    findings: List[DriftFinding] = []
+    findings: list[DriftFinding] = []
     for model in models:
         finding = audit_model(econ_model_type, model)
         if finding is not None:

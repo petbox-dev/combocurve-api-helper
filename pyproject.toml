@@ -18,7 +18,11 @@ maintainers = [
 ]
 readme = {file = 'README.md', content-type = 'text/markdown'}
 license = {file = 'LICENSE'}
-requires-python = '>=3.8'
+# 3.9.13, not 3.9.0: `combocurve-api-v1` has declared `requires-python = >=3.9.13`
+# since 0.2.5, so that is this package's real floor. Declaring the true value makes
+# pip fail at install of THIS package with a clear message, rather than part-way
+# through dependency resolution.
+requires-python = '>=3.9.13'
 dependencies = [
     'combocurve-api-v1',
     'more-itertools',
@@ -36,7 +40,6 @@ classifiers = [
     'Intended Audience :: Developers',
     'Natural Language :: English',
     'License :: OSI Approved :: MIT License',
-    'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
@@ -96,16 +99,23 @@ testpaths = [
 
 [tool.ruff]
 line-length = 120
-extend-exclude = [
-    # Codegen output owned by scripts/generate_model_methods.py and byte-compared
-    # by the freshness test -- the formatter must not touch it, or the test breaks.
-    '_models_generated.py',
-    # Codegen output owned by scripts/generate_csv_functions.py, likewise byte-compared.
-    '_csv_generated.py',
-]
+# Make the formatter exclusion below hold even when a tool passes the file by name
+# (pre-commit, format-on-save, `ruff format <file>`). Without this, ruff honors
+# excludes only on directory walks, and one explicit-path invocation reformats the
+# generated files and breaks their byte-comparison freshness tests.
+force-exclude = true
 
 [tool.ruff.format]
 quote-style = 'single'
+# Codegen output owned by scripts/generate_model_methods.py / generate_csv_functions.py
+# and byte-compared by the freshness tests -- the FORMATTER must not touch it, or those
+# tests break. Excluded here only, not from the linter: the generators emit lint-clean
+# source, so `ruff check` still covers these files and any drift fails loudly instead of
+# accumulating silently. If lint does flag them, fix the template, not the output.
+exclude = [
+    '_models_generated.py',
+    '_csv_generated.py',
+]
 
 [tool.ruff.lint]
 # Mirrors the previous flake8 policy: pyflakes (F) + pycodestyle (E/W) + mccabe (C90),
@@ -113,42 +123,31 @@ quote-style = 'single'
 # continuation indents) are now owned by `ruff format`.
 select = [
     'E',
-    'F',
     'W',
+    'F',
+    'I',
+    'UP',
+    'B',
+    'SIM',
+    'TC',
+    'RUF',
     'C90',
 ]
-ignore = [
-    'E402',  # module-level import not at top of file
-    'E722',  # bare except
-    'E741',  # ambiguous variable name (l, I, O)
-    'E265',  # block comment should start with '# ' (banner comments use ######)
-    'E266',  # too many leading '#' for block comment
-    'F401',  # imported but unused (re-export modules)
-    'F841',  # local variable assigned but never used
-    'W605',  # invalid escape sequence
-]
+# SIM108 ("use a ternary") is the one SIM rule whose benefit inverts as the line
+# limit grows: at line-length 120 it argues for ternaries up to 115 characters
+# chaining several calls, which read worse than the if/else they replace. It did
+# not fire at 100 because those ternaries did not fit. The rest of SIM stays on.
+ignore = ["SIM108"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 20
 
 
 [tool.mypy]
-check_untyped_defs = true
-disallow_any_generics = true
-disallow_incomplete_defs = true
-disallow_subclassing_any = true
-disallow_untyped_calls = true
-disallow_untyped_decorators = true
-disallow_untyped_defs = true
-# ignore_missing_imports = true
-no_implicit_optional = true
-show_error_codes = true
-strict_equality = true
-warn_redundant_casts = true
-# warn_return_any = true
+strict = true
 warn_unreachable = true
-warn_unused_configs = true
-warn_unused_ignores = true
+warn_no_return = true
+disallow_any_unimported = true
 
 
 # The upstream combocurve-api-v1 package ships no py.typed marker / stubs.

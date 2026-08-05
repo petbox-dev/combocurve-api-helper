@@ -1,5 +1,5 @@
 import copy
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -9,7 +9,7 @@ from combocurve_api_helper.econ_models.date_settings import DateSettingsMapper
 
 # ABD exercises the 'years from as of' (non-cash-flow) Cut Off Criteria with an explicit,
 # full-schema cutOff (minLife/triggerEclCapex/tolerateNegativeCF all present).
-ABD: Dict[str, Any] = {
+ABD: dict[str, Any] = {
     'id': '000000000000000000000021',
     'name': 'ABD',
     'unique': False,
@@ -43,7 +43,7 @@ ABD: Dict[str, Any] = {
 }
 
 # 'no cut off' criterion with a non-'none' minLife criterion ('as of').
-HISTORICAL: Dict[str, Any] = {
+HISTORICAL: dict[str, Any] = {
     'id': '000000000000000000000023',
     'name': 'Historical',
     'unique': False,
@@ -78,7 +78,7 @@ HISTORICAL: Dict[str, Any] = {
 
 # 'max cum' (cash-flow) criterion, LEGACY schema: no minLife/triggerEclCapex/tolerateNegativeCF
 # keys at all (absent, not null).
-ARIES_LEGACY: Dict[str, Any] = {
+ARIES_LEGACY: dict[str, Any] = {
     'id': '000000000000000000000019',
     'name': 'SAMPLE_DATES_MODEL_0001',
     'unique': False,
@@ -110,7 +110,7 @@ ARIES_LEGACY: Dict[str, Any] = {
 
 # 'last positive' (cash-flow) criterion: Discount is NEVER rendered for this criterion even
 # though the API carries a real (occasionally non-zero) value.
-INJ: Dict[str, Any] = {
+INJ: dict[str, Any] = {
     'id': '000000000000000000000022',
     'name': 'INJ',
     'unique': False,
@@ -145,7 +145,7 @@ INJ: Dict[str, Any] = {
 
 # 'max cum' criterion, FULL schema, with every field fully round-trippable through the CSV --
 # NONE of the 5 "extra" cutOff columns lose information.
-LOCATION: Dict[str, Any] = {
+LOCATION: dict[str, Any] = {
     'id': '000000000000000000000020',
     'name': 'Location',
     'unique': False,
@@ -184,7 +184,7 @@ LOCATION: Dict[str, Any] = {
 # 'date' cutOff criterion: the Cut Off Value IS the ISO date string, not a plain flag.
 # alignDependentPhases and minLife are both fully present here (contrast BID_TO_LAST_PROD below,
 # which omits alignDependentPhases and has a date-valued minLife).
-DATE_CUTOFF: Dict[str, Any] = {
+DATE_CUTOFF: dict[str, Any] = {
     'id': '000000000000000000000007',
     'name': "Jan '22 - Dec '22",
     'unique': False,
@@ -217,7 +217,7 @@ DATE_CUTOFF: Dict[str, Any] = {
 
 # 'firstNegativeCashFlow' cutOff criterion -- the ONLY criterion where CC's CSV export renders a
 # real 'Tolerant Negative CF' value instead of always blanking it.
-FIRST_NEGATIVE: Dict[str, Any] = {
+FIRST_NEGATIVE: dict[str, Any] = {
     'id': '000000000000000000000017',
     'name': "Jan '26 (no min life)",
     'unique': False,
@@ -252,7 +252,7 @@ FIRST_NEGATIVE: Dict[str, Any] = {
 
 # 'lastPositiveCashFlow' cutOff with `discount` genuinely ABSENT from the API payload (some
 # 'last positive' models omit it entirely).
-SAMPLE_LASTPOS_NO_DISCOUNT: Dict[str, Any] = {
+SAMPLE_LASTPOS_NO_DISCOUNT: dict[str, Any] = {
     'id': '000000000000000000000018',
     'name': 'SAMPLE_0022',
     'unique': False,
@@ -287,7 +287,7 @@ SAMPLE_LASTPOS_NO_DISCOUNT: Dict[str, Any] = {
 # 'date' cutOff criterion with `alignDependentPhases` genuinely ABSENT (some 'date' models omit
 # it) AND a date-valued `minLife` (`{'date': '2027-03-31'}` -- happens to equal the cutOff date
 # here, but is an independent value).
-BID_TO_LAST_PROD: Dict[str, Any] = {
+BID_TO_LAST_PROD: dict[str, Any] = {
     'id': '000000000000000000000004',
     'name': 'Bid to Last Prod',
     'unique': False,
@@ -322,7 +322,7 @@ BID_TO_LAST_PROD: Dict[str, Any] = {
 # matching the cutOff date here) instead of one of the 4 fixed flag keys. Every other field is
 # present (full schema), so this round-trips exactly (see
 # test_roundtrip_exact_post_close_afe_date_fpd_source below).
-POST_CLOSE_AFE: Dict[str, Any] = {
+POST_CLOSE_AFE: dict[str, Any] = {
     'id': '000000000000000000000011',
     'name': 'Sample AFE Model',
     'unique': False,
@@ -359,7 +359,7 @@ POST_CLOSE_AFE: Dict[str, Any] = {
 # 'max cum' cutOff criterion, isolating the minLife-date shape from the 'date' cutOff-criterion
 # shape above. Full schema (every fixed key present), so this round-trips exactly (see
 # test_roundtrip_exact_minlife_date_full_schema below).
-MINLIFE_DATE_FULL: Dict[str, Any] = {
+MINLIFE_DATE_FULL: dict[str, Any] = {
     'id': '000000000000000000000024',
     'name': 'Historical (Sample Project E)',
     'unique': False,
@@ -577,7 +577,7 @@ def test_roundtrip_documented_residual_abd_loses_non_cashflow_cutoff_extras() ->
     ],
 )
 def test_roundtrip_criterion_and_min_life_keys_always_recoverable(
-    model: Dict[str, Any], expected_criteria: str, expected_min_life: str
+    model: dict[str, Any], expected_criteria: str, expected_min_life: str
 ) -> None:
     """The Cut Off criterion key and the minLife criterion key are NEVER lossy -- unlike the 5
     'extra' cutOff columns, these always render (and thus always round-trip) regardless of

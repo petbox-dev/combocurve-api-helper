@@ -1,15 +1,20 @@
 import warnings
-from typing import Callable, List, Dict, Optional, Union, Any, Iterator, Mapping, cast
+from collections.abc import Mapping
+from types import MappingProxyType
+from typing import Callable, Optional, cast
 
 import requests
 from more_itertools import chunked
 
-from .base import APIBase, Item, ItemList, WriteResponse
 from ._batch import BatchChunk, BatchWriteResult
-
+from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
 
 GET_LIMIT = 200
 GET_LIMIT_OUTPUTS_ARIES = 1000
+
+
+# Forecast volume rows are keyed by well only.
+_VOLUME_SORT_ORDER: Mapping[str, int] = MappingProxyType({'well': 0})
 
 
 class Forecasts(APIBase):
@@ -17,7 +22,7 @@ class Forecasts(APIBase):
     # URLs
     ######
 
-    def get_forecasts_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_forecasts_url(self, project_id: str, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of forecasts for a specific project id.
         """
@@ -43,7 +48,7 @@ class Forecasts(APIBase):
         return f'{base_url}/wells'
 
     def get_forecast_aries_url(
-        self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url for a specific forecast's ARIES parameters from its forecast id.
@@ -57,7 +62,7 @@ class Forecasts(APIBase):
         return url
 
     def get_forecast_outputs_url(
-        self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url for a specific forecast outputs from its forecast id.
@@ -78,7 +83,7 @@ class Forecasts(APIBase):
         return f'{base_url}/{output_id}'
 
     def get_forecast_daily_volumes_url(
-        self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url for daily volumes for a specific project id and forecast id.
@@ -92,7 +97,7 @@ class Forecasts(APIBase):
         return url
 
     def get_forecast_monthly_volumes_url(
-        self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url for monthly volumes for a specific project id and forecast id.
@@ -117,10 +122,10 @@ class Forecasts(APIBase):
         VALID_SERIES = ['best', 'p10', 'p50', 'p90']
 
         if phase.lower() not in VALID_PHASES:
-            warnings.warn(f"`phase` '{phase}' is not in list of valid names:\n{VALID_PHASES}")
+            warnings.warn(f"`phase` '{phase}' is not in list of valid names:\n{VALID_PHASES}", stacklevel=2)
 
         if series.lower() not in VALID_SERIES:
-            warnings.warn(f"`series` '{series}' is not in list of valid names:\n{VALID_SERIES}")
+            warnings.warn(f"`series` '{series}' is not in list of valid names:\n{VALID_SERIES}", stacklevel=2)
 
         phase = phase.lower()
         series = series.lower()
@@ -134,7 +139,7 @@ class Forecasts(APIBase):
     # API calls
     ###########
 
-    def get_forecasts(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_forecasts(self, project_id: str, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of forecasts for a specific project id.
 
@@ -165,15 +170,9 @@ class Forecasts(APIBase):
         params = {'take': GET_LIMIT}
         forecasts = self._get_items(url, params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(forecasts, order)
+        return self._keysort(forecasts, LIST_SORT_ORDER)
 
-    def post_forecasts(self, project_id: str, data: ItemList) -> List[WriteResponse]:
+    def post_forecasts(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Creates new forecasts for a specific project id.
 
@@ -216,7 +215,7 @@ class Forecasts(APIBase):
         }
         """
         url = self.get_forecasts_url(project_id)
-        forecasts = cast(List[WriteResponse], self._post_items(url, data))
+        forecasts = cast('list[WriteResponse]', self._post_items(url, data))
 
         return forecasts
 
@@ -224,7 +223,7 @@ class Forecasts(APIBase):
         self,
         project_id: str,
         forecast_id: str,
-        well_ids: List[str],
+        well_ids: list[str],
         *,
         chunksize: int = 100,
     ) -> ItemList:
@@ -331,7 +330,7 @@ class Forecasts(APIBase):
         return self._extract_json(response)[0]
 
     def get_forecast_aries(
-        self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
     ) -> ItemList:
         """
         Returns a list of ARIES parameters for a specific project id and forecast id.
@@ -369,7 +368,7 @@ class Forecasts(APIBase):
         return self._get_items(url, params)
 
     def get_forecast_outputs(
-        self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
     ) -> ItemList:
         """
         Returns a list of outputs for a specific project id and forecast id.
@@ -657,7 +656,7 @@ class Forecasts(APIBase):
         return outputs[0]
 
     def get_forecast_daily_volumes(
-        self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
     ) -> ItemList:
         """
         Returns a list of daily volumes for a specific project id and forecast id.
@@ -674,11 +673,11 @@ class Forecasts(APIBase):
                 "resolution": "monthly",
                 "phases": [
                     {
-                        "phase": "customNumber2",
+                        "phase": "customNumber3",
                         "series": [
                             {
                                 "eur": 123.45,
-                                "series": "P50",
+                                "series": "P90",
                                 "startDate": "2020-01-01",
                                 "endDate": "2020-01-01",
                                 "volumes": [
@@ -687,7 +686,7 @@ class Forecasts(APIBase):
                             },
                             {
                                 "eur": 123.45,
-                                "series": "P90",
+                                "series": "P50",
                                 "startDate": "2020-01-01",
                                 "endDate": "2020-01-01",
                                 "volumes": [
@@ -707,17 +706,8 @@ class Forecasts(APIBase):
                         }
                     },
                     {
-                        "phase": "_project_custom_stream_17",
+                        "phase": "customNumber15",
                         "series": [
-                            {
-                                "eur": 123.45,
-                                "series": "P50",
-                                "startDate": "2020-01-01",
-                                "endDate": "2020-01-01",
-                                "volumes": [
-                                    123.45
-                                ]
-                            },
                             {
                                 "eur": 123.45,
                                 "series": "best",
@@ -731,7 +721,7 @@ class Forecasts(APIBase):
                         "forecastOutputId": "5e272d38b78910dd2a1bd691",
                         "ratio": {
                             "eur": 123.45,
-                            "basePhase": "oil",
+                            "basePhase": "water",
                             "startDate": "2020-01-01",
                             "endDate": "2020-01-01",
                             "volumes": [
@@ -744,12 +734,12 @@ class Forecasts(APIBase):
             {
                 "project": "string",
                 "forecast": "string",
-                "forecastType": "deterministic",
+                "forecastType": "probabilistic",
                 "well": "string",
-                "resolution": "daily",
+                "resolution": "monthly",
                 "phases": [
                     {
-                        "phase": "_project_custom_stream_16",
+                        "phase": "_project_custom_stream_12",
                         "series": [
                             {
                                 "eur": 123.45,
@@ -762,7 +752,7 @@ class Forecasts(APIBase):
                             },
                             {
                                 "eur": 123.45,
-                                "series": "P90",
+                                "series": "P50",
                                 "startDate": "2020-01-01",
                                 "endDate": "2020-01-01",
                                 "volumes": [
@@ -773,7 +763,7 @@ class Forecasts(APIBase):
                         "forecastOutputId": "5e272d38b78910dd2a1bd691",
                         "ratio": {
                             "eur": 123.45,
-                            "basePhase": "water",
+                            "basePhase": "gas",
                             "startDate": "2020-01-01",
                             "endDate": "2020-01-01",
                             "volumes": [
@@ -782,7 +772,7 @@ class Forecasts(APIBase):
                         }
                     },
                     {
-                        "phase": "customNumber12",
+                        "phase": "_project_custom_stream_9",
                         "series": [
                             {
                                 "eur": 123.45,
@@ -822,13 +812,10 @@ class Forecasts(APIBase):
         params = {'take': GET_LIMIT}
         daily_volumes = self._get_items(url, params)
 
-        order = {
-            'well': 0,
-        }
-        return self._keysort(daily_volumes, order)
+        return self._keysort(daily_volumes, _VOLUME_SORT_ORDER)
 
     def get_forecast_monthly_volumes(
-        self, project_id: str, forecast_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
     ) -> ItemList:
         """
         Returns a list of monthly volumes for a specific project id and forecast id.
@@ -845,11 +832,11 @@ class Forecasts(APIBase):
                 "resolution": "monthly",
                 "phases": [
                     {
-                        "phase": "customNumber2",
+                        "phase": "customNumber3",
                         "series": [
                             {
                                 "eur": 123.45,
-                                "series": "P50",
+                                "series": "P90",
                                 "startDate": "2020-01-01",
                                 "endDate": "2020-01-01",
                                 "volumes": [
@@ -858,7 +845,7 @@ class Forecasts(APIBase):
                             },
                             {
                                 "eur": 123.45,
-                                "series": "P90",
+                                "series": "P50",
                                 "startDate": "2020-01-01",
                                 "endDate": "2020-01-01",
                                 "volumes": [
@@ -878,17 +865,8 @@ class Forecasts(APIBase):
                         }
                     },
                     {
-                        "phase": "_project_custom_stream_17",
+                        "phase": "customNumber15",
                         "series": [
-                            {
-                                "eur": 123.45,
-                                "series": "P50",
-                                "startDate": "2020-01-01",
-                                "endDate": "2020-01-01",
-                                "volumes": [
-                                    123.45
-                                ]
-                            },
                             {
                                 "eur": 123.45,
                                 "series": "best",
@@ -902,7 +880,7 @@ class Forecasts(APIBase):
                         "forecastOutputId": "5e272d38b78910dd2a1bd691",
                         "ratio": {
                             "eur": 123.45,
-                            "basePhase": "oil",
+                            "basePhase": "water",
                             "startDate": "2020-01-01",
                             "endDate": "2020-01-01",
                             "volumes": [
@@ -915,12 +893,12 @@ class Forecasts(APIBase):
             {
                 "project": "string",
                 "forecast": "string",
-                "forecastType": "deterministic",
+                "forecastType": "probabilistic",
                 "well": "string",
-                "resolution": "daily",
+                "resolution": "monthly",
                 "phases": [
                     {
-                        "phase": "_project_custom_stream_16",
+                        "phase": "_project_custom_stream_12",
                         "series": [
                             {
                                 "eur": 123.45,
@@ -933,7 +911,7 @@ class Forecasts(APIBase):
                             },
                             {
                                 "eur": 123.45,
-                                "series": "P90",
+                                "series": "P50",
                                 "startDate": "2020-01-01",
                                 "endDate": "2020-01-01",
                                 "volumes": [
@@ -944,7 +922,7 @@ class Forecasts(APIBase):
                         "forecastOutputId": "5e272d38b78910dd2a1bd691",
                         "ratio": {
                             "eur": 123.45,
-                            "basePhase": "water",
+                            "basePhase": "gas",
                             "startDate": "2020-01-01",
                             "endDate": "2020-01-01",
                             "volumes": [
@@ -953,7 +931,7 @@ class Forecasts(APIBase):
                         }
                     },
                     {
-                        "phase": "customNumber12",
+                        "phase": "_project_custom_stream_9",
                         "series": [
                             {
                                 "eur": 123.45,
@@ -993,14 +971,11 @@ class Forecasts(APIBase):
         params = {'take': GET_LIMIT}
         monthly_volumes = self._get_items(url, params)
 
-        order = {
-            'well': 0,
-        }
-        return self._keysort(monthly_volumes, order)
+        return self._keysort(monthly_volumes, _VOLUME_SORT_ORDER)
 
     def post_forecast_segment_parameters(
         self, project_id: str, forecast_id: str, well_id: str, phase: str, series: str, data: ItemList
-    ) -> List[WriteResponse]:
+    ) -> list[WriteResponse]:
         """
         Inserts a specific well's forecast parameters from its forecast id,
         well id, phase, and series.
@@ -1035,13 +1010,13 @@ class Forecasts(APIBase):
         }
         """
         url = self.get_forecast_segment_parameters_url(project_id, forecast_id, well_id, phase, series)
-        segments = cast(List[WriteResponse], self._post_items(url, data))
+        segments = cast('list[WriteResponse]', self._post_items(url, data))
 
         return segments
 
     def put_forecast_segment_parameters(
         self, project_id: str, forecast_id: str, well_id: str, phase: str, series: str, data: ItemList
-    ) -> List[WriteResponse]:
+    ) -> list[WriteResponse]:
         """
         Updates a specific well's forecast parameters from its forecast id,
         well id, phase, and series.
@@ -1076,7 +1051,7 @@ class Forecasts(APIBase):
         }
         """
         url = self.get_forecast_segment_parameters_url(project_id, forecast_id, well_id, phase, series)
-        segments = cast(List[WriteResponse], self._put_items(url, data))
+        segments = cast('list[WriteResponse]', self._put_items(url, data))
 
         return segments
 
@@ -1106,7 +1081,7 @@ class Forecasts(APIBase):
 
     def put_forecast_parameters(
         self, project_id: str, forecast_id: str, data: ItemList, *, chunksize: int = 25
-    ) -> List[WriteResponse]:
+    ) -> list[WriteResponse]:
         """
         Upserts forecast parameters in bulk for a specific forecast. Each item in
         `data` is one well x phase record ({well, phase, series, forecastType,
@@ -1120,7 +1095,7 @@ class Forecasts(APIBase):
         no separate per-segment limit.
         """
         url = self.get_forecast_parameters_url(project_id, forecast_id)
-        return cast(List[WriteResponse], self._put_items(url, data, chunksize))
+        return cast('list[WriteResponse]', self._put_items(url, data, chunksize))
 
     def put_forecast_parameters_batched(
         self,
@@ -1175,7 +1150,7 @@ class Forecasts(APIBase):
         headers = self.auth.get_auth_headers()
         url = self.get_forecast_run_url(project_id, forecast_id)
 
-        data: Dict[str, str] = {}
+        data: dict[str, str] = {}
         if configuration_id is not None:
             data['configurationId'] = configuration_id
 

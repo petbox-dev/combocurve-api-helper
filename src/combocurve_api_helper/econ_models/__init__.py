@@ -1,5 +1,7 @@
-from .base import Context, EconModelMapper
+from . import _csv_generated
+from ._csv_generated import *  # noqa: F403 -- per-type CSV convenience functions
 from .actual_or_forecast import ActualOrForecastMapper
+from .base import Context, EconModelMapper
 from .capex import CapexMapper
 from .date_settings import DateSettingsMapper
 from .differentials import DifferentialsMapper
@@ -7,12 +9,10 @@ from .expenses import ExpensesMapper
 from .ownership_reversion import OwnershipReversionMapper
 from .pricing import PricingMapper
 from .production_taxes import ProductionTaxesMapper
+from .registry import MAPPERS, get_mapper
 from .reserves_category import ReservesCategoryMapper
 from .risking import RiskingMapper
 from .stream_properties import StreamPropertiesMapper
-from .registry import MAPPERS, get_mapper
-from . import _csv_generated
-from ._csv_generated import *  # noqa: F401,F403 -- per-type CSV convenience functions
 
 __all__ = [
     'Context',

@@ -58,7 +58,7 @@ def test_dates_assignment_roundtrip() -> None:
     grid = api.get_scenario_econ_model_assignments(PROJECT_ID, SCENARIO_ID)
     assert grid, 'scenario has no wells'
     well = str(grid[0]['wellId'])
-    qname = 'zz_apitest_%d' % int(time.time())
+    qname = f'zz_apitest_{int(time.time())}'
 
     # throwaway qualifier slot in the `dates` column
     api.post_scenario_qualifiers(PROJECT_ID, SCENARIO_ID, [{'econModel': 'dates', 'name': qname}])
@@ -89,7 +89,7 @@ def test_dates_assignment_roundtrip() -> None:
         # sends `econName` (singular) and 400s; the route needs `econNames`
         # (plural), so clean up with a direct call here.
         requests.delete(
-            '%s/projects/%s/scenarios/%s/qualifiers' % (api.API_BASE_URL, PROJECT_ID, SCENARIO_ID),
+            f'{api.API_BASE_URL}/projects/{PROJECT_ID}/scenarios/{SCENARIO_ID}/qualifiers',
             headers=api.auth.get_auth_headers(),
             params={'econNames': 'dates', 'qualifierNames': qname},
         )

@@ -19,13 +19,16 @@ from __future__ import annotations
 
 import argparse
 import sys
-from typing import Any, Dict, List, Sequence, Set
+from typing import TYPE_CHECKING, Any
 
 from combocurve_api_helper import ComboCurveAPI
 from combocurve_api_helper.econ_models import MAPPERS, drift
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
 # econModelType -> ComboCurveAPI getter method name.
-GETTERS: Dict[str, str] = {
+GETTERS: dict[str, str] = {
     'StreamProperties': 'get_stream_properties_models',
     'Differentials': 'get_differentials_models',
     'ProductionTaxes': 'get_production_taxes_models',
@@ -42,18 +45,18 @@ GETTERS: Dict[str, str] = {
 
 def fetch_models(
     api: ComboCurveAPI, econ_model_type: str, project_ids: Sequence[str], cap: int
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     getter = getattr(api, GETTERS[econ_model_type])
-    models: List[Dict[str, Any]] = []
+    models: list[dict[str, Any]] = []
     for pid in project_ids:
         fetched = getter(pid)
         models.extend(fetched[:cap] if cap else fetched)
     return models
 
 
-def resolve_project_ids(api: ComboCurveAPI, names: Sequence[str]) -> List[str]:
+def resolve_project_ids(api: ComboCurveAPI, names: Sequence[str]) -> list[str]:
     projects = api.get_projects()
-    ids: List[str] = []
+    ids: list[str] = []
     for name in names:
         pid = api.extract_id(projects, name)
         if pid is None:
@@ -86,9 +89,12 @@ def run_audit(api: ComboCurveAPI, names: Sequence[str], cap: int) -> int:
 def emit_baseline(api: ComboCurveAPI, names: Sequence[str], cap: int) -> int:
     """Print a refreshed ``_BASELINE_KEYS`` literal from live data (paste into drift.py)."""
     project_ids = resolve_project_ids(api, names)
-    print('_BASELINE_KEYS: Dict[str, FrozenSet[str]] = {')
+    # Must match drift.py's own spelling: it has no `from __future__ import annotations`,
+    # so this annotation is evaluated at import and `Dict`/`FrozenSet` are not imported
+    # there. Ruff cannot see inside this string literal -- keep it in sync by hand.
+    print('_BASELINE_KEYS: dict[str, frozenset[str]] = {')
     for econ_model_type in MAPPERS:
-        keys: Set[str] = set()
+        keys: set[str] = set()
         for model in fetch_models(api, econ_model_type, project_ids, cap):
             payload = {k: v for k, v in model.items() if k not in drift.ENVELOPE_KEYS}
             keys |= drift.collect_keys(payload)

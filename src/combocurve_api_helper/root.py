@@ -1,7 +1,6 @@
-from typing import List, Dict, Optional, Union, Any, Iterator, Mapping, TypedDict, cast
+from typing import Optional, cast
 
 from .base import APIBase, Item, ItemList, WriteResponse
-
 
 GET_LIMIT = 200
 
@@ -11,7 +10,7 @@ class Root(APIBase):
     # URLs
     ######
 
-    def get_custom_columns_url(self, collection: str, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_custom_columns_url(self, collection: str, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for custom columns.
         """
@@ -28,7 +27,7 @@ class Root(APIBase):
         """
         return f'{self.API_BASE_URL}/well-identifiers'
 
-    def get_tags_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_tags_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for tags.
         """
@@ -39,7 +38,7 @@ class Root(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_root_econ_runs_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_root_econ_runs_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for econ runs.
         """
@@ -56,7 +55,7 @@ class Root(APIBase):
         """
         return f'{self.API_BASE_URL}/econ-runs/{econrun_id}'
 
-    def get_root_forecast_daily_volumes_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_root_forecast_daily_volumes_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for daily volumes.
         """
@@ -67,7 +66,7 @@ class Root(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_root_forecast_monthly_volumes_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_root_forecast_monthly_volumes_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for monthly volumes.
         """
@@ -85,7 +84,7 @@ class Root(APIBase):
         return f'{self.API_BASE_URL}/users/roles'
 
     def get_project_custom_columns_url(
-        self, project_id: str, collection: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, collection: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url for a project's custom columns for a given collection.
@@ -101,7 +100,7 @@ class Root(APIBase):
     # API calls
     ###########
 
-    def get_custom_columns(self, collection: str, filters: Optional[Dict[str, str]] = None) -> Item:
+    def get_custom_columns(self, collection: str, filters: Optional[dict[str, str]] = None) -> Item:
         """
         Returns a list of custom columns. See other convenience methods for specific collections.
 
@@ -111,7 +110,7 @@ class Root(APIBase):
         columns = self._get_items(url)
         return columns[0]
 
-    def get_custom_columns_wells(self, filters: Optional[Dict[str, str]] = None) -> Item:
+    def get_custom_columns_wells(self, filters: Optional[dict[str, str]] = None) -> Item:
         """
         Returns a list of custom columns for Wells.
 
@@ -119,7 +118,7 @@ class Root(APIBase):
         """
         return self.get_custom_columns('wells', filters)
 
-    def get_custom_columns_daily_production(self, filters: Optional[Dict[str, str]] = None) -> Item:
+    def get_custom_columns_daily_production(self, filters: Optional[dict[str, str]] = None) -> Item:
         """
         Returns a list of custom columns for Daily Production.
 
@@ -127,7 +126,7 @@ class Root(APIBase):
         """
         return self.get_custom_columns('daily-productions', filters)
 
-    def get_custom_columns_monthly_production(self, filters: Optional[Dict[str, str]] = None) -> Item:
+    def get_custom_columns_monthly_production(self, filters: Optional[dict[str, str]] = None) -> Item:
         """
         Returns a list of custom columns for Monthly Production.
 
@@ -135,7 +134,7 @@ class Root(APIBase):
         """
         return self.get_custom_columns('monthly-productions', filters)
 
-    def patch_well_identifiers(self, data: ItemList) -> List[WriteResponse]:
+    def patch_well_identifiers(self, data: ItemList) -> list[WriteResponse]:
         """
         Update well identifiers.
 
@@ -156,9 +155,9 @@ class Root(APIBase):
         ]
         """
         url = self.get_well_identifiers_url()
-        return cast(List[WriteResponse], self._patch_items(url, data))
+        return cast('list[WriteResponse]', self._patch_items(url, data))
 
-    def get_tags(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_tags(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of tags.
 
@@ -178,7 +177,7 @@ class Root(APIBase):
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
 
-    def get_root_econ_runs(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_root_econ_runs(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of econ runs.
 
@@ -198,7 +197,7 @@ class Root(APIBase):
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)[0]
 
-    def get_root_forecast_daily_volumes(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_root_forecast_daily_volumes(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of daily volumes.
 
@@ -208,7 +207,7 @@ class Root(APIBase):
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
 
-    def get_root_forecast_monthly_volumes(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_root_forecast_monthly_volumes(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of monthly volumes.
 
@@ -248,7 +247,7 @@ class Root(APIBase):
         return self._get_items(url, params)
 
     def get_project_custom_columns(
-        self, project_id: str, collection: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, collection: str, filters: Optional[dict[str, str]] = None
     ) -> Item:
         """
         Returns a project's custom columns for a given collection (e.g. 'wells',

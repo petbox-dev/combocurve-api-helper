@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, List, Optional, Tuple
+from typing import Annotated, Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -9,7 +9,7 @@ from .formats import csv_to_num, num_to_csv
 
 # API 'risking' phase key (RiskingModel python attribute name) -> CSV 'Phase' column
 # value, in forward-emission order.
-_PHASE_ORDER: List[Tuple[str, str]] = [
+_PHASE_ORDER: list[tuple[str, str]] = [
     ('oil', 'oil'),
     ('gas', 'gas'),
     ('ngl', 'ngl'),
@@ -30,7 +30,7 @@ class RiskingMultiplierRow(BaseModel):
 
     `multiplier` is typed `Any`, not `Union[int, float]`, so the forward pass carries
     the API's exact value through unchanged (int `97` stays `97`, float `92.816` stays
-    `92.816`) -- mirrors `ProductionTaxApiRow.value: List[Any]` in production_taxes.py.
+    `92.816`) -- mirrors `ProductionTaxApiRow.value: list[Any]` in production_taxes.py.
     Note the CSV->API inverse reconstructs the multiplier via `csv_to_num`, which
     renders whole-number floats as int (a `100.0` multiplier comes back as `100`);
     JSON-equivalent and accepted by CC, but not byte-identical for that case.
@@ -45,7 +45,7 @@ class RiskingMultiplierRow(BaseModel):
 class RiskingPhaseNode(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    rows: List[RiskingMultiplierRow] = Field(default_factory=list)
+    rows: list[RiskingMultiplierRow] = Field(default_factory=list)
 
 
 class RiskingModel(BaseModel):
@@ -94,14 +94,14 @@ class RiskingMapper(EconModelMapper):
     econ_model_type = 'Risking'
     columns = COLUMNS['Risking']
 
-    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)
         data = RiskingModel.model_validate(model.get('risking') or {})
 
         risk_prod_csv = self._risk_flag_csv(data.risk_prod)
         risk_ngl_csv = self._risk_flag_csv(data.risk_ngl_drip_cond_via_gas_risk)
 
-        rows: List[Dict[str, str]] = []
+        rows: list[dict[str, str]] = []
         for attr, phase_csv in _PHASE_ORDER:
             phase_node: RiskingPhaseNode = getattr(data, attr)
             for r in phase_node.rows:
@@ -137,11 +137,11 @@ class RiskingMapper(EconModelMapper):
     def _risk_flag_csv(value: Optional[bool]) -> str:
         return formats.yes_no(True if value is None else value)
 
-    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: list[dict[str, str]]) -> dict[str, Any]:
         name, unique = model_identity(rows)
         risk_prod_csv: Optional[str] = None
         risk_ngl_csv: Optional[str] = None
-        phase_members: Dict[str, List[Dict[str, str]]] = {attr: [] for attr, _ in _PHASE_ORDER}
+        phase_members: dict[str, list[dict[str, str]]] = {attr: [] for attr, _ in _PHASE_ORDER}
 
         for row in rows:
             key = row.get('Key', '')
@@ -159,9 +159,9 @@ class RiskingMapper(EconModelMapper):
             if risk_ngl_csv is None:
                 risk_ngl_csv = row.get('Risk NGL & Drip Cond via Gas Risk', '')
 
-        kwargs: Dict[str, Any] = {}
+        kwargs: dict[str, Any] = {}
         for attr, _ in _PHASE_ORDER:
-            phase_rows: List[RiskingMultiplierRow] = []
+            phase_rows: list[RiskingMultiplierRow] = []
             for member in phase_members[attr]:
                 if member['Criteria'] != 'flat':
                     raise NotImplementedError(f'Unknown Risking Criteria: {member["Criteria"]!r}')

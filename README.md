@@ -108,7 +108,7 @@ forecasts = api.get_forecasts(project_id)
 # Bulk-write forecast parameters in parallel: chunked and 207-aware
 result = api.put_forecast_parameters_batched(project_id, forecast_id, records)
 if not result.ok:
-    print(f"{result.failed_count} of {len(result.results)} records failed")
+    print(f'{result.failed_count} of {len(result.results)} records failed')
 ```
 
 ### Econ models to / from CSV
@@ -131,11 +131,11 @@ api = ComboCurveAPI()
 
 # --- ComboCurve -> CSV file ---
 models = [api.get_expenses_model_by_id(project_id, model_id)]
-get_expenses_mapper().write_csv("expenses.csv", models)
+get_expenses_mapper().write_csv('expenses.csv', models)
 
 # --- CSV file -> ComboCurve ---
-payloads = get_expenses_mapper().read_csv("expenses.csv")   # list[dict], one per model
-api.post_expenses_models(project_id, payloads)              # or put_expenses_models(...)
+payloads = get_expenses_mapper().read_csv('expenses.csv')  # list[dict], one per model
+api.post_expenses_models(project_id, payloads)  # or put_expenses_models(...)
 
 # --- In-memory string round trip ---
 csv_text = expenses_to_csv(models)
@@ -155,18 +155,18 @@ from combocurve_api_helper.econ_models import get_expenses_mapper
 
 api = ComboCurveAPI()
 mapper = get_expenses_mapper()
-model = api.get_expenses_model_by_id(project_id, model_id)   # one Expenses econ-model API dict
+model = api.get_expenses_model_by_id(project_id, model_id)  # one Expenses econ-model API dict
 
 # --- one model -> row dicts -> your own CSV file ---
-with open("expenses.csv", "w", newline="") as f:
-    writer = csv.DictWriter(f, fieldnames=mapper.columns)   # columns == the CSV header
+with open('expenses.csv', 'w', newline='') as f:
+    writer = csv.DictWriter(f, fieldnames=mapper.columns)  # columns == the CSV header
     writer.writeheader()
-    writer.writerows(mapper.to_row_dicts(model))            # one model's line-item rows
+    writer.writerows(mapper.to_row_dicts(model))  # one model's line-item rows
 
 # --- row dicts -> one model ---
-with open("expenses.csv", newline="") as f:
+with open('expenses.csv', newline='') as f:
     rows = list(csv.DictReader(f))
-payload = mapper.from_row_dicts(rows)                       # reconstruct a single API payload
+payload = mapper.from_row_dicts(rows)  # reconstruct a single API payload
 ```
 
 ## Contributing

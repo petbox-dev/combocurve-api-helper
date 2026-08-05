@@ -1,6 +1,6 @@
 import json
 import warnings
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 
@@ -8,7 +8,7 @@ from combocurve_api_helper.econ_models.capex import CapexMapper
 
 # API leaf shape: every listed key is always present on an otherCapex row, plus exactly
 # ONE criterion key (+ companion date-header key for fromHeaders/fromSchedule).
-_PROBABILISTIC_DEFAULTS: Dict[str, Any] = {
+_PROBABILISTIC_DEFAULTS: dict[str, Any] = {
     'distributionType': 'na',
     'mean': 0,
     'standardDeviation': 0,
@@ -21,8 +21,8 @@ _PROBABILISTIC_DEFAULTS: Dict[str, Any] = {
 
 def _row(
     category: str, tangible: int = 0, intangible: int = 0, after_econ_limit: bool = False, **criterion: Any
-) -> Dict[str, Any]:
-    base: Dict[str, Any] = {
+) -> dict[str, Any]:
+    base: dict[str, Any] = {
         'category': category,
         'description': '',
         'tangible': tangible,
@@ -40,7 +40,7 @@ def _row(
     return base
 
 
-API: Dict[str, Any] = {
+API: dict[str, Any] = {
     'id': 'c1',
     'name': 'D&C CAPEX',
     'unique': False,
@@ -96,7 +96,7 @@ def test_to_row_dicts_values() -> None:
 def test_from_headers_first_prod_date() -> None:
     """otherCapex rows use the abbreviated token 'offset_to_first_prod_date' (companion key
     'firstProdDate'). Mirrors the existing 'offset_to_spud_date' handling."""
-    m: Dict[str, Any] = {
+    m: dict[str, Any] = {
         'name': 'FIRST PROD DATE CAPEX',
         'unique': False,
         'otherCapex': {
@@ -130,7 +130,7 @@ _COMPLETION_COST = 'Completion Cost ($/ft)'
 
 # drilling's dollarPerFtOfHorizontal is a scalar; completion's is a proppant-loading tier
 # LIST.
-_DRILLING_PER_FOOT: Dict[str, Any] = {
+_DRILLING_PER_FOOT: dict[str, Any] = {
     'dollarPerFtOfVertical': 0,
     'dollarPerFtOfHorizontal': 196,
     'fixedCost': 1000,
@@ -141,7 +141,7 @@ _DRILLING_PER_FOOT: Dict[str, Any] = {
     'dealTerms': 1,
     'rows': [{'pctOfTotalCost': 50, 'offsetToFpd': -243}, {'pctOfTotalCost': 50, 'offsetToFpd': -212}],
 }
-_COMPLETION_PER_FOOT: Dict[str, Any] = {
+_COMPLETION_PER_FOOT: dict[str, Any] = {
     'dollarPerFtOfVertical': 0,
     'dollarPerFtOfHorizontal': [{'propLl': 1, 'unitCost': 142}, {'propLl': 10000, 'unitCost': 142}],
     'fixedCost': 3000,
@@ -166,7 +166,7 @@ def test_drilling_completion_cost_captured_as_json_and_round_trip() -> None:
     own export omits them); the mapper captures them losslessly as JSON on the first row
     -- no warning -- and reconstructs them on the inverse pass. Completion's
     dollarPerFtOfHorizontal tier LIST and both rows[] schedules survive the round trip."""
-    m: Dict[str, Any] = {
+    m: dict[str, Any] = {
         'name': 'DC PER FOOT',
         'unique': False,
         'drillingCost': _DRILLING_PER_FOOT,
@@ -190,7 +190,7 @@ def test_drilling_completion_cost_captured_as_json_and_round_trip() -> None:
 def test_perfoot_only_drilling_leaves_completion_absent() -> None:
     """A model with only drillingCost gets a blank Completion column and no
     completionCost key on the inverse pass (not a null-valued key)."""
-    m: Dict[str, Any] = {
+    m: dict[str, Any] = {
         'name': 'DRILL ONLY',
         'unique': False,
         'drillingCost': _DRILLING_PER_FOOT,
@@ -209,7 +209,7 @@ def test_perfoot_with_no_other_capex_rows_uses_carrier_row() -> None:
     the mapper emits ONE carrier row (blank line-item cells, so blank Criteria) carrying
     only the JSON, and the inverse pass restores the object without inventing a spurious
     otherCapex row."""
-    m: Dict[str, Any] = {
+    m: dict[str, Any] = {
         'name': 'PER FOOT ONLY',
         'unique': False,
         'drillingCost': _DRILLING_PER_FOOT,
@@ -238,7 +238,7 @@ def test_no_perfoot_emits_blank_columns_and_no_key() -> None:
 
 
 def test_non_default_probabilistic_fields_warn() -> None:
-    m: Dict[str, Any] = {
+    m: dict[str, Any] = {
         'name': 'PROBABILISTIC CAPEX',
         'unique': False,
         'otherCapex': {
@@ -260,10 +260,10 @@ def test_escalation_start_as_of_date() -> None:
     """escalationStart {'asOfDate': <int>}: the int is a day-offset, mapped like
     applyToCriteria. The round-trip assertion is label-agnostic (proves to_csv / from_csv
     are inverses); the 'as of date' display string is CC's escalation-start UI option."""
-    rows_in: List[Dict[str, Any]] = [
+    rows_in: list[dict[str, Any]] = [
         {**_row('drilling', intangible=3000, offsetToFpd=-120), 'escalationStart': {'asOfDate': 5}},
     ]
-    m: Dict[str, Any] = {'name': 'AS OF DATE ESC', 'unique': False, 'otherCapex': {'rows': rows_in}}
+    m: dict[str, Any] = {'name': 'AS OF DATE ESC', 'unique': False, 'otherCapex': {'rows': rows_in}}
     mapper = CapexMapper()
     rows = mapper.to_row_dicts(m)
     assert rows[0]['Escalation Start Criteria'] == 'as of date'
@@ -275,14 +275,14 @@ def test_escalation_start_as_of_date() -> None:
 def test_escalation_none_python_roundtrip() -> None:
     """escalationModel/depreciationModel = None (Python None, not the string 'none')
     should round-trip to None, matching the Optional-string convention used elsewhere."""
-    rows_in: List[Dict[str, Any]] = [
+    rows_in: list[dict[str, Any]] = [
         {
             **_row('drilling', intangible=3000, offsetToFpd=-120),
             'escalationModel': None,
             'depreciationModel': None,
         }
     ]
-    m: Dict[str, Any] = {'name': 'NONE MODEL', 'unique': False, 'otherCapex': {'rows': rows_in}}
+    m: dict[str, Any] = {'name': 'NONE MODEL', 'unique': False, 'otherCapex': {'rows': rows_in}}
     mapper = CapexMapper()
     rows = mapper.to_row_dicts(m)
     assert rows[0]['Escalation'] == ''

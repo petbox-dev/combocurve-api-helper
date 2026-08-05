@@ -1,5 +1,5 @@
 import copy
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -7,7 +7,7 @@ from combocurve_api_helper.econ_models import MAPPERS, get_mapper
 from combocurve_api_helper.econ_models.ownership_reversion import OwnershipReversionMapper
 
 # Initial-only -- ALL 20 reversion keys explicitly present and null.
-EIGHT_EIGHTHS: Dict[str, Any] = {
+EIGHT_EIGHTHS: dict[str, Any] = {
     'id': '000000000000000000000016',
     'name': '8/8ths',
     'unique': False,
@@ -51,7 +51,7 @@ EIGHT_EIGHTHS: Dict[str, Any] = {
 
 # One active tier (firstReversion). Note firstReversion carries NO 'reversionTiedTo' key at all
 # (a genuine absence) -- see ownership_reversion._REVERSION_TIED_TO_CSV_DEFAULT.
-SAMPLE_REVERSION_A_W_PO: Dict[str, Any] = {
+SAMPLE_REVERSION_A_W_PO: dict[str, Any] = {
     'id': '000000000000000000000014',
     'name': 'Sample Reversion A w PO',
     'unique': False,
@@ -113,7 +113,7 @@ SAMPLE_REVERSION_A_W_PO: Dict[str, Any] = {
 
 # One active tier, but here 'reversionTiedTo' IS explicit ({"type": "as_of"}) -- unlike
 # SAMPLE_REVERSION_A_W_PO above.
-SAMPLE_WELL_2: Dict[str, Any] = {
+SAMPLE_WELL_2: dict[str, Any] = {
     'id': '000000000000000000000015',
     'name': 'Sample Well 2 - PO 100%',
     'unique': False,
@@ -178,7 +178,7 @@ SAMPLE_WELL_2: Dict[str, Any] = {
 # A `PayoutWithInvestment` firstReversion tier -- previously raised `NotImplementedError`. Also
 # exercises a `reversionTiedTo` WITH a `value` (`{"type": "date", "value": "2021-10-01"}`), fully
 # distinct from the tier's own dollar-amount `reversionValue`.
-PAYOUT_WITH_INVESTMENT: Dict[str, Any] = {
+PAYOUT_WITH_INVESTMENT: dict[str, Any] = {
     'id': '000000000000000000000006',
     'name': 'sample-model-0001',
     'unique': True,
@@ -244,7 +244,7 @@ PAYOUT_WITH_INVESTMENT: Dict[str, Any] = {
 # `includeNetProfitInterest` are the empty string (not null/absent), and `reversionTiedTo`
 # carries `{"type": "date", "value": "2023-09-01"}` -- a DIFFERENT date than the tier's own
 # `reversionValue`.
-DATE_TYPE_REVERSION: Dict[str, Any] = {
+DATE_TYPE_REVERSION: dict[str, Any] = {
     'id': '000000000000000000000005',
     'name': 'sample-model-0002',
     'unique': True,
@@ -479,7 +479,7 @@ def test_roundtrip_exact_date_type() -> None:
 
 
 def test_unknown_reversion_type_raises() -> None:
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'Bad',
         'unique': False,
         'ownership': {

@@ -1,5 +1,5 @@
 import datetime
-from typing import Annotated, Any, Dict, List, NamedTuple, Optional, Tuple
+from typing import Annotated, Any, NamedTuple, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -71,8 +71,8 @@ class ProductionTaxApiRow(BaseModel):
     key: str
     category: str
     criteria: str
-    period: List[Any]
-    value: List[Any]
+    period: list[Any]
+    value: list[Any]
     unit: str
     shrinkage_condition: Annotated[Optional[str], Field(alias='shrinkageCondition')] = None
     escalation: Optional[str] = None
@@ -92,7 +92,7 @@ class KeyCategoryDeduct(NamedTuple):
 
 
 def _key_category_deduct(
-    row: ProductionTaxApiRow, severance_total: Dict[str, int], severance_seen: Dict[str, int]
+    row: ProductionTaxApiRow, severance_total: dict[str, int], severance_seen: dict[str, int]
 ) -> KeyCategoryDeduct:
     if row.category == _SEVERANCE_CATEGORY_API:
         phase = row.key
@@ -119,7 +119,7 @@ def _is_severance_category(category_csv: str) -> bool:
     return category_csv.startswith(prefix) and category_csv[len(prefix) :].isdigit()
 
 
-def _build_api_row(key_csv: str, category_csv: str, members: List[Dict[str, str]]) -> Dict[str, Any]:
+def _build_api_row(key_csv: str, category_csv: str, members: list[dict[str, str]]) -> dict[str, Any]:
     first = members[0]
 
     criteria_csv = first['Criteria']
@@ -145,16 +145,16 @@ def _build_api_row(key_csv: str, category_csv: str, members: List[Dict[str, str]
         category = _SEVERANCE_CATEGORY_API
 
     flat_marker = formats.ENTIRE_WELL_LIFE_MARKER
-    period: List[Any]
+    period: list[Any]
     if criteria_csv == 'flat':
         period = [flat_marker for _ in members]
     elif criteria_csv == 'dates':
         period = [_dates_period_from_csv(m['Period']) for m in members]
     else:
         period = [m['Period'] for m in members]
-    value: List[Any] = [csv_to_num(m['Value']) for m in members]
+    value: list[Any] = [csv_to_num(m['Value']) for m in members]
 
-    row_kwargs: Dict[str, Any] = {
+    row_kwargs: dict[str, Any] = {
         'key': phase,
         'category': category,
         'criteria': criteria_api,
@@ -177,7 +177,7 @@ class ProductionTaxesMapper(EconModelMapper):
     econ_model_type = 'ProductionTaxes'
     columns = COLUMNS['ProductionTaxes']
 
-    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)
         data = model.get('data') or {}
         state = data.get('state', '') or ''
@@ -185,13 +185,13 @@ class ProductionTaxesMapper(EconModelMapper):
 
         parsed = [ProductionTaxApiRow.model_validate(r) for r in api_rows]
 
-        severance_total: Dict[str, int] = {}
+        severance_total: dict[str, int] = {}
         for row in parsed:
             if row.category == _SEVERANCE_CATEGORY_API:
                 severance_total[row.key] = severance_total.get(row.key, 0) + 1
 
-        severance_seen: Dict[str, int] = {}
-        rows: List[Dict[str, str]] = []
+        severance_seen: dict[str, int] = {}
+        rows: list[dict[str, str]] = []
         for row in parsed:
             key_csv, category_csv, deduct_severance = _key_category_deduct(row, severance_total, severance_seen)
             if row.unit not in _UNIT_TO_CSV:
@@ -232,9 +232,9 @@ class ProductionTaxesMapper(EconModelMapper):
                 rows.append({c: csv_row.get(c, '') for c in self.columns})
         return rows
 
-    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
-        groups: Dict[Tuple[str, str], List[Dict[str, str]]] = {}
-        order: List[Tuple[str, str]] = []
+    def from_row_dicts(self, rows: list[dict[str, str]]) -> dict[str, Any]:
+        groups: dict[tuple[str, str], list[dict[str, str]]] = {}
+        order: list[tuple[str, str]] = []
         name, unique = model_identity(rows)
         state = ''
         for row in rows:
@@ -245,7 +245,7 @@ class ProductionTaxesMapper(EconModelMapper):
                 order.append(group_key)
             groups[group_key].append(row)
 
-        api_rows: List[Dict[str, Any]] = []
+        api_rows: list[dict[str, Any]] = []
         for key_csv, category_csv in order:
             api_rows.append(_build_api_row(key_csv, category_csv, groups[(key_csv, category_csv)]))
 

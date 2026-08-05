@@ -1,5 +1,5 @@
 import warnings
-from typing import Annotated, Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import Annotated, Any, NamedTuple, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -188,7 +188,7 @@ class ExpenseLeaf(BaseModel):
     rows_calculation_method: Annotated[Optional[str], Field(alias='rowsCalculationMethod')] = None
     stop_at_econ_limit: Annotated[Optional[bool], Field(alias='stopAtEconLimit')] = None
     expense_before_fpd: Annotated[Optional[bool], Field(alias='expenseBeforeFpd')] = None
-    rows: List[ExpenseApiRow] = Field(default_factory=list)
+    rows: list[ExpenseApiRow] = Field(default_factory=list)
 
     @field_validator('cap', mode='before')
     @classmethod
@@ -208,7 +208,7 @@ class ExpenseTarget(NamedTuple):
     slot_b: Optional[str]  # variable: API subcat; else None
 
 
-def _unwrap_variable_leaf(node: Dict[str, Any]) -> Dict[str, Any]:
+def _unwrap_variable_leaf(node: dict[str, Any]) -> dict[str, Any]:
     """Unwrap the boe/totalFluid double-nesting (see `_DOUBLE_NESTED_PHASES` /
     `_LEAF_MARKER_KEYS`): a real leaf always carries at least one leaf-marker key.
     When `node` carries NONE of them but is a single-entry dict whose lone value
@@ -226,8 +226,8 @@ def _unwrap_variable_leaf(node: Dict[str, Any]) -> Dict[str, Any]:
     return node
 
 
-def _settings_columns(leaf: ExpenseLeaf, fixed: bool) -> Dict[str, str]:
-    out: Dict[str, str] = {
+def _settings_columns(leaf: ExpenseLeaf, fixed: bool) -> dict[str, str]:
+    out: dict[str, str] = {
         'Description': '' if leaf.description is None else leaf.description,
         'Calculation': '' if leaf.calculation is None else leaf.calculation,
         'Escalation': escalation_to_csv(leaf.escalation_model, title=False),
@@ -257,7 +257,7 @@ def _settings_columns(leaf: ExpenseLeaf, fixed: bool) -> Dict[str, str]:
     return out
 
 
-def _value_unit(r: ExpenseApiRow, key_csv: str) -> Tuple[Any, str]:
+def _value_unit(r: ExpenseApiRow, key_csv: str) -> tuple[Any, str]:
     if r.dollar_per_bbl is not None:
         return r.dollar_per_bbl, '$/bbl'
     if r.dollar_per_mcf is not None:
@@ -283,7 +283,7 @@ def _value_unit(r: ExpenseApiRow, key_csv: str) -> Tuple[Any, str]:
     raise NotImplementedError(f'Unknown expense row value: {r!r}')
 
 
-def _criteria(r: ExpenseApiRow, *, is_terminal: bool) -> Tuple[str, str]:
+def _criteria(r: ExpenseApiRow, *, is_terminal: bool) -> tuple[str, str]:
     if r.entire_well_life is not None:
         formats.check_entire_well_life(r.entire_well_life)
         return 'flat', ''
@@ -311,9 +311,9 @@ def _target(key_csv: str, category_csv: str) -> ExpenseTarget:
     raise NotImplementedError(f'Unknown expense Key: {key_csv}')
 
 
-def _build_leaf(members: List[Dict[str, str]], fixed: bool) -> Dict[str, Any]:
+def _build_leaf(members: list[dict[str, str]], fixed: bool) -> dict[str, Any]:
     first = members[0]
-    kwargs: Dict[str, Any] = {}
+    kwargs: dict[str, Any] = {}
 
     description = first.get('Description') or ''
     kwargs['description'] = description or None
@@ -347,7 +347,7 @@ def _build_leaf(members: List[Dict[str, str]], fixed: bool) -> Dict[str, Any]:
     # these fields must NOT be dropped just because their reconstructed value happens to
     # be None. Hence `exclude=` (a fixed field-name set) rather than a blanket
     # `exclude_none=True` on the leaf itself.
-    exclude_fields: Set[str] = {'rate_type', 'rows_calculation_method'}
+    exclude_fields: set[str] = {'rate_type', 'rows_calculation_method'}
     if not fixed:
         exclude_fields |= {'stop_at_econ_limit', 'expense_before_fpd'}
     dumped = leaf.model_dump(by_alias=True, exclude=exclude_fields)
@@ -360,8 +360,8 @@ def _build_leaf(members: List[Dict[str, str]], fixed: bool) -> Dict[str, Any]:
     return dumped
 
 
-def _row_from_csv(m: Dict[str, str]) -> Dict[str, Any]:
-    row_dict: Dict[str, Any] = {}
+def _row_from_csv(m: dict[str, str]) -> dict[str, Any]:
+    row_dict: dict[str, Any] = {}
     criteria = m['Criteria']
     if criteria == 'flat':
         row_dict['entireWellLife'] = formats.ENTIRE_WELL_LIFE_MARKER
@@ -386,9 +386,9 @@ class ExpensesMapper(EconModelMapper):
     econ_model_type = 'Expenses'
     columns = COLUMNS['Expenses']
 
-    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)
-        rows: List[Dict[str, str]] = []
+        rows: list[dict[str, str]] = []
 
         for phase, subcats in (model.get('variableExpenses') or {}).items():
             if phase not in _PHASE_TO_CSV:
@@ -434,11 +434,11 @@ class ExpensesMapper(EconModelMapper):
         return rows
 
     def _leaf_rows(
-        self, common: Dict[str, str], raw_leaf: Dict[str, Any], key_csv: str, category_csv: str, fixed: bool
-    ) -> List[Dict[str, str]]:
+        self, common: dict[str, str], raw_leaf: dict[str, Any], key_csv: str, category_csv: str, fixed: bool
+    ) -> list[dict[str, str]]:
         leaf = ExpenseLeaf.model_validate(raw_leaf)
         settings = _settings_columns(leaf, fixed)
-        out: List[Dict[str, str]] = []
+        out: list[dict[str, str]] = []
         last_index = len(leaf.rows) - 1
         for i, r in enumerate(leaf.rows):
             value, unit = _value_unit(r, key_csv)
@@ -458,9 +458,9 @@ class ExpensesMapper(EconModelMapper):
             out.append({c: row.get(c, '') for c in self.columns})
         return out
 
-    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
-        groups: Dict[Tuple[str, str], List[Dict[str, str]]] = {}
-        order: List[Tuple[str, str]] = []
+    def from_row_dicts(self, rows: list[dict[str, str]]) -> dict[str, Any]:
+        groups: dict[tuple[str, str], list[dict[str, str]]] = {}
+        order: list[tuple[str, str]] = []
         name, unique = model_identity(rows)
         for row in rows:
             group_key = (row['Key'], row['Category'])
@@ -469,10 +469,10 @@ class ExpensesMapper(EconModelMapper):
                 order.append(group_key)
             groups[group_key].append(row)
 
-        variable_expenses: Dict[str, Dict[str, Any]] = {}
-        fixed_expenses: Dict[str, Any] = {}
-        carbon_expenses: Dict[str, Any] = {}
-        water_disposal: Optional[Dict[str, Any]] = None
+        variable_expenses: dict[str, dict[str, Any]] = {}
+        fixed_expenses: dict[str, Any] = {}
+        carbon_expenses: dict[str, Any] = {}
+        water_disposal: Optional[dict[str, Any]] = None
 
         for key_csv, category_csv in order:
             members = groups[(key_csv, category_csv)]
@@ -499,7 +499,7 @@ class ExpensesMapper(EconModelMapper):
             else:  # water
                 water_disposal = leaf
 
-        result: Dict[str, Any] = {'name': name, 'unique': unique}
+        result: dict[str, Any] = {'name': name, 'unique': unique}
         # Only reconstruct a top-level group if at least one CSV row belonged to it --
         # an empty {} would misrepresent a source model that never had the group at all.
         if variable_expenses:

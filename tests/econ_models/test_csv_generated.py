@@ -10,7 +10,6 @@ each pair actually delegates to the correct mapper on real CC export rows.
 import pathlib
 import subprocess
 import sys
-from typing import Dict
 
 import pytest
 
@@ -31,7 +30,7 @@ GEN = REPO / 'scripts' / 'generate_csv_functions.py'
 # The generated module stays in the package under src/; only the test moved out.
 OUT = REPO / 'src' / 'combocurve_api_helper' / 'econ_models' / '_csv_generated.py'
 
-_BASE_BY_TYPE: Dict[str, str] = {
+_BASE_BY_TYPE: dict[str, str] = {
     m['econModelType']: m['methodBase'] for m in config.ECON_MODELS if m['methodBase'] is not None
 }
 

@@ -15,7 +15,7 @@ from __future__ import annotations
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .base import ItemList
@@ -53,7 +53,7 @@ class BatchWriteResult:
     failed_count: int
     results: ItemList  # per-record, in the original payload order
     general_errors: ItemList
-    chunks: List[BatchChunk]
+    chunks: list[BatchChunk]
 
     @property
     def ok(self) -> bool:

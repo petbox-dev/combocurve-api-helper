@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, List, Optional
+from typing import Annotated, Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -36,7 +36,7 @@ class ReservesCategoryMapper(EconModelMapper):
     econ_model_type = 'ReservesCategory'
     columns = COLUMNS['ReservesCategory']
 
-    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)
         data = ReservesCategoryData.model_validate(model.get('reservesCategory') or {})
 
@@ -50,7 +50,7 @@ class ReservesCategoryMapper(EconModelMapper):
         )
         return [{c: row.get(c, '') for c in self.columns}]
 
-    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: list[dict[str, str]]) -> dict[str, Any]:
         if len(rows) != 1:
             raise NotImplementedError(
                 f'ReservesCategory is one-row-per-model; expected exactly 1 CSV row, got {len(rows)}'

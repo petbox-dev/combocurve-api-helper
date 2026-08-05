@@ -1,7 +1,7 @@
+import inspect
+import pathlib
 import subprocess
 import sys
-import pathlib
-import inspect
 
 from combocurve_api_helper import config
 from combocurve_api_helper._models_generated import _GeneratedModelMethods
