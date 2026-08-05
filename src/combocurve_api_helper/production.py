@@ -108,7 +108,7 @@ class Production(APIBase):
         https://docs.api.combocurve.com/api/patch-monthly-productions
         """
         url = self.get_company_monthly_productions_url()
-        monthly_production = cast('list[WriteResponse]', self._put_items(url, data))
+        monthly_production = cast('list[WriteResponse]', self._patch_items(url, data))
 
         return monthly_production
 
@@ -220,7 +220,7 @@ class Production(APIBase):
         https://docs.api.combocurve.com/api/patch-projects-monthly-productions
         """
         url = self.get_project_monthly_productions_url(project_id)
-        monthly_production = cast('list[WriteResponse]', self._put_items(url, data))
+        monthly_production = cast('list[WriteResponse]', self._patch_items(url, data))
 
         return monthly_production
 
@@ -276,7 +276,7 @@ class Production(APIBase):
         https://docs.api.combocurve.com/api/patch-projects-daily-productions
         """
         url = self.get_project_daily_productions_url(project_id)
-        daily_production = cast('list[WriteResponse]', self._put_items(url, data))
+        daily_production = cast('list[WriteResponse]', self._patch_items(url, data))
 
         return daily_production
 

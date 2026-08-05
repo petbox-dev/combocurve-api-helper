@@ -5,16 +5,16 @@
 
 echo Running ruff...
 echo ruff check src tests scripts
-ruff check %~dp0..\src %~dp0..	ests %~dp0..\scripts
+ruff check %~dp0..\src %~dp0..\tests %~dp0..\scripts
 if errorlevel 1 exit /b %errorlevel%
 echo ruff format --check src tests scripts
-ruff format --check %~dp0..\src %~dp0..	ests %~dp0..\scripts
+ruff format --check %~dp0..\src %~dp0..\tests %~dp0..\scripts
 if errorlevel 1 exit /b %errorlevel%
 echo.
 
 echo Running mypy...
 echo mypy src tests scripts
-mypy %~dp0..\src %~dp0..	ests %~dp0..\scripts
+mypy %~dp0..\src %~dp0..\tests %~dp0..\scripts
 if errorlevel 1 exit /b %errorlevel%
 
 pytest

@@ -58,6 +58,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   exceptions such as a truncated `Content-Length` read, non-JSON bodies, and valid JSON of
   the wrong shape. A well-formed JSON object with no `item` tree previously produced a
   silent exit 0, so the freshness test passed having verified nothing.
+- `patch_company_monthly_productions`, `patch_project_monthly_productions` and
+  `patch_project_daily_productions` issued **PUT** rather than PATCH, against routes documented
+  as `patch-*`. Their sibling `patch_company_daily_productions` was already correct, so this was
+  a copy-paste slip rather than a deliberate choice; PUT and PATCH differ server-side in how
+  omitted fields are treated.
 - `scripts/audit_econ_model_drift.py` emitted a `_BASELINE_KEYS: Dict[str, FrozenSet[str]]`
   literal for pasting into `drift.py`, which imports neither name and has no
   `from __future__ import annotations` — pasting it raised `NameError` at import.
