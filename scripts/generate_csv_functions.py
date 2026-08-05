@@ -12,8 +12,10 @@ Run: python scripts/generate_csv_functions.py          # writes the file
 """
 
 from __future__ import annotations
-import sys
+
 import pathlib
+import sys
+
 from combocurve_api_helper import config
 from combocurve_api_helper.econ_models.registry import MAPPERS
 
@@ -30,30 +32,32 @@ for the generic `get_mapper`.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, TextIO, Union
+from typing import TYPE_CHECKING, Any, TextIO
 
-from .base import Context, EconModelMapper
 from .registry import get_mapper
+
+if TYPE_CHECKING:
+    from .base import Context, EconModelMapper
 '''
 
 FUNCS = '''
 
-def {method_base}_to_row_dicts(model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+def {method_base}_to_row_dicts(model: dict[str, Any], context: Context | None = None) -> list[dict[str, str]]:
     """Convert one `{econ_model_type}` econ-model API dict to CSV rows (model-level export shape)."""
     return get_mapper('{econ_model_type}').to_row_dicts(model, context)
 
 
-def {method_base}_from_row_dicts(rows: List[Dict[str, str]]) -> Dict[str, Any]:
+def {method_base}_from_row_dicts(rows: list[dict[str, str]]) -> dict[str, Any]:
     """Reconstruct {article} `{econ_model_type}` econ-model API dict from its CSV rows."""
     return get_mapper('{econ_model_type}').from_row_dicts(rows)
 
 
-def {method_base}_to_csv(models: List[Dict[str, Any]], context: Optional[Context] = None) -> str:
+def {method_base}_to_csv(models: list[dict[str, Any]], context: Context | None = None) -> str:
     """Serialize a list of `{econ_model_type}` econ-model API dicts to a multi-model CSV string."""
     return get_mapper('{econ_model_type}').to_csv(models, context)
 
 
-def {method_base}_from_csv(source: Union[str, TextIO]) -> List[Dict[str, Any]]:
+def {method_base}_from_csv(source: str | TextIO) -> list[dict[str, Any]]:
     """Parse {article} `{econ_model_type}` CSV (string or file-like) into a list of econ-model API dicts."""
     return get_mapper('{econ_model_type}').from_csv(source)
 
@@ -85,7 +89,10 @@ def render() -> str:
                 f'get_{method_base}_mapper',
             )
         )
-    all_body = ''.join(f'    {name!r},\n' for name in names)
+    # Sorted, not emission order: ruff RUF022 wants `__all__` in canonical order, and
+    # the ordering carries no meaning. Grouping per model type would read better but
+    # would keep the generated module permanently lint-dirty.
+    all_body = ''.join(f'    {name!r},\n' for name in sorted(names))
     parts.append(f'\n\n__all__ = [\n{all_body}]\n')
     return ''.join(parts)
 

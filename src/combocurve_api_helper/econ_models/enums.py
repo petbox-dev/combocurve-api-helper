@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Dict
 
 
 class StrEnum(str, Enum):  # Python <3.11 shim
@@ -77,7 +76,7 @@ class GrossOrNet(StrEnum):
 
 
 # API criteria value -> CSV Criteria string
-CRITERIA_TO_CSV: Dict[str, str] = {
+CRITERIA_TO_CSV: dict[str, str] = {
     Criteria.FromHeaders.value: 'from headers',
     Criteria.FromSchedule.value: 'from schedule',
     Criteria.Date.value: 'date',
@@ -91,23 +90,23 @@ CRITERIA_TO_CSV: Dict[str, str] = {
     Criteria.WaterRate.value: 'water rate',
     Criteria.TotalFluidRate.value: 'total fluid rate',
 }
-CRITERIA_FROM_CSV: Dict[str, str] = {v: k for k, v in CRITERIA_TO_CSV.items()}
+CRITERIA_FROM_CSV: dict[str, str] = {v: k for k, v in CRITERIA_TO_CSV.items()}
 
 # OffsetTo value -> CSV display (only the mapped values are handled; extend as new ones
 # surface -- an unmapped token raises in the mapper).
-OFFSET_TO_HEADER_CSV: Dict[str, str] = {
+OFFSET_TO_HEADER_CSV: dict[str, str] = {
     OffsetTo.SpudDate.value: 'Spud Date',
     OffsetTo.CompletionStartDate.value: 'Completion Start Date',
     # 'offset_to_first_prod_date' -> 'First Prod Date': strip the 'offset_to_' prefix and
     # title-case the remaining words, same convention as the other two entries above.
     OffsetTo.FirstProductionDate.value: 'First Prod Date',
 }
-OFFSET_TO_SCHEDULE_CSV: Dict[str, str] = {
+OFFSET_TO_SCHEDULE_CSV: dict[str, str] = {
     OffsetTo.SpudDate.value: 'Spud Start',
     OffsetTo.CompletionStartDate.value: 'Completion Start',
 }
-OFFSET_FROM_HEADER_CSV: Dict[str, str] = {v: k for k, v in OFFSET_TO_HEADER_CSV.items()}
-OFFSET_FROM_SCHEDULE_CSV: Dict[str, str] = {v: k for k, v in OFFSET_TO_SCHEDULE_CSV.items()}
+OFFSET_FROM_HEADER_CSV: dict[str, str] = {v: k for k, v in OFFSET_TO_HEADER_CSV.items()}
+OFFSET_FROM_SCHEDULE_CSV: dict[str, str] = {v: k for k, v in OFFSET_TO_SCHEDULE_CSV.items()}
 
 # OffsetTo value -> companion API date-header key carried alongside a fromHeaders/
 # fromSchedule otherCapex row (e.g. {'fromHeaders': 'offset_to_spud_date', 'spudDate': 0}).
@@ -115,7 +114,7 @@ OFFSET_FROM_SCHEDULE_CSV: Dict[str, str] = {v: k for k, v in OFFSET_TO_SCHEDULE_
 # *value* (str) instead of the enum member so it composes with plain dict lookups
 # elsewhere in this package. `_None` is intentionally omitted -- it is not a real
 # fromHeaders/fromSchedule token.
-OFFSET_TO_API_DATEKEY: Dict[str, str] = {
+OFFSET_TO_API_DATEKEY: dict[str, str] = {
     OffsetTo.PermitDate.value: 'permitDate',
     OffsetTo.SpudDate.value: 'spudDate',
     OffsetTo.RigReleaseDate.value: 'dateRigRelease',

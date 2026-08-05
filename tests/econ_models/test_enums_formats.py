@@ -1,7 +1,7 @@
 import pytest
 
 from combocurve_api_helper.econ_models import formats as F
-from combocurve_api_helper.econ_models.enums import Criteria, CRITERIA_TO_CSV, CRITERIA_FROM_CSV
+from combocurve_api_helper.econ_models.enums import CRITERIA_FROM_CSV, CRITERIA_TO_CSV, Criteria
 
 
 def test_criteria_csv_roundtrip() -> None:

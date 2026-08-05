@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, List, Optional, Union
+from typing import Annotated, Any, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -274,12 +274,12 @@ class OwnershipReversionMapper(EconModelMapper):
     econ_model_type = 'OwnershipReversion'
     columns = COLUMNS['OwnershipReversion']
 
-    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)
         ownership = model.get('ownership') or {}
 
         initial = InitialOwnershipData.model_validate(ownership.get(_INITIAL_KEY_API) or {})
-        rows: List[Dict[str, str]] = [self._initial_row(common, initial)]
+        rows: list[dict[str, str]] = [self._initial_row(common, initial)]
 
         for ordinal in _REVERSION_ORDINALS:
             raw = ownership.get(f'{ordinal}Reversion')
@@ -289,7 +289,7 @@ class OwnershipReversionMapper(EconModelMapper):
             rows.append(self._reversion_row(common, ordinal, tier))
         return rows
 
-    def _initial_row(self, common: Dict[str, str], initial: InitialOwnershipData) -> Dict[str, str]:
+    def _initial_row(self, common: dict[str, str], initial: InitialOwnershipData) -> dict[str, str]:
         row = dict(common)
         row.update(
             {
@@ -314,7 +314,7 @@ class OwnershipReversionMapper(EconModelMapper):
         )
         return {c: row.get(c, '') for c in self.columns}
 
-    def _reversion_row(self, common: Dict[str, str], ordinal: str, tier: ReversionTierData) -> Dict[str, str]:
+    def _reversion_row(self, common: dict[str, str], ordinal: str, tier: ReversionTierData) -> dict[str, str]:
         if tier.reversion_type not in _REVERSION_TYPE_TO_CSV:
             raise NotImplementedError(f'Unknown ownership reversion type: {tier.reversion_type!r}')
         tied_to_csv = _tied_to_to_csv(tier.reversion_tied_to)
@@ -343,9 +343,9 @@ class OwnershipReversionMapper(EconModelMapper):
         )
         return {c: row.get(c, '') for c in self.columns}
 
-    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: list[dict[str, str]]) -> dict[str, Any]:
         name, unique = model_identity(rows)
-        by_key: Dict[str, Dict[str, str]] = {}
+        by_key: dict[str, dict[str, str]] = {}
         for row in rows:
             for col in _REV_BASIS_COLUMNS:
                 if (row.get(col) or '').strip():
@@ -357,7 +357,7 @@ class OwnershipReversionMapper(EconModelMapper):
         if _INITIAL_KEY_CSV not in by_key:
             raise NotImplementedError("OwnershipReversion CSV rows missing required Key='initial' row")
 
-        ownership: Dict[str, Any] = {_INITIAL_KEY_API: self._initial_from_csv(by_key[_INITIAL_KEY_CSV])}
+        ownership: dict[str, Any] = {_INITIAL_KEY_API: self._initial_from_csv(by_key[_INITIAL_KEY_CSV])}
         for ordinal in _REVERSION_ORDINALS:
             api_key = f'{ordinal}Reversion'
             if ordinal not in by_key:
@@ -368,7 +368,7 @@ class OwnershipReversionMapper(EconModelMapper):
         return {'name': name, 'unique': unique, 'ownership': ownership}
 
     @staticmethod
-    def _initial_from_csv(row: Dict[str, str]) -> Dict[str, Any]:
+    def _initial_from_csv(row: dict[str, str]) -> dict[str, Any]:
         data = InitialOwnershipData(
             working_interest=csv_to_num(row['WI %']),
             net_profit_interest_type=row.get('NPI Type') or None,
@@ -386,7 +386,7 @@ class OwnershipReversionMapper(EconModelMapper):
         return data.model_dump(by_alias=True)
 
     @staticmethod
-    def _reversion_from_csv(row: Dict[str, str]) -> Dict[str, Any]:
+    def _reversion_from_csv(row: dict[str, str]) -> dict[str, Any]:
         reversion_type_csv = row.get('Reversion Type') or ''
         if reversion_type_csv not in _REVERSION_TYPE_FROM_CSV:
             raise NotImplementedError(f'Unknown ownership Reversion Type: {reversion_type_csv!r}')

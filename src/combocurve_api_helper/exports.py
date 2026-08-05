@@ -2,7 +2,6 @@ import requests
 
 from .base import APIBase, Item
 
-
 # The async export routes live under /v2 (every other route in this package is /v1);
 # their URLs use `APIBase.API_BASE_URL_V2`.
 
@@ -122,7 +121,7 @@ class Exports(APIBase):
 
         Example data:
         {
-            "exportType": "monthlyProductionVolumeExport",
+            "exportType": "dailyCombinedVolumeExport",
             "expirationHours": 24
         }
 

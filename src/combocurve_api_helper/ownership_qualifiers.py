@@ -1,7 +1,6 @@
-from typing import Dict, Optional, cast, List
+from typing import Optional, cast
 
 from .base import APIBase, Item, ItemList, WriteResponse
-
 
 GET_LIMIT = 200
 
@@ -11,7 +10,7 @@ class OwnershipQualifiers(APIBase):
     # URLs
     ######
 
-    def get_ownership_qualifiers_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_ownership_qualifiers_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for ownership qualifiers.
         """
@@ -33,7 +32,7 @@ class OwnershipQualifiers(APIBase):
     # API calls
     ###########
 
-    def get_ownership_qualifiers(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_ownership_qualifiers(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of ownership qualifiers. Distinct from scenario
         qualifiers (see the scenarios methods).
@@ -57,7 +56,7 @@ class OwnershipQualifiers(APIBase):
         url = self.get_ownership_qualifier_by_id_url(ownership_qualifier_id)
         return self._get_items(url)[0]
 
-    def post_ownership_qualifiers(self, data: ItemList) -> List[WriteResponse]:
+    def post_ownership_qualifiers(self, data: ItemList) -> list[WriteResponse]:
         """
         Creates one or more ownership qualifiers.
 
@@ -66,9 +65,9 @@ class OwnershipQualifiers(APIBase):
         The example request and response are large; see them on the docs page linked above.
         """
         url = self.get_ownership_qualifiers_url()
-        return cast(List[WriteResponse], self._post_items(url, data))
+        return cast('list[WriteResponse]', self._post_items(url, data))
 
-    def put_ownership_qualifiers(self, data: ItemList) -> List[WriteResponse]:
+    def put_ownership_qualifiers(self, data: ItemList) -> list[WriteResponse]:
         """
         Upserts one or more ownership qualifiers.
 
@@ -77,4 +76,4 @@ class OwnershipQualifiers(APIBase):
         The example request and response are large; see them on the docs page linked above.
         """
         url = self.get_ownership_qualifiers_url()
-        return cast(List[WriteResponse], self._put_items(url, data))
+        return cast('list[WriteResponse]', self._put_items(url, data))

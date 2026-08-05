@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
+from typing import Annotated, Any, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -19,7 +19,7 @@ _PHASE_FROM_CSV = {v: k for k, v in _PHASE_TO_CSV.items()}
 # (DifferentialRow python attribute name, CSV 'Unit' column value), in the same
 # priority order as the original dict-key scan -- only one of these four is ever
 # populated on a real row, so scan order is not actually load-bearing.
-_VALUE_UNIT: List[Tuple[str, str]] = [
+_VALUE_UNIT: list[tuple[str, str]] = [
     ('dollar_per_bbl', '$/bbl'),
     ('dollar_per_mcf', '$/mcf'),
     ('dollar_per_mmbtu', '$/mmbtu'),
@@ -62,10 +62,10 @@ class DifferentialPhaseNode(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     escalation_model: Annotated[Optional[str], Field(alias='escalationModel')] = None
-    rows: List[DifferentialRow] = Field(default_factory=list)
+    rows: list[DifferentialRow] = Field(default_factory=list)
 
 
-def _value_unit(r: DifferentialRow) -> Tuple[Any, str]:
+def _value_unit(r: DifferentialRow) -> tuple[Any, str]:
     for attr, unit in _VALUE_UNIT:
         value = getattr(r, attr)
         if value is not None:
@@ -73,7 +73,7 @@ def _value_unit(r: DifferentialRow) -> Tuple[Any, str]:
     raise NotImplementedError(f'Unknown differential value: {r!r}')
 
 
-def _criteria(r: DifferentialRow) -> Tuple[str, str]:
+def _criteria(r: DifferentialRow) -> tuple[str, str]:
     return formats.flat_or_dates_criteria(r.entire_well_life, r.dates, what='differential')
 
 
@@ -81,9 +81,9 @@ class DifferentialsMapper(EconModelMapper):
     econ_model_type = 'Differentials'
     columns = COLUMNS['Differentials']
 
-    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)
-        rows: List[Dict[str, str]] = []
+        rows: list[dict[str, str]] = []
         for tier, phases in model.get('differentials', {}).items():
             if tier not in _TIER_TO_CSV:
                 raise NotImplementedError(f'Unknown differential tier: {tier}')
@@ -111,8 +111,8 @@ class DifferentialsMapper(EconModelMapper):
                     rows.append({c: row.get(c, '') for c in self.columns})
         return rows
 
-    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
-        diffs: Dict[str, Dict[str, DifferentialPhaseNode]] = {
+    def from_row_dicts(self, rows: list[dict[str, str]]) -> dict[str, Any]:
+        diffs: dict[str, dict[str, DifferentialPhaseNode]] = {
             'firstDifferential': {},
             'secondDifferential': {},
             'thirdDifferential': {},
@@ -133,7 +133,7 @@ class DifferentialsMapper(EconModelMapper):
             # silently falling into the 'dates' branch -- the pre-refactor code here had
             # no `else: raise` and would misparse any Criteria value other than 'flat' as
             # a dated row.
-            row_kwargs: Dict[str, Any] = formats.flat_or_dates_row_kwargs(
+            row_kwargs: dict[str, Any] = formats.flat_or_dates_row_kwargs(
                 row['Criteria'], row['Period'], formats.ENTIRE_WELL_LIFE_MARKER
             )
             row_kwargs[_UNIT_TO_ATTR[row['Unit']]] = csv_to_num(row['Value'])

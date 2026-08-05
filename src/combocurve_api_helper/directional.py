@@ -1,9 +1,8 @@
-from typing import Dict, Optional
+from typing import Optional
 
 import requests
 
 from .base import APIBase, Item, ItemList
-
 
 GET_LIMIT = 1000
 
@@ -13,7 +12,7 @@ class Directional(APIBase):
     # URLs
     ######
 
-    def get_directional_surveys_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_directional_surveys_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for directional surveys.
         """
@@ -35,7 +34,7 @@ class Directional(APIBase):
     # API calls
     ###########
 
-    def get_directional_surveys(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_directional_surveys(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of directional survey items.
 
@@ -138,7 +137,7 @@ class Directional(APIBase):
         {
             "chosenID": "string",
             "dataSource": "string",
-            "spatialDataType": "NAD83",
+            "spatialDataType": "WGS84",
             "measuredDepth": [
                 123.45
             ],
@@ -200,7 +199,7 @@ class Directional(APIBase):
 
         Example data:
         {
-            "spatialDataType": "NAD27",
+            "spatialDataType": "WGS84",
             "dataSource": "string",
             "update": {
                 "measuredDepth": [

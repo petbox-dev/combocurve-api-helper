@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -8,7 +8,7 @@ from combocurve_api_helper.econ_models.reserves_category import ReservesCategory
 
 # Real, FULL API shape: the nested 'reservesCategory' object is the entire model
 # payload -- no rows[], no criteria.
-NON_PRODUCING: Dict[str, Any] = {
+NON_PRODUCING: dict[str, Any] = {
     'id': 'rc-non-producing',
     'name': 'Reserves, Proved, Non Producing',
     'unique': False,
@@ -68,7 +68,7 @@ def test_to_row_dicts_unique_model_type() -> None:
 def test_to_row_dicts_passthrough_all_verified_ground_truth_values(
     prms_class: str, prms_category: str, prms_sub_category: str
 ) -> None:
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'X',
         'unique': False,
         'reservesCategory': {

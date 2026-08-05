@@ -54,7 +54,7 @@ def test_to_csv_empty_is_header_only() -> None:
     text = mapper.to_csv([])
     lines = text.splitlines()
     assert len(lines) == 1
-    assert list(csv.reader([lines[0]]))[0] == mapper.columns
+    assert next(iter(csv.reader([lines[0]]))) == mapper.columns
     assert mapper.from_csv(text) == []
 
 

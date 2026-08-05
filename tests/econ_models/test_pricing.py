@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -8,7 +8,7 @@ from combocurve_api_helper.econ_models.pricing import PricingMapper
 
 # API shape: flat pricing on all four phases, `breakeven.basedOnPriceRatio` False (the
 # 'direct' CSV case).
-FLAT_MODEL: Dict[str, Any] = {
+FLAT_MODEL: dict[str, Any] = {
     'id': '000000000000000000000001',
     'name': '$70 / $2.50 Flat',
     'unique': False,
@@ -31,7 +31,7 @@ FLAT_MODEL: Dict[str, Any] = {
 # API shape: dated oil/gas prices, flat ngl (% of oil price) AND flat dripCondensate
 # priced DIRECTLY per bbl (`dollarPerBbl` -- NOT `price`, unlike oil), plus a 'based on
 # price ratio' breakeven.
-BREAKEVEN_RATIO_MODEL: Dict[str, Any] = {
+BREAKEVEN_RATIO_MODEL: dict[str, Any] = {
     'id': '000000000000000000000012',
     'name': '23Q4 Avg Strip',
     'unique': False,

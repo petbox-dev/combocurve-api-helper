@@ -1,6 +1,7 @@
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
+
 from combocurve_api_helper.scenarios import Scenarios
 
 
@@ -14,7 +15,7 @@ def test_scenario_assignments_url_and_fetch(monkeypatch: pytest.MonkeyPatch) -> 
 
 
 class _StubResponse:
-    def __init__(self, headers: Dict[str, str]) -> None:
+    def __init__(self, headers: dict[str, str]) -> None:
         self.headers = headers
 
 
@@ -22,9 +23,9 @@ def test_delete_scenario_qualifiers_uses_plural_econ_names(monkeypatch: pytest.M
     s = Scenarios.__new__(Scenarios)
     monkeypatch.setattr(s, 'get_scenario_by_id_url', lambda p, sc: f'BASE/{p}/{sc}')
 
-    captured_urls: List[str] = []
+    captured_urls: list[str] = []
 
-    def fake_delete_responses(url: str, data: Any) -> List[_StubResponse]:
+    def fake_delete_responses(url: str, data: Any) -> list[_StubResponse]:
         captured_urls.append(url)
         return [_StubResponse(headers={'X-Delete-Count': '1'})]
 

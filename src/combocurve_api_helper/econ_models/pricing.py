@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, List, Optional, Tuple, Union
+from typing import Annotated, Any, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -19,7 +19,7 @@ _PHASE_ORDER = ('oil', 'gas', 'ngl', 'dripCondensate')
 # dispatch is phase-keyed (not a single flat scan) because oil's `price` and
 # ngl/dripCondensate's `dollarPerBbl` both map to the same CSV Unit '$/bbl' string and
 # would collide in a single unit->attr inverse table.
-_PHASE_VALUE_UNIT: Dict[str, List[Tuple[str, str]]] = {
+_PHASE_VALUE_UNIT: dict[str, list[tuple[str, str]]] = {
     'oil': [('price', '$/bbl')],
     'gas': [('dollar_per_mmbtu', '$/mmbtu'), ('dollar_per_mcf', '$/mcf')],
     'ngl': [('pct_of_oil_price', '% of oil price'), ('dollar_per_bbl', '$/bbl')],
@@ -82,7 +82,7 @@ class PricePhaseNode(BaseModel):
 
     cap: Optional[Union[int, float]] = None
     escalation_model: Annotated[Optional[str], Field(alias='escalationModel')] = None
-    rows: List[PriceRow] = Field(default_factory=list)
+    rows: list[PriceRow] = Field(default_factory=list)
 
 
 class Breakeven(BaseModel):
@@ -100,7 +100,7 @@ class Breakeven(BaseModel):
     price_ratio: Annotated[Optional[Union[int, float]], Field(alias='priceRatio')] = None
 
 
-def _value_unit(phase: str, r: PriceRow) -> Tuple[Any, str]:
+def _value_unit(phase: str, r: PriceRow) -> tuple[Any, str]:
     for attr, unit in _PHASE_VALUE_UNIT[phase]:
         value = getattr(r, attr)
         if value is not None:
@@ -108,11 +108,11 @@ def _value_unit(phase: str, r: PriceRow) -> Tuple[Any, str]:
     raise NotImplementedError(f'Unknown pricing row value for phase {phase!r}: {r!r}')
 
 
-def _criteria(r: PriceRow) -> Tuple[str, str]:
+def _criteria(r: PriceRow) -> tuple[str, str]:
     return formats.flat_or_dates_criteria(r.entire_well_life, r.dates, what='pricing row')
 
 
-def _breakeven_from_csv(row: Dict[str, str]) -> Dict[str, Any]:
+def _breakeven_from_csv(row: dict[str, str]) -> dict[str, Any]:
     criteria = row['Criteria']
     if criteria == _BREAKEVEN_DIRECT_CSV:
         return {
@@ -133,9 +133,9 @@ class PricingMapper(EconModelMapper):
     econ_model_type = 'Pricing'
     columns = COLUMNS['Pricing']
 
-    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)
-        rows: List[Dict[str, str]] = []
+        rows: list[dict[str, str]] = []
         price_model = model.get('priceModel') or {}
 
         for phase in _PHASE_ORDER:
@@ -183,9 +183,9 @@ class PricingMapper(EconModelMapper):
 
         return rows
 
-    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
-        price_model: Dict[str, Dict[str, Any]] = {}
-        breakeven: Optional[Dict[str, Any]] = None
+    def from_row_dicts(self, rows: list[dict[str, str]]) -> dict[str, Any]:
+        price_model: dict[str, dict[str, Any]] = {}
+        breakeven: Optional[dict[str, Any]] = None
         name, unique = model_identity(rows)
 
         for row in rows:
@@ -224,7 +224,7 @@ class PricingMapper(EconModelMapper):
                 }
             node = price_model[phase]
 
-            row_kwargs: Dict[str, Any] = formats.flat_or_dates_row_kwargs(
+            row_kwargs: dict[str, Any] = formats.flat_or_dates_row_kwargs(
                 row['Criteria'], row['Period'], formats.ENTIRE_WELL_LIFE_MARKER
             )
             unit = row['Unit']

@@ -1,11 +1,11 @@
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
 from combocurve_api_helper.econ_models.production_taxes import ProductionTaxesMapper
 
 
-def _severance_row(phase: str, unit: str, value: float) -> Dict[str, Any]:
+def _severance_row(phase: str, unit: str, value: float) -> dict[str, Any]:
     """FULL API shape for a severance_tax row. Note there is NO 'deductSeveranceTax' key
     at all -- that field only ever appears on ad_val_tax rows."""
     return {
@@ -23,7 +23,7 @@ def _severance_row(phase: str, unit: str, value: float) -> Dict[str, Any]:
     }
 
 
-def _ad_valorem_row(value: float, deduct_severance_tax: bool) -> Dict[str, Any]:
+def _ad_valorem_row(value: float, deduct_severance_tax: bool) -> dict[str, Any]:
     """FULL API shape for an ad_val_tax row. 'category' is 'ad_val_tax'; the constant,
     recoverable 'key' is 'ad_valorem_tax'. Unlike severance rows, ad valorem rows always
     carry 'deductSeveranceTax'."""
@@ -43,7 +43,7 @@ def _ad_valorem_row(value: float, deduct_severance_tax: bool) -> Dict[str, Any]:
     }
 
 
-NEW_MEXICO: Dict[str, Any] = {
+NEW_MEXICO: dict[str, Any] = {
     'id': 'pt-nm',
     'name': 'NM Prod Tax',
     'unique': False,
@@ -62,7 +62,7 @@ NEW_MEXICO: Dict[str, Any] = {
     },
 }
 
-TEXAS: Dict[str, Any] = {
+TEXAS: dict[str, Any] = {
     'id': 'pt-tx',
     'name': 'TX Prod Tax',
     'unique': False,
@@ -89,7 +89,7 @@ TEXAS: Dict[str, Any] = {
 _DATES_PERIODS = ['1900-01-01', '2023-07-01', '2024-07-01']
 
 
-def _dates_severance(phase: str, unit: str, values: list[float]) -> Dict[str, Any]:
+def _dates_severance(phase: str, unit: str, values: list[float]) -> dict[str, Any]:
     """API shape for a 'dates'-criteria severance row. period is a list of ISO dates; the
     first is CC's 1900-01-01 schedule-start sentinel."""
     return {
@@ -107,7 +107,7 @@ def _dates_severance(phase: str, unit: str, values: list[float]) -> Dict[str, An
     }
 
 
-DATES: Dict[str, Any] = {
+DATES: dict[str, Any] = {
     'id': 'pt-nd',
     'name': 'SAMPLE PDP STREAM',
     'unique': False,
@@ -257,7 +257,7 @@ def test_roundtrip_exact_texas() -> None:
 
 
 def test_fpd_criteria_period_roundtrip() -> None:
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'FPD offset',
         'unique': False,
         'data': {
@@ -284,7 +284,7 @@ def test_fpd_criteria_period_roundtrip() -> None:
 
 
 def test_optional_fields_pass_through_when_present() -> None:
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'Passthrough',
         'unique': False,
         'data': {
@@ -324,7 +324,7 @@ def test_optional_fields_absent_are_not_injected() -> None:
     # A genuinely minimal row -- no shrinkageCondition/escalation/calculation/rateType/
     # rateRowsCalculationMethod/deductSeveranceTax at all -- must round-trip without any
     # of those keys getting injected.
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'Minimal',
         'unique': False,
         'data': {
@@ -354,7 +354,7 @@ def test_optional_fields_absent_are_not_injected() -> None:
 
 
 def test_unknown_category_raises() -> None:
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'Bad',
         'unique': False,
         'data': {
@@ -377,7 +377,7 @@ def test_unknown_category_raises() -> None:
 
 
 def test_unknown_criteria_raises() -> None:
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'Bad',
         'unique': False,
         'data': {

@@ -1,18 +1,11 @@
-from typing import Dict, List, Optional, Sequence, Union, cast
+from collections.abc import Sequence
+from typing import Optional, Union, cast
 
 from requests import Response
 
-from .base import APIBase, Item, ItemList, WriteResponse
-
+from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
 
 GET_LIMIT = 200
-
-SORT_ORDER = {
-    'name': 0,
-    'id': 3,
-    'createdAt': 2,
-    'updatedAt': 1,
-}
 
 
 class _EconModelMethodsBase(APIBase):
@@ -29,7 +22,7 @@ class _EconModelMethodsBase(APIBase):
     # URLs
     ######
 
-    def get_econ_models_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_econ_models_url(self, project_id: str, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of econ models for a specific project id.
         """
@@ -41,7 +34,7 @@ class _EconModelMethodsBase(APIBase):
         return url
 
     def get_econ_models_by_type_url(
-        self, project_id: str, econ_model_type: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, econ_model_type: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url of econ models for a specific project id and model
@@ -66,7 +59,7 @@ class _EconModelMethodsBase(APIBase):
         return url
 
     def get_econ_model_by_type_by_id_url(
-        self, project_id: str, econ_model_type: str, model_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, econ_model_type: str, model_id: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url of a sepcific econ model for a specific project id
@@ -82,7 +75,7 @@ class _EconModelMethodsBase(APIBase):
         return url
 
     def get_econ_model_assignments_by_type_by_id_url(
-        self, project_id: str, econ_model_type: str, model_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, econ_model_type: str, model_id: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url for assignments of a sepcific econ model for a
@@ -116,7 +109,7 @@ class _EconModelMethodsBase(APIBase):
     # API calls
     ###########
 
-    def get_econ_models(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_econ_models(self, project_id: str, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of econ models.
         """
@@ -124,10 +117,10 @@ class _EconModelMethodsBase(APIBase):
         params = {'take': GET_LIMIT}
         econ_models = self._get_items(url, params)
 
-        return self._keysort(econ_models, SORT_ORDER)
+        return self._keysort(econ_models, LIST_SORT_ORDER)
 
     def get_econ_models_by_type(
-        self, project_id: str, econ_model_type: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, econ_model_type: str, filters: Optional[dict[str, str]] = None
     ) -> ItemList:
         """
         Returns a list of econ models by type. Allows `econModelType` passed as
@@ -138,7 +131,7 @@ class _EconModelMethodsBase(APIBase):
         params = {'take': GET_LIMIT}
         econ_models = self._get_items(url, params)
 
-        return self._keysort(econ_models, SORT_ORDER)
+        return self._keysort(econ_models, LIST_SORT_ORDER)
 
     def get_econ_model_by_type_by_id(self, project_id: str, econ_model_type: str, model_id: str) -> Union[Item, None]:
         """
@@ -151,23 +144,23 @@ class _EconModelMethodsBase(APIBase):
 
         return econ_model[0]
 
-    def post_econ_models_by_type(self, project_id: str, econ_model_type: str, data: ItemList) -> List[WriteResponse]:
+    def post_econ_models_by_type(self, project_id: str, econ_model_type: str, data: ItemList) -> list[WriteResponse]:
         """
         Creates econ models of a specific type. Allows `econModelType` passed as
         a parameter rather than calling a different function for each model type.
         """
         url = self.get_econ_models_by_type_url(project_id, econ_model_type)
-        return cast(List[WriteResponse], self._post_items(url, data))
+        return cast('list[WriteResponse]', self._post_items(url, data))
 
-    def put_econ_models_by_type(self, project_id: str, econ_model_type: str, data: ItemList) -> List[WriteResponse]:
+    def put_econ_models_by_type(self, project_id: str, econ_model_type: str, data: ItemList) -> list[WriteResponse]:
         """
         Upserts econ models of a specific type. Allows `econModelType` passed as
         a parameter rather than calling a different function for each model type.
         """
         url = self.get_econ_models_by_type_url(project_id, econ_model_type)
-        return cast(List[WriteResponse], self._put_items(url, data))
+        return cast('list[WriteResponse]', self._put_items(url, data))
 
-    def delete_econ_model_by_type_by_id(self, project_id: str, econ_model_type: str, model_id: str) -> List[Response]:
+    def delete_econ_model_by_type_by_id(self, project_id: str, econ_model_type: str, model_id: str) -> list[Response]:
         """
         Deletes a specific econ model by type + id. Allows `econModelType`
         passed as a parameter rather than calling a different function for each
@@ -194,17 +187,17 @@ class _EconModelMethodsBase(APIBase):
 
     def post_econ_model_assignments_by_type_by_id(
         self, project_id: str, econ_model_type: str, model_id: str, data: ItemList
-    ) -> List[WriteResponse]:
+    ) -> list[WriteResponse]:
         """Create assignments for a specific econ model (by type + id)."""
         url = self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
-        return cast(List[WriteResponse], self._post_items(url, data))
+        return cast('list[WriteResponse]', self._post_items(url, data))
 
     def put_econ_model_assignments_by_type_by_id(
         self, project_id: str, econ_model_type: str, model_id: str, data: ItemList
-    ) -> List[WriteResponse]:
+    ) -> list[WriteResponse]:
         """Upsert assignments for a specific econ model (by type + id)."""
         url = self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
-        return cast(List[WriteResponse], self._put_items(url, data))
+        return cast('list[WriteResponse]', self._put_items(url, data))
 
     def delete_econ_model_assignments_by_type_by_id(
         self,
@@ -215,7 +208,7 @@ class _EconModelMethodsBase(APIBase):
         qualifier_name: Optional[str] = None,
         wells: Union[str, Sequence[str], None] = None,
         all_wells: Optional[bool] = None,
-    ) -> List[Response]:
+    ) -> list[Response]:
         """Delete assignments for a specific econ model (by type + id).
 
         Unlike POST/PUT on the same route, DELETE takes query parameters, not
@@ -229,7 +222,7 @@ class _EconModelMethodsBase(APIBase):
         list, so callers that reuse that value here (e.g. JSON-driven
         callers not protected by mypy) are normalized rather than silently
         producing a Python list-repr query param that matches nothing."""
-        filters: Dict[str, str] = {'scenarioId': scenario_id}
+        filters: dict[str, str] = {'scenarioId': scenario_id}
         if qualifier_name is not None:
             filters['qualifierName'] = qualifier_name
 

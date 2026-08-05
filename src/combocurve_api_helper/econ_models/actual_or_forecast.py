@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Dict, List, Optional, Tuple
+from typing import Annotated, Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -6,7 +6,7 @@ from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
 
 # CC always emits exactly 3 rows per model, in this order (Key=oil/gas/water).
-_PHASES: Tuple[str, str, str] = ('oil', 'gas', 'water')
+_PHASES: tuple[str, str, str] = ('oil', 'gas', 'water')
 
 # The econ-model type's two fixed, non-deletable built-in model names (every project
 # has exactly one of each) -- ported from cc-afe-sync's ACTUAL_OR_FORECAST_ASSIGNMENTS,
@@ -50,7 +50,7 @@ class PhaseSwitchData(BaseModel):
     as_of_date: Annotated[Optional[bool], Field(alias='asOfDate')] = None
 
 
-def _phase_criteria(data: PhaseSwitchData, model_name: str) -> Tuple[str, str]:
+def _phase_criteria(data: PhaseSwitchData, model_name: str) -> tuple[str, str]:
     if data.date is not None:
         return _CRITERIA_DATE, data.date
     if data.never is True:
@@ -72,13 +72,13 @@ class ActualOrForecastMapper(EconModelMapper):
     econ_model_type = 'ActualOrForecast'
     columns = COLUMNS['ActualOrForecast']
 
-    def to_row_dicts(self, model: Dict[str, Any], context: Optional[Context] = None) -> List[Dict[str, str]]:
+    def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)
         model_name = model.get('name', '') or ''
         aof = model.get('actualOrForecast') or {}
         rwf = aof.get('replaceActualWithForecast') or {}
 
-        rows: List[Dict[str, str]] = []
+        rows: list[dict[str, str]] = []
         for phase in _PHASES:
             try:
                 data = PhaseSwitchData.model_validate(rwf.get(phase) or {})
@@ -99,7 +99,7 @@ class ActualOrForecastMapper(EconModelMapper):
             rows.append({c: row.get(c, '') for c in self.columns})
         return rows
 
-    def from_row_dicts(self, rows: List[Dict[str, str]]) -> Dict[str, Any]:
+    def from_row_dicts(self, rows: list[dict[str, str]]) -> dict[str, Any]:
         if len(rows) != 3:
             raise NotImplementedError(
                 f'ActualOrForecast is 3-rows-per-model (oil/gas/water); expected exactly 3 CSV rows, got {len(rows)}'
@@ -115,7 +115,7 @@ class ActualOrForecastMapper(EconModelMapper):
         # rows).
         name, unique = model_identity([rows[0]])
 
-        phase_shapes: Dict[str, Dict[str, Any]] = {}
+        phase_shapes: dict[str, dict[str, Any]] = {}
         for phase in _PHASES:
             criteria = by_phase[phase]['Criteria']
             if criteria == _CRITERIA_DATE:
@@ -144,7 +144,7 @@ class ActualOrForecastMapper(EconModelMapper):
         # `_phase_criteria`'s name-based fallback) -- a round-trip break -- so that
         # one case keeps the explicit modern per-phase shape instead.
         if all_never and name != _MODEL_NAME_FORECAST_AS_OF:
-            actual_or_forecast: Dict[str, Any] = {}
+            actual_or_forecast: dict[str, Any] = {}
         else:
             actual_or_forecast = {
                 'ignoreHistoryProd': False,
@@ -159,4 +159,4 @@ class ActualOrForecastMapper(EconModelMapper):
 
 
 # Re-exported for tests/documentation of the two fixed built-in model names.
-BUILTIN_MODEL_NAMES: Tuple[str, str] = (_MODEL_NAME_ACTUAL, _MODEL_NAME_FORECAST_AS_OF)
+BUILTIN_MODEL_NAMES: tuple[str, str] = (_MODEL_NAME_ACTUAL, _MODEL_NAME_FORECAST_AS_OF)

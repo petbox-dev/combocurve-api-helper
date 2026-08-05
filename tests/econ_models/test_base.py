@@ -1,7 +1,7 @@
-from typing import Any, Dict
+from typing import Any
 
-from combocurve_api_helper.econ_models.csv_columns import COLUMNS
 from combocurve_api_helper.econ_models.base import Context, common_columns
+from combocurve_api_helper.econ_models.csv_columns import COLUMNS
 
 
 def test_columns_have_all_types_and_lead_with_common() -> None:
@@ -32,7 +32,7 @@ def test_columns_have_all_types_and_lead_with_common() -> None:
 
 
 def test_common_columns_with_context() -> None:
-    m: Dict[str, Any] = {
+    m: dict[str, Any] = {
         'id': 'x1',
         'name': 'M',
         'unique': False,
@@ -50,7 +50,7 @@ def test_common_columns_with_context() -> None:
 
 
 def test_common_columns_without_context_omits_pipeline_cols() -> None:
-    m: Dict[str, Any] = {
+    m: dict[str, Any] = {
         'id': 'x1',
         'name': 'M',
         'unique': True,

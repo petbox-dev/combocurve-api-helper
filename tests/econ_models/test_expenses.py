@@ -1,13 +1,13 @@
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
 from combocurve_api_helper.econ_models.expenses import ExpensesMapper
 
 
-def _leaf(rows: Any, **overrides: Any) -> Dict[str, Any]:
+def _leaf(rows: Any, **overrides: Any) -> dict[str, Any]:
     """Real API leaf shape: every listed setting key is always present."""
-    base: Dict[str, Any] = {
+    base: dict[str, Any] = {
         'shrinkageCondition': 'shrunk',
         'description': None,
         'escalationModel': 'none',
@@ -39,7 +39,7 @@ def _strip_rate_fields(node: Any) -> Any:
     return node
 
 
-API: Dict[str, Any] = {
+API: dict[str, Any] = {
     'id': 'e1',
     'name': 'OPEX',
     'unique': False,
@@ -199,7 +199,7 @@ def test_fixed_expense_before_fpd_false_renders_no_and_round_trips() -> None:
     render CSV 'no', not '' -- 'no' is real data. The old yes_blank renderer could only
     emit ''/'yes', silently corrupting the False case and breaking the CSV round-trip.
     Stop at Econ Limit follows the same yes/no rule."""
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'id': 'e2',
         'name': 'FX',
         'unique': False,
@@ -319,7 +319,7 @@ def test_boe_and_total_fluid_real_double_nested_structure_round_trips() -> None:
         'rowsCalculationMethod': 'non_monotonic',
         'rows': [{'dollarPerBbl': 0, 'entireWellLife': 'Flat'}],
     }
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'BOE TOTAL FLUID REAL DOUBLE NESTED',
         'unique': False,
         'variableExpenses': {
@@ -376,7 +376,7 @@ def test_to_row_dicts_multi_row_fpd_leaf_only_last_row_is_ecl() -> None:
     """Terminal-row rule (a): within a single leaf, earlier fpd rows render their
     literal month offset; only the LAST row of the leaf's rows list renders 'ecl' --
     regardless of its numeric value."""
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'MULTI ROW FPD',
         'unique': False,
         'variableExpenses': {
@@ -416,7 +416,7 @@ def test_roundtrip_non_canonical_terminal_offset_is_not_exact() -> None:
     exactly if it happens to equal the inverse canonical placeholder (1200). A real
     terminal offset like 1104 does NOT round-trip -- it comes back as 1200 instead, not
     its original value."""
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'NON CANONICAL TERMINAL',
         'unique': False,
         'variableExpenses': {
@@ -442,7 +442,7 @@ def test_roundtrip_variable_only_exact_no_injected_empty_groups() -> None:
     """A model with only variableExpenses must round-trip without from_row_dicts
     injecting empty fixedExpenses/carbonExpenses/waterDisposal containers -- those
     groups never existed on the source model and shouldn't be fabricated."""
-    m: Dict[str, Any] = {
+    m: dict[str, Any] = {
         'name': 'VAR ONLY',
         'unique': True,
         'variableExpenses': {
@@ -467,7 +467,7 @@ def test_roundtrip_variable_only_exact_no_injected_empty_groups() -> None:
 def test_to_row_dicts_gas_dollar_per_mmbtu_maps_and_round_trips() -> None:
     """Regression (drift audit): `dollarPerMmbtu` is a real, previously-unmodeled gas
     variable-expense value key (Unit '$/mmbtu')."""
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'GAS MMBTU',
         'unique': False,
         'variableExpenses': {
@@ -494,7 +494,7 @@ def test_to_row_dicts_fixed_expense_per_well_maps_and_round_trips() -> None:
     """Regression (drift audit): `fixedExpensePerWell` is a real, previously-unmodeled
     fixedExpenses value key -- CSV Unit '$/well/month', Criteria 'dates', Period
     '01/01/2000'."""
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'FIXED PER WELL',
         'unique': False,
         'fixedExpenses': {
@@ -527,7 +527,7 @@ def test_to_row_dicts_water_disposal_dates_criteria_maps_and_round_trips() -> No
     of `entireWellLife`/`offsetToFpd`. Also proves the fpd-only terminal-row 'ecl' rule
     does not apply to 'dates' rows, even for the last row of the leaf (a 'dates' row
     never renders 'ecl')."""
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'WATER DATES',
         'unique': False,
         'waterDisposal': _leaf(
@@ -560,7 +560,7 @@ def test_no_value_key_bbl_leaf_falls_back_to_zero_dollar_per_bbl() -> None:
     still renders these as Value '0' Unit '$/bbl' (not blank/skipped), so the forward
     mapper must not raise. Covers oil/ngl/dripCondensate/water, the only Keys that
     exhibit this."""
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'NO VALUE KEY',
         'unique': False,
         'variableExpenses': {
@@ -583,7 +583,7 @@ def test_no_value_key_gas_leaf_still_raises() -> None:
     water) only -- a gas (or fixed/carbon) leaf with no value key at all does not occur,
     so guessing a fallback unit ($/mcf vs $/mmbtu) would risk silently misreporting the
     value's real unit. Must still raise."""
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'NO VALUE KEY GAS',
         'unique': False,
         'variableExpenses': {'gas': {'gathering': _leaf([{'entireWellLife': 'Flat'}])}},
@@ -596,7 +596,7 @@ def test_carbon_scalar_only_warns_and_emits_no_rows() -> None:
     """carbonExpenses.category is a scalar with no CSV column. If it's the only
     thing present (no species leaves), the block can't be represented in the CSV
     at all -- to_row_dicts should warn rather than silently dropping it."""
-    m: Dict[str, Any] = {
+    m: dict[str, Any] = {
         'name': 'CARBON SCALAR ONLY',
         'unique': False,
         'carbonExpenses': {'category': 'co2e'},

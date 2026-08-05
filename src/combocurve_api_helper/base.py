@@ -1,41 +1,56 @@
-import warnings
-from pathlib import Path
-import json
 import time
+import warnings
+from collections.abc import Iterator, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from itertools import chain
-from more_itertools import chunked
-from typing import Callable, List, Dict, Optional, Sequence, Tuple, Union, Any, Iterable, Iterator, Mapping
-from typing_extensions import Self, TypeAlias, TypedDict
+from pathlib import Path
+from types import MappingProxyType
+from typing import Any, Callable, ClassVar, Optional, Union
 
 import requests
-from requests import Response
-from combocurve_api_v1 import ServiceAccount, ComboCurveAuth
+from combocurve_api_v1 import ComboCurveAuth, ServiceAccount
 from combocurve_api_v1.pagination import get_next_page_url
+from more_itertools import chunked
+from requests import Response
+from typing_extensions import Self, TypeAlias, TypedDict
 
 from . import config
 from ._batch import BatchChunk, BatchWriteResult, _RateLimitState
-
 
 # A single JSON value: the recursive union of everything `json.loads` can yield.
 # Models real API payloads faithfully -- `null` (None), arrays of objects, and
 # nested objects are all representable, which the former `PrimativeValue` /
 # `IterableValue` split could not express (it allowed lists of scalars only, and
 # no nulls). The container arms are the COVARIANT `Sequence` / `Mapping`, not
-# `List` / `Dict`: because `List`/`Dict` are invariant, a concrete `list[str]` or
+# `list` / `dict`: because `list`/`dict` are invariant, a concrete `list[str]` or
 # `list[dict[...]]` (e.g. a payload built by a caller, or a `list[str]` variable
-# assigned into an item) is NOT a `List[JsonValue]` and would fail to type-check;
+# assigned into an item) is NOT a `list[JsonValue]` and would fail to type-check;
 # `Sequence`/`Mapping` accept them. Self-references are quoted forward refs; mypy
 # resolves the recursive alias.
-JsonValue: TypeAlias = Union[None, str, int, float, bool, Sequence['JsonValue'], Mapping[str, 'JsonValue']]
+JsonValue: TypeAlias = Union[str, int, float, bool, Sequence['JsonValue'], Mapping[str, 'JsonValue'], None]
 
 # One API object (a JSON object) and a list of them -- the shapes every endpoint
-# method takes and returns. These stay the mutable, invariant `Dict`/`List` (we
+# method takes and returns. These stay the mutable, invariant `dict`/`list` (we
 # build, extend, and index them internally); only the nested value arms above are
 # the read-covariant `Sequence`/`Mapping`. Responses stay plain dicts, not custom
 # model classes.
-Item: TypeAlias = Dict[str, JsonValue]
-ItemList: TypeAlias = List[Item]
+Item: TypeAlias = dict[str, JsonValue]
+ItemList: TypeAlias = list[Item]
+
+# The comparison orders `_keysort` is called with. Single-sourced here because the
+# same mapping was previously spelled out at a dozen call sites across six modules
+# with nothing keeping them in sync, and `_keysort`'s correctness argument depends
+# on the exact positions (see `sort_by_key`).
+#
+# Wrapped in MappingProxyType, not merely annotated `Mapping`: an annotation is not a
+# runtime guard, and these are now shared by 23 call sites across 7 modules, so one
+# stray `SORT_ORDER['name'] = x` would corrupt every list endpoint at once. The proxy
+# raises TypeError instead.
+#
+# Positions read: name/wellName first, then updatedAt, createdAt, and id last.
+LIST_SORT_ORDER: Mapping[str, int] = MappingProxyType({'name': 0, 'id': 3, 'createdAt': 2, 'updatedAt': 1})
+
+# Same shape, for the well endpoints whose display name field is `wellName`.
+WELL_LIST_SORT_ORDER: Mapping[str, int] = MappingProxyType({'wellName': 0, 'id': 3, 'createdAt': 2, 'updatedAt': 1})
 
 
 class WriteError(TypedDict, total=False):
@@ -50,7 +65,7 @@ class WriteResponse(TypedDict):
     """The 207 envelope every create/update endpoint (POST/PUT/PATCH) returns.
 
     `_post_items` / `_put_items` / `_patch_items` yield one of these per request
-    chunk, so a write method returns `List[WriteResponse]` (usually one element).
+    chunk, so a write method returns `list[WriteResponse]` (usually one element).
 
     `results` stays the generic `Item`: the per-record shape varies by resource
     (its id key is `id`, `forecastId`, `wellId`, ...; productions add `date`/`well`,
@@ -61,7 +76,7 @@ class WriteResponse(TypedDict):
     successCount: int
     failedCount: int
     results: ItemList
-    generalErrors: List[WriteError]
+    generalErrors: list[WriteError]
 
 
 # HTTP retry policy. Two retryable conditions:
@@ -111,7 +126,7 @@ class APIBase:
     API_BASE_URL = 'https://api.combocurve.com/v1'
     API_BASE_URL_V2 = 'https://api.combocurve.com/v2'  # async export routes are the only /v2 routes
     REFERENCE_WELLHEADER = config.REFERENCE_WELLHEADER
-    WELLHEADER_COLUMNS = {k.lower(): k for k in config.REFERENCE_WELLHEADER.keys()}
+    WELLHEADER_COLUMNS: ClassVar[dict[str, str]] = {k.lower(): k for k in config.REFERENCE_WELLHEADER}
     ECON_MODELS = config.ECON_MODELS
 
     def __init__(self) -> None:
@@ -333,7 +348,7 @@ class APIBase:
         concurrent token refreshes); a batch is expected to finish well within a
         token's lifetime.
         """
-        chunk_specs: List[Tuple[int, int, ItemList]] = []
+        chunk_specs: list[tuple[int, int, ItemList]] = []
         offset = 0
         for index, chunk in enumerate(chunked(data, chunksize)):
             chunk_list: ItemList = list(chunk)
@@ -342,7 +357,7 @@ class APIBase:
 
         headers = self.auth.get_auth_headers()
         rate_limit = _RateLimitState(pause_seconds=_RATE_LIMIT_DEFAULT_PAUSE_SECONDS)
-        completed: List[BatchChunk] = []
+        completed: list[BatchChunk] = []
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = [
@@ -384,7 +399,7 @@ class APIBase:
         """
         yield from self._request_items_pages('get', url, params)
 
-    def _get_responses(self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None) -> List[Response]:
+    def _get_responses(self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None) -> list[Response]:
         """
         Generic method for dispatching GET requests for the given `url`
         strictly returning a list of requests.Response
@@ -419,7 +434,7 @@ class APIBase:
         """
         yield from self._request_items_pages_chunks('post', url, data, chunksize)
 
-    def _post_responses(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> List[Response]:
+    def _post_responses(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> list[Response]:
         """
         Generic method for dispatching POST requests for the given `url`
         strictly returning a list of requests.Response
@@ -454,7 +469,7 @@ class APIBase:
         """
         yield from self._request_items_pages_chunks('patch', url, data, chunksize)
 
-    def _patch_responses(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> List[Response]:
+    def _patch_responses(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> list[Response]:
         """
         Generic method for dispatching PATCH requests for the given `url`
         strictly returning a list of requests.Response
@@ -487,7 +502,7 @@ class APIBase:
         """
         yield from self._request_items_pages_chunks('put', url, data, chunksize)
 
-    def _put_responses(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> List[Response]:
+    def _put_responses(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> list[Response]:
         """
         Generic method for dispatching PUT requests for the given `url`
         strictly returning a list of requests.Response
@@ -522,7 +537,7 @@ class APIBase:
         """
         yield from self._request_items_pages_chunks('delete', url, data, chunksize)
 
-    def _delete_responses(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> List[Response]:
+    def _delete_responses(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> list[Response]:
         """
         Generic method for dispatching DELETE requests for the given `url`
         strictly returning a list of requests.Response
@@ -549,53 +564,87 @@ class APIBase:
         return items
 
     @staticmethod
-    def _build_params_string(filters: Optional[Dict[str, str]] = None) -> str:
+    def _build_params_string(filters: Optional[dict[str, str]] = None) -> str:
         if filters is None or len(filters) == 0:
             return ''
 
-        parameters: List[str] = []
+        parameters: list[str] = []
         for key, value in filters.items():
             parameters.append(f'{key}={value}')
 
         return '?' + '&'.join(parameters)
 
     @staticmethod
-    def _keysort(items: ItemList, order: Dict[str, int], reverse: bool = False) -> ItemList:
+    def _keysort(items: ItemList, order: Mapping[str, int], reverse: bool = False) -> ItemList:
         """
         Return an iterable of dictionaries where each dictionary has
         its keys sorted by the given `order`. The `order` is a mapping
         that defines the key => integer index to order by.
+
+        `order` positions must be non-negative, distinct, non-`bool` integers; gaps are
+        allowed and sort as empty strings. Validated once here rather than per item,
+        because a negative position would index from the end of the key and silently
+        drop another key's value, and a duplicate would silently discard one of the
+        two. `bool` and other `int` subclasses are rejected rather than coerced, so a
+        stray `True` cannot tie with position 1.
         """
+        # `bool` is an `int` subclass and `True == 1`, so a bool position would slip through
+        # the distinctness check by comparing equal to a real position. Excluded by name
+        # rather than via `type(...) is int`, which would also reject `IntEnum` and
+        # `numpy.int64` -- both genuine ints that satisfy the `Mapping[str, int]` annotation.
+        non_integer = sorted(
+            key for key, position in order.items() if not isinstance(position, int) or isinstance(position, bool)
+        )
+        if non_integer:
+            raise ValueError(f'`order` positions must be non-bool ints; got other types for {non_integer}')
 
-        def sort_by_key(item: Item) -> List[str]:
+        negative = sorted(key for key, position in order.items() if position < 0)
+        if negative:
+            raise ValueError(f'`order` positions must be non-negative; got negative for {negative}')
+
+        duplicated = sorted({position for position in order.values() if list(order.values()).count(position) > 1})
+        if duplicated:
+            raise ValueError(f'`order` positions must be distinct; positions {duplicated} are reused')
+
+        # A constant of `order`, so computed once rather than per item.
+        key_width = max(order.values(), default=-1) + 1
+
+        def sort_by_key(item: Item) -> list[str]:
             """
-            Returns a sort order for a dictionary key.
+            Build one item's comparison key: each ordering value placed at the
+            position `order` assigns it, stringified so the keys are comparable.
+
+            Assembled by WRITING to `order[key]`. Reading `values[order[key]]`
+            instead applies the inverse permutation, and the two agree only when
+            `order` composed with the item's own key sequence is self-inverse --
+            a property of the payload, not of `order` alone. ComboCurve does NOT
+            serialize keys uniformly -- projects/scenarios/forecasts lead with
+            `createdAt` (self-inverse), while econ models, type curves and wells
+            lead with `id` and econ runs arrive `id, runDate, status`. Those were
+            therefore sorted by `updatedAt` / `status` instead of the declared key.
             """
-            keys, values = zip(*((k, v) for k, v in item.items() if k in order))
+            sortable_by_position: list[str] = [''] * key_width
 
-            for k in order.keys():
-                if k not in keys:
-                    try:
-                        raise KeyError(f'Order Key `{k}` not found in response: {item.keys()}')
-                    except KeyError as e:
-                        chosen_id = item.get('chosenId')
-                        # print(f'Error for Chosen Id `{chosen_id}`:', e)
-                        item.setdefault(k, None)
-                        keys += (k,)
-                        values += (None,)
+            for key, position in order.items():
+                if key not in item:
+                    # Absent ordering key: record it on the item, which callers have always
+                    # seen padded in. (`item.setdefault(key, None)` would work equally well
+                    # here; what must NOT happen is binding its RETURN value -- typeshed
+                    # collapses that to `None` for a value type that already admits None,
+                    # which makes the branches below unreachable under warn_unreachable.)
+                    item[key] = None
 
-            values_pre: List[str] = []
-            for value in values:
+                value = item[key]
                 if value is None:
-                    values_pre.append('')
+                    sortable_by_position[position] = ''
 
                 elif not isinstance(value, str):
-                    values_pre.append(str(value))
+                    sortable_by_position[position] = str(value)
 
-                values_pre.append(value)
+                else:
+                    sortable_by_position[position] = value
 
-            orders = (order[k] for k in keys)
-            return [values_pre[o] for o in orders]
+            return sortable_by_position
 
         return list(sorted(items, key=sort_by_key, reverse=reverse))
 
@@ -606,8 +655,10 @@ class APIBase:
         id_: Optional[str] = None
 
         if not isinstance(items, (dict, list)):
-            warnings.warn(  # type: ignore
-                f'Expected items to be a dict or list, got {type(items)}', RuntimeWarning
+            # Statically unreachable given the annotation, kept as a runtime guard
+            # for untyped callers.
+            warnings.warn(  # type: ignore[unreachable]
+                f'Expected items to be a dict or list, got {type(items)}', RuntimeWarning, stacklevel=2
             )
             return
 
@@ -622,16 +673,16 @@ class APIBase:
                     break
 
         if id_ is None:
-            warnings.warn(f'Could not find `id` for {name}', UserWarning)
+            warnings.warn(f'Could not find `id` for {name}', UserWarning, stacklevel=2)
         return id_
 
     @staticmethod
     def index_of(items: ItemList, value: str, key: str = 'id') -> Union[int, None]:
-        id_: Optional[str] = None
-
         if not isinstance(items, list):
-            warnings.warn(  # type: ignore
-                f'Expected items to be a list, got {type(items)}', RuntimeWarning
+            # Statically unreachable given the annotation, kept as a runtime guard
+            # for untyped callers.
+            warnings.warn(  # type: ignore[unreachable]
+                f'Expected items to be a list, got {type(items)}', RuntimeWarning, stacklevel=2
             )
             return
 
@@ -645,8 +696,8 @@ class APIBase:
                     return i
 
         if not key_exists:
-            warnings.warn(f'Key `{key}` does not exist in items', UserWarning)
+            warnings.warn(f'Key `{key}` does not exist in items', UserWarning, stacklevel=2)
         else:
-            warnings.warn(f'Could not find {value} for {key}', UserWarning)
+            warnings.warn(f'Could not find {value} for {key}', UserWarning, stacklevel=2)
 
         return None

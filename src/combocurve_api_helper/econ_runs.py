@@ -1,12 +1,8 @@
-import requests
-import warnings
-
-from combocurve_api_v1.pagination import get_next_page_url
-
-from typing import List, Dict, Optional, Union, Any, Iterator, Mapping, cast
+from collections.abc import Iterator, Mapping
+from types import MappingProxyType
+from typing import Optional, cast
 
 from .base import APIBase, Item, ItemList
-
 
 GET_LIMIT = 200
 GET_LIMIT_MONTHLY_EXPORTS = 100
@@ -30,6 +26,10 @@ def flatten_outputs(result: Item) -> Optional[Item]:
 
     out = {k: v for k, v in output.items()}
     return {**result, **out}
+
+
+# Newest run first: runDate leads, and callers pass reverse=True.
+_ECON_RUN_SORT_ORDER: Mapping[str, int] = MappingProxyType({'runDate': 0, 'status': 1, 'id': 2})
 
 
 class EconRuns(APIBase):
@@ -96,7 +96,7 @@ class EconRuns(APIBase):
         return f'{base_url}/{oneline_id}'
 
     def get_econ_run_monthly_econ_result_by_id_url(
-        self, project_id: str, scenario_id: str, econ_run_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, scenario_id: str, econ_run_id: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url for monthly econ results for a specific project id,
@@ -127,12 +127,7 @@ class EconRuns(APIBase):
         if add_combo_names:
             self.update_econ_run_combo_names(econruns, project_id, scenario_id)
 
-        order = {
-            'id': 2,
-            'status': 1,
-            'runDate': 0,
-        }
-        return self._keysort(econruns, order, reverse=True)
+        return self._keysort(econruns, _ECON_RUN_SORT_ORDER, reverse=True)
 
     def get_econ_run_by_id(
         self, project_id: str, scenario_id: str, econ_run_id: str, add_combo_names: bool = True
@@ -148,14 +143,9 @@ class EconRuns(APIBase):
         if add_combo_names:
             self.update_econ_run_combo_names(econruns, project_id, scenario_id)
 
-        order = {
-            'id': 2,
-            'status': 1,
-            'runDate': 0,
-        }
-        return self._keysort(econruns, order, reverse=True)[0]
+        return self._keysort(econruns, _ECON_RUN_SORT_ORDER, reverse=True)[0]
 
-    def get_econ_run_combo_names(self, project_id: str, scenario_id: str, econ_run_id: str) -> List[str]:
+    def get_econ_run_combo_names(self, project_id: str, scenario_id: str, econ_run_id: str) -> list[str]:
         """
         Returns a list of combo names for a specific project id, scenario id,
         and econ run id.
@@ -164,7 +154,7 @@ class EconRuns(APIBase):
         params = {'take': GET_LIMIT}
         data = self._get_items(url, params)
 
-        return cast(List[str], sorted(set(data)))
+        return cast('list[str]', sorted(set(data)))
 
     def get_econ_run_onelines(self, project_id: str, scenario_id: str, econ_run_id: str) -> ItemList:
         """
@@ -198,10 +188,10 @@ class EconRuns(APIBase):
         url = self.get_econ_run_oneline_by_id_url(project_id, scenario_id, econ_run_id, oneline_id)
         items = self._get_items(url)
 
-        return cast(Item, flatten_outputs(items[0]))
+        return cast('Item', flatten_outputs(items[0]))
 
     def get_econ_run_monthly_econ_result_by_id(
-        self, project_id: str, scenario_id: str, econ_run_id: str, columns: List[str]
+        self, project_id: str, scenario_id: str, econ_run_id: str, columns: list[str]
     ) -> ItemList:
         """
         Returns the monthly econ results for a specific project id, scenario id,
@@ -266,7 +256,7 @@ class EconRuns(APIBase):
         }
         items = self._get_items(url, params)
 
-        results = cast(ItemList, items[0]['results'])
+        results = cast('ItemList', items[0]['results'])
 
         results_flat = [result for result in (flatten_outputs(result) for result in results) if result is not None]
         return results_flat
@@ -290,7 +280,7 @@ class EconRuns(APIBase):
 
         for items in iter_items:
             for item in items:
-                results = cast(ItemList, item['results'])
+                results = cast('ItemList', item['results'])
 
                 results_flat = [
                     result for result in (flatten_outputs(result) for result in results) if result is not None

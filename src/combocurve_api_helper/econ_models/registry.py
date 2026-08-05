@@ -5,8 +5,6 @@ convenience functions can import `get_mapper` without an import cycle through th
 package `__init__` (which itself imports the generated module).
 """
 
-from typing import Dict
-
 from .actual_or_forecast import ActualOrForecastMapper
 from .base import EconModelMapper
 from .capex import CapexMapper
@@ -21,7 +19,7 @@ from .risking import RiskingMapper
 from .stream_properties import StreamPropertiesMapper
 
 # PascalCase econModelType (as in econModels.json) -> the singleton mapper for that type.
-MAPPERS: Dict[str, EconModelMapper] = {
+MAPPERS: dict[str, EconModelMapper] = {
     mapper.econ_model_type: mapper
     for mapper in (
         StreamPropertiesMapper(),

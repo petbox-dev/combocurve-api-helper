@@ -1,14 +1,9 @@
-import requests
 import warnings
+from typing import Optional, cast
 
 from requests.structures import CaseInsensitiveDict
 
-from combocurve_api_v1.pagination import get_next_page_url
-
-from typing import List, Dict, Optional, Union, Any, Iterator, Mapping, cast
-
-from .base import APIBase, Item, ItemList, WriteResponse
-
+from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
 
 GET_LIMIT = 200
 
@@ -18,7 +13,7 @@ class Scenarios(APIBase):
     # URLs
     ######
 
-    def get_scenarios_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_scenarios_url(self, project_id: str, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for project scenarios scoped from the project's id.
         """
@@ -38,7 +33,7 @@ class Scenarios(APIBase):
         return f'{base_url}/{scenario_id}'
 
     def get_scenario_combos_url(
-        self, project_id: str, scenario_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url for combos for a specific project id, scenario id,
@@ -57,7 +52,7 @@ class Scenarios(APIBase):
         project_id: str,
         scenario_id: str,
         econ_name: Optional[str] = None,
-        filters: Optional[Dict[str, str]] = None,
+        filters: Optional[dict[str, str]] = None,
     ) -> str:
         """
         Returns the API url for qualifiers for a specific project id,
@@ -78,21 +73,22 @@ class Scenarios(APIBase):
             else:
                 model_names = [m['econModelType'] for m in self.ECON_MODELS]
                 warnings.warn(
-                    f'`econ_name` is not in list of valid names:\n{model_names}. All qualifiers will be returned.'
+                    f'`econ_name` is not in list of valid names:\n{model_names}. All qualifiers will be returned.',
+                    stacklevel=2,
                 )
 
         url += self._build_params_string(filters)
         return url
 
     def get_scenario_wells_url(
-        self, project_id: str, scenario_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url for well assignments for a specific project id and
         scenario id.
         """
         base_url = self.get_scenario_by_id_url(project_id, scenario_id)
-        url = f'{self.API_BASE_URL}/projects/{project_id}/scenarios/{scenario_id}/well-assignments'
+        url = f'{base_url}/well-assignments'
         if filters is None:
             return url
 
@@ -100,7 +96,7 @@ class Scenarios(APIBase):
         return url
 
     def get_scenario_econ_model_assignments_url(
-        self, project_id: str, scenario_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url for the scenario's econ-model assignment grid
@@ -120,7 +116,7 @@ class Scenarios(APIBase):
 
     # Scenarios
 
-    def get_scenarios(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_scenarios(self, project_id: str, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of scenarios scoped from the project's id.
 
@@ -130,33 +126,27 @@ class Scenarios(APIBase):
         params = {'take': GET_LIMIT}
         scenarios = self._get_items(url, params=params)
 
-        order = {
-            'name': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(scenarios, order)
+        return self._keysort(scenarios, LIST_SORT_ORDER)
 
-    def post_scenarios(self, project_id: str, data: ItemList) -> List[WriteResponse]:
+    def post_scenarios(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Creates scenarios for a specific project id.
 
         https://docs.api.combocurve.com/api/post-project-scenarios
         """
         url = self.get_scenarios_url(project_id)
-        scenarios = cast(List[WriteResponse], self._post_items(url, data))
+        scenarios = cast('list[WriteResponse]', self._post_items(url, data))
 
         return scenarios
 
-    def put_scenarios(self, project_id: str, data: ItemList) -> List[WriteResponse]:
+    def put_scenarios(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Upserts scenarios for a specific project id.
 
         https://docs.api.combocurve.com/api/put-project-scenarios
         """
         url = self.get_scenarios_url(project_id)
-        scenarios = cast(List[WriteResponse], self._put_items(url, data))
+        scenarios = cast('list[WriteResponse]', self._put_items(url, data))
 
         return scenarios
 
@@ -174,7 +164,7 @@ class Scenarios(APIBase):
         if (scenario_name or scenario_id) is None:
             raise ValueError('Must provide at least one of scenario_name or scenario_id')
 
-        filters: Dict[str, str] = {}
+        filters: dict[str, str] = {}
         if scenario_name is not None:
             filters['name'] = scenario_name
 
@@ -219,25 +209,25 @@ class Scenarios(APIBase):
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
 
-    def post_scenario_combos(self, project_id: str, scenario_id: str, data: ItemList) -> List[WriteResponse]:
+    def post_scenario_combos(self, project_id: str, scenario_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Creates scenario combos for a specific project id and scenario id.
 
         https://docs.api.combocurve.com/api/post-scenario-combos-upsert
         """
         url = self.get_scenario_combos_url(project_id, scenario_id)
-        scenarios = cast(List[WriteResponse], self._post_items(url, data))
+        scenarios = cast('list[WriteResponse]', self._post_items(url, data))
 
         return scenarios
 
-    def put_scenario_combos(self, project_id: str, scenario_id: str, data: ItemList) -> List[WriteResponse]:
+    def put_scenario_combos(self, project_id: str, scenario_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Upserts scenario combos for a specific project id and scenario id.
 
         https://docs.api.combocurve.com/api/put-scenario-combos-upsert
         """
         url = self.get_scenario_combos_url(project_id, scenario_id)
-        scenarios = cast(List[WriteResponse], self._put_items(url, data))
+        scenarios = cast('list[WriteResponse]', self._put_items(url, data))
 
         return scenarios
 
@@ -250,7 +240,7 @@ class Scenarios(APIBase):
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
         """
-        filters: Dict[str, str] = {}
+        filters: dict[str, str] = {}
         filters['savedName'] = saved_name
 
         url = self.get_scenario_combos_url(project_id, scenario_id, filters)
@@ -274,25 +264,25 @@ class Scenarios(APIBase):
 
         return qualifiers[0]
 
-    def post_scenario_qualifiers(self, project_id: str, scenario_id: str, data: ItemList) -> List[WriteResponse]:
+    def post_scenario_qualifiers(self, project_id: str, scenario_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Creates scenario qualifiers for a specific project id and scenario id.
 
         https://docs.api.combocurve.com/api/post-qualifiers-upsert
         """
         url = self.get_scenario_qualifiers_url(project_id, scenario_id)
-        scenarios = cast(List[WriteResponse], self._post_items(url, data))
+        scenarios = cast('list[WriteResponse]', self._post_items(url, data))
 
         return scenarios
 
-    def put_scenario_qualifiers(self, project_id: str, scenario_id: str, data: ItemList) -> List[WriteResponse]:
+    def put_scenario_qualifiers(self, project_id: str, scenario_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Upserts scenario qualifiers for a specific project id and scenario id.
 
         https://docs.api.combocurve.com/api/put-qualifiers-upsert
         """
         url = self.get_scenario_qualifiers_url(project_id, scenario_id)
-        scenarios = cast(List[WriteResponse], self._put_items(url, data))
+        scenarios = cast('list[WriteResponse]', self._put_items(url, data))
 
         return scenarios
 
@@ -308,7 +298,7 @@ class Scenarios(APIBase):
         the number of wells deleted.
         """
         base_url = self.get_scenario_by_id_url(project_id, scenario_id)
-        filters: Dict[str, str] = {'econNames': econ_names, 'qualifierNames': qualifier_names}
+        filters: dict[str, str] = {'econNames': econ_names, 'qualifierNames': qualifier_names}
         url = f'{base_url}/qualifiers' + self._build_params_string(filters)
         scenarios = self._delete_responses(url, data=[])
 
@@ -344,25 +334,25 @@ class Scenarios(APIBase):
         url = self.get_scenario_econ_model_assignments_url(project_id, scenario_id)
         return self._get_items(url)
 
-    def post_scenario_wells(self, project_id: str, scenario_id: str, data: ItemList) -> List[WriteResponse]:
+    def post_scenario_wells(self, project_id: str, scenario_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Creates scenario well assignments for a specific project id and scenario id.
 
         https://docs.api.combocurve.com/api/post-scenario-wells-upsert
         """
         url = self.get_scenario_wells_url(project_id, scenario_id)
-        scenarios = cast(List[WriteResponse], self._post_items(url, data))
+        scenarios = cast('list[WriteResponse]', self._post_items(url, data))
 
         return scenarios
 
-    def put_scenario_wells(self, project_id: str, scenario_id: str, data: ItemList) -> List[WriteResponse]:
+    def put_scenario_wells(self, project_id: str, scenario_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Upserts scenario well assignments for a specific project id and scenario id.
 
         https://docs.api.combocurve.com/api/put-scenario-wells-upsert
         """
         url = self.get_scenario_wells_url(project_id, scenario_id)
-        scenarios = cast(List[WriteResponse], self._put_items(url, data))
+        scenarios = cast('list[WriteResponse]', self._put_items(url, data))
 
         return scenarios
 
@@ -375,7 +365,7 @@ class Scenarios(APIBase):
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
         """
-        filters: Dict[str, str] = {}
+        filters: dict[str, str] = {}
         filters['wells'] = wells
 
         url = self.get_scenario_wells_url(project_id, scenario_id, filters)
@@ -387,7 +377,7 @@ class Scenarios(APIBase):
 
     # Scenario lookup-tables (project-scoped: /scenarios/lookup-tables)
 
-    def get_scenario_lookup_tables_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_scenario_lookup_tables_url(self, project_id: str, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of scenario lookup-tables for a specific project id.
         Route: /v1/projects/{projectId}/scenarios/lookup-tables
@@ -400,7 +390,7 @@ class Scenarios(APIBase):
         return url
 
     def get_scenario_lookup_table_by_id_url(
-        self, project_id: str, lookup_table_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, lookup_table_id: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url for a specific scenario lookup-table from its id.
@@ -413,7 +403,7 @@ class Scenarios(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_scenario_lookup_tables(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_scenario_lookup_tables(self, project_id: str, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of scenario lookup-tables for a specific project id.
         """
@@ -429,19 +419,19 @@ class Scenarios(APIBase):
         lookup_tables = self._get_items(url)
         return lookup_tables[0]
 
-    def post_scenario_lookup_tables(self, project_id: str, data: ItemList) -> List[WriteResponse]:
+    def post_scenario_lookup_tables(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Creates scenario lookup-tables for a specific project id.
         """
         url = self.get_scenario_lookup_tables_url(project_id)
-        return cast(List[WriteResponse], self._post_items(url, data))
+        return cast('list[WriteResponse]', self._post_items(url, data))
 
-    def put_scenario_lookup_tables(self, project_id: str, data: ItemList) -> List[WriteResponse]:
+    def put_scenario_lookup_tables(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Upserts scenario lookup-tables for a specific project id.
         """
         url = self.get_scenario_lookup_tables_url(project_id)
-        return cast(List[WriteResponse], self._put_items(url, data))
+        return cast('list[WriteResponse]', self._put_items(url, data))
 
     def delete_scenario_lookup_table_by_id(self, project_id: str, lookup_table_id: str) -> CaseInsensitiveDict[str]:
         """
@@ -456,7 +446,7 @@ class Scenarios(APIBase):
     # Scenario lookup-table assignments (/scenarios/{id}/assignments/lookup-tables)
 
     def get_scenario_lookup_table_assignments_url(
-        self, project_id: str, scenario_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url for a scenario's lookup-table assignments.
@@ -471,7 +461,7 @@ class Scenarios(APIBase):
         return url
 
     def get_scenario_lookup_table_assignment_by_id_url(
-        self, project_id: str, scenario_id: str, lookup_table_id: str, filters: Optional[Dict[str, str]] = None
+        self, project_id: str, scenario_id: str, lookup_table_id: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
         Returns the API url for a specific scenario lookup-table assignment from its id.
@@ -494,12 +484,12 @@ class Scenarios(APIBase):
 
     def put_scenario_lookup_table_assignments(
         self, project_id: str, scenario_id: str, data: ItemList
-    ) -> List[WriteResponse]:
+    ) -> list[WriteResponse]:
         """
         Upserts the lookup-table assignments for a specific scenario.
         """
         url = self.get_scenario_lookup_table_assignments_url(project_id, scenario_id)
-        return cast(List[WriteResponse], self._put_items(url, data))
+        return cast('list[WriteResponse]', self._put_items(url, data))
 
     def get_scenario_lookup_table_assignment_by_id(
         self, project_id: str, scenario_id: str, lookup_table_id: str

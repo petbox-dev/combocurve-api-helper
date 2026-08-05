@@ -1,11 +1,11 @@
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 from pydantic import ValidationError
 
 from combocurve_api_helper.econ_models.stream_properties import StreamPropertiesMapper
 
-API: Dict[str, Any] = {
+API: dict[str, Any] = {
     'id': 'sp1',
     'name': 'Sample Stream | Bid',
     'unique': False,
@@ -103,7 +103,7 @@ def test_gas_shrinkage_condition_uses_presence_not_truthiness() -> None:
     # Real ComboCurve API exports carry unshrunkGas = '' (empty string, falsy) on the
     # majority of real ngl yields rows. A truthiness check on r.get('unshrunkGas') wrongly
     # blanks 'Gas Shrinkage Condition' for these; only key presence is the correct signal.
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'ngl-empty-unshrunk',
         'unique': False,
         'yields': {
@@ -125,7 +125,7 @@ def test_csv_rows_roundtrip_exact() -> None:
     # for the stream-properties data columns. 'Last Update' is excluded: it is sourced
     # from the API model's top-level 'updatedAt'/context, which from_row_dicts does not
     # reconstruct -- a separate, pre-existing gap unrelated to this fix.
-    def _strip_last_update(rs: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    def _strip_last_update(rs: list[dict[str, str]]) -> list[dict[str, str]]:
         return [{k: v for k, v in r.items() if k != 'Last Update'} for r in rs]
 
     m = StreamPropertiesMapper()
@@ -148,7 +148,7 @@ def test_roundtrip() -> None:
         assert 'rateType' not in rebuilt[group_key]
         assert 'rowsCalculationMethod' not in rebuilt[group_key]
 
-    def _rows_only(group: Dict[str, Any]) -> Dict[str, Any]:
+    def _rows_only(group: dict[str, Any]) -> dict[str, Any]:
         return {
             category: {'rows': node['rows']}
             for category, node in group.items()

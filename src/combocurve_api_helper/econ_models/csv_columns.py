@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 _COMMON_HEAD = [
     'Model Id',
     'Created At',
@@ -10,9 +8,9 @@ _COMMON_HEAD = [
     'Embedded Lookup Table',
 ]
 
-COLUMNS: Dict[str, List[str]] = {
-    'StreamProperties': _COMMON_HEAD
-    + [
+COLUMNS: dict[str, list[str]] = {
+    'StreamProperties': [
+        *_COMMON_HEAD,
         'Key',
         'Category',
         'Criteria',
@@ -30,10 +28,10 @@ COLUMNS: Dict[str, List[str]] = {
         'Shrink (% Remaining)',
         'BTU (MBTU/MCF)',
         'Post Extraction (%)',
-    ]
-    + ['Last Update'],
-    'Differentials': _COMMON_HEAD
-    + [
+        'Last Update',
+    ],
+    'Differentials': [
+        *_COMMON_HEAD,
         'Key',
         'Phase',
         'Criteria',
@@ -41,10 +39,10 @@ COLUMNS: Dict[str, List[str]] = {
         'Period',
         'Unit',
         'Escalation',
-    ]
-    + ['Last Update'],
-    'ProductionTaxes': _COMMON_HEAD
-    + [
+        'Last Update',
+    ],
+    'ProductionTaxes': [
+        *_COMMON_HEAD,
         'Production Taxes State',
         'Key',
         'Stream Type',
@@ -60,10 +58,10 @@ COLUMNS: Dict[str, List[str]] = {
         'Deduct Severance Tax',
         'Rate Type',
         'Rate Rows Calculation Method',
-    ]
-    + ['Last Update'],
-    'Expenses': _COMMON_HEAD
-    + [
+        'Last Update',
+    ],
+    'Expenses': [
+        *_COMMON_HEAD,
         'Key',
         'Category',
         'Criteria',
@@ -83,10 +81,10 @@ COLUMNS: Dict[str, List[str]] = {
         'Paying WI / Earning WI',
         'Rate Type',
         'Rate Rows Calculation Method',
-    ]
-    + ['Last Update'],
-    'Capex': _COMMON_HEAD
-    + [
+        'Last Update',
+    ],
+    'Capex': [
+        *_COMMON_HEAD,
         'Category',
         'Description',
         'Tangible (M$)',
@@ -108,25 +106,12 @@ COLUMNS: Dict[str, List[str]] = {
         # MUST match capex._DRILLING_COST_COL / _COMPLETION_COST_COL.
         'Drilling Cost ($/ft)',
         'Completion Cost ($/ft)',
-    ]
-    + ['Last Update'],
-    'ReservesCategory': _COMMON_HEAD
-    + [
-        'PRMS Class',
-        'PRMS Category',
-        'PRMS Sub Category',
-    ]
-    + ['Last Update'],
-    'ActualOrForecast': _COMMON_HEAD
-    + [
-        'Key',
-        'Category',
-        'Criteria',
-        'Value',
-    ]
-    + ['Last Update'],
-    'Pricing': _COMMON_HEAD
-    + [
+        'Last Update',
+    ],
+    'ReservesCategory': [*_COMMON_HEAD, 'PRMS Class', 'PRMS Category', 'PRMS Sub Category', 'Last Update'],
+    'ActualOrForecast': [*_COMMON_HEAD, 'Key', 'Category', 'Criteria', 'Value', 'Last Update'],
+    'Pricing': [
+        *_COMMON_HEAD,
         'Phase',
         'Category',
         'Criteria',
@@ -136,10 +121,10 @@ COLUMNS: Dict[str, List[str]] = {
         'Cap',
         'Price Ratio',
         'Escalation',
-    ]
-    + ['Last Update'],
-    'Dates': _COMMON_HEAD
-    + [
+        'Last Update',
+    ],
+    'Dates': [
+        *_COMMON_HEAD,
         'Max Econ Life (Years)',
         'As of Date',
         'Discount Date',
@@ -160,10 +145,10 @@ COLUMNS: Dict[str, List[str]] = {
         'Econ Limit Delay',
         'Trigger ECL CAPEX (Unecon)',
         'Tolerant Negative CF',
-    ]
-    + ['Last Update'],
-    'OwnershipReversion': _COMMON_HEAD
-    + [
+        'Last Update',
+    ],
+    'OwnershipReversion': [
+        *_COMMON_HEAD,
         'Key',
         'Reversion Type',
         'Reversion Value',
@@ -181,10 +166,10 @@ COLUMNS: Dict[str, List[str]] = {
         'Drip Cond. NRI %',
         'Rev Basis WI %',
         'Rev Basis NRI %',
-    ]
-    + ['Last Update'],
-    'Risking': _COMMON_HEAD
-    + [
+        'Last Update',
+    ],
+    'Risking': [
+        *_COMMON_HEAD,
         'Key',
         'Phase',
         'Category',
@@ -204,6 +189,6 @@ COLUMNS: Dict[str, List[str]] = {
         'Scale Post Shut-In End',
         'Fixed Expense',
         'CAPEX',
-    ]
-    + ['Last Update'],
+        'Last Update',
+    ],
 }

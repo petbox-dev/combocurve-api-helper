@@ -1,29 +1,29 @@
-__version__ = '2.0.0'
+__version__ = '2.1.0'
 
-from .root import Root
-from .projects import Projects
-from .scenarios import Scenarios
-from .production import Production
-from .econ_runs import EconRuns
-from .wells import Wells
-from .models import Models
-from .company_models import CompanyModels
-from .forecasts import Forecasts
-from .typecurves import TypeCurves
-from .directional import Directional
-from .forecast_configurations import ForecastConfigurations
-from .ownership_qualifiers import OwnershipQualifiers
-from .exports import Exports
+from ._batch import BatchChunk as BatchChunk
+from ._batch import BatchWriteResult as BatchWriteResult
 
 # Explicit re-export (`as`) so downstream `mypy --strict`
 # (--no-implicit-reexport) sees these public types as exported.
 from .base import Item as Item
 from .base import ItemList as ItemList
 from .base import JsonValue as JsonValue
-from .base import WriteResponse as WriteResponse
 from .base import WriteError as WriteError
-from ._batch import BatchChunk as BatchChunk
-from ._batch import BatchWriteResult as BatchWriteResult
+from .base import WriteResponse as WriteResponse
+from .company_models import CompanyModels
+from .directional import Directional
+from .econ_runs import EconRuns
+from .exports import Exports
+from .forecast_configurations import ForecastConfigurations
+from .forecasts import Forecasts
+from .models import Models
+from .ownership_qualifiers import OwnershipQualifiers
+from .production import Production
+from .projects import Projects
+from .root import Root
+from .scenarios import Scenarios
+from .typecurves import TypeCurves
+from .wells import Wells
 
 
 class ComboCurveAPI(

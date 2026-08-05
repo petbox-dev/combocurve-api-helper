@@ -1,12 +1,24 @@
-from typing import List, Dict, Optional, Union, Any, Iterator, Mapping, cast
+from collections.abc import Mapping
+from types import MappingProxyType
+from typing import Optional, cast
 
 from requests.structures import CaseInsensitiveDict
 
-from .base import APIBase, Item, ItemList, WriteResponse
-
+from .base import WELL_LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
 
 GET_LIMIT = 1000
 POST_PATCH_PUT_LIMIT = 1000
+
+
+# Well comments carry none of the well-list ordering keys -- their documented shape is
+# commentedAt / commentedBy / forecast / project / text / well. Passing the well-list
+# ordering raised on every non-empty response before 2.1.0, and afterwards would have
+# silently no-sorted while padding four null keys onto every returned comment.
+#
+# Newest first, like `_ECON_RUN_SORT_ORDER` (the caller passes reverse=True): a comment
+# feed is read chronologically, and `well` is an opaque id that means nothing as a
+# primary sort key. Both fields verified populated on live comments.
+_WELL_COMMENT_SORT_ORDER: Mapping[str, int] = MappingProxyType({'commentedAt': 0, 'well': 1})
 
 
 class Wells(APIBase):
@@ -14,7 +26,7 @@ class Wells(APIBase):
     # URLs
     ######
 
-    def get_company_wells_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_wells_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for company wells.
         """
@@ -31,7 +43,7 @@ class Wells(APIBase):
         """
         return f'{self.API_BASE_URL}/wells/{well_id}'
 
-    def get_project_company_wells_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_project_company_wells_url(self, project_id: str, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for project company wells scoped from the
         project's id.
@@ -50,7 +62,7 @@ class Wells(APIBase):
         """
         return f'{self.API_BASE_URL}/projects/{project_id}/company-wells/{well_id}'
 
-    def get_project_wells_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_project_wells_url(self, project_id: str, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for project wells scoped from the project's id.
         """
@@ -67,7 +79,7 @@ class Wells(APIBase):
         """
         return f'{self.API_BASE_URL}/projects/{project_id}/wells/{well_id}'
 
-    def get_well_comments_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_well_comments_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for well comments.
         """
@@ -84,7 +96,7 @@ class Wells(APIBase):
 
     # Company Wells
 
-    def get_company_wells(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_wells(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of company wells.
 
@@ -94,44 +106,38 @@ class Wells(APIBase):
         params = {'take': GET_LIMIT}
         wells = self._get_items(url, params)
 
-        order = {
-            'wellName': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(wells, order)
+        return self._keysort(wells, WELL_LIST_SORT_ORDER)
 
-    def post_company_wells(self, data: ItemList) -> List[WriteResponse]:
+    def post_company_wells(self, data: ItemList) -> list[WriteResponse]:
         """
         Creates a list of company wells.
 
         https://docs.api.combocurve.com/api/post-wells
         """
         url = self.get_company_wells_url()
-        wells = cast(List[WriteResponse], self._post_items(url, data, POST_PATCH_PUT_LIMIT))
+        wells = cast('list[WriteResponse]', self._post_items(url, data, POST_PATCH_PUT_LIMIT))
 
         return wells
 
-    def put_company_wells(self, data: ItemList) -> List[WriteResponse]:
+    def put_company_wells(self, data: ItemList) -> list[WriteResponse]:
         """
         Upserts a list of company wells.
 
         https://docs.api.combocurve.com/api/put-wells
         """
         url = self.get_company_wells_url()
-        wells = cast(List[WriteResponse], self._put_items(url, data, POST_PATCH_PUT_LIMIT))
+        wells = cast('list[WriteResponse]', self._put_items(url, data, POST_PATCH_PUT_LIMIT))
 
         return wells
 
-    def patch_company_wells(self, data: ItemList) -> List[WriteResponse]:
+    def patch_company_wells(self, data: ItemList) -> list[WriteResponse]:
         """
         Updates a list of company wells.
 
         https://docs.api.combocurve.com/api/patch-wells
         """
         url = self.get_company_wells_url()
-        wells = cast(List[WriteResponse], self._patch_items(url, data, POST_PATCH_PUT_LIMIT))
+        wells = cast('list[WriteResponse]', self._patch_items(url, data, POST_PATCH_PUT_LIMIT))
 
         return wells
 
@@ -153,7 +159,7 @@ class Wells(APIBase):
         if (chosen_id or data_source or well_id) is None:
             raise ValueError('Must provide at least one of chosen_id, data_source, or well_id')
 
-        filters: Dict[str, str] = {}
+        filters: dict[str, str] = {}
         if chosen_id is not None:
             filters['chosenID'] = chosen_id
 
@@ -182,25 +188,25 @@ class Wells(APIBase):
 
         return wells[0]
 
-    def put_company_well_by_id(self, well_id: str, data: Item) -> List[WriteResponse]:
+    def put_company_well_by_id(self, well_id: str, data: Item) -> list[WriteResponse]:
         """
         Upserts a specific company well from its well id.
 
         https://docs.api.combocurve.com/api/put-well-by-id
         """
         url = self.get_company_well_by_id_url(well_id)
-        wells = cast(List[WriteResponse], self._put_items(url, [data]))
+        wells = cast('list[WriteResponse]', self._put_items(url, [data]))
 
         return wells
 
-    def patch_company_well_by_id(self, well_id: str, data: Item) -> List[WriteResponse]:
+    def patch_company_well_by_id(self, well_id: str, data: Item) -> list[WriteResponse]:
         """
         Updates a specific company well from its well id.
 
         https://docs.api.combocurve.com/api/patch-well-by-id
         """
         url = self.get_company_well_by_id_url(well_id)
-        wells = cast(List[WriteResponse], self._patch_items(url, [data]))
+        wells = cast('list[WriteResponse]', self._patch_items(url, [data]))
 
         return wells
 
@@ -222,7 +228,7 @@ class Wells(APIBase):
 
     # Project Company Wells
 
-    def get_project_company_wells(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_project_company_wells(self, project_id: str, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of project company wells scoped from the project's id.
 
@@ -232,22 +238,16 @@ class Wells(APIBase):
         params = {'take': GET_LIMIT}
         wells = self._get_items(url, params)
 
-        order = {
-            'wellName': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(wells, order)
+        return self._keysort(wells, WELL_LIST_SORT_ORDER)
 
-    def post_project_company_wells(self, project_id: str, data: ItemList) -> List[WriteResponse]:
+    def post_project_company_wells(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Creates a list of project company wells.
 
         https://docs.api.combocurve.com/api/post-project-company-wells
         """
         url = self.get_project_company_wells_url(project_id)
-        wells = cast(List[WriteResponse], self._post_items(url, data, POST_PATCH_PUT_LIMIT))
+        wells = cast('list[WriteResponse]', self._post_items(url, data, POST_PATCH_PUT_LIMIT))
 
         return wells
 
@@ -269,7 +269,7 @@ class Wells(APIBase):
         if (chosen_id or data_source or well_id) is None:
             raise ValueError('Must provide at least one of chosen_id, data_source, or well_id')
 
-        filters: Dict[str, str] = {}
+        filters: dict[str, str] = {}
         if chosen_id is not None:
             filters['chosenID'] = chosen_id
 
@@ -300,7 +300,7 @@ class Wells(APIBase):
 
     # Project Wells
 
-    def get_project_wells(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_project_wells(self, project_id: str, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of project wells scoped from the project's id.
 
@@ -310,44 +310,38 @@ class Wells(APIBase):
         params = {'take': GET_LIMIT}
         wells = self._get_items(url, params)
 
-        order = {
-            'wellName': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(wells, order)
+        return self._keysort(wells, WELL_LIST_SORT_ORDER)
 
-    def post_project_wells(self, project_id: str, data: ItemList) -> List[WriteResponse]:
+    def post_project_wells(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Creates a list of project wells scoped from the project's id.
 
         https://docs.api.combocurve.com/api/post-projects-wells
         """
         url = self.get_project_wells_url(project_id)
-        wells = cast(List[WriteResponse], self._post_items(url, data, POST_PATCH_PUT_LIMIT))
+        wells = cast('list[WriteResponse]', self._post_items(url, data, POST_PATCH_PUT_LIMIT))
 
         return wells
 
-    def put_project_wells(self, project_id: str, data: ItemList) -> List[WriteResponse]:
+    def put_project_wells(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Upserts a list of project wells scoped from the project's id.
 
         https://docs.api.combocurve.com/api/put-projects-wells
         """
         url = self.get_project_wells_url(project_id)
-        wells = cast(List[WriteResponse], self._put_items(url, data, POST_PATCH_PUT_LIMIT))
+        wells = cast('list[WriteResponse]', self._put_items(url, data, POST_PATCH_PUT_LIMIT))
 
         return wells
 
-    def patch_project_wells(self, project_id: str, data: ItemList) -> List[WriteResponse]:
+    def patch_project_wells(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Updates a list of project wells scoped from the project's id.
 
         https://docs.api.combocurve.com/api/patch-project-wells
         """
         url = self.get_project_wells_url(project_id)
-        wells = cast(List[WriteResponse], self._patch_items(url, data, POST_PATCH_PUT_LIMIT))
+        wells = cast('list[WriteResponse]', self._patch_items(url, data, POST_PATCH_PUT_LIMIT))
 
         return wells
 
@@ -369,7 +363,7 @@ class Wells(APIBase):
         if (chosen_id or data_source or well_id) is None:
             raise ValueError('Must provide at least one of chosen_id, data_source, or well_id')
 
-        filters: Dict[str, str] = {}
+        filters: dict[str, str] = {}
         if chosen_id is not None:
             filters['chosenID'] = chosen_id
 
@@ -398,25 +392,25 @@ class Wells(APIBase):
 
         return wells[0]
 
-    def put_project_well_by_id(self, project_id: str, well_id: str, data: Item) -> List[WriteResponse]:
+    def put_project_well_by_id(self, project_id: str, well_id: str, data: Item) -> list[WriteResponse]:
         """
         Upserts a specific project well from its well id.
 
         https://docs.api.combocurve.com/api/put-projects-wells-by-id
         """
         url = self.get_project_well_by_id_url(project_id, well_id)
-        wells = cast(List[WriteResponse], self._put_items(url, [data]))
+        wells = cast('list[WriteResponse]', self._put_items(url, [data]))
 
         return wells
 
-    def patch_project_well_by_id(self, project_id: str, well_id: str, data: Item) -> List[WriteResponse]:
+    def patch_project_well_by_id(self, project_id: str, well_id: str, data: Item) -> list[WriteResponse]:
         """
         Updates a specific project well from its well id.
 
         https://docs.api.combocurve.com/api/patch-project-well-by-id
         """
         url = self.get_project_well_by_id_url(project_id, well_id)
-        wells = cast(List[WriteResponse], self._patch_items(url, [data]))
+        wells = cast('list[WriteResponse]', self._patch_items(url, [data]))
 
         return wells
 
@@ -436,7 +430,7 @@ class Wells(APIBase):
 
         return headers
 
-    def get_well_comments(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_well_comments(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of well comments.
 
@@ -458,13 +452,7 @@ class Wells(APIBase):
         params = {'take': GET_LIMIT}
         well_comments = self._get_items(url, params)
 
-        order = {
-            'wellName': 0,
-            'id': 3,
-            'createdAt': 2,
-            'updatedAt': 1,
-        }
-        return self._keysort(well_comments, order)
+        return self._keysort(well_comments, _WELL_COMMENT_SORT_ORDER, reverse=True)
 
 
 wells_response = """

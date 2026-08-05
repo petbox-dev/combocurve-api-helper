@@ -1,6 +1,6 @@
 import datetime
 from decimal import Decimal
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 
 def model_type(unique: bool) -> str:
@@ -111,7 +111,7 @@ def check_entire_well_life(value: str) -> None:
         raise NotImplementedError(f'Unknown entireWellLife value: {value!r}')
 
 
-def flat_or_dates_criteria(entire_well_life: Optional[str], dates: Optional[str], *, what: str) -> Tuple[str, str]:
+def flat_or_dates_criteria(entire_well_life: Optional[str], dates: Optional[str], *, what: str) -> tuple[str, str]:
     """Shared 'flat'/'dates' (Criteria, Period) CSV pair for a pydantic row that carries
     exactly one of `entireWellLife`/`dates` (StreamProperties/Differentials/Pricing rows
     all share this exact shape). Validates `entire_well_life` via `check_entire_well_life`
@@ -126,7 +126,7 @@ def flat_or_dates_criteria(entire_well_life: Optional[str], dates: Optional[str]
     raise NotImplementedError(f'Unknown {what} criteria row: entireWellLife/dates both None')
 
 
-def flat_or_dates_row_kwargs(criteria_csv: str, period_csv: str, marker: str) -> Dict[str, Any]:
+def flat_or_dates_row_kwargs(criteria_csv: str, period_csv: str, marker: str) -> dict[str, Any]:
     """Inverse of `flat_or_dates_criteria`: build the `{'entire_well_life': ...}` or
     `{'dates': ...}` row kwarg for a CSV 'Criteria'/'Period' cell pair. `marker` is the
     write-back `entire_well_life` value to use for a 'flat' row (see
@@ -188,4 +188,4 @@ def enum_from_csv(s: str) -> Optional[str]:
 # {oil, gas, ngl, dripCondensate}. NOT shared with ProductionTaxes/Expenses, which key
 # drip cond as the snake_case `drip_condensate` (a real API difference, not an oversight),
 # nor with StreamProperties, whose phase map is embedded in a larger category table.
-PHASE_TO_CSV_CAMEL: Dict[str, str] = {'oil': 'oil', 'gas': 'gas', 'ngl': 'ngl', 'dripCondensate': 'drip cond'}
+PHASE_TO_CSV_CAMEL: dict[str, str] = {'oil': 'oil', 'gas': 'gas', 'ngl': 'ngl', 'dripCondensate': 'drip cond'}

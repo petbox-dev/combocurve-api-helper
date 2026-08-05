@@ -1,7 +1,8 @@
-from typing import List, Dict, Optional, Union, Any, Iterator, Mapping, cast
+from collections.abc import Mapping
+from types import MappingProxyType
+from typing import Optional, cast
 
-from .base import APIBase, Item, ItemList, WriteResponse
-
+from .base import APIBase, ItemList, WriteResponse
 
 GET_LIMIT = 20_000
 POST_LIMIT = 20_000
@@ -9,12 +10,16 @@ PUT_LIMIT = 20_000
 PATCH_LIMIT = 20_000
 
 
+# Production rows are identified by well then date.
+_PRODUCTION_SORT_ORDER: Mapping[str, int] = MappingProxyType({'well': 0, 'date': 1})
+
+
 class Production(APIBase):
     ######
     # URLs
     ######
 
-    def get_company_monthly_productions_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_monthly_productions_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for company monthly production.
         """
@@ -25,7 +30,7 @@ class Production(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_company_daily_productions_url(self, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_company_daily_productions_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for company daily production.
         """
@@ -36,7 +41,7 @@ class Production(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_project_monthly_productions_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_project_monthly_productions_url(self, project_id: str, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for a specific project's monthly production.
         """
@@ -47,7 +52,7 @@ class Production(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_project_daily_productions_url(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> str:
+    def get_project_daily_productions_url(self, project_id: str, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url for a specific project's daily production.
         """
@@ -62,7 +67,7 @@ class Production(APIBase):
     # API calls
     ###########
 
-    def get_company_monthly_productions(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_monthly_productions(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of company monthly production items.
 
@@ -72,42 +77,38 @@ class Production(APIBase):
         params = {'take': GET_LIMIT}
         monthly_production = self._get_items(url, params)
 
-        order = {
-            'well': 0,
-            'date': 1,
-        }
-        return self._keysort(monthly_production, order)
+        return self._keysort(monthly_production, _PRODUCTION_SORT_ORDER)
 
-    def post_company_monthly_productions(self, data: ItemList) -> List[WriteResponse]:
+    def post_company_monthly_productions(self, data: ItemList) -> list[WriteResponse]:
         """
         Creates monthly production items.
 
         https://docs.api.combocurve.com/api/post-monthly-productions
         """
         url = self.get_company_monthly_productions_url()
-        monthly_production = cast(List[WriteResponse], self._post_items(url, data))
+        monthly_production = cast('list[WriteResponse]', self._post_items(url, data))
 
         return monthly_production
 
-    def put_company_monthly_productions(self, data: ItemList) -> List[WriteResponse]:
+    def put_company_monthly_productions(self, data: ItemList) -> list[WriteResponse]:
         """
         Upserts monthly production items.
 
         https://docs.api.combocurve.com/api/put-monthly-productions
         """
         url = self.get_company_monthly_productions_url()
-        monthly_production = cast(List[WriteResponse], self._put_items(url, data))
+        monthly_production = cast('list[WriteResponse]', self._put_items(url, data))
 
         return monthly_production
 
-    def patch_company_monthly_productions(self, data: ItemList) -> List[WriteResponse]:
+    def patch_company_monthly_productions(self, data: ItemList) -> list[WriteResponse]:
         """
         Updates monthly production items.
 
         https://docs.api.combocurve.com/api/patch-monthly-productions
         """
         url = self.get_company_monthly_productions_url()
-        monthly_production = cast(List[WriteResponse], self._put_items(url, data))
+        monthly_production = cast('list[WriteResponse]', self._patch_items(url, data))
 
         return monthly_production
 
@@ -122,7 +123,7 @@ class Production(APIBase):
 
         return monthly_production
 
-    def get_company_daily_productions(self, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_company_daily_productions(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of company monthly production items.
 
@@ -132,42 +133,38 @@ class Production(APIBase):
         params = {'take': GET_LIMIT}
         dailiy_production = self._get_items(url, params)
 
-        order = {
-            'well': 0,
-            'date': 1,
-        }
-        return self._keysort(dailiy_production, order)
+        return self._keysort(dailiy_production, _PRODUCTION_SORT_ORDER)
 
-    def post_company_daily_productions(self, data: ItemList) -> List[WriteResponse]:
+    def post_company_daily_productions(self, data: ItemList) -> list[WriteResponse]:
         """
         Creates daily production items.
 
         https://docs.api.combocurve.com/api/post-daily-productions
         """
         url = self.get_company_daily_productions_url()
-        daily_production = cast(List[WriteResponse], self._post_items(url, data))
+        daily_production = cast('list[WriteResponse]', self._post_items(url, data))
 
         return daily_production
 
-    def put_company_daily_productions(self, data: ItemList) -> List[WriteResponse]:
+    def put_company_daily_productions(self, data: ItemList) -> list[WriteResponse]:
         """
         Upserts daily production items.
 
         https://docs.api.combocurve.com/api/put-daily-productions
         """
         url = self.get_company_daily_productions_url()
-        daily_production = cast(List[WriteResponse], self._put_items(url, data))
+        daily_production = cast('list[WriteResponse]', self._put_items(url, data))
 
         return daily_production
 
-    def patch_company_daily_productions(self, data: ItemList) -> List[WriteResponse]:
+    def patch_company_daily_productions(self, data: ItemList) -> list[WriteResponse]:
         """
         Updates daily production items.
 
         https://docs.api.combocurve.com/api/patch-daily-productions
         """
         url = self.get_company_daily_productions_url()
-        daily_production = cast(List[WriteResponse], self._patch_items(url, data))
+        daily_production = cast('list[WriteResponse]', self._patch_items(url, data))
 
         return daily_production
 
@@ -182,7 +179,7 @@ class Production(APIBase):
 
         return daily_production
 
-    def get_project_monthly_productions(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_project_monthly_productions(self, project_id: str, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of monthly production items for a specific project id.
 
@@ -192,42 +189,38 @@ class Production(APIBase):
         params = {'take': GET_LIMIT}
         monthly_production = self._get_items(url, params)
 
-        order = {
-            'well': 0,
-            'date': 1,
-        }
-        return self._keysort(monthly_production, order)
+        return self._keysort(monthly_production, _PRODUCTION_SORT_ORDER)
 
-    def post_project_monthly_productions(self, project_id: str, data: ItemList) -> List[WriteResponse]:
+    def post_project_monthly_productions(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Creates project monthly production items.
 
         https://docs.api.combocurve.com/api/post-projects-monthly-productions
         """
         url = self.get_project_monthly_productions_url(project_id)
-        monthly_production = cast(List[WriteResponse], self._post_items(url, data))
+        monthly_production = cast('list[WriteResponse]', self._post_items(url, data))
 
         return monthly_production
 
-    def put_project_monthly_productions(self, project_id: str, data: ItemList) -> List[WriteResponse]:
+    def put_project_monthly_productions(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Upserts project monthly production items.
 
         https://docs.api.combocurve.com/api/put-projects-monthly-productions
         """
         url = self.get_project_monthly_productions_url(project_id)
-        monthly_production = cast(List[WriteResponse], self._put_items(url, data))
+        monthly_production = cast('list[WriteResponse]', self._put_items(url, data))
 
         return monthly_production
 
-    def patch_project_monthly_productions(self, project_id: str, data: ItemList) -> List[WriteResponse]:
+    def patch_project_monthly_productions(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Updates project monthly production items.
 
         https://docs.api.combocurve.com/api/patch-projects-monthly-productions
         """
         url = self.get_project_monthly_productions_url(project_id)
-        monthly_production = cast(List[WriteResponse], self._put_items(url, data))
+        monthly_production = cast('list[WriteResponse]', self._patch_items(url, data))
 
         return monthly_production
 
@@ -242,7 +235,7 @@ class Production(APIBase):
 
         return monthly_production
 
-    def get_project_daily_productions(self, project_id: str, filters: Optional[Dict[str, str]] = None) -> ItemList:
+    def get_project_daily_productions(self, project_id: str, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of daily production items for a specific project id.
 
@@ -252,42 +245,38 @@ class Production(APIBase):
         params = {'take': GET_LIMIT}
         daily_production = self._get_items(url, params)
 
-        order = {
-            'well': 0,
-            'date': 1,
-        }
-        return self._keysort(daily_production, order)
+        return self._keysort(daily_production, _PRODUCTION_SORT_ORDER)
 
-    def post_project_daily_productions(self, project_id: str, data: ItemList) -> List[WriteResponse]:
+    def post_project_daily_productions(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Creates project daily production items.
 
         https://docs.api.combocurve.com/api/post-projects-daily-productions
         """
         url = self.get_project_daily_productions_url(project_id)
-        daily_production = cast(List[WriteResponse], self._post_items(url, data))
+        daily_production = cast('list[WriteResponse]', self._post_items(url, data))
 
         return daily_production
 
-    def put_project_daily_productions(self, project_id: str, data: ItemList) -> List[WriteResponse]:
+    def put_project_daily_productions(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Upserts project daily production items.
 
         https://docs.api.combocurve.com/api/put-projects-daily-productions
         """
         url = self.get_project_daily_productions_url(project_id)
-        daily_production = cast(List[WriteResponse], self._put_items(url, data))
+        daily_production = cast('list[WriteResponse]', self._put_items(url, data))
 
         return daily_production
 
-    def patch_project_daily_productions(self, project_id: str, data: ItemList) -> List[WriteResponse]:
+    def patch_project_daily_productions(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Updates project daily production items.
 
         https://docs.api.combocurve.com/api/patch-projects-daily-productions
         """
         url = self.get_project_daily_productions_url(project_id)
-        daily_production = cast(List[WriteResponse], self._put_items(url, data))
+        daily_production = cast('list[WriteResponse]', self._patch_items(url, data))
 
         return daily_production
 

@@ -5,7 +5,7 @@ per-kind -> URL mapping, and the raw-request delegation deterministically
 (the one new module with logic beyond a thin URL-build-and-dispatch wrapper).
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import pytest
 import requests
@@ -17,7 +17,7 @@ V1 = 'https://api.combocurve.com/v1'
 V2 = 'https://api.combocurve.com/v2'
 
 # export kind (URL segment) -> the snake fragment in the public method names
-KINDS: Dict[str, str] = {
+KINDS: dict[str, str] = {
     'forecast-parameters': 'forecast_parameters',
     'forecast-volumes': 'forecast_volumes',
     'econ-monthly': 'econ_monthly',
@@ -31,7 +31,7 @@ class _FakeResponse:
     def __init__(self, status_code: int, body: Any) -> None:
         self.status_code = status_code
         self._body = body
-        self.headers: Dict[str, str] = {}
+        self.headers: dict[str, str] = {}
 
     def json(self) -> Any:
         return self._body
@@ -58,7 +58,7 @@ def test_export_url_builders() -> None:
 @pytest.mark.parametrize('kind', sorted(KINDS))
 def test_post_export_hits_correct_v2_url(monkeypatch: MonkeyPatch, kind: str) -> None:
     api = _make_api(monkeypatch)
-    calls: List[Tuple[str, Any]] = []
+    calls: list[tuple[str, Any]] = []
 
     def fake_post(url: str, headers: Any = None, json: Any = None) -> _FakeResponse:
         calls.append((url, json))
@@ -75,7 +75,7 @@ def test_post_export_hits_correct_v2_url(monkeypatch: MonkeyPatch, kind: str) ->
 @pytest.mark.parametrize('kind', sorted(KINDS))
 def test_get_export_by_job_id_hits_correct_v2_url(monkeypatch: MonkeyPatch, kind: str) -> None:
     api = _make_api(monkeypatch)
-    calls: List[str] = []
+    calls: list[str] = []
 
     def fake_get(url: str, headers: Any = None, params: Optional[Any] = None) -> _FakeResponse:
         calls.append(url)
@@ -91,7 +91,7 @@ def test_get_export_by_job_id_hits_correct_v2_url(monkeypatch: MonkeyPatch, kind
 
 def test_post_export_v1_hits_v1_url(monkeypatch: MonkeyPatch) -> None:
     api = _make_api(monkeypatch)
-    calls: List[Tuple[str, Any]] = []
+    calls: list[tuple[str, Any]] = []
 
     def fake_post(url: str, headers: Any = None, json: Any = None) -> _FakeResponse:
         calls.append((url, json))

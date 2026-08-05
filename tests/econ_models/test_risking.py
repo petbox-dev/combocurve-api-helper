@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -9,7 +9,7 @@ from combocurve_api_helper.econ_models.risking import RiskingMapper
 # 'data' -- unlike every other econ-model type in this package. This model has NO CSV
 # 'wells' row despite an identical `risking` shape to models that DO -- confirming the
 # wells row is not recoverable from the API.
-SAMPLE_WELL_1_P50: Dict[str, Any] = {
+SAMPLE_WELL_1_P50: dict[str, Any] = {
     'id': 'risk-rd7h',
     'name': 'SAMPLE WELL 1 P50',
     'unique': False,
@@ -29,7 +29,7 @@ SAMPLE_WELL_1_P50: Dict[str, Any] = {
 
 # riskProd/riskNglDripCondViaGasRisk KEYS ABSENT ENTIRELY. CC's CSV still renders
 # 'Risk Hist Prod'/'Risk NGL...' as 'yes' -- the documented None -> yes default.
-LOW_PROPPANT: Dict[str, Any] = {
+LOW_PROPPANT: dict[str, Any] = {
     'name': 'Low Proppant',
     'unique': False,
     'econModelType': 'Risking',
@@ -44,7 +44,7 @@ LOW_PROPPANT: Dict[str, Any] = {
 
 # riskProd == False -- exercises the mapper's explicit no/False branch, not just the
 # None default.
-SAMPLE_UNIT_2: Dict[str, Any] = {
+SAMPLE_UNIT_2: dict[str, Any] = {
     'name': 'SAMPLE_UNIT_2',
     'unique': False,
     'econModelType': 'Risking',
@@ -159,12 +159,12 @@ def test_from_row_dicts_ignores_wells_rows() -> None:
             'Unit': '',
         }
     )
-    rebuilt = m.from_row_dicts(rows + [wells_row])
+    rebuilt = m.from_row_dicts([*rows, wells_row])
     assert rebuilt['risking'] == SAMPLE_WELL_1_P50['risking']
 
 
 def test_unknown_entire_well_life_raises() -> None:
-    model: Dict[str, Any] = {
+    model: dict[str, Any] = {
         'name': 'Bad',
         'unique': False,
         'risking': {

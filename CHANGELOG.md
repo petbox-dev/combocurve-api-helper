@@ -5,6 +5,89 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-08-05
+
+### Changed
+
+- **Minimum Python is now 3.9.13** (was 3.8). The floor is set by `combocurve-api-v1`,
+  which has declared `requires-python = >=3.9.13` since its 0.2.5; declaring the real
+  value makes `pip` fail at install of this package rather than part-way through
+  dependency resolution. The 3.8 classifier is dropped. Annotations across the package
+  move to PEP 585 builtin generics (`dict` / `list`) and `collections.abc` imports;
+  modules that evaluate annotations at runtime (the pydantic econ-model rows) keep
+  `Optional` / `Union`, which PEP 604 could not replace before 3.10.
+- **Several list endpoints return a different order.** The `_keysort` comparison key was
+  assembled by *reading* the item's own key sequence (`values[order[key]]`) rather than by
+  *writing* each value to its assigned position. Those are inverse permutations, and they agree
+  only when `order` composed with the payload's key order is self-inverse — a property of the
+  data, not of `order`. The declared position is now honored. Verified endpoint-by-endpoint
+  against the live API:
+
+  | endpoint | live key order | before | now |
+  |---|---|---|---|
+  | econ models (company + per type) | `id, name, createdAt, updatedAt` | `updatedAt` | `name` |
+  | type curves | `id, name, createdAt, updatedAt` | `updatedAt` | `name` |
+  | wells (company, project-company, project) | `id, wellName, createdAt, updatedAt` | `updatedAt` | `wellName` |
+  | econ runs (list + by id) | `id, runDate, status` | `status` | `runDate` |
+  | projects, scenarios, forecasts | `createdAt, id, name, updatedAt` | `name` | `name` (unchanged) |
+  | productions, forecast volumes | — | unchanged | unchanged |
+
+  ComboCurve does **not** serialize keys uniformly: some resources lead with `createdAt`, others
+  with `id`. Orderings of two or fewer keys are self-inverse for every arrival order and so were
+  never affected. Consumers that relied on recency-first ordering for econ models, type curves or
+  wells should sort explicitly.
+- **Type-curve representative wells tie-break by `wellId`.** The ordering named `id`, which that
+  payload does not have (its id key is `wellId`), so the tie-break never fired and every returned
+  well was padded with a spurious `id: null`. Wells sharing a `wellName` now order by `wellId`
+  instead of retaining arrival order, and the `id` key is no longer added.
+- **`get_well_comments` returns newest first**, ordered by `commentedAt` then `well`. It was passing the well-list
+  ordering, whose four keys (`wellName`/`id`/`createdAt`/`updatedAt`) appear in no well-comment
+  payload. That raised `ValueError` on every non-empty response before this release; keeping it
+  would instead have silently performed no sort while padding four `null` keys onto every returned
+  comment.
+
+### Fixed
+
+- `_keysort` no longer raises `ValueError: not enough values to unpack` on an item that
+  carries none of the ordering keys, and no longer leaks raw non-`str` values into the
+  comparison key — which could raise
+  `TypeError: '<' not supported between instances of 'NoneType' and 'int'` when a null and
+  a number met in the same key position.
+- `scripts/generate_docstrings.py` now reports every failure to obtain the collection as
+  "unavailable" (exit 2) rather than "stale" (exit 1): TLS errors, `http.client`
+  exceptions such as a truncated `Content-Length` read, non-JSON bodies, and valid JSON of
+  the wrong shape. A well-formed JSON object with no `item` tree previously produced a
+  silent exit 0, so the freshness test passed having verified nothing.
+- `patch_company_monthly_productions`, `patch_project_monthly_productions` and
+  `patch_project_daily_productions` issued **PUT** rather than PATCH, against routes documented
+  as `patch-*`. Their sibling `patch_company_daily_productions` was already correct, so this was
+  a copy-paste slip rather than a deliberate choice; PUT and PATCH differ server-side in how
+  omitted fields are treated.
+- `scripts/audit_econ_model_drift.py` emitted a `_BASELINE_KEYS: Dict[str, FrozenSet[str]]`
+  literal for pasting into `drift.py`, which imports neither name and has no
+  `from __future__ import annotations` — pasting it raised `NameError` at import.
+
+### Internal
+
+- `scripts/` is now covered by `scripts/test.{sh,ps1,bat}` (ruff, format, mypy). Its
+  absence is why the `audit_econ_model_drift.py` defect above went unnoticed. `test.bat`
+  also propagates failures instead of always reporting success.
+- Ruff rule set widened to `E/W/F/I/UP/B/SIM/TC/RUF` (`SIM108` ignored) and mypy to
+  `strict` plus `warn_unreachable` / `warn_no_return` / `disallow_any_unimported`.
+- The shared ordering constants are `MappingProxyType`, so `copy.deepcopy` and `pickle.dumps`
+  on them now raise `TypeError` where `company_models.SORT_ORDER` (a plain dict before) allowed
+  it. `.copy()` still works and returns a mutable `dict`.
+- The `_keysort` comparison orders are single-sourced as `base.LIST_SORT_ORDER` /
+  `base.WELL_LIST_SORT_ORDER`, replacing a dozen inline copies across six modules that
+  nothing kept in sync. `company_models.SORT_ORDER` remains bound as an alias.
+  `_keysort` now rejects negative or duplicate `order` positions, which would
+  respectively corrupt and silently discard a key.
+- `tests/test_api.py` looked for `cc_api_config.json`; the file `config.py` defines and
+  ships is `cc-api.config.json`, so its live tests were unconditionally skipped.
+- The two generated modules are excluded from the ruff *formatter* only, not the linter,
+  with `force-exclude` so an explicit-path invocation cannot reformat them and break their
+  byte-comparison freshness tests.
+
 ## [2.0.0] - 2026-07-23
 
 Type-precision release. Runtime behavior is unchanged throughout (same dicts flow
