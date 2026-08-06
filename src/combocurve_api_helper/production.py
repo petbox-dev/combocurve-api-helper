@@ -2,12 +2,49 @@ from collections.abc import Mapping
 from types import MappingProxyType
 from typing import Optional, cast
 
+from requests.structures import CaseInsensitiveDict
+
 from .base import APIBase, ItemList, WriteResponse
 
 GET_LIMIT = 20_000
 POST_LIMIT = 20_000
 PUT_LIMIT = 20_000
 PATCH_LIMIT = 20_000
+
+
+def _delete_filters(
+    well_id: Optional[str],
+    start_date: Optional[str],
+    end_date: Optional[str],
+) -> dict[str, str]:
+    """Build the query string for a production DELETE.
+
+    The production delete endpoints take `well`, `startDate` and `endDate` as
+    **query parameters**, not as a request body -- sending them as a body returns
+    `400 Bad Request` (verified live 2026-08-06 against a project monthly delete).
+
+    At least one filter is required. An unfiltered delete would remove every
+    production record in scope, which no caller can plausibly want by accident,
+    so it is refused here rather than sent. This mirrors `delete_company_wells`.
+
+    Note that omitting `well_id` applies the date range to **every** well in
+    scope, which is documented API behaviour and is why the guard demands only
+    that *some* filter be present rather than requiring the well.
+    """
+    if well_id is None and start_date is None and end_date is None:
+        raise ValueError('Must provide at least one of well_id, start_date, or end_date')
+
+    filters: dict[str, str] = {}
+    if well_id is not None:
+        filters['well'] = well_id
+
+    if start_date is not None:
+        filters['startDate'] = start_date
+
+    if end_date is not None:
+        filters['endDate'] = end_date
+
+    return filters
 
 
 # Production rows are identified by well then date.
@@ -112,16 +149,27 @@ class Production(APIBase):
 
         return monthly_production
 
-    def delete_company_monthly_productions(self, data: ItemList) -> ItemList:
+    def delete_company_monthly_productions(
+        self,
+        well_id: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+    ) -> CaseInsensitiveDict[str]:
         """
-        Deletes monthly production items.
+        Deletes company monthly production records.
 
         https://docs.api.combocurve.com/api/delete-monthly-productions
-        """
-        url = self.get_company_monthly_productions_url()
-        monthly_production = self._delete_items(url, data)
 
-        return monthly_production
+        Filters are query parameters; see `_delete_filters` for why, and for the
+        at-least-one-filter requirement.
+
+        Returns the delete response headers, where 'X-Delete-Count' is the number
+        of production records deleted.
+        """
+        url = self.get_company_monthly_productions_url(_delete_filters(well_id, start_date, end_date))
+        responses = self._delete_responses(url, data=[])
+
+        return responses[0].headers
 
     def get_company_daily_productions(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
@@ -168,16 +216,27 @@ class Production(APIBase):
 
         return daily_production
 
-    def delete_company_daily_productions(self, data: ItemList) -> ItemList:
+    def delete_company_daily_productions(
+        self,
+        well_id: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+    ) -> CaseInsensitiveDict[str]:
         """
-        Delete daily production items.
+        Deletes company daily production records.
 
         https://docs.api.combocurve.com/api/delete-daily-productions
-        """
-        url = self.get_company_daily_productions_url()
-        daily_production = self._delete_items(url, data)
 
-        return daily_production
+        Filters are query parameters; see `_delete_filters` for why, and for the
+        at-least-one-filter requirement.
+
+        Returns the delete response headers, where 'X-Delete-Count' is the number
+        of production records deleted.
+        """
+        url = self.get_company_daily_productions_url(_delete_filters(well_id, start_date, end_date))
+        responses = self._delete_responses(url, data=[])
+
+        return responses[0].headers
 
     def get_project_monthly_productions(self, project_id: str, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
@@ -224,16 +283,28 @@ class Production(APIBase):
 
         return monthly_production
 
-    def delete_project_monthly_productions(self, project_id: str, data: ItemList) -> ItemList:
+    def delete_project_monthly_productions(
+        self,
+        project_id: str,
+        well_id: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+    ) -> CaseInsensitiveDict[str]:
         """
-        Deletes project monthly production items.
+        Deletes a project's monthly production records.
 
         https://docs.api.combocurve.com/api/delete-project-monthly-productions
-        """
-        url = self.get_project_monthly_productions_url(project_id)
-        monthly_production = self._delete_items(url, data)
 
-        return monthly_production
+        Filters are query parameters; see `_delete_filters` for why, and for the
+        at-least-one-filter requirement.
+
+        Returns the delete response headers, where 'X-Delete-Count' is the number
+        of production records deleted.
+        """
+        url = self.get_project_monthly_productions_url(project_id, _delete_filters(well_id, start_date, end_date))
+        responses = self._delete_responses(url, data=[])
+
+        return responses[0].headers
 
     def get_project_daily_productions(self, project_id: str, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
@@ -280,16 +351,28 @@ class Production(APIBase):
 
         return daily_production
 
-    def delete_project_daily_productions(self, project_id: str, data: ItemList) -> ItemList:
+    def delete_project_daily_productions(
+        self,
+        project_id: str,
+        well_id: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+    ) -> CaseInsensitiveDict[str]:
         """
-        Deletes project daily production items.
+        Deletes a project's daily production records.
 
         https://docs.api.combocurve.com/api/delete-project-daily-productions
-        """
-        url = self.get_project_daily_productions_url(project_id)
-        daily_production = self._delete_items(url, data)
 
-        return daily_production
+        Filters are query parameters; see `_delete_filters` for why, and for the
+        at-least-one-filter requirement.
+
+        Returns the delete response headers, where 'X-Delete-Count' is the number
+        of production records deleted.
+        """
+        url = self.get_project_daily_productions_url(project_id, _delete_filters(well_id, start_date, end_date))
+        responses = self._delete_responses(url, data=[])
+
+        return responses[0].headers
 
 
 monthly_production_response = """

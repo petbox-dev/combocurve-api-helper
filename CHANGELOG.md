@@ -5,6 +5,33 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **The four production `delete_*` methods could never succeed.** They sent
+  `well` / `startDate` / `endDate` as a JSON request body, but the production
+  delete endpoints take them as **query parameters**, so every call returned
+  `400 Bad Request`. Verified live: the same filters in the query string return
+  `204` with `X-Delete-Count`.
+
+### Changed
+
+- **BREAKING: the four production `delete_*` methods take explicit keyword
+  filters and return response headers.** `delete_company_monthly_productions`,
+  `delete_company_daily_productions`, `delete_project_monthly_productions` and
+  `delete_project_daily_productions` replace their `data: ItemList` parameter
+  with `well_id` / `start_date` / `end_date` keywords, and return the
+  `CaseInsensitiveDict` of response headers — `X-Delete-Count` is the number of
+  records deleted — instead of an `ItemList`. This matches
+  `delete_company_wells`, the only delete in the package that already worked.
+  No migration is required in practice: the previous signature could not
+  complete a request, so no working caller can exist.
+- **An unfiltered production delete is now refused** with `ValueError` rather
+  than sent. Passing no filter would delete every production record in scope;
+  omitting only `well_id` still applies the date range to every well, which is
+  documented API behaviour and remains allowed.
+
 ## [2.1.0] - 2026-08-05
 
 ### Changed
