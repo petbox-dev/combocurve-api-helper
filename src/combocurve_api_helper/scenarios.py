@@ -151,7 +151,10 @@ class Scenarios(APIBase):
         return scenarios
 
     def delete_scenarios(
-        self, project_id: str, scenario_name: Optional[str], scenario_id: Optional[str]
+        self,
+        project_id: str,
+        scenario_name: Optional[str] = None,
+        scenario_id: Optional[str] = None,
     ) -> CaseInsensitiveDict[str]:
         """
         Deletes scenarios for a specific project id.
@@ -161,15 +164,10 @@ class Scenarios(APIBase):
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
         """
-        if (scenario_name or scenario_id) is None:
-            raise ValueError('Must provide at least one of scenario_name or scenario_id')
-
-        filters: dict[str, str] = {}
-        if scenario_name is not None:
-            filters['name'] = scenario_name
-
-        if scenario_id is not None:
-            filters['id'] = scenario_id
+        filters = self._require_any_filter(
+            {'name': scenario_name, 'id': scenario_id},
+            'scenario_name or scenario_id',
+        )
 
         url = self.get_scenarios_url(project_id, filters)
         scenarios = self._delete_responses(url, data=[])

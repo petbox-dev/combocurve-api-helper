@@ -13,7 +13,7 @@ PATCH_LIMIT = 20_000
 
 
 def _delete_filters(
-    well_id: Optional[str],
+    well_id: str,
     start_date: Optional[str],
     end_date: Optional[str],
 ) -> dict[str, str]:
@@ -23,21 +23,24 @@ def _delete_filters(
     **query parameters**, not as a request body -- sending them as a body returns
     `400 Bad Request` (verified live 2026-08-06 against a project monthly delete).
 
-    At least one filter is required. An unfiltered delete would remove every
-    production record in scope, which no caller can plausibly want by accident,
-    so it is refused here rather than sent. This mirrors `delete_company_wells`.
+    `well` is REQUIRED and the dates are optional. Both published sources agree:
+    the OpenAPI spec marks `well` `required: true` on all four delete routes, and
+    the Postman collection describes it as `(Required) filter by well ID`. So a
+    date-only delete is not a supported call -- it is refused here rather than
+    sent to fail. This is also the safe reading: without a well, the date range
+    would apply to every well in scope.
 
-    Note that omitting `well_id` applies the date range to **every** well in
-    scope, which is documented API behaviour and is why the guard demands only
-    that *some* filter be present rather than requiring the well.
+    The guard is falsy rather than `is None` so that `well_id=''` -- which would
+    build `?well=` and reach the API as an ObjectId error -- is refused too, and it
+    checks the type because the 2.1.0 signature took a positional `data: ItemList`.
+    An untyped caller left on the old shape passes a non-empty list, which is truthy;
+    without the type check that would stringify into the query and issue a real DELETE
+    against a destructive endpoint rather than failing at the call site.
     """
-    if well_id is None and start_date is None and end_date is None:
-        raise ValueError('Must provide at least one of well_id, start_date, or end_date')
+    if not isinstance(well_id, str) or not well_id:
+        raise ValueError('well_id is required for a production delete, and must be a well id string')
 
-    filters: dict[str, str] = {}
-    if well_id is not None:
-        filters['well'] = well_id
-
+    filters: dict[str, str] = {'well': well_id}
     if start_date is not None:
         filters['startDate'] = start_date
 
@@ -151,7 +154,7 @@ class Production(APIBase):
 
     def delete_company_monthly_productions(
         self,
-        well_id: Optional[str] = None,
+        well_id: str,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
     ) -> CaseInsensitiveDict[str]:
@@ -160,8 +163,8 @@ class Production(APIBase):
 
         https://docs.api.combocurve.com/api/delete-monthly-productions
 
-        Filters are query parameters; see `_delete_filters` for why, and for the
-        at-least-one-filter requirement.
+        Filters are query parameters; see `_delete_filters` for why, and for why
+        `well_id` is required while the dates are optional.
 
         Returns the delete response headers, where 'X-Delete-Count' is the number
         of production records deleted.
@@ -218,7 +221,7 @@ class Production(APIBase):
 
     def delete_company_daily_productions(
         self,
-        well_id: Optional[str] = None,
+        well_id: str,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
     ) -> CaseInsensitiveDict[str]:
@@ -227,8 +230,8 @@ class Production(APIBase):
 
         https://docs.api.combocurve.com/api/delete-daily-productions
 
-        Filters are query parameters; see `_delete_filters` for why, and for the
-        at-least-one-filter requirement.
+        Filters are query parameters; see `_delete_filters` for why, and for why
+        `well_id` is required while the dates are optional.
 
         Returns the delete response headers, where 'X-Delete-Count' is the number
         of production records deleted.
@@ -286,7 +289,7 @@ class Production(APIBase):
     def delete_project_monthly_productions(
         self,
         project_id: str,
-        well_id: Optional[str] = None,
+        well_id: str,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
     ) -> CaseInsensitiveDict[str]:
@@ -295,8 +298,8 @@ class Production(APIBase):
 
         https://docs.api.combocurve.com/api/delete-project-monthly-productions
 
-        Filters are query parameters; see `_delete_filters` for why, and for the
-        at-least-one-filter requirement.
+        Filters are query parameters; see `_delete_filters` for why, and for why
+        `well_id` is required while the dates are optional.
 
         Returns the delete response headers, where 'X-Delete-Count' is the number
         of production records deleted.
@@ -354,7 +357,7 @@ class Production(APIBase):
     def delete_project_daily_productions(
         self,
         project_id: str,
-        well_id: Optional[str] = None,
+        well_id: str,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
     ) -> CaseInsensitiveDict[str]:
@@ -363,8 +366,8 @@ class Production(APIBase):
 
         https://docs.api.combocurve.com/api/delete-project-daily-productions
 
-        Filters are query parameters; see `_delete_filters` for why, and for the
-        at-least-one-filter requirement.
+        Filters are query parameters; see `_delete_filters` for why, and for why
+        `well_id` is required while the dates are optional.
 
         Returns the delete response headers, where 'X-Delete-Count' is the number
         of production records deleted.

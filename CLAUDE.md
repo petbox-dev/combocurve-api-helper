@@ -196,6 +196,30 @@ that calls the builder, sets `params = {'take': GET_LIMIT}`, and dispatches thro
 Methods that return a single object index `[0]` off the `ItemList`. Each public method's docstring carries
 the matching `https://docs.api.combocurve.com/#<anchor>` link — keep this when adding methods.
 
+**Those are TWO query-parameter channels, and `requests` appends rather than merges them.** The `filters`
+handed to the url builder are baked into the url string by `_build_params_string`; `params` is passed
+separately to `requests` (`take`, plus `concurrency` on the econ-run monthly-export routes). A key present
+in both — in practice `take`, which callers legitimately pass as a filter — used to arrive twice (`?take=50&take=200`), and the API rejects the pair outright
+(`TypeError: `50,200` is not a valid number`) rather than picking one. `_drop_params_already_in_url`
+reconciles them once, in `_request_with_retry`: **the url wins**, so an explicit filter overrides the
+method's default page size. Do not re-introduce a second reconciliation point, and do not assume a value
+passed in `params` survives — if the url already carries that key, it is dropped. Note the batched-write
+path is the one exception that does NOT funnel through `_request_with_retry`: `_send_one_chunk` calls
+`requests.request` directly and has its own retry loop. It passes no `params` today, so nothing is wrong —
+but a query parameter added there would not be reconciled.
+Relatedly, `_build_params_string` percent-encodes and drops `None` values, so callers must NOT pre-encode.
+It keeps `,` literal and encodes a space as `%20`, not `+`: three callers join list filters on commas
+(`econ_runs` `columns`, `_econ_model_base` `wells`, `scenarios` `econNames`) and those wire formats were
+live-verified unencoded. Don't "fix" that back to the `urlencode` default.
+
+**Route paths are hand-written and were wrong FIVE times.** `forecast-monthly-volumes`,
+`forecast-daily-volumes`, `wells-identifiers`, `type-curves/{id}/fits/daily` and `.../fits/monthly` all
+shipped misspelled through 2.1.0 and 404'd with `{"code": 5, "message": "Method does not exist."}`. Three
+were found by hand; the last two only fell out of the mechanical check. `tests/test_route_paths.py` now
+resolves each method's `docs.api.combocurve.com/api/<slug>` docstring link to its Postman collection item
+and asserts the paired `*_url` builder produces that item's path — run it (network-gated, like
+`test_docstring_slugs.py`) rather than eyeballing a new route literal.
+
 **Resource nesting mirrors the REST hierarchy** and is threaded through method arguments:
 `projects` → `projects/{project_id}/scenarios` and `projects/{project_id}/forecasts` →
 `.../scenarios/{scenario_id}/well-assignments`. So scenario/forecast methods take `project_id`, etc.

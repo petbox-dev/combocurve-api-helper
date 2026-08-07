@@ -52,16 +52,20 @@ class TypeCurves(APIBase):
         Returns the API url for daily fits for a specific project id and
         type curve id.
         """
+        # `fits/daily`, NOT `daily-fits` -- the resolution is a path segment under
+        # `fits`, unlike the volume routes which hyphenate. Verified live 2026-08-06:
+        # `daily-fits` 404s ("Method does not exist"), `fits/daily` returns 200.
         base_url = self.get_type_curve_by_id_url(project_id, type_curve_id)
-        return f'{base_url}/daily-fits'
+        return f'{base_url}/fits/daily'
 
     def get_type_curve_monthly_fits_url(self, project_id: str, type_curve_id: str) -> str:
         """
         Returns the API url for monthly fits for a specific project id and
         type curve id.
         """
+        # `fits/monthly`, as with the daily route above.
         base_url = self.get_type_curve_by_id_url(project_id, type_curve_id)
-        return f'{base_url}/monthly-fits'
+        return f'{base_url}/fits/monthly'
 
     ###########
     # API calls
@@ -99,14 +103,7 @@ class TypeCurves(APIBase):
 
         https://docs.api.combocurve.com/api/delete-type-curves
         """
-        if (name or id) is None:
-            raise ValueError('Must provide at least one of name or id')
-
-        filters: dict[str, str] = {}
-        if name is not None:
-            filters['name'] = name
-        if id is not None:
-            filters['id'] = id
+        filters = self._require_any_filter({'name': name, 'id': id}, 'name or id')
 
         url = self.get_type_curves_url(project_id, filters)
         responses = self._delete_responses(url, data=[])

@@ -5,32 +5,93 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.1.1] - 2026-08-06
 
 ### Fixed
 
+- **Five routes were misspelled and returned `404 Method does not exist`.**
+  `get_root_forecast_monthly_volumes` and `get_root_forecast_daily_volumes` built
+  `/v1/forecasts/{monthly,daily}-volumes`; the root routes are flat and hyphenated
+  (`/v1/forecast-monthly-volumes`). Only the *project-scoped* pair nests under
+  `forecasts/`. `patch_well_identifiers` built `/v1/well-identifiers`; the route is
+  `/v1/wells-identifiers`. `get_type_curve_daily_fits` and
+  `get_type_curve_monthly_fits` built `.../type-curves/{id}/{daily,monthly}-fits`; the
+  route nests the resolution under `fits` (`.../fits/daily`). All five were broken for
+  every call through 2.1.0. Every spelling is confirmed by the OpenAPI spec and the
+  Postman collection, and the type-curve pair was confirmed live (404 vs. 200).
+- **`tests/test_route_paths.py` now checks every route mechanically.** It resolves each
+  method's `docs.api.combocurve.com/api/<slug>` docstring link to its Postman
+  collection item and asserts the paired `*_url` builder produces that item's path —
+  110 builders, network-gated like the existing docstring tests. The three root routes
+  were found by hand; the two type-curve routes only fell out of this check.
+- **`_build_params_string` rendered `None` filter values as the literal text
+  `None`.** `filters={'take': None}` produced `?take=None`, which the API rejects on
+  any numeric field. `None` values are now dropped, matching how `requests` treats a
+  `None` in `params`.
+- **A `take` in `filters` collided with the method's own page size.** Query
+  parameters reach a request through two channels — `filters` baked into the url by
+  the `*_url(...)` builder, and the `params` the api method passes to `requests`,
+  which *appends* rather than merges. A caller-supplied `take` arrived twice
+  (`?take=50&take=200`) and the API rejected the pair outright
+  (``TypeError: `50,200` is not a valid number``). They are now reconciled once, in
+  `_request_with_retry`: the url wins, so an explicit filter overrides the default.
 - **The four production `delete_*` methods could never succeed.** They sent
   `well` / `startDate` / `endDate` as a JSON request body, but the production
   delete endpoints take them as **query parameters**, so every call returned
   `400 Bad Request`. Verified live: the same filters in the query string return
   `204` with `X-Delete-Count`.
 
+- **Five delete methods forwarded an empty filter instead of refusing it.**
+  `delete_company_wells`, `delete_project_company_wells`, `delete_project_wells`,
+  `delete_scenarios` and `delete_type_curves` each inlined their own
+  at-least-one-filter guard, and all of them let `chosen_id=''` (the shape an
+  unresolved lookup produces) through alongside a real filter, sending
+  `?chosenID=&dataSource=...` — a delete filtered on a value the caller never set. The
+  guard is now the single `APIBase._require_any_filter`, which drops empty values and
+  raises when none survive.
+- **A chunked write could post later chunks to an earlier chunk's next-page url.**
+  `_request_items_pages_chunks` rebound the shared `url` while following pagination, so
+  chunk N+1 inherited chunk N's `skip`/`take`. Page-following now uses a local copy.
+  (Previously this surfaced as a duplicate `take` the API rejected; the new parameter
+  reconciliation would have made it silent.)
+
 ### Changed
 
-- **BREAKING: the four production `delete_*` methods take explicit keyword
-  filters and return response headers.** `delete_company_monthly_productions`,
+- **`_build_params_string` now percent-encodes filter values.** A filter containing
+  `&`, `=`, `#`, a space or a non-ASCII character no longer corrupts the query
+  string. Callers that previously pre-encoded values to work around the raw
+  interpolation must stop, or they will now double-encode (`a%20b` → `a%2520b`).
+  `,` is deliberately left literal and a space encodes as `%20` rather than `+`: three
+  callers join list filters on commas (`columns`, `wells`, `econNames`) and those wire
+  formats were live-verified unencoded.
+- **BREAKING: `delete_company_wells` no longer takes `project_id`.** The route is
+  company-scoped and the parameter was accepted and then never used — the url is
+  `get_company_wells_url(filters)`, with no project in it — so a caller passing one
+  believed a destructive delete was confined to a project when it was not. Drop the
+  argument; for a project-scoped delete use `delete_project_company_wells`.
+- **`delete_scenarios` gives `scenario_name` and `scenario_id` defaults.** They were
+  required positionals, so callers had to pass `None` explicitly to filter by the
+  other. Backwards compatible.
+- **`get_root_forecast_monthly_volumes` / `_daily_volumes` now require a scope filter.**
+  The API rejects a request that does not carry at least one of `project`, `forecast`
+  or `well`, so it is refused with `ValueError` instead of sent. This mirrors
+  `get_econ_run_monthly_export`, which already enforced its own required filter.
+- **BREAKING: the four production `delete_*` methods take explicit filter
+  arguments and return response headers.** `delete_company_monthly_productions`,
   `delete_company_daily_productions`, `delete_project_monthly_productions` and
   `delete_project_daily_productions` replace their `data: ItemList` parameter
-  with `well_id` / `start_date` / `end_date` keywords, and return the
+  with a required `well_id` plus optional `start_date` / `end_date`, and return the
   `CaseInsensitiveDict` of response headers — `X-Delete-Count` is the number of
-  records deleted — instead of an `ItemList`. This matches
-  `delete_company_wells`, the only delete in the package that already worked.
-  No migration is required in practice: the previous signature could not
-  complete a request, so no working caller can exist.
-- **An unfiltered production delete is now refused** with `ValueError` rather
-  than sent. Passing no filter would delete every production record in scope;
-  omitting only `well_id` still applies the date range to every well, which is
-  documented API behaviour and remains allowed.
+  records deleted — instead of an `ItemList`. This is the pattern the package's
+  other delete methods already use. No migration is required in practice: the
+  previous signature could not complete a request, so no working caller can exist.
+  An old positional call, `delete_company_daily_productions([{...}])`, raises
+  `ValueError` — the guard type-checks `well_id` at runtime so a stale caller cannot
+  stringify a list into the query and issue a real DELETE.
+- **A production delete without a well is now refused** with `ValueError` rather
+  than sent. `well` is marked `required: true` on all four delete routes in the
+  OpenAPI spec and `(Required)` in the Postman collection, so a date-only delete was
+  never a supported call. The guard is falsy, so `well_id=''` is refused too.
 
 ## [2.1.0] - 2026-08-05
 

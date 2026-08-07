@@ -4,6 +4,23 @@ from .base import APIBase, Item, ItemList, WriteResponse
 
 GET_LIMIT = 200
 
+# The root volume routes reject any request that does not scope itself to at least one
+# of these. Enforced locally so the mistake is a ValueError at the call site rather than
+# a round trip that always 400s.
+_VOLUME_SCOPE_FILTERS = ('project', 'forecast', 'well')
+
+
+def _require_volume_scope(filters: Optional[dict[str, str]]) -> dict[str, str]:
+    """Return `filters` unchanged, or raise if it does not scope the volume query."""
+    if not filters or not any(filters.get(key) for key in _VOLUME_SCOPE_FILTERS):
+        raise ValueError(
+            'filters must include at least one of '
+            + ', '.join(_VOLUME_SCOPE_FILTERS)
+            + '; the API rejects an unscoped forecast-volumes request'
+        )
+
+    return filters
+
 
 class Root(APIBase):
     ######
@@ -25,7 +42,11 @@ class Root(APIBase):
         """
         Returns the API url for well identifiers.
         """
-        return f'{self.API_BASE_URL}/well-identifiers'
+        # `wells-identifiers`, plural `wells` -- the route is spelled that way in both
+        # the Postman collection and the OpenAPI spec (`operationId: patch-wells-identifiers`,
+        # which is also this method's docs slug). The singular `well-identifiers` shipped
+        # here through 2.1.0 and 404s.
+        return f'{self.API_BASE_URL}/wells-identifiers'
 
     def get_tags_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
@@ -59,7 +80,11 @@ class Root(APIBase):
         """
         Returns the API url for daily volumes.
         """
-        url = f'{self.API_BASE_URL}/forecasts/daily-volumes'
+        # The ROOT volume routes are flat and hyphenated -- `forecast-daily-volumes`, not
+        # `forecasts/daily-volumes`. Only the project-scoped pair nests under `forecasts/`
+        # (`projects/{id}/forecasts/{id}/daily-volumes`, see forecasts.py). The nested
+        # spelling shipped here through 2.1.0 and 404s ("Method does not exist").
+        url = f'{self.API_BASE_URL}/forecast-daily-volumes'
         if filters is None:
             return url
 
@@ -70,7 +95,8 @@ class Root(APIBase):
         """
         Returns the API url for monthly volumes.
         """
-        url = f'{self.API_BASE_URL}/forecasts/monthly-volumes'
+        # Flat and hyphenated, as with the daily route above.
+        url = f'{self.API_BASE_URL}/forecast-monthly-volumes'
         if filters is None:
             return url
 
@@ -201,9 +227,15 @@ class Root(APIBase):
         """
         Returns a list of daily volumes.
 
+        `filters` is REQUIRED here, unlike the other root list methods, and must carry
+        at least one of `project`, `forecast` or `well` -- the API rejects anything else
+        with a ValidationError, so it is refused locally rather than sent, as
+        `get_econ_run_monthly_export` does for its own required filter. Accepted keys
+        are `project`, `forecast`, `well`, `startDate`, `endDate`, `skip` and `take`.
+
         https://docs.api.combocurve.com/api/get-root-forecast-daily-volumes
         """
-        url = self.get_root_forecast_daily_volumes_url(filters)
+        url = self.get_root_forecast_daily_volumes_url(_require_volume_scope(filters))
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
 
@@ -211,9 +243,15 @@ class Root(APIBase):
         """
         Returns a list of monthly volumes.
 
+        `filters` is REQUIRED here, unlike the other root list methods, and must carry
+        at least one of `project`, `forecast` or `well` -- the API rejects anything else
+        with a ValidationError, so it is refused locally rather than sent, as
+        `get_econ_run_monthly_export` does for its own required filter. Accepted keys
+        are `project`, `forecast`, `well`, `startDate`, `endDate`, `skip` and `take`.
+
         https://docs.api.combocurve.com/api/get-root-forecast-monthly-volumes
         """
-        url = self.get_root_forecast_monthly_volumes_url(filters)
+        url = self.get_root_forecast_monthly_volumes_url(_require_volume_scope(filters))
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
 

@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Callable, ClassVar, Optional, Union
+from urllib.parse import parse_qsl, quote, urlencode, urlsplit
 
 import requests
 from combocurve_api_v1 import ComboCurveAuth, ServiceAccount
@@ -107,6 +108,32 @@ def _retry_after_seconds(response: Response) -> Optional[float]:
         return None
 
 
+def _drop_params_already_in_url(
+    url: str, params: Optional[Mapping[str, Union[str, int, float]]]
+) -> Optional[Mapping[str, Union[str, int, float]]]:
+    """Strip keys from `params` that the `url` already carries in its query string.
+
+    Query parameters reach a request through two independent channels: the `filters`
+    a caller hands a `*_url(...)` builder, which `_build_params_string` bakes into the
+    url, and the `params` mapping the api method supplies (in practice `take`, plus
+    `concurrency` on the econ-run monthly-export routes). `requests` APPENDS `params`
+    to an existing query rather
+    than merging, so a caller-supplied `take` produced `?take=50&take=200` and the API
+    rejected the pair outright (`TypeError: `50,200` is not a valid number`) instead of
+    honouring either value.
+
+    The url wins, so an explicit filter overrides the method's default page size.
+    """
+    if not params:
+        return params
+
+    # `keep_blank_values` is load-bearing: without it a valueless `?take=` would not
+    # register as present and the duplicate-key bug returns for that spelling.
+    existing = {key for key, _ in parse_qsl(urlsplit(url).query, keep_blank_values=True)}
+
+    return {key: value for key, value in params.items() if key not in existing}
+
+
 def _retry_delay_seconds(response: Response, attempt: int) -> Optional[float]:
     """Seconds to wait before retrying `response`, or None if it is not retryable.
 
@@ -179,7 +206,15 @@ class APIBase:
         `_MAX_REQUEST_RETRIES` retries. Any other response (success or a
         non-transient error) is returned immediately for the caller to handle
         (e.g. `raise_for_status`).
+
+        Every verb funnels through here EXCEPT the batched-write path (`_send_one_chunk`
+        calls `requests.request` directly and carries its own retry loop), so this is
+        also where `params` is reconciled against a query string already present on
+        `url` -- see `_drop_params_already_in_url`. The batch path passes no `params`,
+        so it has nothing to reconcile today; a future change that adds one there would
+        NOT be covered by this.
         """
+        params = _drop_params_already_in_url(url, params)
         for attempt in range(_MAX_REQUEST_RETRIES + 1):
             headers = self.auth.get_auth_headers()
             response = requests.request(method, url, headers=headers, params=params, json=json_body)
@@ -233,16 +268,23 @@ class APIBase:
 
         if chunksize == 0:
             yield from self._request_items_pages(method, url, params=params)
+            return
 
         for chunk in chunked(data, chunksize):
-            # keep fetching while there are more records to be returned
+            # Page-following rebinds a LOCAL copy: `url` itself must survive the chunk
+            # loop unchanged, or chunk N+1 posts to chunk N's next-page url -- which
+            # already carries that page's `skip`/`take`. That leak used to surface as a
+            # duplicate `take` the API rejected outright; `_drop_params_already_in_url`
+            # would now reconcile it silently, so the wrong-url write has to be
+            # prevented here rather than caught downstream.
+            chunk_url = url
             params_ = params
             while True:
-                response = self._request_with_retry(method, url, params=params_, json_body=chunk)
+                response = self._request_with_retry(method, chunk_url, params=params_, json_body=chunk)
                 try:
                     response.raise_for_status()
                 except Exception as e:
-                    print(f'\nException occured during request:\nURL: {url}\n')
+                    print(f'\nException occured during request:\nURL: {chunk_url}\n')
                     raise e
 
                 yield response
@@ -252,7 +294,7 @@ class APIBase:
                     # no more pages to process
                     break
                 else:
-                    url = next_page_url
+                    chunk_url = next_page_url
 
                 params_ = None
 
@@ -564,15 +606,53 @@ class APIBase:
         return items
 
     @staticmethod
-    def _build_params_string(filters: Optional[dict[str, str]] = None) -> str:
-        if filters is None or len(filters) == 0:
-            return ''
+    def _require_any_filter(filters: Mapping[str, Optional[str]], parameters: str) -> dict[str, str]:
+        """Return the non-empty entries of `filters`, or raise if none survive.
 
-        parameters: list[str] = []
-        for key, value in filters.items():
-            parameters.append(f'{key}={value}')
+        Shared by every delete the API refuses to run unfiltered -- company/project/
+        project-company wells, scenarios, type curves. The same guard-then-build block
+        was inlined at each of those sites in two spellings, and both let an empty
+        string through: `chosen_id=''` from an unresolved lookup, paired with a real
+        `data_source`, sent `?chosenID=&dataSource=...` and deleted on a filter the
+        caller never meant. Empty values are dropped here rather than forwarded.
 
-        return '?' + '&'.join(parameters)
+        `filters` is keyed by API query name; `parameters` names the caller-facing
+        keyword arguments for the error message, because the two differ (`well_id` is
+        the parameter, `id` is the query key).
+
+        Distinct from `production._delete_filters`, which is NOT this shape: that
+        endpoint requires one SPECIFIC filter (`well`) rather than any one of several,
+        and additionally type-checks it. Don't unify them.
+        """
+        present = {key: value for key, value in filters.items() if value}
+        if not present:
+            raise ValueError(f'Must provide at least one of {parameters}')
+
+        return present
+
+    @staticmethod
+    def _build_params_string(filters: Optional[Mapping[str, Optional[str]]] = None) -> str:
+        """Render `filters` as a query string, or `''` when there is nothing to send.
+
+        `None` values are DROPPED rather than rendered, matching how `requests` treats a
+        `None` in `params`. The previous f-string interpolation emitted the literal text
+        `None` (`?take=None`), which the API rejects on any numeric field.
+
+        Values are percent-encoded, so a filter carrying `&`, `=`, `#`, a space or a
+        non-ASCII character (a project or well name, say) no longer corrupts the query.
+
+        `,` is deliberately left LITERAL via `safe`, and `quote` is used instead of the
+        `urlencode` default `quote_plus` so a space encodes as `%20` rather than `+`.
+        Three internal callers join list filters on commas -- `econ_runs` `columns`,
+        `_econ_model_base` `wells`, `scenarios` `econNames`/`qualifierNames` -- and each
+        of those wire formats was verified live against the API in its unencoded form.
+        Encoding the separator would change a request that is known to work into one
+        that is not, for no benefit: `,` and `+` are legal unencoded query characters
+        (RFC 3986 sub-delims), so they were never the corruption this fix targets.
+        """
+        pairs = [(key, value) for key, value in (filters or {}).items() if value is not None]
+
+        return '?' + urlencode(pairs, safe=',', quote_via=quote) if pairs else ''
 
     @staticmethod
     def _keysort(items: ItemList, order: Mapping[str, int], reverse: bool = False) -> ItemList:

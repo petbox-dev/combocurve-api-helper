@@ -143,7 +143,6 @@ class Wells(APIBase):
 
     def delete_company_wells(
         self,
-        project_id: str,
         chosen_id: Optional[str] = None,
         data_source: Optional[str] = None,
         well_id: Optional[str] = None,
@@ -153,21 +152,19 @@ class Wells(APIBase):
 
         https://docs.api.combocurve.com/api/delete-wells
 
+        This route is COMPANY-scoped. It previously took a leading `project_id` that was
+        accepted and then never used -- the url is `get_company_wells_url(filters)`, with
+        no project in it -- so a caller passing one believed the delete was confined to a
+        project when it was not. The parameter is gone rather than honoured; the
+        project-scoped delete is the separate `delete_project_company_wells`.
+
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
         """
-        if (chosen_id or data_source or well_id) is None:
-            raise ValueError('Must provide at least one of chosen_id, data_source, or well_id')
-
-        filters: dict[str, str] = {}
-        if chosen_id is not None:
-            filters['chosenID'] = chosen_id
-
-        if data_source is not None:
-            filters['dataSource'] = data_source
-
-        if well_id is not None:
-            filters['id'] = well_id
+        filters = self._require_any_filter(
+            {'chosenID': chosen_id, 'dataSource': data_source, 'id': well_id},
+            'chosen_id, data_source, or well_id',
+        )
 
         url = self.get_company_wells_url(filters)
         wells = self._delete_responses(url, data=[])
@@ -266,18 +263,10 @@ class Wells(APIBase):
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
         """
-        if (chosen_id or data_source or well_id) is None:
-            raise ValueError('Must provide at least one of chosen_id, data_source, or well_id')
-
-        filters: dict[str, str] = {}
-        if chosen_id is not None:
-            filters['chosenID'] = chosen_id
-
-        if data_source is not None:
-            filters['dataSource'] = data_source
-
-        if well_id is not None:
-            filters['id'] = well_id
+        filters = self._require_any_filter(
+            {'chosenID': chosen_id, 'dataSource': data_source, 'id': well_id},
+            'chosen_id, data_source, or well_id',
+        )
 
         url = self.get_project_company_wells_url(project_id, filters)
         wells = self._delete_responses(url, data=[])
@@ -353,25 +342,17 @@ class Wells(APIBase):
         well_id: Optional[str] = None,
     ) -> CaseInsensitiveDict[str]:
         """
-                Deletes a list of project wells scoped from the project's id.
-        F
-                https://docs.api.combocurve.com/api/delete-project-wells
+        Deletes a list of project wells scoped from the project's id.
 
-                Returns the headers from the delete response where 'X-Delete-Count' is
-                the number of wells deleted.
+        https://docs.api.combocurve.com/api/delete-project-wells
+
+        Returns the headers from the delete response where 'X-Delete-Count' is
+        the number of wells deleted.
         """
-        if (chosen_id or data_source or well_id) is None:
-            raise ValueError('Must provide at least one of chosen_id, data_source, or well_id')
-
-        filters: dict[str, str] = {}
-        if chosen_id is not None:
-            filters['chosenID'] = chosen_id
-
-        if data_source is not None:
-            filters['dataSource'] = data_source
-
-        if well_id is not None:
-            filters['id'] = well_id
+        filters = self._require_any_filter(
+            {'chosenID': chosen_id, 'dataSource': data_source, 'id': well_id},
+            'chosen_id, data_source, or well_id',
+        )
 
         url = self.get_project_wells_url(project_id, filters)
         wells = self._delete_responses(url, data=[])
