@@ -85,7 +85,8 @@ def test_to_row_dicts_values() -> None:
         assert r['Escalation'] == 'None'
 
     assert rows[0]['Escalation Start Criteria'] == 'apply to criteria'
-    assert rows[0]['Escalation Start Value (Days/Date)'] == '0'
+    # Day-offsets render WITH a decimal point ('0.0', not '0') to match CC's decimal form.
+    assert rows[0]['Escalation Start Value (Days/Date)'] == '0.0'
     assert rows[0]['Paying WI / Earning WI'] == '1'
     assert rows[0]['Calculation'] == 'gross'
     assert rows[0]['CAPEX or Expense'] == 'capex'
@@ -267,7 +268,7 @@ def test_escalation_start_as_of_date() -> None:
     mapper = CapexMapper()
     rows = mapper.to_row_dicts(m)
     assert rows[0]['Escalation Start Criteria'] == 'as of date'
-    assert rows[0]['Escalation Start Value (Days/Date)'] == '5'
+    assert rows[0]['Escalation Start Value (Days/Date)'] == '5.0'  # decimal form
     rebuilt = mapper.from_row_dicts(rows)
     assert rebuilt['otherCapex']['rows'][0]['escalationStart'] == {'asOfDate': 5}
 
@@ -288,6 +289,28 @@ def test_escalation_start_date() -> None:
     assert rows[0]['Escalation Start Value (Days/Date)'] == '04/01/2026'
     rebuilt = mapper.from_row_dicts(rows)
     assert rebuilt['otherCapex']['rows'][0]['escalationStart'] == {'date': '2026-04-01'}
+
+
+def test_escalation_start_date_reads_iso_or_us_format() -> None:
+    """from_csv tolerates BOTH MM/DD/YYYY (canonical) and ISO in the escalation-start-date
+    cell -- real CC exports have carried both -- without raising. The WRITE side stays
+    MM/DD/YYYY, so this only exercises the liberal read path."""
+    rows_in: list[dict[str, Any]] = [
+        {**_row('drilling', intangible=3000, offsetToFpd=-120), 'escalationStart': {'date': '2026-04-01'}},
+    ]
+    m: dict[str, Any] = {'name': 'DATE ESC', 'unique': False, 'otherCapex': {'rows': rows_in}}
+    mapper = CapexMapper()
+    rows = mapper.to_row_dicts(m)
+
+    # canonical MM/DD/YYYY round-trips
+    us = mapper.from_row_dicts(rows)
+    assert us['otherCapex']['rows'][0]['escalationStart'] == {'date': '2026-04-01'}
+
+    # an ISO date in the same cell must not raise and must yield the same API value
+    iso_rows = [dict(row) for row in rows]
+    iso_rows[0]['Escalation Start Value (Days/Date)'] = '2026-04-01'
+    iso = mapper.from_row_dicts(iso_rows)
+    assert iso['otherCapex']['rows'][0]['escalationStart'] == {'date': '2026-04-01'}
 
 
 def test_escalation_none_python_roundtrip() -> None:

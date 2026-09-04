@@ -17,7 +17,15 @@ from .enums import (
     OFFSET_TO_SCHEDULE_CSV,
     Criteria,
 )
-from .formats import csv_to_num, enum_from_csv, enum_to_csv, escalation_from_csv, escalation_to_csv, num_to_csv
+from .formats import (
+    csv_to_num,
+    enum_from_csv,
+    enum_to_csv,
+    escalation_from_csv,
+    escalation_to_csv,
+    num_to_csv,
+    num_to_csv_float,
+)
 
 # otherCapex `fromHeaders` rows carry the token 'offset_to_first_prod_date' with companion
 # API date-key 'firstProdDate' (e.g. {'fromHeaders': 'offset_to_first_prod_date',
@@ -31,13 +39,16 @@ from .formats import csv_to_num, enum_from_csv, enum_to_csv, escalation_from_csv
 # still raises loudly.
 
 # escalationStart API key -> CSV 'Escalation Start Criteria' display. THREE shapes occur
-# (all verified against a real CC CAPEX UI export, plus a None escalationStart rendered
+# (all verified against real CC CAPEX UI exports, plus a None escalationStart rendered
 # blank by _escalation_start_to_csv):
-#   {'applyToCriteria': <int>} and {'asOfDate': <int>} carry integer DAY-OFFSETS, so
-#     num_to_csv is correct for each;
+#   {'applyToCriteria': <int>} and {'asOfDate': <int>} carry integer DAY-OFFSETS. The
+#     export writes these WITH a decimal point (num_to_csv_float -> '0.0', not '0'). CC is
+#     actually inconsistent here -- both '0' and '0.0' appear across real exports -- so we
+#     pick the decimal form on write and accept either on read (csv_to_num parses both).
 #   {'date': '<ISO date>'} carries an ABSOLUTE DATE, which the export writes as MM/DD/YYYY
 #     (to_csv_date) into the SAME 'Escalation Start Value (Days/Date)' column -- which is
-#     exactly why that column is named '(Days/Date)'.
+#     exactly why that column is named '(Days/Date)'. Real exports have carried both
+#     MM/DD/YYYY and ISO in this cell, so the READ side uses from_csv_date_flexible.
 # 'apply to criteria', 'as of date' and 'date' are CC's three escalation-start UI options,
 # lowercased. Any other shape still fails loud.
 _ESCALATION_START_KEY_TO_CSV: dict[str, str] = {
@@ -142,7 +153,7 @@ def _escalation_start_to_csv(escalation_start: Optional[dict[str, Any]]) -> tupl
     criteria = _ESCALATION_START_KEY_TO_CSV[api_key]
     if api_key == _ESCALATION_START_DATE_KEY:
         return criteria, formats.to_csv_date(value)
-    return criteria, num_to_csv(value)
+    return criteria, num_to_csv_float(value)
 
 
 def _escalation_start_from_csv(criteria_csv: str, value_csv: str) -> dict[str, Any]:
@@ -152,7 +163,7 @@ def _escalation_start_from_csv(criteria_csv: str, value_csv: str) -> dict[str, A
         raise NotImplementedError(f'Unknown Escalation Start Criteria: {criteria_csv!r}')
     api_key = _ESCALATION_START_KEY_FROM_CSV[criteria_csv]
     if api_key == _ESCALATION_START_DATE_KEY:
-        return {api_key: formats.from_csv_date(value_csv)}
+        return {api_key: formats.from_csv_date_flexible(value_csv)}
     return {api_key: csv_to_num(value_csv or '0')}
 
 

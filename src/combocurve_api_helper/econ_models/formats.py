@@ -30,6 +30,24 @@ def from_csv_date(s: str) -> str:
     return datetime.datetime.strptime(s, '%m/%d/%Y').date().isoformat()
 
 
+def from_csv_date_flexible(s: str) -> str:
+    """Parse a date cell that may be CC's canonical `MM/DD/YYYY` OR ISO `YYYY-MM-DD` to an
+    ISO date string; '' for empty.
+
+    A LIBERAL reader (`from_csv_date` is the strict `MM/DD/YYYY`-only one). Real CC exports
+    have been observed to carry BOTH spellings in the same column -- e.g. CAPEX
+    escalation-start dates -- so a round-trip reader must not raise on either. The WRITE
+    side stays canonical `MM/DD/YYYY` (`to_csv_date`); only reads are liberal.
+    """
+    if not s:
+        return ''
+    text = s.strip()
+    try:
+        return datetime.datetime.strptime(text, '%m/%d/%Y').date().isoformat()
+    except ValueError:
+        return _parse_iso(text).date().isoformat()
+
+
 def to_csv_iso_date(value: Any) -> str:
     """Format a forecast-export date as ISO `YYYY-MM-DD`, or '' for a null.
 
