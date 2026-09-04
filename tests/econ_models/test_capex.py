@@ -272,6 +272,24 @@ def test_escalation_start_as_of_date() -> None:
     assert rebuilt['otherCapex']['rows'][0]['escalationStart'] == {'asOfDate': 5}
 
 
+def test_escalation_start_date() -> None:
+    """escalationStart {'date': '<ISO date>'}: an ABSOLUTE date, not a day-offset -- the
+    third shape the API returns. Regression for a `NotImplementedError: Unknown
+    escalationStart key: 'date'`. The CC CAPEX UI export writes the 'date' criteria with the
+    value as MM/DD/YYYY (verified against a real export); the round-trip restores the ISO
+    date the API uses."""
+    rows_in: list[dict[str, Any]] = [
+        {**_row('drilling', intangible=3000, offsetToFpd=-120), 'escalationStart': {'date': '2026-04-01'}},
+    ]
+    m: dict[str, Any] = {'name': 'DATE ESC', 'unique': False, 'otherCapex': {'rows': rows_in}}
+    mapper = CapexMapper()
+    rows = mapper.to_row_dicts(m)
+    assert rows[0]['Escalation Start Criteria'] == 'date'
+    assert rows[0]['Escalation Start Value (Days/Date)'] == '04/01/2026'
+    rebuilt = mapper.from_row_dicts(rows)
+    assert rebuilt['otherCapex']['rows'][0]['escalationStart'] == {'date': '2026-04-01'}
+
+
 def test_escalation_none_python_roundtrip() -> None:
     """escalationModel/depreciationModel = None (Python None, not the string 'none')
     should round-trip to None, matching the Optional-string convention used elsewhere."""

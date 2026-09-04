@@ -30,16 +30,26 @@ from .formats import csv_to_num, enum_from_csv, enum_to_csv, escalation_from_csv
 # row using this token is known, so extending it would be speculative; an unmapped token
 # still raises loudly.
 
-# escalationStart API key -> CSV 'Escalation Start Criteria' display. Exactly two keys
-# occur -- {'applyToCriteria': <int>} and {'asOfDate': <int>} -- plus a None escalationStart
-# (rendered blank by _escalation_start_to_csv). Both values are integer day-offsets, so
-# num_to_csv is correct for each. 'apply to criteria' and 'as of date' are CC's two
-# escalation-start UI options, lowercased. Fail loud on any other shape.
+# escalationStart API key -> CSV 'Escalation Start Criteria' display. THREE shapes occur
+# (all verified against a real CC CAPEX UI export, plus a None escalationStart rendered
+# blank by _escalation_start_to_csv):
+#   {'applyToCriteria': <int>} and {'asOfDate': <int>} carry integer DAY-OFFSETS, so
+#     num_to_csv is correct for each;
+#   {'date': '<ISO date>'} carries an ABSOLUTE DATE, which the export writes as MM/DD/YYYY
+#     (to_csv_date) into the SAME 'Escalation Start Value (Days/Date)' column -- which is
+#     exactly why that column is named '(Days/Date)'.
+# 'apply to criteria', 'as of date' and 'date' are CC's three escalation-start UI options,
+# lowercased. Any other shape still fails loud.
 _ESCALATION_START_KEY_TO_CSV: dict[str, str] = {
     'applyToCriteria': 'apply to criteria',
     'asOfDate': 'as of date',
+    'date': 'date',
 }
 _ESCALATION_START_KEY_FROM_CSV: dict[str, str] = {v: k for k, v in _ESCALATION_START_KEY_TO_CSV.items()}
+
+# The one escalationStart shape whose value is an absolute DATE (written MM/DD/YYYY), not an
+# integer day-offset -- so it needs date formatting on both directions, not num_to_csv.
+_ESCALATION_START_DATE_KEY = 'date'
 
 # CC's CSV export OMITS the model-level $/ft `drillingCost`/`completionCost` objects.
 # Rather than drop them, CapexMapper captures each as a compact JSON blob in an extra
@@ -129,7 +139,10 @@ def _escalation_start_to_csv(escalation_start: Optional[dict[str, Any]]) -> tupl
     ((api_key, value),) = escalation_start.items()
     if api_key not in _ESCALATION_START_KEY_TO_CSV:
         raise NotImplementedError(f'Unknown escalationStart key: {api_key!r}')
-    return _ESCALATION_START_KEY_TO_CSV[api_key], num_to_csv(value)
+    criteria = _ESCALATION_START_KEY_TO_CSV[api_key]
+    if api_key == _ESCALATION_START_DATE_KEY:
+        return criteria, formats.to_csv_date(value)
+    return criteria, num_to_csv(value)
 
 
 def _escalation_start_from_csv(criteria_csv: str, value_csv: str) -> dict[str, Any]:
@@ -138,6 +151,8 @@ def _escalation_start_from_csv(criteria_csv: str, value_csv: str) -> dict[str, A
     if criteria_csv not in _ESCALATION_START_KEY_FROM_CSV:
         raise NotImplementedError(f'Unknown Escalation Start Criteria: {criteria_csv!r}')
     api_key = _ESCALATION_START_KEY_FROM_CSV[criteria_csv]
+    if api_key == _ESCALATION_START_DATE_KEY:
+        return {api_key: formats.from_csv_date(value_csv)}
     return {api_key: csv_to_num(value_csv or '0')}
 
 
