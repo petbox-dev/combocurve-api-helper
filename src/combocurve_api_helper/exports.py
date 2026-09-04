@@ -121,7 +121,7 @@ class Exports(APIBase):
 
         Example data:
         {
-            "exportType": "dailyCombinedVolumeExport",
+            "exportType": "monthlyProductionVolumeExport",
             "expirationHours": 24
         }
 
