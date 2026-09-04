@@ -143,6 +143,7 @@ class Wells(APIBase):
 
     def delete_company_wells(
         self,
+        *,
         chosen_id: Optional[str] = None,
         data_source: Optional[str] = None,
         well_id: Optional[str] = None,
@@ -157,6 +158,11 @@ class Wells(APIBase):
         no project in it -- so a caller passing one believed the delete was confined to a
         project when it was not. The parameter is gone rather than honoured; the
         project-scoped delete is the separate `delete_project_company_wells`.
+
+        The three filters are KEYWORD-ONLY. They are all `Optional[str]`, so a positional
+        call (e.g. a stale `delete_company_wells(project_id)`) would otherwise bind its
+        argument to `chosen_id` and silently issue a real, differently-scoped DELETE; the
+        `*` turns that into a `TypeError` at the call site instead.
 
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.

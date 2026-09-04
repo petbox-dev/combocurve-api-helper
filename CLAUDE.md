@@ -208,9 +208,10 @@ path is the one exception that does NOT funnel through `_request_with_retry`: `_
 `requests.request` directly and has its own retry loop. It passes no `params` today, so nothing is wrong —
 but a query parameter added there would not be reconciled.
 Relatedly, `_build_params_string` percent-encodes and drops `None` values, so callers must NOT pre-encode.
-It keeps `,` literal and encodes a space as `%20`, not `+`: three callers join list filters on commas
-(`econ_runs` `columns`, `_econ_model_base` `wells`, `scenarios` `econNames`) and those wire formats were
-live-verified unencoded. Don't "fix" that back to the `urlencode` default.
+It keeps `,` literal and encodes a space as `%20`, not `+`: two callers comma-join list filters
+(`econ_runs` `columns`, `_econ_model_base` `wells`), while `scenarios.delete_scenario_qualifiers` forwards
+already-comma-joined `econNames`/`qualifierNames` strings; those wire formats were live-verified unencoded.
+Don't "fix" that back to the `urlencode` default.
 
 **Route paths are hand-written and were wrong FIVE times.** `forecast-monthly-volumes`,
 `forecast-daily-volumes`, `wells-identifiers`, `type-curves/{id}/fits/daily` and `.../fits/monthly` all

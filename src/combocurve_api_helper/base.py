@@ -1,5 +1,6 @@
 import time
 import warnings
+from collections import Counter
 from collections.abc import Iterator, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -153,7 +154,9 @@ class APIBase:
     API_BASE_URL = 'https://api.combocurve.com/v1'
     API_BASE_URL_V2 = 'https://api.combocurve.com/v2'  # async export routes are the only /v2 routes
     REFERENCE_WELLHEADER = config.REFERENCE_WELLHEADER
-    WELLHEADER_COLUMNS: ClassVar[dict[str, str]] = {k.lower(): k for k in config.REFERENCE_WELLHEADER}
+    WELLHEADER_COLUMNS: ClassVar[dict[str, str]] = {
+        header_key.lower(): header_key for header_key in config.REFERENCE_WELLHEADER
+    }
     ECON_MODELS = config.ECON_MODELS
 
     def __init__(self) -> None:
@@ -643,12 +646,14 @@ class APIBase:
 
         `,` is deliberately left LITERAL via `safe`, and `quote` is used instead of the
         `urlencode` default `quote_plus` so a space encodes as `%20` rather than `+`.
-        Three internal callers join list filters on commas -- `econ_runs` `columns`,
-        `_econ_model_base` `wells`, `scenarios` `econNames`/`qualifierNames` -- and each
-        of those wire formats was verified live against the API in its unencoded form.
-        Encoding the separator would change a request that is known to work into one
-        that is not, for no benefit: `,` and `+` are legal unencoded query characters
-        (RFC 3986 sub-delims), so they were never the corruption this fix targets.
+        Two internal callers comma-join list filters -- `econ_runs` `columns` and
+        `_econ_model_base` `wells`; `scenarios.delete_scenario_qualifiers` forwards
+        `econNames`/`qualifierNames` as strings the caller has already comma-joined. Each
+        of those comma-separated wire formats was verified live against the API in its
+        unencoded form, so encoding the separator would break a request known to work,
+        for no benefit: `,` is a legal unencoded query character (RFC 3986 sub-delim). Do
+        NOT add `+` to `safe` to match -- a literal `+` is decoded as a space under
+        form-urlencoded query rules, so `quote` correctly emits it as `%2B`.
         """
         pairs = [(key, value) for key, value in (filters or {}).items() if value is not None]
 
@@ -682,7 +687,7 @@ class APIBase:
         if negative:
             raise ValueError(f'`order` positions must be non-negative; got negative for {negative}')
 
-        duplicated = sorted({position for position in order.values() if list(order.values()).count(position) > 1})
+        duplicated = sorted(position for position, count in Counter(order.values()).items() if count > 1)
         if duplicated:
             raise ValueError(f'`order` positions must be distinct; positions {duplicated} are reused')
 

@@ -41,10 +41,12 @@ def _delete_filters(
         raise ValueError('well_id is required for a production delete, and must be a well id string')
 
     filters: dict[str, str] = {'well': well_id}
-    if start_date is not None:
+    # Falsy, not `is not None`, so an empty-string date (e.g. an unset config value)
+    # is dropped rather than sent as `?startDate=`, matching the well_id guard above.
+    if start_date:
         filters['startDate'] = start_date
 
-    if end_date is not None:
+    if end_date:
         filters['endDate'] = end_date
 
     return filters

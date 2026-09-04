@@ -230,7 +230,8 @@ class Root(APIBase):
         `filters` is REQUIRED here, unlike the other root list methods, and must carry
         at least one of `project`, `forecast` or `well` -- the API rejects anything else
         with a ValidationError, so it is refused locally rather than sent, as
-        `get_econ_run_monthly_export` does for its own required filter. Accepted keys
+        `get_econ_run_monthly_econ_result_by_id` does for its own required `columns`
+        filter. Accepted keys
         are `project`, `forecast`, `well`, `startDate`, `endDate`, `skip` and `take`.
 
         https://docs.api.combocurve.com/api/get-root-forecast-daily-volumes
@@ -246,7 +247,8 @@ class Root(APIBase):
         `filters` is REQUIRED here, unlike the other root list methods, and must carry
         at least one of `project`, `forecast` or `well` -- the API rejects anything else
         with a ValidationError, so it is refused locally rather than sent, as
-        `get_econ_run_monthly_export` does for its own required filter. Accepted keys
+        `get_econ_run_monthly_econ_result_by_id` does for its own required `columns`
+        filter. Accepted keys
         are `project`, `forecast`, `well`, `startDate`, `endDate`, `skip` and `take`.
 
         https://docs.api.combocurve.com/api/get-root-forecast-monthly-volumes

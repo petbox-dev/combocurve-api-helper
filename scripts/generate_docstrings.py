@@ -138,8 +138,11 @@ class CollectionUnavailable(Exception):
 def load_collection(source: str) -> dict[str, Any]:
     """Parse the Postman collection from a URL or a local path.
 
-    Raises `CollectionUnavailable` only for the URL branch; a bad local path
-    surfaces as the underlying OSError so a typo is not mistaken for "offline".
+    Raises `CollectionUnavailable` only for the URL branch (mapped to exit 2, "offline
+    / no verdict"). A bad local path is a real error, not "offline": a missing file
+    surfaces as the underlying OSError and a wrong-shape file as a ValueError, both of
+    which reach exit 1 rather than the exit-2 skip -- so a `--collection` typo is never
+    mistaken for an unreachable network.
     """
     if source.startswith(('http://', 'https://')):
         request = urllib.request.Request(source, headers={'User-Agent': 'Mozilla/5.0'})
@@ -172,8 +175,15 @@ def load_collection(source: str) -> dict[str, Any]:
         collection_from_url: dict[str, Any] = fetched
         return collection_from_url
 
-    # Local path: a typo or malformed file is a real error, not "offline".
-    collection: dict[str, Any] = json.loads(pathlib.Path(source).read_bytes())
+    # Local path: a typo, malformed file, or valid-JSON-but-wrong-shape file is a real
+    # error, not "offline". The shape check mirrors the URL branch, but raises ValueError
+    # (NOT CollectionUnavailable) so it reaches exit 1, never the exit-2 offline skip --
+    # otherwise a structurally invalid local file would yield zero examples and --check
+    # would exit 0, a false "fresh".
+    fetched = json.loads(pathlib.Path(source).read_bytes())
+    if not isinstance(fetched, dict) or not isinstance(fetched.get('item'), list):
+        raise ValueError(f'--collection {source} is not a Postman collection (no top-level `item` list)')
+    collection: dict[str, Any] = fetched
     return collection
 
 

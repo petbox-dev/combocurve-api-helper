@@ -114,6 +114,10 @@ def test_dates_are_optional_but_the_well_is_not() -> None:
     assert _delete_filters(WELL_ID, None, None) == {'well': WELL_ID}
     assert _delete_filters(WELL_ID, '2020-01-01', None) == {'well': WELL_ID, 'startDate': '2020-01-01'}
     assert _delete_filters(WELL_ID, None, '2020-12-31') == {'well': WELL_ID, 'endDate': '2020-12-31'}
+    # An empty-string date (the shape an unset config value takes) is DROPPED, like `None`,
+    # rather than sent as `?startDate=` -- the dates guard on falsiness, not `is not None`.
+    assert _delete_filters(WELL_ID, '', '') == {'well': WELL_ID}
+    assert _delete_filters(WELL_ID, '', '2020-12-31') == {'well': WELL_ID, 'endDate': '2020-12-31'}
 
 
 def test_the_old_positional_data_call_never_reaches_the_api(api: _RecordingProduction) -> None:

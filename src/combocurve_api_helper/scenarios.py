@@ -238,8 +238,7 @@ class Scenarios(APIBase):
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
         """
-        filters: dict[str, str] = {}
-        filters['savedName'] = saved_name
+        filters = self._require_any_filter({'savedName': saved_name}, 'saved_name')
 
         url = self.get_scenario_combos_url(project_id, scenario_id, filters)
         scenarios = self._delete_responses(url, data=[])
@@ -295,6 +294,15 @@ class Scenarios(APIBase):
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
         """
+        # Both filters are required by the API and always sent together, so refuse if
+        # EITHER is empty rather than only when both are. An unresolved lookup yielding ''
+        # in one field would otherwise forward `?econNames=&qualifierNames=P50` (or the
+        # mirror), and a blank filter the API may read as "unfiltered" widens the delete
+        # past what the caller named -- the same ARIES-empty-lookup hazard the well
+        # deletes guard against, applied per-field because both must be present.
+        if not econ_names or not qualifier_names:
+            raise ValueError('Must provide both econ_names and qualifier_names')
+
         base_url = self.get_scenario_by_id_url(project_id, scenario_id)
         filters: dict[str, str] = {'econNames': econ_names, 'qualifierNames': qualifier_names}
         url = f'{base_url}/qualifiers' + self._build_params_string(filters)
@@ -363,8 +371,7 @@ class Scenarios(APIBase):
         Returns the headers from the delete response where 'X-Delete-Count' is
         the number of wells deleted.
         """
-        filters: dict[str, str] = {}
-        filters['wells'] = wells
+        filters = self._require_any_filter({'wells': wells}, 'wells')
 
         url = self.get_scenario_wells_url(project_id, scenario_id, filters)
         scenarios = self._delete_responses(url, data=[])

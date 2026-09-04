@@ -5,7 +5,7 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.1.1] - 2026-08-06
+## [2.2.0] - 2026-08-06
 
 ### Fixed
 
@@ -64,11 +64,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `,` is deliberately left literal and a space encodes as `%20` rather than `+`: three
   callers join list filters on commas (`columns`, `wells`, `econNames`) and those wire
   formats were live-verified unencoded.
-- **BREAKING: `delete_company_wells` no longer takes `project_id`.** The route is
-  company-scoped and the parameter was accepted and then never used — the url is
-  `get_company_wells_url(filters)`, with no project in it — so a caller passing one
-  believed a destructive delete was confined to a project when it was not. Drop the
-  argument; for a project-scoped delete use `delete_project_company_wells`.
+- **`delete_company_wells` no longer takes `project_id`, and its filters are now
+  keyword-only.** The route is company-scoped and the parameter was accepted and then
+  never used — the url is `get_company_wells_url(filters)`, with no project in it — so a
+  caller passing one believed a destructive delete was confined to a project when it was
+  not. This is a correction, not a break of working behavior: the project scoping never
+  happened. A caller that passed `project_id` (or any filter) positionally now gets a
+  `TypeError` at the call site rather than a silently company-wide delete, so drop the
+  argument and pass filters by keyword; for a project-scoped delete use
+  `delete_project_company_wells`.
 - **`delete_scenarios` gives `scenario_name` and `scenario_id` defaults.** They were
   required positionals, so callers had to pass `None` explicitly to filter by the
   other. Backwards compatible.
@@ -76,7 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The API rejects a request that does not carry at least one of `project`, `forecast`
   or `well`, so it is refused with `ValueError` instead of sent. This mirrors
   `get_econ_run_monthly_export`, which already enforced its own required filter.
-- **BREAKING: the four production `delete_*` methods take explicit filter
+- **The four production `delete_*` methods take explicit filter
   arguments and return response headers.** `delete_company_monthly_productions`,
   `delete_company_daily_productions`, `delete_project_monthly_productions` and
   `delete_project_daily_productions` replace their `data: ItemList` parameter
