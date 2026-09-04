@@ -4,6 +4,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import Any, NamedTuple, Optional, TextIO, Union
 
+from .._csv_writer import RowWriter
 from . import formats
 
 
@@ -66,15 +67,16 @@ def group_rows_by_model_name(rows: list[dict[str, str]]) -> list[list[dict[str, 
     return [groups[name] for name in order]
 
 
-class EconModelMapper(ABC):
+class EconModelMapper(RowWriter, ABC):
     """Base for econ-model API<->CSV mappers.
 
     Subclasses supply the type-specific pieces (`econ_model_type`, `columns`, `to_row_dicts`,
     `from_row_dicts`); this base implements the file-level conversions once in terms of them.
+    The round-trip half (`from_row_dicts`, `from_csv`) lives here; the one-way WRITE half
+    (`columns` -> CSV) is inherited from `RowWriter`, which one-way exporters share.
     """
 
     econ_model_type: str
-    columns: list[str]
 
     @abstractmethod
     def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
@@ -94,12 +96,10 @@ class EconModelMapper(ABC):
         result to a file opened with `newline=''` to avoid doubled newlines on Windows
         (`write_csv` does this).
         """
-        buffer = io.StringIO()
-        writer = csv.DictWriter(buffer, fieldnames=self.columns)
-        writer.writeheader()
+        rows: list[dict[str, str]] = []
         for model in models:
-            writer.writerows(self.to_row_dicts(model, context))
-        return buffer.getvalue()
+            rows.extend(self.to_row_dicts(model, context))
+        return self.rows_to_csv(rows)
 
     def from_csv(self, source: Union[str, TextIO]) -> list[dict[str, Any]]:
         """Parse a multi-model CSV (a string or text file-like) into a list of API dicts, one

@@ -30,6 +30,28 @@ def from_csv_date(s: str) -> str:
     return datetime.datetime.strptime(s, '%m/%d/%Y').date().isoformat()
 
 
+def to_csv_iso_date(value: Any) -> str:
+    """Format a forecast-export date as ISO `YYYY-MM-DD`, or '' for a null.
+
+    The forecast-parameters export surface writes ISO dates, UNLIKE the econ-model
+    surface's `MM/DD/YYYY` (`to_csv_date` above) -- verified against a real CC 'Forecast
+    Parameters' UI export. Accepts a `datetime.date`/`datetime.datetime`, an ISO-8601
+    string, or a null: `None`, `''`, or a value whose `str()` is 'NaT'/'nan'/'None' (the
+    shapes a parquet-read null takes when the caller has not normalized it).
+    """
+    if value is None:
+        return ''
+    # `datetime` is a subclass of `date`, so test it first and drop the time part.
+    if isinstance(value, datetime.datetime):
+        return value.date().isoformat()
+    if isinstance(value, datetime.date):
+        return value.isoformat()
+    text = str(value).strip()
+    if text in {'', 'NaT', 'nan', 'None'}:
+        return ''
+    return _parse_iso(text).date().isoformat()
+
+
 def yes_blank(b: Optional[bool]) -> str:
     return 'yes' if b else ''
 
