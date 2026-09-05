@@ -7,6 +7,7 @@ the same way, instead of one test module importing another.
 
 import csv
 import os
+from collections.abc import Sequence
 
 from combocurve_api_helper.econ_models.base import group_rows_by_model_name
 
@@ -47,6 +48,6 @@ def group_by_model_name(rows: list[dict[str, str]]) -> dict[str, list[dict[str, 
     return {group[0].get('Model Name', ''): group for group in group_rows_by_model_name(rows)}
 
 
-def project_columns(row: dict[str, str], columns: list[str]) -> dict[str, str]:
+def project_columns(row: dict[str, str], columns: Sequence[str]) -> dict[str, str]:
     """Restrict a row to `columns` (missing keys default to '') for column-subset comparison."""
     return {column: row.get(column, '') for column in columns}

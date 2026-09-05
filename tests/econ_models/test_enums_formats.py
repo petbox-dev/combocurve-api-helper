@@ -26,6 +26,16 @@ def test_dates() -> None:
     assert F.to_csv_date(None) == ''
 
 
+def test_from_csv_date_flexible() -> None:
+    # Reads BOTH the canonical MM/DD/YYYY and ISO, to an ISO date string.
+    assert F.from_csv_date_flexible('04/01/2026') == '2026-04-01'
+    assert F.from_csv_date_flexible('2026-04-01') == '2026-04-01'
+    # Empty AND whitespace-only both yield '' (the whitespace case is checked after strip,
+    # so '   ' is not fed to the parser).
+    assert F.from_csv_date_flexible('') == ''
+    assert F.from_csv_date_flexible('   ') == ''
+
+
 def test_bools() -> None:
     assert (F.yes_blank(True), F.yes_blank(False), F.yes_blank(None)) == ('yes', '', '')
     assert (F.yes_no(True), F.yes_no(False)) == ('yes', 'no')

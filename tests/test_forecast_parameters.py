@@ -78,16 +78,22 @@ GAS_SHUT_IN_ROW: dict[str, Any] = {
     'warning': None,
 }
 
+# Independent copies of the q-column headers (deliberately NOT imported from the module, so a
+# wrong `_Q_UNITS` there is caught rather than mirrored); each is guarded against
+# FORECAST_PARAMETERS_COLUMNS in test_columns_are_the_exact_23_headers_in_order.
 _Q_START = 'q Start (BBL/D, MCF/D, BBL/MCF, MCF/BBL)'
+_Q_END = 'q End (BBL/D, MCF/D, BBL/MCF, MCF/BBL)'
 _Q_SW = 'q Sw (BBL/D, MCF/D, BBL/MCF, MCF/BBL)'
 
 
 def test_columns_are_the_exact_23_headers_in_order() -> None:
     rows = forecast_parameters_to_row_dicts([OIL_ROW], WELLS)
-    assert list(rows[0].keys()) == FORECAST_PARAMETERS_COLUMNS
+    assert tuple(rows[0].keys()) == FORECAST_PARAMETERS_COLUMNS
     assert len(FORECAST_PARAMETERS_COLUMNS) == 23
     # the unit label is the fixed multi-unit string, not per-phase
     assert _Q_START in FORECAST_PARAMETERS_COLUMNS
+    assert _Q_END in FORECAST_PARAMETERS_COLUMNS
+    assert _Q_SW in FORECAST_PARAMETERS_COLUMNS
     assert 'Status' not in FORECAST_PARAMETERS_COLUMNS
 
 
@@ -111,7 +117,7 @@ def test_value_formatting_matches_the_cc_export() -> None:
     assert row['Start Day'] == '-14.0'  # negative, keeps the decimal point
     assert row['End Day'] == '166.0'
     assert row[_Q_START] == '1234.5'
-    assert row['q End (BBL/D, MCF/D, BBL/MCF, MCF/BBL)'] == '500'  # 500.0 -> "500"
+    assert row[_Q_END] == '500'  # 500.0 -> "500"
     assert row['Di Eff-Sec (%)'] == '76.26'  # percent passed through
     assert row['Di Nominal'] == '80'
     assert row['b'] == '1.1'
@@ -154,7 +160,7 @@ def test_string_null_spellings_from_an_unnormalized_parquet_read_are_blank() -> 
 def test_to_csv_roundtrips_the_header_and_rows() -> None:
     text = forecast_parameters_to_csv([OIL_ROW, GAS_SHUT_IN_ROW], WELLS)
     parsed = list(csv.reader(io.StringIO(text)))
-    assert parsed[0] == FORECAST_PARAMETERS_COLUMNS  # header survives comma-in-header quoting
+    assert tuple(parsed[0]) == FORECAST_PARAMETERS_COLUMNS  # header survives comma-in-header quoting
     assert len(parsed) == 3  # header + 2 rows
     assert parsed[1][FORECAST_PARAMETERS_COLUMNS.index('Well Name')] == 'Sample Well 1'
 
@@ -162,7 +168,7 @@ def test_to_csv_roundtrips_the_header_and_rows() -> None:
 def test_to_csv_of_no_rows_is_header_only() -> None:
     text = forecast_parameters_to_csv([], WELLS)
     parsed = list(csv.reader(io.StringIO(text)))
-    assert parsed == [FORECAST_PARAMETERS_COLUMNS]
+    assert parsed == [list(FORECAST_PARAMETERS_COLUMNS)]
 
 
 def test_write_csv_writes_a_utf8_file(tmp_path: Any) -> None:
@@ -170,5 +176,5 @@ def test_write_csv_writes_a_utf8_file(tmp_path: Any) -> None:
     write_forecast_parameters_csv(path, [OIL_ROW, GAS_SHUT_IN_ROW], WELLS)
     with open(path, encoding='utf-8', newline='') as handle:
         parsed = list(csv.reader(handle))
-    assert parsed[0] == FORECAST_PARAMETERS_COLUMNS
+    assert tuple(parsed[0]) == FORECAST_PARAMETERS_COLUMNS
     assert len(parsed) == 3

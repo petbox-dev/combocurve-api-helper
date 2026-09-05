@@ -163,6 +163,11 @@ def _escalation_start_from_csv(criteria_csv: str, value_csv: str) -> dict[str, A
         raise NotImplementedError(f'Unknown Escalation Start Criteria: {criteria_csv!r}')
     api_key = _ESCALATION_START_KEY_FROM_CSV[criteria_csv]
     if api_key == _ESCALATION_START_DATE_KEY:
+        # Unlike the day-offset keys (which default an absent value to 0 below), an absolute
+        # date has no sensible default, so an empty 'date' cell is malformed -- fail loud
+        # here rather than sending {'date': ''} on to fail opaquely at the API.
+        if not value_csv.strip():
+            raise ValueError('Escalation Start Criteria is "date" but the value is empty')
         return {api_key: formats.from_csv_date_flexible(value_csv)}
     return {api_key: csv_to_num(value_csv or '0')}
 

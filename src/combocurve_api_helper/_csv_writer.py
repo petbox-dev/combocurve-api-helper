@@ -1,6 +1,7 @@
 import csv
 import io
 import os
+from collections.abc import Sequence
 from typing import Union
 
 
@@ -19,10 +20,12 @@ class RowWriter:
     their own, different, row-building signatures and share only the writer.
     """
 
-    # The exact CSV header, in order. Every subclass sets this. A row carrying a key NOT in
-    # `columns` raises (csv.DictWriter's default `extrasaction='raise'`); a column absent
-    # from a row is written blank -- so build every row with the full `columns` key set.
-    columns: list[str]
+    # The exact CSV header, in order. Every subclass sets this (a list on the econ mappers, a
+    # tuple on the forecast converter -- `Sequence` accepts both, and an immutable tuple is
+    # preferred for a re-exported header). A row carrying a key NOT in `columns` raises
+    # (csv.DictWriter's default `extrasaction='raise'`); a column absent from a row is written
+    # blank -- so build every row with the full `columns` key set.
+    columns: Sequence[str]
 
     def rows_to_csv(self, rows: list[dict[str, str]]) -> str:
         """Serialize already-built row dicts to a CSV string.

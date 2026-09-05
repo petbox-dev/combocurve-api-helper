@@ -20,17 +20,28 @@ per-phase), copied verbatim from a real export.
 """
 
 import os
+from collections.abc import Callable
 from typing import Any, Union
 
 from ._csv_writer import RowWriter
-from .econ_models.formats import num_to_csv, num_to_csv_float, to_csv_iso_date
+from .econ_models.formats import NULL_TEXTS, num_to_csv, num_to_csv_float, to_csv_iso_date
 
 # The multi-unit label a real CC export writes on every q column, regardless of phase.
 _Q_UNITS = 'BBL/D, MCF/D, BBL/MCF, MCF/BBL'
 
+# The three q columns carry that label in their header. Named once so the header list and
+# the per-row builder share the exact string -- and so the f-string is not rebuilt on every
+# row (a real cost on a large multi-thousand-row export).
+_Q_START_COL = f'q Start ({_Q_UNITS})'
+_Q_END_COL = f'q End ({_Q_UNITS})'
+_Q_SW_COL = f'q Sw ({_Q_UNITS})'
+
 # The 23 columns, in the exact order and spelling of a real CC 'Forecast Parameters' export.
 # (A full export carries 83 columns; this is the segment-parameter subset ARIES consumes.)
-FORECAST_PARAMETERS_COLUMNS: list[str] = [
+# A tuple, not a list: it is re-exported at the package root and backs the singleton
+# converter's `.columns`, so an immutable header cannot be corrupted process-wide by a
+# stray `.append`/`.sort` on the shared object (mirrors base.py's MappingProxyType orders).
+FORECAST_PARAMETERS_COLUMNS: tuple[str, ...] = (
     'Well Name',
     'INPT ID',
     'Chosen ID',
@@ -45,20 +56,16 @@ FORECAST_PARAMETERS_COLUMNS: list[str] = [
     'End Date',
     'Start Day',
     'End Day',
-    f'q Start ({_Q_UNITS})',
-    f'q End ({_Q_UNITS})',
+    _Q_START_COL,
+    _Q_END_COL,
     'Di Eff-Sec (%)',
     'Di Nominal',
     'b',
     'Realized D Sw-Eff-Sec (%)',
     'Sw-Date',
-    f'q Sw ({_Q_UNITS})',
+    _Q_SW_COL,
     'Warning',
-]
-
-# Parquet nulls arrive as None, or -- if the caller read the export without normalizing --
-# as one of these string spellings. Treated as blank everywhere.
-_NULL_TEXTS = {'', 'nan', 'NaT', 'None'}
+)
 
 
 def _text(value: Any) -> str:
@@ -66,7 +73,22 @@ def _text(value: Any) -> str:
     if value is None:
         return ''
     text = str(value)
-    return '' if text in _NULL_TEXTS else text
+    return '' if text in NULL_TEXTS else text
+
+
+def _format_value(value: Any, formatter: Callable[[Any], str]) -> str:
+    """Apply `formatter` to a number, emitting '' for any parquet null shape.
+
+    The shared null contract for the numeric columns: `None`, a float NaN, or a null-text
+    string (an unnormalized parquet read) all render blank; anything else is formatted.
+    """
+    if value is None:
+        return ''
+    if isinstance(value, float) and value != value:  # NaN
+        return ''
+    if isinstance(value, str) and value.strip() in NULL_TEXTS:
+        return ''
+    return formatter(value)
 
 
 def _num(value: Any) -> str:
@@ -76,13 +98,7 @@ def _num(value: Any) -> str:
     trailing '.0' (e.g. a shut-in `q Start` of 0 renders '0') and a decline-less segment
     leaves the field blank.
     """
-    if value is None:
-        return ''
-    if isinstance(value, float) and value != value:  # NaN
-        return ''
-    if isinstance(value, str) and value.strip() in _NULL_TEXTS:
-        return ''
-    return num_to_csv(value)
+    return _format_value(value, num_to_csv)
 
 
 def _day(value: Any) -> str:
@@ -91,13 +107,7 @@ def _day(value: Any) -> str:
     Distinct from `_num`: days render '52.0', not '52' -- and can be negative (a segment
     that starts before first production).
     """
-    if value is None:
-        return ''
-    if isinstance(value, float) and value != value:  # NaN
-        return ''
-    if isinstance(value, str) and value.strip() in _NULL_TEXTS:
-        return ''
-    return num_to_csv_float(value)
+    return _format_value(value, num_to_csv_float)
 
 
 class ForecastParametersConverter(RowWriter):
@@ -133,6 +143,8 @@ class ForecastParametersConverter(RowWriter):
     def _row(export_row: dict[str, Any], well: dict[str, Any]) -> dict[str, str]:
         """Build one CSV row from an export row and its matched well header."""
         return {
+            # An empty `wellName` on the header falls back to the export's `well_name`;
+            # blank is treated as absent (the `or`), unlike the plain `.get()` fields below.
             'Well Name': _text(well.get('wellName') or export_row.get('well_name')),
             'INPT ID': _text(well.get('inptID')),
             'Chosen ID': _text(well.get('chosenID')),
@@ -147,14 +159,14 @@ class ForecastParametersConverter(RowWriter):
             'End Date': to_csv_iso_date(export_row.get('end_date')),
             'Start Day': _day(export_row.get('start_day')),
             'End Day': _day(export_row.get('end_day')),
-            f'q Start ({_Q_UNITS})': _num(export_row.get('q_start')),
-            f'q End ({_Q_UNITS})': _num(export_row.get('q_end')),
+            _Q_START_COL: _num(export_row.get('q_start')),
+            _Q_END_COL: _num(export_row.get('q_end')),
             'Di Eff-Sec (%)': _num(export_row.get('Di_Eff_Sec')),
             'Di Nominal': _num(export_row.get('Di_nominal')),
             'b': _num(export_row.get('b')),
             'Realized D Sw-Eff-Sec (%)': _num(export_row.get('realized_D_sw_Eff_Sec')),
             'Sw-Date': to_csv_iso_date(export_row.get('sw_date')),
-            f'q Sw ({_Q_UNITS})': _num(export_row.get('q_sw')),
+            _Q_SW_COL: _num(export_row.get('q_sw')),
             'Warning': _text(export_row.get('warning')),
         }
 

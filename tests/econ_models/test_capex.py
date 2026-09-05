@@ -313,6 +313,25 @@ def test_escalation_start_date_reads_iso_or_us_format() -> None:
     assert iso['otherCapex']['rows'][0]['escalationStart'] == {'date': '2026-04-01'}
 
 
+def test_escalation_start_date_with_empty_value_raises() -> None:
+    """A 'date' criteria row with an empty value cell is malformed: unlike a day-offset
+    (which defaults to 0), an absolute date has no default, so from_row_dicts fails loud
+    rather than reconstructing {'date': ''} and sending it to the API to fail opaquely."""
+    rows_in: list[dict[str, Any]] = [
+        {**_row('drilling', intangible=3000, offsetToFpd=-120), 'escalationStart': {'date': '2026-04-01'}},
+    ]
+    m: dict[str, Any] = {'name': 'DATE ESC', 'unique': False, 'otherCapex': {'rows': rows_in}}
+    mapper = CapexMapper()
+    template = mapper.to_row_dicts(m)
+
+    # Both an empty and a whitespace-only value cell are malformed (the guard strips first).
+    for empty_value in ('', '   '):
+        blanked = [dict(row) for row in template]
+        blanked[0]['Escalation Start Value (Days/Date)'] = empty_value
+        with pytest.raises(ValueError, match='"date" but the value is empty'):
+            mapper.from_row_dicts(blanked)
+
+
 def test_escalation_none_python_roundtrip() -> None:
     """escalationModel/depreciationModel = None (Python None, not the string 'none')
     should round-trip to None, matching the Optional-string convention used elsewhere."""

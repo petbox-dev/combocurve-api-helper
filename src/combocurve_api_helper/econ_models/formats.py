@@ -32,20 +32,27 @@ def from_csv_date(s: str) -> str:
 
 def from_csv_date_flexible(s: str) -> str:
     """Parse a date cell that may be CC's canonical `MM/DD/YYYY` OR ISO `YYYY-MM-DD` to an
-    ISO date string; '' for empty.
+    ISO date string; '' for an empty or whitespace-only cell.
 
     A LIBERAL reader (`from_csv_date` is the strict `MM/DD/YYYY`-only one). Real CC exports
     have been observed to carry BOTH spellings in the same column -- e.g. CAPEX
     escalation-start dates -- so a round-trip reader must not raise on either. The WRITE
     side stays canonical `MM/DD/YYYY` (`to_csv_date`); only reads are liberal.
     """
-    if not s:
-        return ''
     text = s.strip()
+    if not text:  # empty OR whitespace-only -- checked after strip so '   ' is not parsed
+        return ''
     try:
         return datetime.datetime.strptime(text, '%m/%d/%Y').date().isoformat()
     except ValueError:
         return _parse_iso(text).date().isoformat()
+
+
+# String spellings a parquet-read null can take when the caller has not normalized it (a
+# pandas NaT/NaN or a bare None stringified). Treated as blank by the forecast converters
+# and by `to_csv_iso_date` below; single-sourced here so the "what is a null text" rule has
+# one home as more export converters are added.
+NULL_TEXTS = frozenset({'', 'nan', 'NaT', 'None'})
 
 
 def to_csv_iso_date(value: Any) -> str:
@@ -65,7 +72,7 @@ def to_csv_iso_date(value: Any) -> str:
     if isinstance(value, datetime.date):
         return value.isoformat()
     text = str(value).strip()
-    if text in {'', 'NaT', 'nan', 'None'}:
+    if text in NULL_TEXTS:
         return ''
     return _parse_iso(text).date().isoformat()
 
