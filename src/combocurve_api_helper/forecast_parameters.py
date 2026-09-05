@@ -17,6 +17,12 @@ both surfaces, so they pass through unchanged -- no remap was needed.
 The reader matches the unit-bearing columns by SUBSTRING ('q Start', 'Di Eff-Sec'), so the
 `(BBL/D, MCF/D, BBL/MCF, MCF/BBL)` label is a fixed, non-load-bearing header (it is NOT
 per-phase), copied verbatim from a real export.
+
+The 21 snake_case input keys this converter reads were verified against a real
+forecast-parameters parquet export (2026-09-04): the parquet carries ~61 columns and all 21
+read keys are present with the exact spellings used below; the other ~40 (project/forecast
+metadata, eur, cum, ...) are ignored. `test_extra_export_columns_are_ignored` pins that a
+real-shaped row is handled and the extras are dropped.
 """
 
 import os

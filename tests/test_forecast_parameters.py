@@ -97,6 +97,42 @@ def test_columns_are_the_exact_23_headers_in_order() -> None:
     assert 'Status' not in FORECAST_PARAMETERS_COLUMNS
 
 
+def test_extra_export_columns_are_ignored() -> None:
+    """A real parquet export row carries ~61 columns; the converter reads 21 and drops the
+    rest. Verified live 2026-09-04 against a real forecast-parameters export (all 21 read keys
+    present). This feeds a row shaped like the real export -- the 21 read keys PLUS a
+    representative sample of the ~40 ignored metadata columns (all SYNTHETIC values) -- and
+    asserts the output is exactly the 23-column subset with the read keys mapped correctly."""
+    ignored_export_columns = {
+        'project_name': 'Sample Project',
+        'project_id': WELL_A,
+        'forecast_name': 'Sample Forecast',
+        'forecast_id': WELL_A,
+        'well_number': '1H',
+        'status': 'In Progress',
+        'stream_scope': 'field',
+        'sub_type': 'rate',
+        'eur': 1234.5,
+        'eur_per_ft': 0.5,
+        'q_final': 1.0,
+        'cum_start': 0.0,
+        'cum_end': 100.0,
+        'x_axis_type': 'time',
+        'sw_idx_arps': 3.0,
+        'D_exp': 0.1,
+        '__RecordSource': 'x',
+        'adjust_segment': False,
+    }
+    full_row = dict(OIL_ROW, **ignored_export_columns)
+
+    (row,) = forecast_parameters_to_row_dicts([full_row], WELLS)
+
+    assert tuple(row.keys()) == FORECAST_PARAMETERS_COLUMNS  # exactly the 23; extras dropped
+    assert row['Phase'] == 'Oil'  # read keys still map correctly amid the extra columns
+    assert row[_Q_START] == '1234.5'
+    assert row['Segment Type'] == 'arps'
+
+
 def test_well_identity_is_joined_from_wells_not_the_export() -> None:
     (row,) = forecast_parameters_to_row_dicts([OIL_ROW], WELLS)
     assert row['Well Name'] == 'Sample Well 1'
