@@ -5,7 +5,18 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.2.0] - 2026-08-06
+## [2.2.0] - 2026-09-04
+
+### Added
+
+- **Forecast-parameters export -> CSV converter.** `forecast_parameters_to_row_dicts(export_rows, wells)`
+  (with `forecast_parameters_to_csv` / `write_forecast_parameters_csv` and the
+  `FORECAST_PARAMETERS_COLUMNS` header) turns the rows of a forecast-parameters async export into the
+  Title-Case, unit-bearing CSV a ComboCurve "Forecast Parameters" UI export produces -- the 23-column
+  segment-parameter subset downstream tooling reads. Well identity (`INPT ID` / `Chosen ID` / `API 10`)
+  is joined from company-well headers; a forecast row whose `well_id` is absent from `wells` raises. The
+  21 snake_case input keys were verified against a real export. A one-way `RowWriter` mixin, extracted
+  from `EconModelMapper`, provides the shared CSV-write plumbing (no new runtime dependency).
 
 ### Fixed
 
@@ -54,6 +65,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   chunk N+1 inherited chunk N's `skip`/`take`. Page-following now uses a local copy.
   (Previously this surfaced as a duplicate `take` the API rejected; the new parameter
   reconciliation would have made it silent.)
+- **Three scenario sub-deletes forwarded an empty filter.** `delete_scenario_wells`,
+  `delete_scenario_combo` and `delete_scenario_qualifiers` built their filter inline without the
+  at-least-one-filter guard the sibling deletes use, so an empty string (e.g. from an unresolved
+  lookup) reached the API as an unscoped destructive DELETE. They now refuse an empty filter.
+- **CAPEX `escalationStart` on an absolute date raised `NotImplementedError`.** `capex_to_row_dicts`
+  handled only `applyToCriteria` / `asOfDate`; a model whose escalation started on a `{'date': ...}`
+  shape was dropped from any export. The `date` shape is now written `MM/DD/YYYY` and read back
+  (accepting both `MM/DD/YYYY` and ISO), and the day-offset shapes render with a decimal point (`0.0`)
+  to match the CC export.
 
 ### Changed
 
