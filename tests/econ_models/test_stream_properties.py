@@ -31,10 +31,8 @@ API: dict[str, Any] = {
         'gasLoss': {'rows': [{'entireWellLife': 'Flat', 'pctRemaining': 100}]},
         'gasFlare': {'rows': [{'entireWellLife': 'Flat', 'pctRemaining': 100}]},
     },
-    # CC's real Stream Properties CSV export has NO 'btu'-Key rows at all (blank 'BTU
-    # (MBTU/MCF)' column) even though the API model carries btuContent. Kept here (with
-    # a non-empty value) specifically to prove to_row_dicts drops it rather than emitting
-    # 'btu' rows.
+    # Both at the default (1000): CC's real CSV omits 'btu' rows entirely in this case
+    # (see test_btu_content_emitted_only_off_default for the non-default case).
     'btuContent': {'unshrunkGas': 1000, 'shrunkGas': 1000},
     'companyCustomStreams': [],
 }
@@ -53,8 +51,8 @@ _BLANK_COLS = (
 
 def test_to_row_dicts_values() -> None:
     rows = StreamPropertiesMapper().to_row_dicts(API)
-    # 2 yields + 2 shrinkage + 3 lossFlare = 7. NOT 9: btuContent is dropped entirely,
-    # matching CC's real export (no 'btu'-Key rows).
+    # 2 yields + 2 shrinkage + 3 lossFlare = 7. No 'btu' rows: API's btuContent is
+    # {'unshrunkGas': 1000, 'shrunkGas': 1000} -- both at the default CC's CSV omits.
     assert len(rows) == 7
     assert not any(r['Key'] == 'btu' for r in rows)
 
@@ -99,6 +97,42 @@ def test_to_row_dicts_values() -> None:
             assert r[col] == ''
 
 
+def test_btu_content_emitted_only_off_default() -> None:
+    # Verified live 2026-09-06: a real Stream Properties CSV export carries 'btu'-Key
+    # rows (Category 'unshrunk gas'/'shrunk gas', Value/Unit columns, 'mbtu/mcf') for
+    # whichever category is off the default (1000) -- one row per off-default category,
+    # independently.
+    model = dict(API)
+    model['btuContent'] = {'unshrunkGas': 1100, 'shrunkGas': 900}
+    rows = StreamPropertiesMapper().to_row_dicts(model)
+
+    btu_rows = [r for r in rows if r['Key'] == 'btu']
+    assert len(btu_rows) == 2
+
+    unshrunk = next(r for r in btu_rows if r['Category'] == 'unshrunk gas')
+    assert (unshrunk['Value'], unshrunk['Unit'], unshrunk['Criteria'], unshrunk['Period']) == (
+        '1100',
+        'mbtu/mcf',
+        '',
+        '',
+    )
+    shrunk = next(r for r in btu_rows if r['Category'] == 'shrunk gas')
+    assert (shrunk['Value'], shrunk['Unit']) == ('900', 'mbtu/mcf')
+
+
+def test_btu_content_one_category_off_default() -> None:
+    # Each category is checked against the default independently -- only the
+    # off-default one gets a row.
+    model = dict(API)
+    model['btuContent'] = {'unshrunkGas': 1000, 'shrunkGas': 900}
+    rows = StreamPropertiesMapper().to_row_dicts(model)
+
+    btu_rows = [r for r in rows if r['Key'] == 'btu']
+    assert len(btu_rows) == 1
+    assert btu_rows[0]['Category'] == 'shrunk gas'
+    assert btu_rows[0]['Value'] == '900'
+
+
 def test_gas_shrinkage_condition_uses_presence_not_truthiness() -> None:
     # Real ComboCurve API exports carry unshrunkGas = '' (empty string, falsy) on the
     # majority of real ngl yields rows. A truthiness check on r.get('unshrunkGas') wrongly
@@ -139,8 +173,9 @@ def test_roundtrip() -> None:
     rebuilt = m.from_row_dicts(m.to_row_dicts(API))
 
     # Documented, permanent losses through the real CC CSV (not bugs):
-    # - btuContent has no CSV representation at all (no 'btu'-Key rows) -- omitted
-    #   entirely from the rebuilt model, like Capex $/ft.
+    # - btuContent's own categories round-trip (see test_btu_content_roundtrip), but
+    #   API's btuContent is {'unshrunkGas': 1000, 'shrunkGas': 1000} -- both at the
+    #   default CC's CSV omits -- so no 'btu' rows exist to rebuild it from here.
     # - rateType/rowsCalculationMethod are blanked unconditionally in the CSV's
     #   'Rate Type'/'Rate Rows Calculation Method' columns -- never reconstructed.
     assert 'btuContent' not in rebuilt
@@ -160,6 +195,20 @@ def test_roundtrip() -> None:
     assert rebuilt['shrinkage'] == _rows_only(API['shrinkage'])
     assert rebuilt['lossFlare'] == _rows_only(API['lossFlare'])
     assert rebuilt['name'] == API['name'] and rebuilt['unique'] == API['unique']
+
+
+def test_btu_content_roundtrip() -> None:
+    model = dict(API)
+    model['btuContent'] = {'unshrunkGas': 1100, 'shrunkGas': 900}
+    m = StreamPropertiesMapper()
+    rebuilt = m.from_row_dicts(m.to_row_dicts(model))
+    assert rebuilt['btuContent'] == {'unshrunkGas': 1100, 'shrunkGas': 900}
+
+    # One category at the default: only the off-default one round-trips, the
+    # at-default one is indistinguishable from absent (documented CSV limitation).
+    model['btuContent'] = {'unshrunkGas': 1000, 'shrunkGas': 900}
+    rebuilt = m.from_row_dicts(m.to_row_dicts(model))
+    assert rebuilt['btuContent'] == {'shrunkGas': 900}
 
 
 def test_nonempty_company_custom_streams_raises() -> None:

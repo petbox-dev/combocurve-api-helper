@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from . import formats
 from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
-from .formats import csv_to_num, num_to_csv_float
+from .formats import csv_to_num, num_to_csv, num_to_csv_float
 
 # API group key -> CSV 'Key' column value.
 _KEY_TO_CSV = {
@@ -27,6 +27,18 @@ _CATEGORY_TO_CSV = {
     'gasFlare': 'gas flare',
 }
 _CATEGORY_FROM_CSV = {v: k for k, v in _CATEGORY_TO_CSV.items()}
+
+# `btuContent` API key -> CSV 'Category' column value, for the 'btu'-Key rows. These
+# reuse the ordinary Key/Category/Value/Unit columns (Key='btu'); the dedicated
+# 'BTU (MBTU/MCF)' column is unrelated and always blank -- see StreamPropertiesMapper.
+_BTU_KEY_TO_CSV = {'unshrunkGas': 'unshrunk gas', 'shrunkGas': 'shrunk gas'}
+_BTU_CATEGORY_FROM_CSV = {v: k for k, v in _BTU_KEY_TO_CSV.items()}
+_BTU_UNIT = 'mbtu/mcf'
+# CC's real CSV export omits a 'btu' row for a category whose value equals this
+# default (1000) rather than omitting btuContent from the CSV altogether -- confirmed
+# against a live export dated 2026-09-06 showing unshrunkGas=1100/shrunkGas=900 as two
+# 'btu' rows.
+_BTU_DEFAULT = 1000
 
 # (StreamPropertyGroup python attribute name, API category key), in the same canonical
 # order as _CATEGORY_TO_CSV -- this is the order categories are emitted in real CC CSVs.
@@ -161,18 +173,43 @@ class StreamPropertiesMapper(EconModelMapper):
                     )
                     rows.append({c: row.get(c, '') for c in self.columns})
 
-        # `btuContent` is intentionally NOT emitted here: CC's real Stream Properties
-        # CSV export has no 'btu'-Key rows at all and a blank 'BTU (MBTU/MCF)' column.
-        # Like Capex $/ft, btuContent has no CSV representation and does not round-trip.
+        btu_content = model.get('btuContent') or {}
+        for api_key, csv_category in _BTU_KEY_TO_CSV.items():
+            value = btu_content.get(api_key)
+            # CC's CSV omits the row when the value is the default (1000), not just
+            # when btuContent is absent -- checked per category, independently.
+            if value is None or value == _BTU_DEFAULT:
+                continue
+            row = dict(common)
+            row.update(
+                {
+                    'Key': 'btu',
+                    'Category': csv_category,
+                    'Criteria': '',
+                    'Value': num_to_csv(value),
+                    'Period': '',
+                    'Unit': _BTU_UNIT,
+                    'Gas Shrinkage Condition': '',
+                    'Rate Type': '',
+                    'Rate Rows Calculation Method': '',
+                }
+            )
+            rows.append({c: row.get(c, '') for c in self.columns})
 
         return rows
 
     def from_row_dicts(self, rows: list[dict[str, str]]) -> dict[str, Any]:
         groups: dict[str, dict[str, list[StreamPropertyRow]]] = {'yields': {}, 'shrinkage': {}, 'lossFlare': {}}
+        btu_content: dict[str, Any] = {}
         name, unique = model_identity(rows)
 
         for row in rows:
             key = row['Key']
+            if key == 'btu':
+                if row['Category'] not in _BTU_CATEGORY_FROM_CSV:
+                    raise NotImplementedError(f'Unknown btu Category: {row["Category"]}')
+                btu_content[_BTU_CATEGORY_FROM_CSV[row['Category']]] = csv_to_num(row['Value'])
+                continue
             if key not in _KEY_FROM_CSV:
                 raise NotImplementedError(f'Unknown Key: {key}')
             group_key = _KEY_FROM_CSV[key]
@@ -202,10 +239,13 @@ class StreamPropertiesMapper(EconModelMapper):
         # `rateType`/`rowsCalculationMethod` cannot be reconstructed: CC's CSV blanks
         # 'Rate Type'/'Rate Rows Calculation Method' unconditionally (see
         # StreamPropertyGroup docstring), so those fields are simply never set below and
-        # are excluded on dump. `btuContent` cannot be reconstructed at all -- there are
-        # no 'btu'-Key rows in the CSV to read it back from -- so it is omitted entirely
-        # from the result.
+        # are excluded on dump. A btuContent category omitted from the CSV (because it
+        # was at the default, 1000) is likewise not reconstructed here -- only categories
+        # with an actual 'btu' row come back, so a model that never leaves the default
+        # for either category round-trips with no `btuContent` key at all.
         result: dict[str, Any] = {'name': name, 'unique': unique}
+        if btu_content:
+            result['btuContent'] = btu_content
         for group_key in ('yields', 'shrinkage', 'lossFlare'):
             group_kwargs: dict[str, Any] = {
                 _CATEGORY_TO_ATTR[category]: StreamPropertyCategory(rows=category_rows)

@@ -1,4 +1,4 @@
-__version__ = '2.2.0'
+__version__ = '2.2.1'
 
 from ._batch import BatchChunk as BatchChunk
 from ._batch import BatchWriteResult as BatchWriteResult
