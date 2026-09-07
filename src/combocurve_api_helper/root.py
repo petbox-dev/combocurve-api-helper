@@ -110,12 +110,13 @@ class Root(APIBase):
         return f'{self.API_BASE_URL}/users/roles'
 
     def get_project_custom_columns_url(
-        self, project_id: str, collection: str, filters: Optional[dict[str, str]] = None
+        self, project_id: str, custom_column: str, filters: Optional[dict[str, str]] = None
     ) -> str:
         """
-        Returns the API url for a project's custom columns for a given collection.
+        Returns the API url for a project's custom columns. `custom_column` -- "Currently
+        only `headers` is supported" per the docs.
         """
-        url = f'{self.API_BASE_URL}/projects/{project_id}/custom-columns/{collection}'
+        url = f'{self.API_BASE_URL}/projects/{project_id}/custom-columns/{custom_column}'
         if filters is None:
             return url
 
@@ -287,12 +288,19 @@ class Root(APIBase):
         return self._get_items(url, params)
 
     def get_project_custom_columns(
-        self, project_id: str, collection: str, filters: Optional[dict[str, str]] = None
-    ) -> Item:
+        self, project_id: str, custom_column: str, filters: Optional[dict[str, str]] = None
+    ) -> ItemList:
         """
-        Returns a project's custom columns for a given collection (e.g. 'wells',
-        'daily-productions', 'monthly-productions'). The project-scoped counterpart
-        to `get_custom_columns`.
+        Returns a project's custom well-header definitions. `custom_column` is
+        "Currently only `headers` is supported" per the docs -- unlike the sibling
+        `get_custom_columns`, whose `collection` argument is a collection name
+        ('wells', 'daily-productions', ...), this one is not. The project-scoped
+        counterpart to `get_custom_columns`.
+
+        The response is a list with one entry per project custom header -- 0 if the
+        project has none defined, or several for a project with multiple. Verified
+        live: a project with no custom headers returns `[]`; a project with several
+        returns one dict per header.
 
         https://docs.api.combocurve.com/api/get-project-custom-columns
 
@@ -305,6 +313,5 @@ class Root(APIBase):
             }
         ]
         """
-        url = self.get_project_custom_columns_url(project_id, collection, filters)
-        columns = self._get_items(url)
-        return columns[0]
+        url = self.get_project_custom_columns_url(project_id, custom_column, filters)
+        return self._get_items(url)

@@ -5,6 +5,20 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.2] - 2026-09-06
+
+### Fixed
+
+- **`get_project_custom_columns` dropped every header past the first, and crashed on projects
+  with none.** Its `custom_column` argument is not a collection name like the sibling
+  `get_custom_columns`'s (`'wells'`, `'daily-productions'`, ...) -- the live API accepts only the
+  literal `'headers'` for this path segment, so any other value 404s with
+  `CustomColumnHeaderNotFoundError`. The method also hard-coded `columns[0]`, silently discarding
+  every custom header beyond the first and raising an unhandled `IndexError` for the common case
+  of a project with zero custom headers. Now `custom_column` is a required argument (no wrong
+  default to fall into) and the method returns the full `ItemList` (`[]` when a project has none).
+  Verified live against three dev projects.
+
 ## [2.2.0] - 2026-09-04
 
 ### Added

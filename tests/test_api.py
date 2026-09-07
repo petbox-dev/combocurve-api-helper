@@ -31,3 +31,15 @@ class TestRoot:
     def test_custom_columns(self, api: ComboCurveAPI) -> None:
         result = api.get_custom_columns('wells')
         assert isinstance(result, dict)
+
+    def test_project_custom_columns(self, api: ComboCurveAPI) -> None:
+        # `custom_column='headers'` is the only value the live API accepts (verified
+        # 2026-09-06: every other value, including the collection names 'wells' /
+        # 'daily-productions' that `get_custom_columns` takes, 404s with
+        # CustomColumnHeaderNotFoundError). The response is a list -- 0 entries for a
+        # project with no custom headers, one per header for a project that has them.
+        project_id = os.environ.get('CC_DEV_PROJECT_ID', '65568dbb4a8039d4e89a2f4b')
+        result = api.get_project_custom_columns(project_id, 'headers')
+        assert isinstance(result, list)
+        for header in result:
+            assert {'headerName', 'headerLabel', 'headerType'} <= header.keys()
