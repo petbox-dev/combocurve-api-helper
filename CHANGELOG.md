@@ -5,6 +5,33 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-09-07
+
+### Added
+
+- **`Context.scope` stamps the CSV `Model Type` for company-scope econ models.** An econ-model API
+  dict carries no scope field, so a model fetched from a company endpoint (`get_company_*`) was
+  indistinguishable from a project one and every converter wrote `Model Type = 'project'`. `Context`
+  gained `scope: Literal['project', 'company'] = 'project'`, threaded through `common_columns` into
+  `formats.model_type(unique, scope)`; pass `scope='company'` to stamp company models correctly. A
+  `unique` model still resolves to `'unique'` regardless of scope, and the default keeps the prior
+  output for every existing caller.
+
+### Fixed
+
+- **Auth-header retrieval is now serialized against concurrent token refresh.** `ComboCurveAuth`
+  refreshes an expired token in place, so several threads fetching headers at once (e.g. GETs driven
+  from a thread pool) could refresh concurrently -- undefined behavior. All header fetches now route
+  through `APIBase._auth_headers()`, which holds a lock across the fetch (never across the HTTP
+  request). The batched-write path already fetched headers once up front, which was and remains safe.
+
+### Documentation
+
+- **Project production endpoints noted as returning no rows for company-scoped wells.**
+  `get_project_monthly_productions` / `get_project_daily_productions` gained a note (verified live
+  2026-09-07) that they return zero rows when a project's wells are all company-scoped -- read
+  production from the company endpoints instead of looping per well.
+
 ## [2.2.2] - 2026-09-06
 
 ### Fixed

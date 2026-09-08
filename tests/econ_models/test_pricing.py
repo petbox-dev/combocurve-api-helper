@@ -187,6 +187,18 @@ def test_unique_model_type() -> None:
     assert row['Model Type'] == 'unique'
 
 
+def test_company_scope_stamps_every_row_model_type_company() -> None:
+    ctx = Context(project_name='x', scope='company')
+    rows = PricingMapper().to_row_dicts(FLAT_MODEL, context=ctx)
+    assert rows and all(row['Model Type'] == 'company' for row in rows)
+
+
+def test_company_scope_does_not_override_unique_rows() -> None:
+    ctx = Context(project_name='x', scope='company')
+    rows = PricingMapper().to_row_dicts(dict(FLAT_MODEL, unique=True), context=ctx)
+    assert rows and all(row['Model Type'] == 'unique' for row in rows)
+
+
 def test_registry_get_mapper() -> None:
     mapper = get_mapper('Pricing')
     assert isinstance(mapper, PricingMapper)

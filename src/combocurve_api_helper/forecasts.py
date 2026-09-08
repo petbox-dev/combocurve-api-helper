@@ -239,7 +239,7 @@ class Forecasts(APIBase):
         # NOTE: we can't use `self._post_items` since it expects the base data to be a list
         # whereas this particular endpoint receives an object
 
-        headers = self.auth.get_auth_headers()
+        headers = self._auth_headers()
         url = self.get_forecast_wells_url(project_id, forecast_id)
 
         items: ItemList = []
@@ -321,7 +321,7 @@ class Forecasts(APIBase):
         """
         # The by-id PATCH endpoint receives a single object body (e.g. {'name': ...}),
         # not a list, so `self._patch_items` (which chunks a list) does not apply.
-        headers = self.auth.get_auth_headers()
+        headers = self._auth_headers()
         url = self.get_forecast_by_id_url(project_id, forecast_id)
 
         response = requests.patch(url, headers=headers, json=data)
@@ -1129,7 +1129,7 @@ class Forecasts(APIBase):
         """
         # The run endpoint receives a single object body ({configurationId}), not
         # a list, so `self._post_items` (which chunks a list) does not apply.
-        headers = self.auth.get_auth_headers()
+        headers = self._auth_headers()
         url = self.get_forecast_run_url(project_id, forecast_id)
 
         data: dict[str, str] = {}

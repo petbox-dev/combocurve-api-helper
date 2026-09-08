@@ -3,8 +3,18 @@ from decimal import Decimal
 from typing import Any, Optional, Union
 
 
-def model_type(unique: bool) -> str:
-    return 'unique' if unique else 'project'
+def model_type(unique: bool, scope: str = 'project') -> str:
+    """CSV 'Model Type' value for a model.
+
+    A `unique` model (one written inline on a single well/assignment) is always
+    'unique'. Otherwise the value is the model's SCOPE -- 'project' for a project
+    econ model, 'company' for one fetched from a company endpoint. The API dict
+    carries no scope field, so the caller supplies it via `Context.scope`; the
+    default keeps the historical 'project' behaviour for callers that pass none.
+    """
+    if unique:
+        return 'unique'
+    return scope
 
 
 def _parse_iso(value: str) -> datetime.datetime:

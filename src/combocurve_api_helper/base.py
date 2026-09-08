@@ -1,3 +1,4 @@
+import threading
 import time
 import warnings
 from collections import Counter
@@ -162,6 +163,7 @@ class APIBase:
     def __init__(self) -> None:
         account = ServiceAccount.from_file(str(config.COMBOCURVE_JSON))
         self.auth = ComboCurveAuth(account, config.cfg.apikey)
+        self._auth_lock = threading.Lock()
 
     @classmethod
     def from_alternate_config(
@@ -178,8 +180,25 @@ class APIBase:
             account = ServiceAccount.from_file(combocurve_json_path.absolute())
 
         api_base.auth = ComboCurveAuth(account, cfg.apikey)
+        # `from_alternate_config` builds the instance via `__new__`, bypassing `__init__`,
+        # so the lock that guards token refresh must be set here too -- see `_auth_headers`.
+        api_base._auth_lock = threading.Lock()
 
         return api_base
+
+    def _auth_headers(self) -> dict[str, str]:
+        """Auth headers for one request, fetched under a lock.
+
+        `ComboCurveAuth.get_auth_headers` refreshes an expired token IN PLACE, and two
+        threads refreshing at once is undefined. Every caller now goes through here so the
+        header fetch is serialised; the lock is held only for that fetch, never across the
+        HTTP request itself. `aries pull` fans GETs across a thread pool, so several threads
+        can hit an expired token in the same instant -- without this they refresh concurrently.
+        The batched-write path (`_request_batched`) instead fetches headers once up front and
+        shares them across workers, which is equally safe.
+        """
+        with self._auth_lock:
+            return dict(self.auth.get_auth_headers())
 
     def _extract_json(self, response: requests.Response) -> ItemList:
         """
@@ -219,7 +238,7 @@ class APIBase:
         """
         params = _drop_params_already_in_url(url, params)
         for attempt in range(_MAX_REQUEST_RETRIES + 1):
-            headers = self.auth.get_auth_headers()
+            headers = self._auth_headers()
             response = requests.request(method, url, headers=headers, params=params, json=json_body)
             delay = _retry_delay_seconds(response, attempt)
             if delay is None or attempt == _MAX_REQUEST_RETRIES:
@@ -400,7 +419,7 @@ class APIBase:
             chunk_specs.append((index, offset, chunk_list))
             offset += len(chunk_list)
 
-        headers = self.auth.get_auth_headers()
+        headers = self._auth_headers()
         rate_limit = _RateLimitState(pause_seconds=_RATE_LIMIT_DEFAULT_PAUSE_SECONDS)
         completed: list[BatchChunk] = []
 

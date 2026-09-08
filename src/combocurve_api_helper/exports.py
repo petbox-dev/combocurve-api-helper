@@ -40,7 +40,7 @@ class Exports(APIBase):
         Submits a v2 async export of `kind` (single-object body) and returns the
         job carrying its job id; poll `_get_v2_export` for status/results.
         """
-        headers = self.auth.get_auth_headers()
+        headers = self._auth_headers()
         url = self.get_v2_export_url(kind)
 
         response = requests.post(url, headers=headers, json=data)
@@ -52,7 +52,7 @@ class Exports(APIBase):
         """
         Returns the status/result of a v2 async export job of `kind` from its job id.
         """
-        headers = self.auth.get_auth_headers()
+        headers = self._auth_headers()
         url = self.get_v2_export_by_job_id_url(kind, job_id)
 
         response = requests.get(url, headers=headers)
@@ -134,7 +134,7 @@ class Exports(APIBase):
             ]
         }
         """
-        headers = self.auth.get_auth_headers()
+        headers = self._auth_headers()
         url = self.get_exports_url()
 
         response = requests.post(url, headers=headers, json=data)

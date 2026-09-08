@@ -247,6 +247,12 @@ class Production(APIBase):
         """
         Returns a list of monthly production items for a specific project id.
 
+        Note: verified live 2026-09-07, this endpoint returned zero rows for every filter
+        on a project whose wells were all company-scoped -- the production lived on the
+        company endpoint (`get_company_monthly_productions`), not the project one. If a
+        project returns nothing here, read production from the company endpoint instead of
+        looping per well.
+
         https://docs.api.combocurve.com/api/get-projects-monthly-productions
         """
         url = self.get_project_monthly_productions_url(project_id, filters)
@@ -314,6 +320,12 @@ class Production(APIBase):
     def get_project_daily_productions(self, project_id: str, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of daily production items for a specific project id.
+
+        Note: verified live 2026-09-07, this endpoint returned zero rows for every filter
+        on a project whose wells were all company-scoped -- the production lived on the
+        company endpoint (`get_company_daily_productions`), not the project one. If a
+        project returns nothing here, read production from the company endpoint instead of
+        looping per well.
 
         https://docs.api.combocurve.com/api/get-projects-daily-productions
         """

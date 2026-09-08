@@ -182,7 +182,7 @@ class Directional(APIBase):
         """
         # The endpoint receives a single object body, not a list, so
         # `self._post_items` (which chunks a list) does not apply.
-        headers = self.auth.get_auth_headers()
+        headers = self._auth_headers()
         url = self.get_directional_surveys_url()
 
         response = requests.post(url, headers=headers, json=data)
@@ -274,7 +274,7 @@ class Directional(APIBase):
         }
         """
         # The endpoint receives a single object body, not a list.
-        headers = self.auth.get_auth_headers()
+        headers = self._auth_headers()
         url = self.get_directional_survey_by_id_url(directional_survey_id)
 
         response = requests.put(url, headers=headers, json=data)

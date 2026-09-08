@@ -17,6 +17,7 @@ Two defects motivated these, both live-verified against api.combocurve.com on
    as `TypeError: `None,200` is not a valid number`.
 """
 
+import threading
 from typing import Any, Optional, cast
 
 import pytest
@@ -62,6 +63,9 @@ def _make_api() -> ComboCurveAPI:
     """
     api = ComboCurveAPI.__new__(ComboCurveAPI)
     api.auth = _StubAuth()
+    # `__init__` and `from_alternate_config` both set this; bypassing `__init__` here means
+    # supplying it too, since `_request_with_retry` -> `_auth_headers` acquires it.
+    api._auth_lock = threading.Lock()
 
     return api
 

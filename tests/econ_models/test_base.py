@@ -49,6 +49,24 @@ def test_common_columns_with_context() -> None:
     assert c['Last Update'] == '05/08/2026 14:18:05'
 
 
+def test_common_columns_company_scope_stamps_company() -> None:
+    m: dict[str, Any] = {'id': 'x1', 'name': 'M', 'unique': False, 'updatedAt': '2026-05-08T14:18:05.000Z'}
+    ctx = Context(project_name='x', scope='company')
+    assert common_columns(m, ctx)['Model Type'] == 'company'
+
+
+def test_common_columns_company_scope_does_not_override_unique() -> None:
+    # A `unique` model is 'unique' regardless of scope -- scope only names the shared-model home.
+    m: dict[str, Any] = {'id': 'x1', 'name': 'M', 'unique': True, 'updatedAt': '2026-05-08T14:18:05.000Z'}
+    ctx = Context(project_name='x', scope='company')
+    assert common_columns(m, ctx)['Model Type'] == 'unique'
+
+
+def test_common_columns_default_scope_is_project() -> None:
+    m: dict[str, Any] = {'id': 'x1', 'name': 'M', 'unique': False, 'updatedAt': '2026-05-08T14:18:05.000Z'}
+    assert common_columns(m, Context(project_name='x'))['Model Type'] == 'project'
+
+
 def test_common_columns_without_context_omits_pipeline_cols() -> None:
     m: dict[str, Any] = {
         'id': 'x1',
