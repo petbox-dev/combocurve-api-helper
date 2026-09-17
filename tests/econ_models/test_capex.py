@@ -20,7 +20,7 @@ _PROBABILISTIC_DEFAULTS: dict[str, Any] = {
 
 
 def _row(
-    category: str, tangible: int = 0, intangible: int = 0, after_econ_limit: bool = False, **criterion: Any
+    category: str, tangible: float = 0, intangible: float = 0, after_econ_limit: bool = False, **criterion: Any
 ) -> dict[str, Any]:
     base: dict[str, Any] = {
         'category': category,
@@ -113,6 +113,36 @@ def test_from_headers_first_prod_date() -> None:
     assert rows[0]['From Headers'] == 'First Prod Date'
     assert rows[0]['From Schedule'] == ''
     assert rows[0]['Value'] == '185'
+
+    rebuilt = mapper.from_row_dicts(rows)
+    assert rebuilt['otherCapex'] == m['otherCapex']
+
+
+def test_from_schedule_spud_start_and_completion_start() -> None:
+    """`fromSchedule` otherCapex rows carry their OWN OffsetTo tokens
+    ('offset_to_spud_start'/'offset_to_completion_start', companion keys
+    'spudStart'/'completionStart') -- NOT the `fromHeaders` tokens
+    ('offset_to_spud_date'/'offset_to_completion_start_date'). Regression for a
+    production `NotImplementedError: Unsupported fromSchedule OffsetTo token:
+    'offset_to_spud_start'`, hit on a real Capex model (verified live
+    2026-09-17 via the ComboCurve API)."""
+    m: dict[str, Any] = {
+        'name': 'SCHEDULE OFFSET CAPEX',
+        'unique': False,
+        'otherCapex': {
+            'rows': [
+                _row('drilling', intangible=3904.9666, fromSchedule='offset_to_spud_start', spudStart=0),
+                _row('completion', intangible=4773.71173, fromSchedule='offset_to_completion_start', completionStart=0),
+            ]
+        },
+    }
+    mapper = CapexMapper()
+    rows = mapper.to_row_dicts(m)
+    assert len(rows) == 2
+    assert rows[0]['Criteria'] == 'from schedule'
+    assert rows[0]['From Schedule'] == 'Spud Start'
+    assert rows[0]['From Headers'] == ''
+    assert rows[1]['From Schedule'] == 'Completion Start'
 
     rebuilt = mapper.from_row_dicts(rows)
     assert rebuilt['otherCapex'] == m['otherCapex']

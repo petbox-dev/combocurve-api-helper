@@ -5,6 +5,19 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-09-17
+
+### Fixed
+
+- **`fromSchedule` Capex rows used the wrong `OffsetTo` tokens.** A `fromSchedule` otherCapex row
+  carries its OWN date tokens -- `offset_to_spud_start` / `offset_to_completion_start` (companion API
+  keys `spudStart` / `completionStart`) -- distinct from the `fromHeaders` tokens
+  `offset_to_spud_date` / `offset_to_completion_start_date`. `OFFSET_TO_SCHEDULE_CSV` previously
+  pointed at the `fromHeaders` tokens, so a real model raised
+  `NotImplementedError: Unsupported fromSchedule OffsetTo token: 'offset_to_spud_start'`. Added the
+  two `OffsetTo` members, re-pointed `OFFSET_TO_SCHEDULE_CSV` and `OFFSET_TO_API_DATEKEY`, and added a
+  live-verified round-trip regression test (verified live 2026-09-17).
+
 ## [2.3.0] - 2026-09-07
 
 ### Added

@@ -49,6 +49,16 @@ class OffsetTo(StrEnum):
     CustomDate7 = 'offset_to_custom_date_7'
     CustomDate8 = 'offset_to_custom_date_8'
     CustomDate9 = 'offset_to_custom_date_9'
+    # `fromSchedule` otherCapex rows do NOT reuse the `fromHeaders` date tokens above --
+    # verified live 2026-09-17 against real Capex models: a `fromSchedule` row
+    # carries 'offset_to_spud_start'/'offset_to_completion_start' (companion keys
+    # 'spudStart'/'completionStart'), distinct from `fromHeaders`'s
+    # 'offset_to_spud_date'/'offset_to_completion_start_date' ('spudDate'/
+    # 'completionStartDate'). Production hit `NotImplementedError: Unsupported
+    # fromSchedule OffsetTo token: 'offset_to_spud_start'` because OFFSET_TO_SCHEDULE_CSV
+    # previously (wrongly) pointed at the `fromHeaders` tokens.
+    SpudStart = 'offset_to_spud_start'
+    CompletionStart = 'offset_to_completion_start'
 
 
 class CapExCategory(StrEnum):
@@ -102,8 +112,8 @@ OFFSET_TO_HEADER_CSV: dict[str, str] = {
     OffsetTo.FirstProductionDate.value: 'First Prod Date',
 }
 OFFSET_TO_SCHEDULE_CSV: dict[str, str] = {
-    OffsetTo.SpudDate.value: 'Spud Start',
-    OffsetTo.CompletionStartDate.value: 'Completion Start',
+    OffsetTo.SpudStart.value: 'Spud Start',
+    OffsetTo.CompletionStart.value: 'Completion Start',
 }
 OFFSET_FROM_HEADER_CSV: dict[str, str] = {v: k for k, v in OFFSET_TO_HEADER_CSV.items()}
 OFFSET_FROM_SCHEDULE_CSV: dict[str, str] = {v: k for k, v in OFFSET_TO_SCHEDULE_CSV.items()}
@@ -139,4 +149,6 @@ OFFSET_TO_API_DATEKEY: dict[str, str] = {
     OffsetTo.CustomDate7.value: 'customDateHeader7',
     OffsetTo.CustomDate8.value: 'customDateHeader8',
     OffsetTo.CustomDate9.value: 'customDateHeader9',
+    OffsetTo.SpudStart.value: 'spudStart',
+    OffsetTo.CompletionStart.value: 'completionStart',
 }
