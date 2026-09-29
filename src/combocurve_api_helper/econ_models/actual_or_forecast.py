@@ -36,7 +36,7 @@ class PhaseSwitchData(BaseModel):
       (explicit modern form of the built-in 'Forecast As Of' model's default).
 
     An empty node (`{}`) under a PRESENT `replaceActualWithForecast` key is
-    "Ignore Hist Prod" and is handled by the mapper before validation. The phase key
+    "Ignore Historical Production" and is handled by the mapper before validation. The phase key
     entirely absent from `replaceActualWithForecast`, or `replaceActualWithForecast`
     itself absent (whole `actualOrForecast` == `{}`) is the legacy/unset
     representation and is resolved by `_phase_criteria` via the fixed model name
@@ -61,7 +61,7 @@ def _phase_criteria(data: PhaseSwitchData, model_name: str) -> tuple[str, str]:
         return _CRITERIA_AS_OF_DATE, ''
     # No explicit marker -- legacy whole-node `{}` / absent-phase representation (the
     # caller has already routed an empty node under a present `replaceActualWithForecast`
-    # key, and the model-level `ignoreHistoryProd` flag, to "Ignore Hist Prod"). CC's
+    # key to "Ignore Historical Production"). CC's
     # front end resolves this via the model's fixed, non-deletable built-in name:
     # 'Forecast As Of' always means "replace with forecast as of the project's As Of
     # Date" even when unmigrated/empty; every other model (including the other built-in,
@@ -82,16 +82,17 @@ class ActualOrForecastMapper(EconModelMapper):
         rwf = aof.get('replaceActualWithForecast') or {}
 
         rows: list[dict[str, str]] = []
-        ignore_history_flag = bool(aof.get('ignoreHistoryProd'))
+        # The model-level `ignoreHistoryProd` flag is deliberately NOT read. Verified live
+        # 2026-09-29 against ComboCurve's own CSV export: a model whose API shape is
+        # `{"ignoreHistoryProd": true}` (no `replaceActualWithForecast`) exports Never on every
+        # phase, so the flag does not mean "Ignore Historical Production".
         has_phase_nodes = 'replaceActualWithForecast' in aof
         for phase in _PHASES:
             node = rwf.get(phase)
-            if ignore_history_flag or (has_phase_nodes and node == {}):
+            if has_phase_nodes and node == {}:
                 # Verified live 2026-09-29: a phase whose ComboCurve screen reads "Ignore Hist Prod"
-                # arrives as an EMPTY node under a present `replaceActualWithForecast` key. The
-                # model-level `ignoreHistoryProd` flag is the older spelling of the same choice
-                # (tooltip: "Ignore Hist Prod = Yes"); that half is read from the field name, not
-                # screen-verified.
+                # (CSV export: "Ignore Historical Production") arrives as an EMPTY node under a
+                # present `replaceActualWithForecast` key.
                 criteria, value = _CRITERIA_IGNORE_HIST_PROD, ''
             else:
                 try:
@@ -144,14 +145,12 @@ class ActualOrForecastMapper(EconModelMapper):
                 raise NotImplementedError(f'Unknown ActualOrForecast Criteria: {criteria!r}')
 
         all_never = all(by_phase[p]['Criteria'] == _CRITERIA_NEVER for p in _PHASES)
-        # `ignoreHistoryProd` has NO CSV column: its true/false value is dropped on the
-        # forward (API->CSV) pass and is NOT recoverable here -- documented limitation.
-        # `{}` (Never) and `{"ignoreHistoryProd": true}` (Ignore Hist Prod) now render
-        # different rows; what is still unrecoverable is the flag's true/false value on
-        # an explicit-node model (both reconstruct to `ignoreHistoryProd: False`).
-        # A model with any Ignore Hist Prod phase reconstructs to the explicit form below,
-        # with `{}` on those phases (the per-phase `{}` is distinct from the legacy
-        # whole-node `{}`).
+        # `ignoreHistoryProd` has NO CSV column and does not change the CSV (ComboCurve's
+        # export ignores it too), so its true/false value is NOT recoverable here --
+        # documented limitation; every reconstruction writes `ignoreHistoryProd: False`.
+        # A model with any Ignore Historical Production phase reconstructs to the explicit
+        # form below, with `{}` on those phases (the per-phase `{}` is distinct from the
+        # legacy whole-node `{}`).
         #
         # When every phase is Never AND the model is not the built-in
         # 'Forecast As Of', reproduce CC's real legacy/default empty shape

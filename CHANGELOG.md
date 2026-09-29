@@ -31,13 +31,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   resolved by model name to `Never` (keep actuals) instead of ignoring history (verified live
   2026-09-29 against the ComboCurve screen and against ComboCurve's own CSV export). An empty phase
   node under a present key now exports as `Ignore Historical Production`, the string ComboCurve's CSV
-  export writes (its screen abbreviates it "Ignore Hist Prod"), and the older model-level
-  `ignoreHistoryProd: true` flag is now read the same way (inferred from the field name and
-  ComboCurve's tooltip, not verified). `from_row_dicts` reconstructs `Ignore Historical Production` as
-  an empty phase node. New CSV `Criteria` value `Ignore Historical Production`: consumers that switch
-  on `Criteria` must handle it. Unchanged: the legacy whole-node
-  `actualOrForecast == {}` (no `replaceActualWithForecast` key) still resolves by model name
-  (`Forecast As Of` -> As of Date, otherwise Never).
+  export writes (its screen abbreviates it "Ignore Hist Prod"). `from_row_dicts` reconstructs
+  `Ignore Historical Production` as an empty phase node. New CSV `Criteria` value
+  `Ignore Historical Production`: consumers that switch on `Criteria` must handle it. Unchanged: the
+  model-level `ignoreHistoryProd` flag is still ignored -- ComboCurve's export shows a
+  `{"ignoreHistoryProd": true}` model as Never, and explicit per-phase nodes win whatever the flag
+  says -- and the legacy whole-node `actualOrForecast == {}` (no `replaceActualWithForecast` key) still
+  resolves by model name (`Forecast As Of` -> As of Date, otherwise Never). Checked against
+  ComboCurve's CSV export of two projects (36 models, 108 rows): mapper output from the live API
+  matches on every row.
 
 ## [2.3.1] - 2026-09-17
 
