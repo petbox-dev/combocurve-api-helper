@@ -14,8 +14,9 @@ strings, ids as ObjectId-like) so the docstring shows the response's key/value
 shape without a live API call. Descriptions are untouched -- only the JSON under
 an example marker is replaced.
 
-Literal strings in the collection are enum members, and the collection picks one
-at random on every publish. A block that differs from the collection only in those
+Literal (non-`<type>`) strings in the collection are enum picks or random faker
+values (ObjectId-like ids, garbage dates, sentences), and the collection re-draws
+them on every publish. A block that differs from the collection only in those
 picks is left as committed (see `EnumLiteral`), so --check reports a block stale
 only when its shape, keys or placeholder values change.
 
@@ -111,13 +112,14 @@ def spoof(token: str, key: str) -> str | int | float | bool:
 
 
 class EnumLiteral(str):
-    """A literal (non-`<type>`) string from the collection: a schema enum member.
+    """A literal (non-`<type>`) string from the collection: an enum pick or a faker value.
 
-    The collection's generator picks a random member of each enum on every publish
-    (`exportType` was `monthlyProductionVolumeExport`, `econMonthlyExport`, then
-    `monthlyCombinedVolumeExport` across three publishes). Marking these positions
-    lets the comparison ignore the pick, so a republish that changes only enum
-    picks does not make the docstrings stale. `json.dumps` renders it as a plain
+    The collection's generator re-draws these on every publish: a random member of
+    each enum (`exportType` was `monthlyProductionVolumeExport`, `econMonthlyExport`,
+    then `monthlyCombinedVolumeExport` across three publishes) and random faker
+    values (ObjectId-like ids, garbage dates such as `01/0363`, sentences). Marking
+    these positions lets the comparison ignore the draw, so a republish that changes
+    only them does not make the docstrings stale. `json.dumps` renders it as a plain
     string.
     """
 

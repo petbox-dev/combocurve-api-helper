@@ -284,7 +284,7 @@ the template in `scripts/`, never the output** — editing the output makes the 
   `__doc__ +=` -- from the **Postman collection** (a superset of the OpenAPI spec, which is an
   older/less-complete snapshot missing ~52 ops as of 2026-07). The collection's `<type>` placeholders
   are filled with realistic, deterministic spoof values (numbers as numbers, bools as bools, ISO dates,
-  ObjectId-like ids) and duplicated array items are collapsed, so a docstring shows the response's
+  ObjectId-like ids) and duplicated array items are collapsed (see the literal-strings note below), so a docstring shows the response's
   key/value shape without a live call. Each method maps to its operation via the
   `docs.api.combocurve.com/api/<slug>` link (slug == the collection item name). Shared constants use
   their first (representative) method. Refresh with `python scripts/generate_docstrings.py`; `--check`
@@ -292,12 +292,15 @@ the template in `scripts/`, never the output** — editing the output makes the 
   (The OpenAPI spec has *real* example values; if it ever catches up on coverage, switching the source
   back would give real instead of spoofed values.)
 
-  **Literal strings in the collection are enum members, re-picked at random on every publish**
-  (`exportType` took three different values in three publishes). `fill` marks them `EnumLiteral`; a
-  committed block that differs only at those positions is kept as-is, and array elements that differ
-  only in enum picks collapse to one. So `--check` goes stale on a change of shape, keys or placeholder
-  values, not on a reshuffle. The cost: an enum member that ComboCurve removes stays in a docstring
-  until something else in that block changes.
+  **Literal (non-`<type>`) strings in the collection are re-drawn at random on every publish**: enum
+  picks (`exportType` took three different values in three publishes) and faker values (ObjectId-like
+  ids, garbage dates such as `01/0363`, sentences). `fill` marks them all `EnumLiteral`; a committed
+  block that differs only at those positions is kept as-is, and array elements that differ only at
+  those positions collapse to one (so a `phases` or `series` list shows one element, not several).
+  `--check` goes stale on a change of shape, keys, array length or placeholder type, not on a re-draw.
+  The costs: an enum member that ComboCurve removes stays in a docstring until something else in that
+  block changes, and a position that changes from a `<type>` placeholder to a literal is not detected
+  (the committed spoof string is accepted as a draw).
 
   **Exit 1 vs 2 is load-bearing** — the freshness test reads 1 as "the docstrings are stale" (failure)
   and 2 as "skip". So *every* failure to obtain a usable collection must raise `CollectionUnavailable`

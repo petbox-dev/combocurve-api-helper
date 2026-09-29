@@ -91,6 +91,40 @@ def test_added_key_rewrites_the_block() -> None:
     assert replacement.lines != lines[replacement.start : replacement.end + 1]
 
 
+def test_reindented_block_is_rewritten() -> None:
+    body = {'exportType': 'econMonthlyExport', 'expirationHours': 24}
+    source = _source_with_block(body).replace('\n            "expirationHours"', '\n              "expirationHours"')
+    request = generator.fill({'exportType': 'econMonthlyExport', 'expirationHours': '<integer>'})
+    request['expirationHours'] = 24
+    lines = source.split('\n')
+    replacements, _ = generator.plan_replacements(source, _examples(request))
+    replacement = replacements[0]
+    assert replacement.lines != lines[replacement.start : replacement.end + 1]
+
+
+def test_reordered_keys_do_not_match() -> None:
+    body = generator.fill({'exportType': 'econMonthlyExport', 'expirationHours': '<integer>'})
+    assert not generator.matches_ignoring_enums({'expirationHours': 123, 'exportType': 'econMonthlyExport'}, body)
+
+
+def test_array_length_mismatch_does_not_match() -> None:
+    body = generator.fill({'phases': ['oil']})
+    assert not generator.matches_ignoring_enums({'phases': ['oil', 'gas']}, body)
+    assert not generator.matches_ignoring_enums({'phases': []}, body)
+
+
+def test_check_mode_reports_enum_only_change_as_fresh(tmp_path: pathlib.Path) -> None:
+    module_path = tmp_path / 'sample.py'
+    module_path.write_text(
+        _source_with_block({'exportType': 'monthlyProductionVolumeExport', 'expirationHours': 123}),
+        encoding='utf-8',
+    )
+    fresh_request = generator.fill({'exportType': 'econMonthlyExport', 'expirationHours': '<integer>'})
+    assert generator.rewrite_file(module_path, _examples(fresh_request), True).changed is False
+    stale_request = generator.fill({'exportType': 'econMonthlyExport', 'expirationHours': '<number>'})
+    assert generator.rewrite_file(module_path, _examples(stale_request), True).changed is True
+
+
 def test_enum_position_holding_a_non_string_rewrites_the_block() -> None:
     assert not generator.matches_ignoring_enums({'kind': 1}, generator.fill({'kind': 'rate'}))
     assert not generator.matches_ignoring_enums({'flag': 1}, generator.fill({'flag': '<boolean>'}))

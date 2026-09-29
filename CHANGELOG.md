@@ -11,14 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Docstring examples regenerated** from the ComboCurve Postman collection republished 2026-09-28
   (`directional`, `exports`, `forecasts`, `typecurves`). Example JSON only; no code change.
-- **`scripts/generate_docstrings.py` ignores random enum picks.** The collection picks a random member
-  of each enum on every publish (`exportType` took three different values in three publishes), so each
-  republish made `test_docstrings_current` fail with no API change. Literal strings from the collection
-  are now marked as enum values: a committed block that differs only at those positions is kept, and
-  array elements that differ only in enum picks collapse to one. A change of shape, keys or placeholder
-  values still reports stale. Cost: an enum member that ComboCurve removes stays in a docstring until
-  something else in that block changes. The `forecasts` volume examples shrink by one-time collapse of
-  two `phases` arrays.
+- **`scripts/generate_docstrings.py` ignores random re-draws.** The collection re-draws its literal
+  example strings on every publish: enum picks (`exportType` took three different values in three
+  publishes) and faker values (ids, dates, sentences). So each republish made `test_docstrings_current`
+  fail with no API change. Literal strings from the collection are now marked: a committed block that
+  differs only at those positions is kept, and array elements that differ only at those positions
+  collapse to one. A change of shape, keys, array length or placeholder type still reports stale.
+  Costs: an enum member that ComboCurve removes stays in a docstring until something else in that
+  block changes, and a placeholder that becomes a literal is not detected. One-time effect: the two
+  `forecasts` volume examples collapse at three levels: the result list and `phases` from 2 elements
+  to 1, and every `series` list to 1 element (one had 2).
 
 ### Fixed
 
