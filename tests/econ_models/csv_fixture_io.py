@@ -27,7 +27,10 @@ FIXTURE_FILES: dict[str, list[str]] = {
     'Pricing': ['pricing.csv'],
     'Dates': ['date_settings.csv'],
     'OwnershipReversion': ['ownership_reversion.csv'],
-    'ActualOrForecast': ['actual_or_forecast.csv'],
+    # Two projects: the first has a model-level `ignoreHistoryProd: true` model ('Ignore History',
+    # exported as Never); the second has an empty-phase-node model exported as
+    # 'Ignore Historical Production'.
+    'ActualOrForecast': ['actual_or_forecast.csv', 'actual_or_forecast_ignore_hist_prod.csv'],
     'Risking': ['risking.csv'],
 }
 
