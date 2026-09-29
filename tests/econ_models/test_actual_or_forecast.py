@@ -148,7 +148,7 @@ def test_forward_model_level_ignore_history_flag_is_ignore_hist_prod() -> None:
     # at all); the flag reads as Ignore Hist Prod on every phase.
     rows = ActualOrForecastMapper().to_row_dicts(IGNORE_HISTORY)
     for r in rows:
-        assert r['Criteria'] == 'Ignore Hist Prod'
+        assert r['Criteria'] == 'Ignore Historical Production'
         assert r['Value'] == ''
 
 
@@ -226,7 +226,7 @@ def test_forward_empty_phase_node_under_present_key_is_ignore_hist_prod() -> Non
     rows = ActualOrForecastMapper().to_row_dicts(FORECAST_ONLY_IGNORE_HIST_PROD)
     assert [r['Key'] for r in rows] == ['oil', 'gas', 'water']
     for r in rows:
-        assert r['Criteria'] == 'Ignore Hist Prod'
+        assert r['Criteria'] == 'Ignore Historical Production'
         assert r['Value'] == ''
 
 
@@ -253,7 +253,7 @@ def test_roundtrip_mixed_ignore_hist_prod_and_explicit_phases() -> None:
     }
     m = ActualOrForecastMapper()
     by_key = {r['Key']: r for r in m.to_row_dicts(model)}
-    assert by_key['oil']['Criteria'] == 'Ignore Hist Prod'
+    assert by_key['oil']['Criteria'] == 'Ignore Historical Production'
     assert by_key['gas']['Criteria'] == 'Never'
     assert by_key['water']['Criteria'] == 'As of Date'
     assert m.from_row_dicts(m.to_row_dicts(model))['actualOrForecast'] == model['actualOrForecast']
@@ -343,7 +343,7 @@ def test_model_level_flag_reads_differently_from_legacy_empty_node() -> None:
     flagged_rows = m.to_row_dicts(dict(ACTUAL_LEGACY_EMPTY, name='X', actualOrForecast={'ignoreHistoryProd': True}))
     assert empty_rows != flagged_rows
     assert {r['Criteria'] for r in empty_rows} == {'Never'}
-    assert {r['Criteria'] for r in flagged_rows} == {'Ignore Hist Prod'}
+    assert {r['Criteria'] for r in flagged_rows} == {'Ignore Historical Production'}
 
 
 def test_explicit_node_model_flag_value_is_not_recoverable() -> None:
@@ -363,7 +363,7 @@ def test_explicit_node_model_flag_value_is_not_recoverable() -> None:
     rows_true = m.to_row_dicts(flag_true)
     # The model-level flag wins over explicit nodes in the forward pass.
     assert {r['Criteria'] for r in rows_false} == {'Never'}
-    assert {r['Criteria'] for r in rows_true} == {'Ignore Hist Prod'}
+    assert {r['Criteria'] for r in rows_true} == {'Ignore Historical Production'}
     assert m.from_row_dicts(rows_true)['actualOrForecast']['ignoreHistoryProd'] is False
 
 

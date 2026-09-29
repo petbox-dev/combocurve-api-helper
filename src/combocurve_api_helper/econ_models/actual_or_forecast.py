@@ -18,7 +18,7 @@ _MODEL_NAME_FORECAST_AS_OF = 'Forecast As Of'
 _CRITERIA_DATE = 'Date'
 _CRITERIA_NEVER = 'Never'
 _CRITERIA_AS_OF_DATE = 'As of Date'
-_CRITERIA_IGNORE_HIST_PROD = 'Ignore Hist Prod'
+_CRITERIA_IGNORE_HIST_PROD = 'Ignore Historical Production'
 
 
 class PhaseSwitchData(BaseModel):
