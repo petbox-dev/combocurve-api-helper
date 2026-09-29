@@ -292,6 +292,13 @@ the template in `scripts/`, never the output** — editing the output makes the 
   (The OpenAPI spec has *real* example values; if it ever catches up on coverage, switching the source
   back would give real instead of spoofed values.)
 
+  **Literal strings in the collection are enum members, re-picked at random on every publish**
+  (`exportType` took three different values in three publishes). `fill` marks them `EnumLiteral`; a
+  committed block that differs only at those positions is kept as-is, and array elements that differ
+  only in enum picks collapse to one. So `--check` goes stale on a change of shape, keys or placeholder
+  values, not on a reshuffle. The cost: an enum member that ComboCurve removes stays in a docstring
+  until something else in that block changes.
+
   **Exit 1 vs 2 is load-bearing** — the freshness test reads 1 as "the docstrings are stale" (failure)
   and 2 as "skip". So *every* failure to obtain a usable collection must raise `CollectionUnavailable`
   and reach exit 2, not escape as a traceback: `OSError` (offline, DNS, TLS — a malformed cert in the

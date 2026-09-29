@@ -14,6 +14,11 @@ strings, ids as ObjectId-like) so the docstring shows the response's key/value
 shape without a live API call. Descriptions are untouched -- only the JSON under
 an example marker is replaced.
 
+Literal strings in the collection are enum members, and the collection picks one
+at random on every publish. A block that differs from the collection only in those
+picks is left as committed (see `EnumLiteral`), so --check reports a block stale
+only when its shape, keys or placeholder values change.
+
 Usage:
     python scripts/generate_docstrings.py             # rewrite in place
     python scripts/generate_docstrings.py --check      # exit 1 if stale (no write)
@@ -105,9 +110,38 @@ def spoof(token: str, key: str) -> str | int | float | bool:
     return 'string'
 
 
+class EnumLiteral(str):
+    """A literal (non-`<type>`) string from the collection: a schema enum member.
+
+    The collection's generator picks a random member of each enum on every publish
+    (`exportType` was `monthlyProductionVolumeExport`, `econMonthlyExport`, then
+    `monthlyCombinedVolumeExport` across three publishes). Marking these positions
+    lets the comparison ignore the pick, so a republish that changes only enum
+    picks does not make the docstrings stale. `json.dumps` renders it as a plain
+    string.
+    """
+
+
+def _enum_masked(value: Any) -> str:
+    """`value` rendered with every `EnumLiteral` replaced by one fixed sentinel."""
+
+    def mask(nested: Any) -> Any:
+        if isinstance(nested, EnumLiteral):
+            return '<enum>'
+        if isinstance(nested, dict):
+            return {nested_key: mask(item) for nested_key, item in nested.items()}
+        if isinstance(nested, list):
+            return [mask(item) for item in nested]
+        return nested
+
+    return json.dumps(mask(value), sort_keys=True, default=str)
+
+
 def fill(value: Any, key: str = '') -> Any:
-    """Recursively replace `<type>` placeholder strings with spoof values, and
-    collapse arrays whose elements are all identical (Postman doubles examples).
+    """Recursively replace `<type>` placeholder strings with spoof values, mark
+    literal strings as `EnumLiteral`, and collapse arrays whose elements are all
+    identical apart from enum picks (Postman doubles examples, and a random pick
+    per element would otherwise defeat the collapse).
 
     Typed `Any` in/out: the input is an arbitrary `json.loads` result and the
     output mirrors its shape, so no narrower annotation is honest here."""
@@ -116,14 +150,36 @@ def fill(value: Any, key: str = '') -> Any:
     if isinstance(value, list):
         elements = [fill(element, key) for element in value]
         if len(elements) > 1:
-            first_rendered = json.dumps(elements[0], sort_keys=True, default=str)
-            if all(json.dumps(other, sort_keys=True, default=str) == first_rendered for other in elements[1:]):
+            first_rendered = _enum_masked(elements[0])
+            if all(_enum_masked(other) == first_rendered for other in elements[1:]):
                 return [elements[0]]
         return elements
     if isinstance(value, str):
         token_match = TOKEN_RE.fullmatch(value)
-        return spoof(token_match.group(1), key) if token_match else value
+        return spoof(token_match.group(1), key) if token_match else EnumLiteral(value)
     return value
+
+
+def matches_ignoring_enums(existing: Any, body: Any) -> bool:
+    """True when `existing` (a parsed docstring block) equals `body` (a filled
+    collection example) everywhere except `EnumLiteral` positions, where any string
+    is accepted. Key order and array length must match; scalar types must match
+    exactly (so `True` never equals `1`)."""
+    if isinstance(body, EnumLiteral):
+        return isinstance(existing, str)
+    if isinstance(body, dict):
+        return (
+            isinstance(existing, dict)
+            and list(existing) == list(body)
+            and all(matches_ignoring_enums(existing[nested_key], body[nested_key]) for nested_key in body)
+        )
+    if isinstance(body, list):
+        return (
+            isinstance(existing, list)
+            and len(existing) == len(body)
+            and all(matches_ignoring_enums(old, new) for old, new in zip(existing, body))
+        )
+    return type(existing) is type(body) and existing == body
 
 
 class CollectionUnavailable(Exception):
@@ -301,6 +357,25 @@ def collect_targets(tree: ast.Module) -> list[tuple[ast.stmt, str]]:
     return targets
 
 
+def render_block(body: Any, indent: str) -> list[str]:
+    """The docstring lines for one example body, indented under its marker."""
+    return [indent + line for line in json.dumps(body, indent=4, default=str).split('\n')]
+
+
+def _keeps_existing_block(existing_lines: list[str], body: Any, indent: str) -> bool:
+    """True when the committed block differs from `body` only in enum picks.
+
+    The committed block must also be exactly what this generator renders for its
+    own parsed value, so a hand edit (re-indented, reordered, reformatted) is still
+    reported stale and rewritten.
+    """
+    try:
+        existing = json.loads('\n'.join(existing_lines))
+    except ValueError:
+        return False
+    return matches_ignoring_enums(existing, body) and render_block(existing, indent) == existing_lines
+
+
 def plan_replacements(
     source_text: str, examples: dict[str, CollectionExample]
 ) -> tuple[list[LineReplacement], list[str]]:
@@ -329,7 +404,11 @@ def plan_replacements(
                 unsourced.append(f'{label} [{lines[line_index].strip()}]')
                 continue
             indent = ' ' * (len(lines[line_index]) - len(lines[line_index].lstrip()))
-            rendered = [indent + line for line in json.dumps(body, indent=4, default=str).split('\n')]
+            existing_lines = lines[span[0] : span[1] + 1]
+            if _keeps_existing_block(existing_lines, body, indent):
+                rendered = existing_lines
+            else:
+                rendered = render_block(body, indent)
             replacements.append(LineReplacement(start=span[0], end=span[1], lines=rendered))
     return replacements, unsourced
 
