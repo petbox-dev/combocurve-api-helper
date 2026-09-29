@@ -1651,6 +1651,15 @@ class TypeCurves(APIBase):
 
         return self._keysort(type_curves, LIST_SORT_ORDER)
 
+    def count_type_curves(self, project_id: str, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of type curves in a project matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-type-curves
+        """
+        return self._count_items(self.get_type_curves_url(project_id, filters))
+
     def get_type_curve_by_id(self, project_id: str, type_curve_id: str) -> Item:
         """
         Returns a specific type curve from its type curve id.
@@ -3353,6 +3362,15 @@ class TypeCurves(APIBase):
         url = self.get_type_curve_lookup_tables_url(project_id, filters)
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
+
+    def count_type_curve_lookup_tables(self, project_id: str, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of type-curve lookup tables matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-type-curve-lookup-tables
+        """
+        return self._count_items(self.get_type_curve_lookup_tables_url(project_id, filters))
 
     def get_type_curve_lookup_table_by_id(self, project_id: str, lookup_table_id: str) -> Item:
         """

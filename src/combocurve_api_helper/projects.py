@@ -54,6 +54,15 @@ class Projects(APIBase):
 
         return self._keysort(projects, LIST_SORT_ORDER)
 
+    def count_projects(self, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of projects matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-projects
+        """
+        return self._count_items(self.get_projects_url(filters))
+
     def post_projects(self, data: ItemList) -> list[WriteResponse]:
         """
         Creates a new project.

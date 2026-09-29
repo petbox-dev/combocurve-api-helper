@@ -31,6 +31,8 @@ A utility library mapped to ComboCurve's API.
 - **Lookup tables** — scenario, type-curve, and scenario-assignment CRUD.
 - **Econ runs** — trigger scenario economics and read results.
 - **Directional** — directional survey access.
+- **Counts** — a `count_*` method beside each list method returns the number of
+  matching documents from a HEAD request, without fetching them.
 - **Resilient transport** — automatic retry with backoff on HTTP 429 (honoring
   `Retry-After`) and transient gateway errors (502 / 503 / 504).
 

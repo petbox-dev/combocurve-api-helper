@@ -454,6 +454,23 @@ class APIBase:
             chunks=completed,
         )
 
+    def _count_items(self, url: str) -> int:
+        """Send a HEAD request to `url` and return its `X-Query-Count` header as an int.
+
+        Every list route has a HEAD twin that returns no body, only the total number of
+        documents matching the url's filters (verified live 2026-09-29: `take` does not
+        change it, and a filter that matches nothing gives 0). A response without the
+        header raises instead of reading as 0, so "could not count" never looks like
+        "counted nothing".
+        """
+        response = self._request_with_retry('head', url)
+        response.raise_for_status()
+        count = response.headers.get('X-Query-Count')
+        if count is None:
+            raise ValueError(f'HEAD {url} returned no X-Query-Count header')
+
+        return int(count)
+
     def _get_responses_iterator(
         self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None
     ) -> Iterator[Response]:

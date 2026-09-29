@@ -45,6 +45,15 @@ class ForecastConfigurations(APIBase):
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
 
+    def count_forecast_configurations(self, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of forecast configurations matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-forecast-configurations
+        """
+        return self._count_items(self.get_forecast_configurations_url(filters))
+
     def get_forecast_configuration_by_id(self, forecast_configuration_id: str) -> Item:
         """
         Returns a specific forecast configuration from its id.

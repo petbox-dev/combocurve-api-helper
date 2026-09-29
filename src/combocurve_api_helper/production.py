@@ -121,6 +121,15 @@ class Production(APIBase):
 
         return self._keysort(monthly_production, _PRODUCTION_SORT_ORDER)
 
+    def count_company_monthly_productions(self, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of company monthly productions matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-monthly-productions
+        """
+        return self._count_items(self.get_company_monthly_productions_url(filters))
+
     def post_company_monthly_productions(self, data: ItemList) -> list[WriteResponse]:
         """
         Creates monthly production items.
@@ -187,6 +196,15 @@ class Production(APIBase):
         dailiy_production = self._get_items(url, params)
 
         return self._keysort(dailiy_production, _PRODUCTION_SORT_ORDER)
+
+    def count_company_daily_productions(self, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of company daily productions matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-daily-productions
+        """
+        return self._count_items(self.get_company_daily_productions_url(filters))
 
     def post_company_daily_productions(self, data: ItemList) -> list[WriteResponse]:
         """
@@ -261,6 +279,15 @@ class Production(APIBase):
 
         return self._keysort(monthly_production, _PRODUCTION_SORT_ORDER)
 
+    def count_project_monthly_productions(self, project_id: str, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of monthly productions in a project matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-projects-monthly-productions
+        """
+        return self._count_items(self.get_project_monthly_productions_url(project_id, filters))
+
     def post_project_monthly_productions(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Creates project monthly production items.
@@ -334,6 +361,15 @@ class Production(APIBase):
         daily_production = self._get_items(url, params)
 
         return self._keysort(daily_production, _PRODUCTION_SORT_ORDER)
+
+    def count_project_daily_productions(self, project_id: str, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of daily productions in a project matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-projects-daily-productions
+        """
+        return self._count_items(self.get_project_daily_productions_url(project_id, filters))
 
     def post_project_daily_productions(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """

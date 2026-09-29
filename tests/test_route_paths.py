@@ -82,13 +82,13 @@ def _collection_paths() -> dict[str, str]:
 def _builder_for(method_name: str) -> tuple[str, Callable[..., str]] | tuple[None, None]:
     """Resolve a public method to the `*_url` builder that assembles its path.
 
-    Read methods pair as `<method>_url`. Write verbs have no builder of their own --
-    they reuse the read builder (`delete_company_wells` -> `get_company_wells_url`), so
-    the verb prefix is swapped for `get_` on the second attempt.
+    Read methods pair as `<method>_url`. Write verbs and HEAD counts have no builder of
+    their own -- they reuse the read builder (`delete_company_wells` / `count_company_wells`
+    -> `get_company_wells_url`), so the verb prefix is swapped for `get_` on the second attempt.
     """
     candidates = [f'{method_name}_url']
     verb, _, rest = method_name.partition('_')
-    if verb in {'post', 'put', 'patch', 'delete'} and rest:
+    if verb in {'post', 'put', 'patch', 'delete', 'count'} and rest:
         candidates.append(f'get_{rest}_url')
 
     for candidate in candidates:
@@ -142,9 +142,10 @@ def test_url_builders_match_the_collection_route_paths() -> None:
 
         try:
             built = _built_path(builder)
-        except (TypeError, ValueError):
-            # Builder needs an argument shape the placeholder cannot satisfy; the slug
-            # test still covers its docs link.
+        except (TypeError, ValueError, AssertionError):
+            # Builder needs an argument shape the placeholder cannot satisfy (the by-type
+            # econ-model builders assert on an unknown `econ_model_type`); the slug test
+            # still covers its docs link.
             continue
 
         checked += 1

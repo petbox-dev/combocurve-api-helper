@@ -5,6 +5,31 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-09-29
+
+### Added
+
+- **HEAD count methods for every list route (all 64 HEAD routes in the collection).** Each
+  `count_<rest>` sits beside its list method `get_<rest>`, takes the same arguments plus `filters`,
+  and returns the `X-Query-Count` header of a HEAD request as an `int`: the number of matching
+  documents, with no documents fetched. For example `count_projects(filters)`,
+  `count_project_wells(project_id, filters)`, `count_forecast_outputs(project_id, forecast_id,
+  filters)`, `count_econ_run_onelines(project_id, scenario_id, econ_run_id, filters)`. Econ models:
+  `count_econ_models`, `count_econ_models_by_type`, `count_econ_model_assignments_by_type_by_id`,
+  `count_company_econ_models`, `count_company_econ_models_by_type`, and the generated per-type
+  `count_<type>_models` / `count_<type>_assignments_by_id`. Verified live 2026-09-29: `take` does not
+  change the count, a filter that matches nothing gives 0, and every count checked against its list
+  call agreed. A response without the header raises `ValueError` rather than reading as 0.
+- **Type-less econ-model by id**: `get_econ_model_by_id(project_id, model_id)` and
+  `get_company_econ_model_by_id(model_id)`. They return the model's header only (`id`, `name`,
+  `econModelType`, timestamps, ...), not its assumption body (verified live); use them to learn a
+  model's type, then read it with the by-type method.
+
+### Changed
+
+- The ActualOrForecast CSV fixtures are refreshed from 2026-09-29 ComboCurve exports of two projects
+  (anonymized), so the real-export round-trip test covers `Ignore Historical Production`.
+
 ## [2.3.2] - 2026-09-29
 
 ### Changed

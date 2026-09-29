@@ -172,6 +172,15 @@ class Forecasts(APIBase):
 
         return self._keysort(forecasts, LIST_SORT_ORDER)
 
+    def count_forecasts(self, project_id: str, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of forecasts in a project matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-forecasts
+        """
+        return self._count_items(self.get_forecasts_url(project_id, filters))
+
     def post_forecasts(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Creates new forecasts for a specific project id.
@@ -367,6 +376,15 @@ class Forecasts(APIBase):
         params = {'take': GET_LIMIT_OUTPUTS_ARIES}
         return self._get_items(url, params)
 
+    def count_forecast_aries(self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of ARIES forecast documents matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-aries-forecast
+        """
+        return self._count_items(self.get_forecast_aries_url(project_id, forecast_id, filters))
+
     def get_forecast_outputs(
         self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
     ) -> ItemList:
@@ -511,6 +529,17 @@ class Forecasts(APIBase):
         url = self.get_forecast_outputs_url(project_id, forecast_id, filters)
         params = {'take': GET_LIMIT_OUTPUTS_ARIES}
         return self._get_items(url, params)
+
+    def count_forecast_outputs(
+        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
+    ) -> int:
+        """
+        Returns the number of forecast outputs matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-forecast-outputs
+        """
+        return self._count_items(self.get_forecast_outputs_url(project_id, forecast_id, filters))
 
     def get_forecast_output_by_id(self, project_id: str, forecast_id: str, output_id: str) -> Item:
         """
@@ -706,6 +735,17 @@ class Forecasts(APIBase):
 
         return self._keysort(daily_volumes, _VOLUME_SORT_ORDER)
 
+    def count_forecast_daily_volumes(
+        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
+    ) -> int:
+        """
+        Returns the number of forecast daily-volume documents matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-forecast-daily-volumes
+        """
+        return self._count_items(self.get_forecast_daily_volumes_url(project_id, forecast_id, filters))
+
     def get_forecast_monthly_volumes(
         self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
     ) -> ItemList:
@@ -756,6 +796,17 @@ class Forecasts(APIBase):
         monthly_volumes = self._get_items(url, params)
 
         return self._keysort(monthly_volumes, _VOLUME_SORT_ORDER)
+
+    def count_forecast_monthly_volumes(
+        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
+    ) -> int:
+        """
+        Returns the number of forecast monthly-volume documents matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-forecast-monthly-volumes
+        """
+        return self._count_items(self.get_forecast_monthly_volumes_url(project_id, forecast_id, filters))
 
     def post_forecast_segment_parameters(
         self, project_id: str, forecast_id: str, well_id: str, phase: str, series: str, data: ItemList

@@ -81,6 +81,15 @@ class Directional(APIBase):
 
         return directional_surveys
 
+    def count_directional_surveys(self, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of directional surveys matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-directional-surveys
+        """
+        return self._count_items(self.get_directional_surveys_url(filters))
+
     def get_directional_survey_by_id(self, directional_survey_id: str) -> Item:
         """
         Returns a directional survey item from its id.

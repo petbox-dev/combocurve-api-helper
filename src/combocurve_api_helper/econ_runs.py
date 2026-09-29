@@ -129,6 +129,15 @@ class EconRuns(APIBase):
 
         return self._keysort(econruns, _ECON_RUN_SORT_ORDER, reverse=True)
 
+    def count_econ_runs(self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of econ runs in a scenario matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-econ-runs
+        """
+        return self._count_items(self.get_econ_runs_url(project_id, scenario_id) + self._build_params_string(filters))
+
     def get_econ_run_by_id(
         self, project_id: str, scenario_id: str, econ_run_id: str, add_combo_names: bool = True
     ) -> Item:
@@ -175,6 +184,35 @@ class EconRuns(APIBase):
         ]
 
         return onelines  # type: ignore[return-value]
+
+    def count_econ_run_onelines(
+        self, project_id: str, scenario_id: str, econ_run_id: str, filters: Optional[dict[str, str]] = None
+    ) -> int:
+        """
+        Returns the number of one-liners of an econ run matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-one-liners
+        """
+        return self._count_items(
+            self.get_econ_run_onelines_url(project_id, scenario_id, econ_run_id) + self._build_params_string(filters)
+        )
+
+    def count_econ_run_monthly_exports(
+        self, project_id: str, scenario_id: str, econ_run_id: str, filters: Optional[dict[str, str]] = None
+    ) -> int:
+        """
+        Returns the number of econ monthly documents of an econ run matching `filters` (the
+        collection's description of this HEAD route), from the `X-Query-Count` header of a HEAD
+        request (no documents are fetched). Creates no export, unlike `post_econ_run_monthly_export`
+        on the same path.
+
+        https://docs.api.combocurve.com/api/head-monthly-exports
+        """
+        return self._count_items(
+            self.get_econ_run_monthly_export_id_url(project_id, scenario_id, econ_run_id)
+            + self._build_params_string(filters)
+        )
 
     def get_econ_run_oneline_by_id(self, project_id: str, scenario_id: str, econ_run_id: str, oneline_id: str) -> Item:
         """

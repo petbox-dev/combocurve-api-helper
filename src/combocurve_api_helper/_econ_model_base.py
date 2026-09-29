@@ -33,6 +33,12 @@ class _EconModelMethodsBase(APIBase):
         url += self._build_params_string(filters)
         return url
 
+    def get_econ_model_by_id_url(self, project_id: str, model_id: str) -> str:
+        """
+        Returns the API url of one econ model of any type for a specific project id.
+        """
+        return f'{self.get_econ_models_url(project_id)}/{model_id}'
+
     def get_econ_models_by_type_url(
         self, project_id: str, econ_model_type: str, filters: Optional[dict[str, str]] = None
     ) -> str:
@@ -119,6 +125,30 @@ class _EconModelMethodsBase(APIBase):
 
         return self._keysort(econ_models, LIST_SORT_ORDER)
 
+    def count_econ_models(self, project_id: str, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of econ models of every type in a project matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-econ-models
+        """
+        return self._count_items(self.get_econ_models_url(project_id, filters))
+
+    def get_econ_model_by_id(self, project_id: str, model_id: str) -> Item:
+        """
+        Returns the HEADER of one econ model of any type from its id, without knowing its type:
+        `id`, `name`, `unique`, `well`, `createdBy`, `lastUpdatedBy`, `createdAt`, `updatedAt` and
+        `econModelType` -- NOT its assumption body (verified live 2026-09-29: a Capex model came back
+        without `otherCapex`). Use it to learn `econModelType`, then read the full model with
+        `get_econ_model_by_type_by_id`.
+
+        https://docs.api.combocurve.com/api/get-econ-model-by-id
+        """
+        url = self.get_econ_model_by_id_url(project_id, model_id)
+        econ_model = self._get_items(url)
+
+        return econ_model[0]
+
     def get_econ_models_by_type(
         self, project_id: str, econ_model_type: str, filters: Optional[dict[str, str]] = None
     ) -> ItemList:
@@ -132,6 +162,15 @@ class _EconModelMethodsBase(APIBase):
         econ_models = self._get_items(url, params)
 
         return self._keysort(econ_models, LIST_SORT_ORDER)
+
+    def count_econ_models_by_type(
+        self, project_id: str, econ_model_type: str, filters: Optional[dict[str, str]] = None
+    ) -> int:
+        """
+        Returns the number of econ models of `econ_model_type` in a project matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+        """
+        return self._count_items(self.get_econ_models_by_type_url(project_id, econ_model_type, filters))
 
     def get_econ_model_by_type_by_id(self, project_id: str, econ_model_type: str, model_id: str) -> Union[Item, None]:
         """
@@ -184,6 +223,19 @@ class _EconModelMethodsBase(APIBase):
             return None
 
         return assignments
+
+    def count_econ_model_assignments_by_type_by_id(
+        self, project_id: str, econ_model_type: str, model_id: str, filters: Optional[dict[str, str]] = None
+    ) -> int:
+        """
+        Returns the number of assignments of one econ model (filters: `wells`, `scenarios`) matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-econ-models-assignments-count
+        """
+        return self._count_items(
+            self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id, filters)
+        )
 
     def post_econ_model_assignments_by_type_by_id(
         self, project_id: str, econ_model_type: str, model_id: str, data: ItemList

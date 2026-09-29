@@ -108,6 +108,15 @@ class Wells(APIBase):
 
         return self._keysort(wells, WELL_LIST_SORT_ORDER)
 
+    def count_company_wells(self, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of company wells matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-wells
+        """
+        return self._count_items(self.get_company_wells_url(filters))
+
     def post_company_wells(self, data: ItemList) -> list[WriteResponse]:
         """
         Creates a list of company wells.
@@ -243,6 +252,15 @@ class Wells(APIBase):
 
         return self._keysort(wells, WELL_LIST_SORT_ORDER)
 
+    def count_project_company_wells(self, project_id: str, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of company wells in a project matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-project-company-wells
+        """
+        return self._count_items(self.get_project_company_wells_url(project_id, filters))
+
     def post_project_company_wells(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Creates a list of project company wells.
@@ -306,6 +324,15 @@ class Wells(APIBase):
         wells = self._get_items(url, params)
 
         return self._keysort(wells, WELL_LIST_SORT_ORDER)
+
+    def count_project_wells(self, project_id: str, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of project wells matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-project-wells
+        """
+        return self._count_items(self.get_project_wells_url(project_id, filters))
 
     def post_project_wells(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
@@ -440,6 +467,15 @@ class Wells(APIBase):
         well_comments = self._get_items(url, params)
 
         return self._keysort(well_comments, _WELL_COMMENT_SORT_ORDER, reverse=True)
+
+    def count_well_comments(self, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of well comments matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-well-comments
+        """
+        return self._count_items(self.get_well_comments_url(filters))
 
 
 wells_response = """

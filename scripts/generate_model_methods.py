@@ -43,6 +43,9 @@ CRUD = """
     def get_{method_base}_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "{econ_model_type}", filters)
 
+    def count_{method_base}_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "{econ_model_type}", filters)
+
     def get_{method_base}_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_by_type_by_id_url(project_id, "{econ_model_type}", model_id, filters)
@@ -68,6 +71,10 @@ ASSIGN = """
 
     def get_{method_base}_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "{econ_model_type}", model_id)
+
+    def count_{method_base}_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "{econ_model_type}", model_id, filters)
 
     def post_{method_base}_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList

@@ -21,6 +21,7 @@ def _expected_method_names() -> set[str]:
         if m['hasCrud']:
             names |= {
                 f'get_{b}_models',
+                f'count_{b}_models',
                 f'get_{b}_models_url',
                 f'get_{b}_model_by_id',
                 f'get_{b}_model_by_id_url',
@@ -31,6 +32,7 @@ def _expected_method_names() -> set[str]:
         if m['assignable']:
             names |= {
                 f'get_{b}_assignments_by_id',
+                f'count_{b}_assignments_by_id',
                 f'get_{b}_assignments_by_id_url',
                 f'post_{b}_assignments_by_id',
                 f'put_{b}_assignments_by_id',

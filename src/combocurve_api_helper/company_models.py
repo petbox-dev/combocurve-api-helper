@@ -30,6 +30,12 @@ class CompanyModels(APIBase):
         url += self._build_params_string(filters)
         return url
 
+    def get_company_econ_model_by_id_url(self, model_id: str) -> str:
+        """
+        Returns the API url of one company econ model of any type.
+        """
+        return f'{self.get_company_econ_models_url()}/{model_id}'
+
     def get_company_econ_models_by_type_url(
         self, econ_model_type: str, filters: Optional[dict[str, str]] = None
     ) -> str:
@@ -329,6 +335,30 @@ class CompanyModels(APIBase):
 
         return self._keysort(econ_models, SORT_ORDER)
 
+    def count_company_econ_models(self, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of company econ models of every type matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-company-econ-models
+        """
+        return self._count_items(self.get_company_econ_models_url(filters))
+
+    def get_company_econ_model_by_id(self, model_id: str) -> Item:
+        """
+        Returns the HEADER of one company econ model of any type from its id, without knowing its
+        type: the same fields as a `get_company_econ_models` list item (`id`, `name`, `econModelType`,
+        timestamps, ...) -- NOT its assumption body (verified live 2026-09-29: a Pricing model came back
+        without `priceModel`). Use it to learn `econModelType`, then read the full model with
+        `get_company_econ_model_by_type_by_id`.
+
+        https://docs.api.combocurve.com/api/get-company-econ-model-by-id
+        """
+        url = self.get_company_econ_model_by_id_url(model_id)
+        econ_model = self._get_items(url)
+
+        return econ_model[0]
+
     def get_company_econ_models_by_type(
         self, econ_model_type: str, filters: Optional[dict[str, str]] = None
     ) -> ItemList:
@@ -342,6 +372,13 @@ class CompanyModels(APIBase):
         econ_models = self._get_items(url, params)
 
         return self._keysort(econ_models, SORT_ORDER)
+
+    def count_company_econ_models_by_type(self, econ_model_type: str, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of company econ models of `econ_model_type` matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+        """
+        return self._count_items(self.get_company_econ_models_by_type_url(econ_model_type, filters))
 
     def get_company_econ_model_by_type_by_id(self, econ_model_type: str, model_id: str) -> Union[Item, None]:
         """

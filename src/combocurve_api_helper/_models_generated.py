@@ -23,6 +23,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_general_options_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "GeneralOptions", filters)
 
+    def count_general_options_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "GeneralOptions", filters)
+
     def get_general_options_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_by_type_by_id_url(project_id, "GeneralOptions", model_id, filters)
@@ -44,6 +47,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 
     def get_actual_forecast_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "ActualOrForecast", filters)
+
+    def count_actual_forecast_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "ActualOrForecast", filters)
 
     def get_actual_forecast_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
@@ -68,6 +74,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_actual_forecast_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "ActualOrForecast", model_id)
 
+    def count_actual_forecast_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "ActualOrForecast", model_id, filters)
+
     def post_actual_forecast_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList
     ) -> list[WriteResponse]:
@@ -90,6 +100,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 
     def get_capex_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "Capex", filters)
+
+    def count_capex_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "Capex", filters)
 
     def get_capex_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
@@ -114,6 +127,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_capex_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Capex", model_id)
 
+    def count_capex_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "Capex", model_id, filters)
+
     def post_capex_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList
     ) -> list[WriteResponse]:
@@ -136,6 +153,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 
     def get_date_settings_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "Dates", filters)
+
+    def count_date_settings_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "Dates", filters)
 
     def get_date_settings_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
@@ -160,6 +180,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_date_settings_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Dates", model_id)
 
+    def count_date_settings_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "Dates", model_id, filters)
+
     def post_date_settings_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList
     ) -> list[WriteResponse]:
@@ -182,6 +206,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 
     def get_depreciation_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "Depreciation", filters)
+
+    def count_depreciation_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "Depreciation", filters)
 
     def get_depreciation_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
@@ -206,6 +233,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_depreciation_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Depreciation", model_id)
 
+    def count_depreciation_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "Depreciation", model_id, filters)
+
     def post_depreciation_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList
     ) -> list[WriteResponse]:
@@ -228,6 +259,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 
     def get_differentials_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "Differentials", filters)
+
+    def count_differentials_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "Differentials", filters)
 
     def get_differentials_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
@@ -252,6 +286,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_differentials_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Differentials", model_id)
 
+    def count_differentials_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "Differentials", model_id, filters)
+
     def post_differentials_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList
     ) -> list[WriteResponse]:
@@ -274,6 +312,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 
     def get_emissions_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "Emission", filters)
+
+    def count_emissions_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "Emission", filters)
 
     def get_emissions_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
@@ -298,6 +339,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_emissions_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Emission", model_id)
 
+    def count_emissions_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "Emission", model_id, filters)
+
     def post_emissions_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList
     ) -> list[WriteResponse]:
@@ -320,6 +365,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 
     def get_escalations_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "Escalation", filters)
+
+    def count_escalations_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "Escalation", filters)
 
     def get_escalations_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
@@ -344,6 +392,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_escalations_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Escalation", model_id)
 
+    def count_escalations_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "Escalation", model_id, filters)
+
     def post_escalations_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList
     ) -> list[WriteResponse]:
@@ -366,6 +418,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 
     def get_expenses_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "Expenses", filters)
+
+    def count_expenses_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "Expenses", filters)
 
     def get_expenses_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
@@ -390,6 +445,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_expenses_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Expenses", model_id)
 
+    def count_expenses_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "Expenses", model_id, filters)
+
     def post_expenses_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList
     ) -> list[WriteResponse]:
@@ -412,6 +471,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 
     def get_fluid_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "FluidModel", filters)
+
+    def count_fluid_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "FluidModel", filters)
 
     def get_fluid_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
@@ -436,6 +498,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_fluid_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "FluidModel", model_id)
 
+    def count_fluid_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "FluidModel", model_id, filters)
+
     def post_fluid_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList
     ) -> list[WriteResponse]:
@@ -458,6 +524,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 
     def get_operations_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "Operations", filters)
+
+    def count_operations_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "Operations", filters)
 
     def get_operations_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
@@ -482,6 +551,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_operations_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Operations", model_id)
 
+    def count_operations_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "Operations", model_id, filters)
+
     def post_operations_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList
     ) -> list[WriteResponse]:
@@ -504,6 +577,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 
     def get_ownership_reversions_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "OwnershipReversion", filters)
+
+    def count_ownership_reversions_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "OwnershipReversion", filters)
 
     def get_ownership_reversions_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
@@ -528,6 +604,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "OwnershipReversion", model_id)
 
+    def count_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "OwnershipReversion", model_id, filters)
+
     def post_ownership_reversions_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList
     ) -> list[WriteResponse]:
@@ -550,6 +630,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 
     def get_pricing_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "Pricing", filters)
+
+    def count_pricing_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "Pricing", filters)
 
     def get_pricing_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
@@ -574,6 +657,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_pricing_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Pricing", model_id)
 
+    def count_pricing_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "Pricing", model_id, filters)
+
     def post_pricing_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList
     ) -> list[WriteResponse]:
@@ -596,6 +683,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 
     def get_production_taxes_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "ProductionTaxes", filters)
+
+    def count_production_taxes_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "ProductionTaxes", filters)
 
     def get_production_taxes_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
@@ -620,6 +710,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_production_taxes_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "ProductionTaxes", model_id)
 
+    def count_production_taxes_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "ProductionTaxes", model_id, filters)
+
     def post_production_taxes_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList
     ) -> list[WriteResponse]:
@@ -642,6 +736,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 
     def get_reserves_categories_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "ReservesCategory", filters)
+
+    def count_reserves_categories_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "ReservesCategory", filters)
 
     def get_reserves_categories_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
@@ -666,6 +763,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_reserves_categories_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "ReservesCategory", model_id)
 
+    def count_reserves_categories_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "ReservesCategory", model_id, filters)
+
     def post_reserves_categories_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList
     ) -> list[WriteResponse]:
@@ -688,6 +789,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 
     def get_riskings_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "Risking", filters)
+
+    def count_riskings_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "Risking", filters)
 
     def get_riskings_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
@@ -712,6 +816,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_riskings_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "Risking", model_id)
 
+    def count_riskings_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "Risking", model_id, filters)
+
     def post_riskings_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList
     ) -> list[WriteResponse]:
@@ -735,6 +843,9 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
     def get_stream_properties_models(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
         return self.get_econ_models_by_type(project_id, "StreamProperties", filters)
 
+    def count_stream_properties_models(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_models_by_type(project_id, "StreamProperties", filters)
+
     def get_stream_properties_model_by_id_url(self, project_id: str, model_id: str,
                                 filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_by_type_by_id_url(project_id, "StreamProperties", model_id, filters)
@@ -757,6 +868,10 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
 
     def get_stream_properties_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
         return self.get_econ_model_assignments_by_type_by_id(project_id, "StreamProperties", model_id)
+
+    def count_stream_properties_assignments_by_id(self, project_id: str, model_id: str,
+                                        filters: dict[str, str] | None = None) -> int:
+        return self.count_econ_model_assignments_by_type_by_id(project_id, "StreamProperties", model_id, filters)
 
     def post_stream_properties_assignments_by_id(
         self, project_id: str, model_id: str, data: ItemList

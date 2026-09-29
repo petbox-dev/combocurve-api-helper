@@ -128,6 +128,15 @@ class Scenarios(APIBase):
 
         return self._keysort(scenarios, LIST_SORT_ORDER)
 
+    def count_scenarios(self, project_id: str, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of scenarios in a project matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-scenarios
+        """
+        return self._count_items(self.get_scenarios_url(project_id, filters))
+
     def post_scenarios(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
         Creates scenarios for a specific project id.
@@ -206,6 +215,15 @@ class Scenarios(APIBase):
         url = self.get_scenario_combos_url(project_id, scenario_id)
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
+
+    def count_scenario_combos(self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of combos in a scenario matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-scenario-combos-count
+        """
+        return self._count_items(self.get_scenario_combos_url(project_id, scenario_id, filters))
 
     def post_scenario_combos(self, project_id: str, scenario_id: str, data: ItemList) -> list[WriteResponse]:
         """
@@ -415,6 +433,15 @@ class Scenarios(APIBase):
         url = self.get_scenario_lookup_tables_url(project_id, filters)
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
+
+    def count_scenario_lookup_tables(self, project_id: str, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of scenario lookup tables matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-scenario-lookup-tables
+        """
+        return self._count_items(self.get_scenario_lookup_tables_url(project_id, filters))
 
     def get_scenario_lookup_table_by_id(self, project_id: str, lookup_table_id: str) -> Item:
         """

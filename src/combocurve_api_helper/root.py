@@ -204,6 +204,15 @@ class Root(APIBase):
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
 
+    def count_tags(self, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of tags matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-tags
+        """
+        return self._count_items(self.get_tags_url(filters))
+
     def get_root_econ_runs(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of econ runs.
@@ -213,6 +222,15 @@ class Root(APIBase):
         url = self.get_root_econ_runs_url(filters)
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
+
+    def count_root_econ_runs(self, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of econ runs across the company matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-root-econ-runs
+        """
+        return self._count_items(self.get_root_econ_runs_url(filters))
 
     def get_root_econ_run_by_id(self, id: str) -> Item:
         """
@@ -241,6 +259,15 @@ class Root(APIBase):
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
 
+    def count_root_forecast_daily_volumes(self, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of forecast daily-volume documents matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-root-forecast-daily-volumes
+        """
+        return self._count_items(self.get_root_forecast_daily_volumes_url(filters))
+
     def get_root_forecast_monthly_volumes(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
         Returns a list of monthly volumes.
@@ -257,6 +284,15 @@ class Root(APIBase):
         url = self.get_root_forecast_monthly_volumes_url(_require_volume_scope(filters))
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
+
+    def count_root_forecast_monthly_volumes(self, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of forecast monthly-volume documents matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-root-forecast-monthly-volumes
+        """
+        return self._count_items(self.get_root_forecast_monthly_volumes_url(filters))
 
     def get_users_roles(self) -> ItemList:
         """

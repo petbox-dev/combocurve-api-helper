@@ -45,6 +45,15 @@ class OwnershipQualifiers(APIBase):
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
 
+    def count_ownership_qualifiers(self, filters: Optional[dict[str, str]] = None) -> int:
+        """
+        Returns the number of ownership qualifiers matching `filters`, from the
+        `X-Query-Count` header of a HEAD request (no documents are fetched).
+
+        https://docs.api.combocurve.com/api/head-ownership-qualifiers
+        """
+        return self._count_items(self.get_ownership_qualifiers_url(filters))
+
     def get_ownership_qualifier_by_id(self, ownership_qualifier_id: str) -> Item:
         """
         Returns a specific ownership qualifier from its id.
