@@ -50,6 +50,20 @@ IGNORE_HISTORY: dict[str, Any] = {
     'actualOrForecast': {'ignoreHistoryProd': True},
 }
 
+FORECAST_ONLY_IGNORE_HIST_PROD: dict[str, Any] = {
+    'id': '000000000000000000000014',
+    'name': 'Forecast Only',
+    'unique': False,
+    'createdAt': '2024-12-09T22:16:39.000Z',
+    'updatedAt': '2024-12-09T22:16:39.000Z',
+    'econModelType': 'ActualOrForecast',
+    # Verified live 2026-09-29 against the ComboCurve screen: all three rows read "Ignore Hist Prod".
+    'actualOrForecast': {
+        'ignoreHistoryProd': False,
+        'replaceActualWithForecast': {'oil': {}, 'gas': {}, 'water': {}},
+    },
+}
+
 FORECAST_JULY_24: dict[str, Any] = {
     'id': '000000000000000000000013',
     'name': "Forecast July '24",
@@ -129,12 +143,12 @@ def test_forward_empty_forecast_as_of_model_is_as_of_date() -> None:
         assert r['Value'] == ''
 
 
-def test_forward_ignore_history_prod_only_is_never() -> None:
+def test_forward_model_level_ignore_history_flag_is_ignore_hist_prod() -> None:
     # actualOrForecast carries ONLY ignoreHistoryProd (no replaceActualWithForecast
-    # at all); a non-built-in model name still defaults to Never.
+    # at all); the flag reads as Ignore Hist Prod on every phase.
     rows = ActualOrForecastMapper().to_row_dicts(IGNORE_HISTORY)
     for r in rows:
-        assert r['Criteria'] == 'Never'
+        assert r['Criteria'] == 'Ignore Hist Prod'
         assert r['Value'] == ''
 
 
@@ -186,16 +200,63 @@ def test_roundtrip_date_switch_reconstructs_explicit_shape() -> None:
 
 
 def test_roundtrip_all_never_collapses_to_empty_default_shape() -> None:
-    # documented limitation: ignoreHistoryProd has no CSV column and is NOT
-    # recoverable -- both the legacy `{}` shape and an explicit modern
-    # {"never": true}-per-phase shape render identical CSV rows, and the inverse
-    # always reconstructs the real API's `{}` default, not the explicit form.
+    # Both the legacy `{}` shape and an explicit modern {"never": true}-per-phase shape
+    # render identical CSV rows, and the inverse always reconstructs the real API's `{}`
+    # default, not the explicit form.
     m = ActualOrForecastMapper()
-    for source in (ACTUAL_LEGACY_EMPTY, ACTUAL_MODERN_EXPLICIT, IGNORE_HISTORY):
+    for source in (ACTUAL_LEGACY_EMPTY, ACTUAL_MODERN_EXPLICIT):
         rows = m.to_row_dicts(source)
         rebuilt = m.from_row_dicts(rows)
         assert rebuilt['actualOrForecast'] == {}, source['name']
         assert _no_timestamp(m.to_row_dicts(rebuilt)) == _no_timestamp(rows)
+
+
+def test_roundtrip_model_level_ignore_flag_rebuilds_to_empty_phase_nodes() -> None:
+    m = ActualOrForecastMapper()
+    rows = m.to_row_dicts(IGNORE_HISTORY)
+    rebuilt = m.from_row_dicts(rows)
+    assert rebuilt['actualOrForecast'] == {
+        'ignoreHistoryProd': False,
+        'replaceActualWithForecast': {'oil': {}, 'gas': {}, 'water': {}},
+    }
+    assert _no_timestamp(m.to_row_dicts(rebuilt)) == _no_timestamp(rows)
+
+
+def test_forward_empty_phase_node_under_present_key_is_ignore_hist_prod() -> None:
+    rows = ActualOrForecastMapper().to_row_dicts(FORECAST_ONLY_IGNORE_HIST_PROD)
+    assert [r['Key'] for r in rows] == ['oil', 'gas', 'water']
+    for r in rows:
+        assert r['Criteria'] == 'Ignore Hist Prod'
+        assert r['Value'] == ''
+
+
+def test_roundtrip_ignore_hist_prod_reconstructs_empty_phase_nodes() -> None:
+    m = ActualOrForecastMapper()
+    rows = m.to_row_dicts(FORECAST_ONLY_IGNORE_HIST_PROD)
+    rebuilt = m.from_row_dicts(rows)
+    assert rebuilt['actualOrForecast'] == FORECAST_ONLY_IGNORE_HIST_PROD['actualOrForecast']
+    assert _no_timestamp(m.to_row_dicts(rebuilt)) == _no_timestamp(rows)
+
+
+def test_roundtrip_mixed_ignore_hist_prod_and_explicit_phases() -> None:
+    model: dict[str, Any] = {
+        'name': 'Mixed Ignore',
+        'unique': False,
+        'actualOrForecast': {
+            'ignoreHistoryProd': False,
+            'replaceActualWithForecast': {
+                'oil': {},
+                'gas': {'never': True},
+                'water': {'asOfDate': True},
+            },
+        },
+    }
+    m = ActualOrForecastMapper()
+    by_key = {r['Key']: r for r in m.to_row_dicts(model)}
+    assert by_key['oil']['Criteria'] == 'Ignore Hist Prod'
+    assert by_key['gas']['Criteria'] == 'Never'
+    assert by_key['water']['Criteria'] == 'As of Date'
+    assert m.from_row_dicts(m.to_row_dicts(model))['actualOrForecast'] == model['actualOrForecast']
 
 
 def test_roundtrip_forecast_as_of_all_never_does_not_collapse_to_empty() -> None:
@@ -274,16 +335,36 @@ def test_roundtrip_unique_model_type() -> None:
     assert rebuilt['unique'] is True
 
 
-def test_ignore_history_prod_dropped_and_not_recoverable() -> None:
-    # {} and {"ignoreHistoryProd": true} render IDENTICAL CSV rows -- the flag is
-    # unrecoverable from the CSV round trip. This is documented, not a bug.
+def test_model_level_flag_reads_differently_from_legacy_empty_node() -> None:
+    # Whole-node `{}` (legacy Never) and `{"ignoreHistoryProd": true}` (Ignore Hist Prod)
+    # now render DIFFERENT rows.
     m = ActualOrForecastMapper()
     empty_rows = m.to_row_dicts(dict(ACTUAL_LEGACY_EMPTY, name='X'))
     flagged_rows = m.to_row_dicts(dict(ACTUAL_LEGACY_EMPTY, name='X', actualOrForecast={'ignoreHistoryProd': True}))
-    assert empty_rows == flagged_rows
-    rebuilt_empty = m.from_row_dicts(empty_rows)
-    rebuilt_flagged = m.from_row_dicts(flagged_rows)
-    assert rebuilt_empty == rebuilt_flagged
+    assert empty_rows != flagged_rows
+    assert {r['Criteria'] for r in empty_rows} == {'Never'}
+    assert {r['Criteria'] for r in flagged_rows} == {'Ignore Hist Prod'}
+
+
+def test_explicit_node_model_flag_value_is_not_recoverable() -> None:
+    # What is still unrecoverable: the flag itself (no CSV column). A flag-True model reads as
+    # Ignore Hist Prod on every phase and reconstructs with the flag False and empty phase nodes.
+    m = ActualOrForecastMapper()
+    phases = {'oil': {'never': True}, 'gas': {'never': True}, 'water': {'never': True}}
+    flag_false = dict(
+        ACTUAL_MODERN_EXPLICIT,
+        actualOrForecast={'ignoreHistoryProd': False, 'replaceActualWithForecast': phases},
+    )
+    flag_true = dict(
+        ACTUAL_MODERN_EXPLICIT,
+        actualOrForecast={'ignoreHistoryProd': True, 'replaceActualWithForecast': phases},
+    )
+    rows_false = m.to_row_dicts(flag_false)
+    rows_true = m.to_row_dicts(flag_true)
+    # The model-level flag wins over explicit nodes in the forward pass.
+    assert {r['Criteria'] for r in rows_false} == {'Never'}
+    assert {r['Criteria'] for r in rows_true} == {'Ignore Hist Prod'}
+    assert m.from_row_dicts(rows_true)['actualOrForecast']['ignoreHistoryProd'] is False
 
 
 def test_unknown_criteria_on_from_row_dicts_raises() -> None:

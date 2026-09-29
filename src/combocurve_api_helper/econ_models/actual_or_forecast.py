@@ -18,6 +18,7 @@ _MODEL_NAME_FORECAST_AS_OF = 'Forecast As Of'
 _CRITERIA_DATE = 'Date'
 _CRITERIA_NEVER = 'Never'
 _CRITERIA_AS_OF_DATE = 'As of Date'
+_CRITERIA_IGNORE_HIST_PROD = 'Ignore Hist Prod'
 
 
 class PhaseSwitchData(BaseModel):
@@ -34,11 +35,12 @@ class PhaseSwitchData(BaseModel):
     - `{"asOfDate": true}` -- switch as of the project's Dates-settings "As of Date"
       (explicit modern form of the built-in 'Forecast As Of' model's default).
 
-    A genuinely empty node (`{}`), or the phase key entirely absent from
-    `replaceActualWithForecast`, or `replaceActualWithForecast` itself absent (whole
-    `actualOrForecast` == `{}` or only carries `ignoreHistoryProd`) is the
-    legacy/unset representation and is resolved by `_phase_criteria` via the fixed
-    model name instead. `extra='forbid'` so any future/unrecognized key raises
+    An empty node (`{}`) under a PRESENT `replaceActualWithForecast` key is
+    "Ignore Hist Prod" and is handled by the mapper before validation. The phase key
+    entirely absent from `replaceActualWithForecast`, or `replaceActualWithForecast`
+    itself absent (whole `actualOrForecast` == `{}`) is the legacy/unset
+    representation and is resolved by `_phase_criteria` via the fixed model name
+    instead. `extra='forbid'` so any future/unrecognized key raises
     loudly (converted to `NotImplementedError` by the mapper) rather than being
     silently dropped.
     """
@@ -57,12 +59,13 @@ def _phase_criteria(data: PhaseSwitchData, model_name: str) -> tuple[str, str]:
         return _CRITERIA_NEVER, ''
     if data.as_of_date is True:
         return _CRITERIA_AS_OF_DATE, ''
-    # No explicit marker -- legacy `{}`/absent-phase representation. CC's front end
-    # resolves this via the model's fixed, non-deletable built-in name: 'Forecast As Of'
-    # always means "replace with forecast as of the project's As Of Date" even when
-    # unmigrated/empty; every other model (including the other built-in, 'Actual', and
-    # ordinary user-created models such as 'Ignore History' whose `actualOrForecast`
-    # carries only `ignoreHistoryProd`) defaults to Never.
+    # No explicit marker -- legacy whole-node `{}` / absent-phase representation (the
+    # caller has already routed an empty node under a present `replaceActualWithForecast`
+    # key, and the model-level `ignoreHistoryProd` flag, to "Ignore Hist Prod"). CC's
+    # front end resolves this via the model's fixed, non-deletable built-in name:
+    # 'Forecast As Of' always means "replace with forecast as of the project's As Of
+    # Date" even when unmigrated/empty; every other model (including the other built-in,
+    # 'Actual') defaults to Never, matching CC's "no model applied defaults to Never".
     if model_name == _MODEL_NAME_FORECAST_AS_OF:
         return _CRITERIA_AS_OF_DATE, ''
     return _CRITERIA_NEVER, ''
@@ -79,14 +82,25 @@ class ActualOrForecastMapper(EconModelMapper):
         rwf = aof.get('replaceActualWithForecast') or {}
 
         rows: list[dict[str, str]] = []
+        ignore_history_flag = bool(aof.get('ignoreHistoryProd'))
+        has_phase_nodes = 'replaceActualWithForecast' in aof
         for phase in _PHASES:
-            try:
-                data = PhaseSwitchData.model_validate(rwf.get(phase) or {})
-            except ValidationError as e:
-                raise NotImplementedError(
-                    f'Unknown ActualOrForecast replaceActualWithForecast[{phase!r}] shape: {rwf.get(phase)!r}'
-                ) from e
-            criteria, value = _phase_criteria(data, model_name)
+            node = rwf.get(phase)
+            if ignore_history_flag or (has_phase_nodes and node == {}):
+                # Verified live 2026-09-29: a phase whose ComboCurve screen reads "Ignore Hist Prod"
+                # arrives as an EMPTY node under a present `replaceActualWithForecast` key. The
+                # model-level `ignoreHistoryProd` flag is the older spelling of the same choice
+                # (tooltip: "Ignore Hist Prod = Yes"); that half is read from the field name, not
+                # screen-verified.
+                criteria, value = _CRITERIA_IGNORE_HIST_PROD, ''
+            else:
+                try:
+                    data = PhaseSwitchData.model_validate(node or {})
+                except ValidationError as e:
+                    raise NotImplementedError(
+                        f'Unknown ActualOrForecast replaceActualWithForecast[{phase!r}] shape: {node!r}'
+                    ) from e
+                criteria, value = _phase_criteria(data, model_name)
             row = dict(common)
             row.update(
                 {
@@ -124,15 +138,20 @@ class ActualOrForecastMapper(EconModelMapper):
                 phase_shapes[phase] = {'never': True}
             elif criteria == _CRITERIA_AS_OF_DATE:
                 phase_shapes[phase] = {'asOfDate': True}
+            elif criteria == _CRITERIA_IGNORE_HIST_PROD:
+                phase_shapes[phase] = {}
             else:
                 raise NotImplementedError(f'Unknown ActualOrForecast Criteria: {criteria!r}')
 
         all_never = all(by_phase[p]['Criteria'] == _CRITERIA_NEVER for p in _PHASES)
-        # `ignoreHistoryProd` has NO CSV column: it is dropped on the forward
-        # (API->CSV) pass and is NOT recoverable here -- documented limitation. Two
-        # real models differing only by `ignoreHistoryProd` (e.g. `{}` vs
-        # `{"ignoreHistoryProd": true}`) render identical CSV rows and reconstruct
-        # to the same shape below.
+        # `ignoreHistoryProd` has NO CSV column: its true/false value is dropped on the
+        # forward (API->CSV) pass and is NOT recoverable here -- documented limitation.
+        # `{}` (Never) and `{"ignoreHistoryProd": true}` (Ignore Hist Prod) now render
+        # different rows; what is still unrecoverable is the flag's true/false value on
+        # an explicit-node model (both reconstruct to `ignoreHistoryProd: False`).
+        # A model with any Ignore Hist Prod phase reconstructs to the explicit form below,
+        # with `{}` on those phases (the per-phase `{}` is distinct from the legacy
+        # whole-node `{}`).
         #
         # When every phase is Never AND the model is not the built-in
         # 'Forecast As Of', reproduce CC's real legacy/default empty shape

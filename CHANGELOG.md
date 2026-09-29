@@ -5,6 +5,23 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.2] - 2026-09-29
+
+### Fixed
+
+- **`ActualOrForecast` converter read "Ignore Hist Prod" as "Never", the opposite meaning.** ComboCurve
+  has four per-phase choices (Never, Ignore Hist Prod, As Of Date, Date) but the v1 API has explicit
+  keys for only three. A phase set to "Ignore Hist Prod" arrives as an EMPTY per-phase node under a
+  PRESENT `replaceActualWithForecast` key (`{'oil': {}, 'gas': {}, 'water': {}}`), which the converter
+  resolved by model name to `Never` (keep actuals) instead of ignoring history (verified live
+  2026-09-29 against the ComboCurve screen). An empty phase node under a present key now exports as
+  `Ignore Hist Prod`, and the older model-level `ignoreHistoryProd: true` flag is now read the same
+  way (inferred from the field name and ComboCurve's tooltip, not screen-verified). `from_row_dicts`
+  reconstructs `Ignore Hist Prod` as an empty phase node. New CSV `Criteria` value `Ignore Hist Prod`:
+  consumers that switch on `Criteria` must handle it. Unchanged: the legacy whole-node
+  `actualOrForecast == {}` (no `replaceActualWithForecast` key) still resolves by model name
+  (`Forecast As Of` -> As of Date, otherwise Never).
+
 ## [2.3.1] - 2026-09-17
 
 ### Fixed
