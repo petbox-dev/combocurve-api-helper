@@ -199,7 +199,7 @@ class Directional(APIBase):
 
         Example data:
         {
-            "spatialDataType": "WGS84",
+            "spatialDataType": "NAD83",
             "dataSource": "string",
             "update": {
                 "measuredDepth": [

@@ -122,7 +122,7 @@ class TypeCurves(APIBase):
                 "fits": {
                     "gas": {
                         "align": true,
-                        "resolution": "daily",
+                        "resolution": "monthly",
                         "normalize": true,
                         "best": {
                             "segments": [
@@ -136,7 +136,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "linear",
+                                    "segmentType": "exp_dec",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -157,7 +157,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "exp_inc",
+                                    "segmentType": "empty",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -178,7 +178,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "empty",
+                                    "segmentType": "arps_inc",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -199,7 +199,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "empty",
+                                    "segmentType": "arps_inc",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -222,7 +222,7 @@ class TypeCurves(APIBase):
                                         "realizedDSwEffSec": 123.45,
                                         "targetDSwEffSec": 123.45,
                                         "segmentIndex": 123,
-                                        "segmentType": "exp_inc",
+                                        "segmentType": "linear",
                                         "startDate": "2020-01-01",
                                         "swDate": "2020-01-01",
                                         "slope": 123.45,
@@ -244,7 +244,7 @@ class TypeCurves(APIBase):
                                         "realizedDSwEffSec": 123.45,
                                         "targetDSwEffSec": 123.45,
                                         "segmentIndex": 123,
-                                        "segmentType": "linear",
+                                        "segmentType": "arps",
                                         "startDate": "2020-01-01",
                                         "swDate": "2020-01-01",
                                         "slope": 123.45,
@@ -252,7 +252,7 @@ class TypeCurves(APIBase):
                                         "qSw": 123.45
                                     }
                                 ],
-                                "basePhase": "water"
+                                "basePhase": "oil"
                             },
                             "p50": {
                                 "segments": [
@@ -274,7 +274,7 @@ class TypeCurves(APIBase):
                                         "qSw": 123.45
                                     }
                                 ],
-                                "basePhase": "oil"
+                                "basePhase": "water"
                             },
                             "p90": {
                                 "segments": [
@@ -288,7 +288,7 @@ class TypeCurves(APIBase):
                                         "realizedDSwEffSec": 123.45,
                                         "targetDSwEffSec": 123.45,
                                         "segmentIndex": 123,
-                                        "segmentType": "arps_modified",
+                                        "segmentType": "exp_dec",
                                         "startDate": "2020-01-01",
                                         "swDate": "2020-01-01",
                                         "slope": 123.45,
@@ -296,20 +296,20 @@ class TypeCurves(APIBase):
                                         "qSw": 123.45
                                     }
                                 ],
-                                "basePhase": "water"
+                                "basePhase": "gas"
                             }
                         },
                         "normalizations": {
                             "perfLateralLength": 123.45,
                             "normalizationType": "eur_and_q_peak",
                             "eur": {
-                                "type": "1_to_1",
+                                "type": "no_normalization",
                                 "slope": 123.45,
                                 "intercept": 123.45,
                                 "coefficient": 123.45,
                                 "exponent": 123.45,
-                                "base": "fluid/pll/hz",
-                                "selectedNumericalTarget": "cum_mmcfge",
+                                "base": "prop/pll/hz",
+                                "selectedNumericalTarget": "custom_number_15",
                                 "target": {
                                     "eur": 123.45,
                                     "acre_spacing": 123.45,
@@ -463,13 +463,13 @@ class TypeCurves(APIBase):
                                 }
                             },
                             "peak": {
-                                "type": "1_to_1",
+                                "type": "linear",
                                 "slope": 123.45,
                                 "intercept": 123.45,
                                 "coefficient": 123.45,
                                 "exponent": 123.45,
-                                "base": "fluid/acre",
-                                "selectedNumericalTarget": "cum_water",
+                                "base": "prop/pll_eur/pll",
+                                "selectedNumericalTarget": "refrac_stage_count",
                                 "target": {
                                     "eur": 123.45,
                                     "acre_spacing": 123.45,
@@ -626,7 +626,7 @@ class TypeCurves(APIBase):
                     },
                     "oil": {
                         "align": true,
-                        "resolution": "daily",
+                        "resolution": "monthly",
                         "normalize": true,
                         "best": {
                             "segments": [
@@ -640,7 +640,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "flat",
+                                    "segmentType": "arps_modified",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -661,7 +661,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "linear",
+                                    "segmentType": "arps_inc",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -682,7 +682,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "linear",
+                                    "segmentType": "arps_inc",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -703,7 +703,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "arps",
+                                    "segmentType": "linear",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -734,7 +734,7 @@ class TypeCurves(APIBase):
                                         "qSw": 123.45
                                     }
                                 ],
-                                "basePhase": "water"
+                                "basePhase": "gas"
                             },
                             "p10": {
                                 "segments": [
@@ -748,7 +748,7 @@ class TypeCurves(APIBase):
                                         "realizedDSwEffSec": 123.45,
                                         "targetDSwEffSec": 123.45,
                                         "segmentIndex": 123,
-                                        "segmentType": "arps",
+                                        "segmentType": "empty",
                                         "startDate": "2020-01-01",
                                         "swDate": "2020-01-01",
                                         "slope": 123.45,
@@ -756,7 +756,7 @@ class TypeCurves(APIBase):
                                         "qSw": 123.45
                                     }
                                 ],
-                                "basePhase": "gas"
+                                "basePhase": "water"
                             },
                             "p50": {
                                 "segments": [
@@ -792,7 +792,7 @@ class TypeCurves(APIBase):
                                         "realizedDSwEffSec": 123.45,
                                         "targetDSwEffSec": 123.45,
                                         "segmentIndex": 123,
-                                        "segmentType": "flat",
+                                        "segmentType": "exp_dec",
                                         "startDate": "2020-01-01",
                                         "swDate": "2020-01-01",
                                         "slope": 123.45,
@@ -805,15 +805,15 @@ class TypeCurves(APIBase):
                         },
                         "normalizations": {
                             "perfLateralLength": 123.45,
-                            "normalizationType": "eur",
+                            "normalizationType": "eur_and_q_peak",
                             "eur": {
                                 "type": "power_law_fit",
                                 "slope": 123.45,
                                 "intercept": 123.45,
                                 "coefficient": 123.45,
                                 "exponent": 123.45,
-                                "base": "prop/pll_eur/pll",
-                                "selectedNumericalTarget": "vt_well_spacing_any_zone",
+                                "base": "fluid/pll_eur/pll",
+                                "selectedNumericalTarget": "first_additive_volume",
                                 "target": {
                                     "eur": 123.45,
                                     "acre_spacing": 123.45,
@@ -967,13 +967,13 @@ class TypeCurves(APIBase):
                                 }
                             },
                             "peak": {
-                                "type": "power_law_fit",
+                                "type": "1_to_1",
                                 "slope": 123.45,
                                 "intercept": 123.45,
                                 "coefficient": 123.45,
                                 "exponent": 123.45,
-                                "base": "fluid/acre",
-                                "selectedNumericalTarget": "refrac_stage_count",
+                                "base": "prop/pll_eur/pll",
+                                "selectedNumericalTarget": "matrix_permeability",
                                 "target": {
                                     "eur": 123.45,
                                     "acre_spacing": 123.45,
@@ -1144,7 +1144,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "exp_inc",
+                                    "segmentType": "arps_modified",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -1165,7 +1165,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "exp_dec",
+                                    "segmentType": "flat",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -1186,7 +1186,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "flat",
+                                    "segmentType": "arps",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -1207,7 +1207,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "arps_inc",
+                                    "segmentType": "exp_dec",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -1230,7 +1230,7 @@ class TypeCurves(APIBase):
                                         "realizedDSwEffSec": 123.45,
                                         "targetDSwEffSec": 123.45,
                                         "segmentIndex": 123,
-                                        "segmentType": "arps_inc",
+                                        "segmentType": "arps_modified",
                                         "startDate": "2020-01-01",
                                         "swDate": "2020-01-01",
                                         "slope": 123.45,
@@ -1238,7 +1238,7 @@ class TypeCurves(APIBase):
                                         "qSw": 123.45
                                     }
                                 ],
-                                "basePhase": "gas"
+                                "basePhase": "water"
                             },
                             "p10": {
                                 "segments": [
@@ -1252,7 +1252,7 @@ class TypeCurves(APIBase):
                                         "realizedDSwEffSec": 123.45,
                                         "targetDSwEffSec": 123.45,
                                         "segmentIndex": 123,
-                                        "segmentType": "arps_modified",
+                                        "segmentType": "exp_inc",
                                         "startDate": "2020-01-01",
                                         "swDate": "2020-01-01",
                                         "slope": 123.45,
@@ -1260,7 +1260,7 @@ class TypeCurves(APIBase):
                                         "qSw": 123.45
                                     }
                                 ],
-                                "basePhase": "oil"
+                                "basePhase": "water"
                             },
                             "p50": {
                                 "segments": [
@@ -1274,7 +1274,7 @@ class TypeCurves(APIBase):
                                         "realizedDSwEffSec": 123.45,
                                         "targetDSwEffSec": 123.45,
                                         "segmentIndex": 123,
-                                        "segmentType": "flat",
+                                        "segmentType": "arps_modified",
                                         "startDate": "2020-01-01",
                                         "swDate": "2020-01-01",
                                         "slope": 123.45,
@@ -1282,7 +1282,7 @@ class TypeCurves(APIBase):
                                         "qSw": 123.45
                                     }
                                 ],
-                                "basePhase": "oil"
+                                "basePhase": "water"
                             },
                             "p90": {
                                 "segments": [
@@ -1296,7 +1296,7 @@ class TypeCurves(APIBase):
                                         "realizedDSwEffSec": 123.45,
                                         "targetDSwEffSec": 123.45,
                                         "segmentIndex": 123,
-                                        "segmentType": "arps_modified",
+                                        "segmentType": "arps",
                                         "startDate": "2020-01-01",
                                         "swDate": "2020-01-01",
                                         "slope": 123.45,
@@ -1309,15 +1309,15 @@ class TypeCurves(APIBase):
                         },
                         "normalizations": {
                             "perfLateralLength": 123.45,
-                            "normalizationType": "eur_and_q_peak",
+                            "normalizationType": "eur",
                             "eur": {
                                 "type": "power_law_fit",
                                 "slope": 123.45,
                                 "intercept": 123.45,
                                 "coefficient": 123.45,
                                 "exponent": 123.45,
-                                "base": "eur_pll",
-                                "selectedNumericalTarget": "cum_mmcfge",
+                                "base": "fluid/pll/hz",
+                                "selectedNumericalTarget": "refrac_additive_volume",
                                 "target": {
                                     "eur": 123.45,
                                     "acre_spacing": 123.45,
@@ -1476,8 +1476,8 @@ class TypeCurves(APIBase):
                                 "intercept": 123.45,
                                 "coefficient": 123.45,
                                 "exponent": 123.45,
-                                "base": "prop/pll/hz",
-                                "selectedNumericalTarget": "total_proppant_per_perforated_interval",
+                                "base": "eur_pll",
+                                "selectedNumericalTarget": "last_month_oil_per_perforated_interval",
                                 "target": {
                                     "eur": 123.45,
                                     "acre_spacing": 123.45,
@@ -1638,7 +1638,7 @@ class TypeCurves(APIBase):
                 "name": "Example",
                 "updatedAt": "2020-01-01",
                 "createdAt": "2020-01-01",
-                "regressionType": "cum",
+                "regressionType": "rate",
                 "wells": [
                     "string"
                 ]
@@ -1662,7 +1662,7 @@ class TypeCurves(APIBase):
             "fits": {
                 "gas": {
                     "align": true,
-                    "resolution": "daily",
+                    "resolution": "monthly",
                     "normalize": true,
                     "best": {
                         "segments": [
@@ -1676,7 +1676,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "arps",
+                                "segmentType": "arps_modified",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -1697,7 +1697,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "empty",
+                                "segmentType": "exp_dec",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -1718,7 +1718,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "arps",
+                                "segmentType": "exp_inc",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -1739,7 +1739,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "linear",
+                                "segmentType": "arps_modified",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -1748,7 +1748,7 @@ class TypeCurves(APIBase):
                             }
                         ]
                     },
-                    "type": "rate",
+                    "type": "ratio",
                     "ratio": {
                         "best": {
                             "segments": [
@@ -1762,7 +1762,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "flat",
+                                    "segmentType": "arps",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -1792,7 +1792,7 @@ class TypeCurves(APIBase):
                                     "qSw": 123.45
                                 }
                             ],
-                            "basePhase": "oil"
+                            "basePhase": "water"
                         },
                         "p50": {
                             "segments": [
@@ -1806,7 +1806,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "empty",
+                                    "segmentType": "flat",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -1828,7 +1828,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "empty",
+                                    "segmentType": "arps_modified",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -1836,20 +1836,20 @@ class TypeCurves(APIBase):
                                     "qSw": 123.45
                                 }
                             ],
-                            "basePhase": "gas"
+                            "basePhase": "oil"
                         }
                     },
                     "normalizations": {
                         "perfLateralLength": 123.45,
                         "normalizationType": "eur_and_q_peak",
                         "eur": {
-                            "type": "linear",
+                            "type": "no_normalization",
                             "slope": 123.45,
                             "intercept": 123.45,
                             "coefficient": 123.45,
                             "exponent": 123.45,
-                            "base": "peak_pll",
-                            "selectedNumericalTarget": "first_6_water_per_perforated_interval",
+                            "base": "prop/pll/hz",
+                            "selectedNumericalTarget": "cum_mmcfge",
                             "target": {
                                 "eur": 123.45,
                                 "acre_spacing": 123.45,
@@ -2003,13 +2003,13 @@ class TypeCurves(APIBase):
                             }
                         },
                         "peak": {
-                            "type": "power_law_fit",
+                            "type": "1_to_1",
                             "slope": 123.45,
                             "intercept": 123.45,
                             "coefficient": 123.45,
                             "exponent": 123.45,
                             "base": "fluid/acre",
-                            "selectedNumericalTarget": "custom_number_0",
+                            "selectedNumericalTarget": "formation_thickness_mean",
                             "target": {
                                 "eur": 123.45,
                                 "acre_spacing": 123.45,
@@ -2180,7 +2180,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "arps_modified",
+                                "segmentType": "empty",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -2201,7 +2201,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "flat",
+                                "segmentType": "arps_inc",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -2222,7 +2222,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "exp_dec",
+                                "segmentType": "flat",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -2243,7 +2243,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "arps_inc",
+                                "segmentType": "flat",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -2266,7 +2266,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "exp_inc",
+                                    "segmentType": "arps_modified",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -2288,7 +2288,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "empty",
+                                    "segmentType": "arps",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -2296,7 +2296,7 @@ class TypeCurves(APIBase):
                                     "qSw": 123.45
                                 }
                             ],
-                            "basePhase": "water"
+                            "basePhase": "gas"
                         },
                         "p50": {
                             "segments": [
@@ -2310,7 +2310,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "arps",
+                                    "segmentType": "flat",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -2318,7 +2318,7 @@ class TypeCurves(APIBase):
                                     "qSw": 123.45
                                 }
                             ],
-                            "basePhase": "gas"
+                            "basePhase": "oil"
                         },
                         "p90": {
                             "segments": [
@@ -2332,7 +2332,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "arps_inc",
+                                    "segmentType": "flat",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -2345,15 +2345,15 @@ class TypeCurves(APIBase):
                     },
                     "normalizations": {
                         "perfLateralLength": 123.45,
-                        "normalizationType": "eur",
+                        "normalizationType": "eur_and_q_peak",
                         "eur": {
-                            "type": "power_law_fit",
+                            "type": "1_to_1",
                             "slope": 123.45,
                             "intercept": 123.45,
                             "coefficient": 123.45,
                             "exponent": 123.45,
-                            "base": "prop/pll/hz",
-                            "selectedNumericalTarget": "last_12_oil_per_perforated_interval",
+                            "base": "eur_pll",
+                            "selectedNumericalTarget": "custom_number_10",
                             "target": {
                                 "eur": 123.45,
                                 "acre_spacing": 123.45,
@@ -2512,8 +2512,8 @@ class TypeCurves(APIBase):
                             "intercept": 123.45,
                             "coefficient": 123.45,
                             "exponent": 123.45,
-                            "base": "peak_pll",
-                            "selectedNumericalTarget": "casing_id",
+                            "base": "fluid/pll/hz",
+                            "selectedNumericalTarget": "last_month_boe",
                             "target": {
                                 "eur": 123.45,
                                 "acre_spacing": 123.45,
@@ -2684,7 +2684,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "empty",
+                                "segmentType": "arps_inc",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -2705,7 +2705,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "arps_inc",
+                                "segmentType": "empty",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -2726,7 +2726,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "exp_inc",
+                                "segmentType": "arps",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -2747,7 +2747,7 @@ class TypeCurves(APIBase):
                                 "realizedDSwEffSec": 123.45,
                                 "targetDSwEffSec": 123.45,
                                 "segmentIndex": 123,
-                                "segmentType": "empty",
+                                "segmentType": "exp_inc",
                                 "startDate": "2020-01-01",
                                 "swDate": "2020-01-01",
                                 "slope": 123.45,
@@ -2756,7 +2756,7 @@ class TypeCurves(APIBase):
                             }
                         ]
                     },
-                    "type": "rate",
+                    "type": "ratio",
                     "ratio": {
                         "best": {
                             "segments": [
@@ -2770,7 +2770,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "linear",
+                                    "segmentType": "arps",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -2778,7 +2778,7 @@ class TypeCurves(APIBase):
                                     "qSw": 123.45
                                 }
                             ],
-                            "basePhase": "oil"
+                            "basePhase": "water"
                         },
                         "p10": {
                             "segments": [
@@ -2792,7 +2792,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "arps_modified",
+                                    "segmentType": "arps",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -2800,7 +2800,7 @@ class TypeCurves(APIBase):
                                     "qSw": 123.45
                                 }
                             ],
-                            "basePhase": "oil"
+                            "basePhase": "gas"
                         },
                         "p50": {
                             "segments": [
@@ -2814,7 +2814,7 @@ class TypeCurves(APIBase):
                                     "realizedDSwEffSec": 123.45,
                                     "targetDSwEffSec": 123.45,
                                     "segmentIndex": 123,
-                                    "segmentType": "flat",
+                                    "segmentType": "exp_inc",
                                     "startDate": "2020-01-01",
                                     "swDate": "2020-01-01",
                                     "slope": 123.45,
@@ -2844,20 +2844,20 @@ class TypeCurves(APIBase):
                                     "qSw": 123.45
                                 }
                             ],
-                            "basePhase": "gas"
+                            "basePhase": "water"
                         }
                     },
                     "normalizations": {
                         "perfLateralLength": 123.45,
                         "normalizationType": "eur",
                         "eur": {
-                            "type": "linear",
+                            "type": "no_normalization",
                             "slope": 123.45,
                             "intercept": 123.45,
                             "coefficient": 123.45,
                             "exponent": 123.45,
-                            "base": "fluid/pll/hz",
-                            "selectedNumericalTarget": "footage_in_landing_zone",
+                            "base": "prop/pll/hz",
+                            "selectedNumericalTarget": "oil_api_gravity",
                             "target": {
                                 "eur": 123.45,
                                 "acre_spacing": 123.45,
@@ -3011,13 +3011,13 @@ class TypeCurves(APIBase):
                             }
                         },
                         "peak": {
-                            "type": "no_normalization",
+                            "type": "linear",
                             "slope": 123.45,
                             "intercept": 123.45,
                             "coefficient": 123.45,
                             "exponent": 123.45,
-                            "base": "eur_vs_numerical",
-                            "selectedNumericalTarget": "cum_gor",
+                            "base": "eur_pll",
+                            "selectedNumericalTarget": "first_test_gor",
                             "target": {
                                 "eur": 123.45,
                                 "acre_spacing": 123.45,
@@ -3178,7 +3178,7 @@ class TypeCurves(APIBase):
             "name": "Example",
             "updatedAt": "2020-01-01",
             "createdAt": "2020-01-01",
-            "regressionType": "cum",
+            "regressionType": "rate",
             "wells": [
                 "string"
             ]
