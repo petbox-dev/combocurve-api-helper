@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.3.2] - 2026-09-29
 
+### Changed
+
+- **Docstring examples regenerated** from the ComboCurve Postman collection republished 2026-09-28
+  (`directional`, `exports`, `forecasts`, `typecurves`). Example JSON only; no code change.
+- **`scripts/generate_docstrings.py` ignores random enum picks.** The collection picks a random member
+  of each enum on every publish (`exportType` took three different values in three publishes), so each
+  republish made `test_docstrings_current` fail with no API change. Literal strings from the collection
+  are now marked as enum values: a committed block that differs only at those positions is kept, and
+  array elements that differ only in enum picks collapse to one. A change of shape, keys or placeholder
+  values still reports stale. Cost: an enum member that ComboCurve removes stays in a docstring until
+  something else in that block changes. The `forecasts` volume examples shrink by one-time collapse of
+  two `phases` arrays.
+
 ### Fixed
 
 - **`ActualOrForecast` converter read "Ignore Hist Prod" as "Never", the opposite meaning.** ComboCurve
