@@ -30,6 +30,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The ActualOrForecast CSV fixtures are refreshed from 2026-09-29 ComboCurve exports of two projects
   (anonymized), so the real-export round-trip test covers `Ignore Historical Production`.
 
+### Fixed
+
+- **A single connection interruption no longer ends a call.** Before, a `requests.ConnectionError` or
+  timeout went straight to the caller, and a request had no timeout at all, so a connection that
+  stalled without a reset blocked forever. Every request that goes through `APIBase` (the list, write,
+  count and batched-write paths) now carries a timeout of 30 s to connect and 300 s to read, and is sent
+  again, up to 2 more times with 2 s and 4 s pauses, when that cannot write twice:
+  - a request that never reached the server (connect timeout, refused connection, DNS failure), any
+    method;
+  - a GET or HEAD that failed after it was sent (reset, read timeout, truncated body).
+
+  A POST, PUT, PATCH or DELETE that failed after it was sent is NOT sent again: the server may have
+  applied it and only the response was lost. That error still goes to the caller, which must check what
+  the server holds. The direct `requests` calls in `directional.py`, `exports.py` and `forecasts.py` are
+  not covered.
+
 ## [2.3.2] - 2026-09-29
 
 ### Changed

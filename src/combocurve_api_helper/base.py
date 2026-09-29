@@ -10,6 +10,7 @@ from typing import Any, Callable, ClassVar, Optional, Union
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit
 
 import requests
+import urllib3.exceptions
 from combocurve_api_v1 import ComboCurveAuth, ServiceAccount
 from combocurve_api_v1.pagination import get_next_page_url
 from more_itertools import chunked
@@ -94,6 +95,75 @@ _MAX_REQUEST_RETRIES = 5
 _RATE_LIMIT_DEFAULT_PAUSE_SECONDS = 60.0
 _RETRYABLE_GATEWAY_STATUSES = frozenset({502, 503, 504})
 _GATEWAY_BACKOFF_SECONDS = 1.0  # sleep before a gateway retry = _GATEWAY_BACKOFF_SECONDS * 2**attempt
+
+
+# Connection-failure policy: a request that raised instead of returning a response.
+#   * Every request carries a timeout. `requests` has none by default, so a connection that stalls
+#     without a reset blocked forever and no retry could start. (connect, read) seconds; a large
+#     paginated GET or a big POST can take minutes to answer.
+#   * A request that was never sent (connect timeout, refused connection, DNS failure) is sent again,
+#     whatever its method: the server received nothing.
+#   * A GET or HEAD that failed after it was sent (reset, read timeout, truncated body) is sent again:
+#     it changes nothing on the server. A POST/PUT/PATCH/DELETE that failed after it was sent is NOT:
+#     the server may have applied it and only the response was lost, so a second send could write the
+#     records twice. The error goes to the caller, who must check what the server holds.
+_REQUEST_TIMEOUT_SECONDS = (30.0, 300.0)
+_MAX_CONNECTION_RETRIES = 2
+_CONNECTION_BACKOFF_SECONDS = 2.0  # sleep before a connection retry = _CONNECTION_BACKOFF_SECONDS * 2**failure
+_READ_ONLY_METHODS = frozenset({'get', 'head'})
+
+
+def _request_was_never_sent(error: requests.RequestException) -> bool:
+    """True when `error` happened before the request reached the server: a connect timeout, or a
+    connection that could not be opened (refused, DNS failure). `requests` wraps the second as a
+    `ConnectionError` around urllib3's `MaxRetryError(reason=NewConnectionError)`."""
+    if isinstance(error, requests.ConnectTimeout):
+        return True
+    if not isinstance(error, requests.ConnectionError) or not error.args:
+        return False
+    cause = error.args[0]
+    if isinstance(cause, urllib3.exceptions.MaxRetryError):
+        cause = cause.reason
+    return isinstance(cause, urllib3.exceptions.NewConnectionError)
+
+
+def _safe_to_send_again(method: str, error: requests.RequestException) -> bool:
+    """True when the request that raised `error` can be sent again without a risk of applying it twice."""
+    if _request_was_never_sent(error):
+        return True
+    connection_lost = isinstance(
+        error, (requests.ConnectionError, requests.Timeout, requests.exceptions.ChunkedEncodingError)
+    )
+    return connection_lost and method.lower() in _READ_ONLY_METHODS
+
+
+def _send_request(
+    method: str,
+    url: str,
+    auth_headers: Callable[[], Mapping[str, str]],
+    *,
+    params: Optional[Mapping[str, Union[str, int, float]]] = None,
+    json_body: Any = None,
+) -> Response:
+    """Send one HTTP request with the timeout, and send it again after a connection failure when
+    `_safe_to_send_again` allows it, up to `_MAX_CONNECTION_RETRIES` times. `auth_headers` is called
+    for each attempt. Any other error, and the last one, is raised to the caller. A response is
+    returned whatever its status: status retries are the caller's (`_retry_delay_seconds`)."""
+    for failure in range(_MAX_CONNECTION_RETRIES + 1):
+        try:
+            return requests.request(
+                method,
+                url,
+                headers=dict(auth_headers()),
+                params=params,
+                json=json_body,
+                timeout=_REQUEST_TIMEOUT_SECONDS,
+            )
+        except requests.RequestException as error:
+            if failure == _MAX_CONNECTION_RETRIES or not _safe_to_send_again(method, error):
+                raise
+            time.sleep(_CONNECTION_BACKOFF_SECONDS * (2.0**failure))
+    raise RuntimeError('unreachable: the loop returns or raises on the final attempt')
 
 
 def _retry_after_seconds(response: Response) -> Optional[float]:
@@ -227,10 +297,11 @@ class APIBase:
         transient gateway errors 502/503/504 (exponential backoff), for up to
         `_MAX_REQUEST_RETRIES` retries. Any other response (success or a
         non-transient error) is returned immediately for the caller to handle
-        (e.g. `raise_for_status`).
+        (e.g. `raise_for_status`). A connection failure is handled one level down, in
+        `_send_request` (timeout, and a second send only when it cannot write twice).
 
         Every verb funnels through here EXCEPT the batched-write path (`_send_one_chunk`
-        calls `requests.request` directly and carries its own retry loop), so this is
+        calls `_send_request` directly and carries its own status retry loop), so this is
         also where `params` is reconciled against a query string already present on
         `url` -- see `_drop_params_already_in_url`. The batch path passes no `params`,
         so it has nothing to reconcile today; a future change that adds one there would
@@ -238,8 +309,7 @@ class APIBase:
         """
         params = _drop_params_already_in_url(url, params)
         for attempt in range(_MAX_REQUEST_RETRIES + 1):
-            headers = self._auth_headers()
-            response = requests.request(method, url, headers=headers, params=params, json=json_body)
+            response = _send_request(method, url, self._auth_headers, params=params, json_body=json_body)
             delay = _retry_delay_seconds(response, attempt)
             if delay is None or attempt == _MAX_REQUEST_RETRIES:
                 return response
@@ -342,7 +412,7 @@ class APIBase:
         count = len(chunk)
         for attempt in range(_MAX_REQUEST_RETRIES + 1):
             rate_limit.wait_if_limited()
-            response = requests.request(method, url, headers=dict(headers), json=chunk)
+            response = _send_request(method, url, lambda: headers, json_body=chunk)
             status = response.status_code
 
             if attempt < _MAX_REQUEST_RETRIES:

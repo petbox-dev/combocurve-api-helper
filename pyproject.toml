@@ -29,6 +29,7 @@ dependencies = [
     'pydantic>=2,<3',
     'requests',
     'typing-extensions',
+    'urllib3',
 ]
 keywords = [
     'combocurve-api-helper', 'combocurve', 'cc', 'api'

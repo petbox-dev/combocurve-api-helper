@@ -205,8 +205,18 @@ reconciles them once, in `_request_with_retry`: **the url wins**, so an explicit
 method's default page size. Do not re-introduce a second reconciliation point, and do not assume a value
 passed in `params` survives — if the url already carries that key, it is dropped. Note the batched-write
 path is the one exception that does NOT funnel through `_request_with_retry`: `_send_one_chunk` calls
-`requests.request` directly and has its own retry loop. It passes no `params` today, so nothing is wrong —
+`_send_request` directly and has its own status retry loop. It passes no `params` today, so nothing is wrong —
 but a query parameter added there would not be reconciled.
+
+**Connection failures: a write is never sent twice.** `_send_request` (`base.py`) is where both paths
+call `requests.request`. It sets `_REQUEST_TIMEOUT_SECONDS` (without a timeout, a stalled connection
+blocks forever) and sends a request again after a connection failure only when the request never reached
+the server (connect timeout, refused connection, DNS failure) or is a GET/HEAD. A POST/PUT/PATCH/DELETE
+that failed after it was sent raises: the server may have applied it, and a second send could create the
+records twice. Do not widen this to a blanket retry on `ConnectionError`. The direct
+`requests.get/post/put/patch` calls in `directional.py`, `exports.py` and `forecasts.py` do not go
+through `_send_request`: they have no timeout and no retry.
+
 Relatedly, `_build_params_string` percent-encodes and drops `None` values, so callers must NOT pre-encode.
 It keeps `,` literal and encodes a space as `%20`, not `+`: two callers comma-join list filters
 (`econ_runs` `columns`, `_econ_model_base` `wells`), while `scenarios.delete_scenario_qualifiers` forwards
