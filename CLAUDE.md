@@ -56,6 +56,11 @@ name error from an id error.
 assignment route — it returns `EconTypeMismatch: not 'forecast'`. Forecast→
 qualifier wiring is a CC-UI operation; the grid is read-only.)
 
+## TODOs
+
+Outstanding work is in `docs/todo/`. Read `docs/todo/README.md` before you add an item. Adding an
+item includes its row in the README index. Never write `# TODO:` in code.
+
 ## Commands
 
 Run from the repo root:
