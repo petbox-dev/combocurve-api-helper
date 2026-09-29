@@ -213,7 +213,9 @@ call `requests.request`. It sets `_REQUEST_TIMEOUT_SECONDS` (without a timeout, 
 blocks forever) and sends a request again after a connection failure only when the request never reached
 the server (connect timeout, refused connection, DNS failure) or is a GET/HEAD. A POST/PUT/PATCH/DELETE
 that failed after it was sent raises: the server may have applied it, and a second send could create the
-records twice. Do not widen this to a blanket retry on `ConnectionError`. The direct
+records twice. Do not widen this to a blanket retry on `ConnectionError`. The same rule holds for status
+retries: 502/503/504 are retried for GET/HEAD only (`_gateway_retry_allowed`), because the gateway can time
+out after the server applied the write; 429 is retried for every method. The direct
 `requests.get/post/put/patch` calls in `directional.py`, `exports.py` and `forecasts.py` do not go
 through `_send_request`: they have no timeout and no retry.
 

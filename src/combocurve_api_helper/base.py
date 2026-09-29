@@ -87,10 +87,12 @@ class WriteResponse(TypedDict):
 #   * 429 (Too Many Requests) -- ComboCurve's write quota is enforced by Google
 #     Cloud and resets ~every 60s, so a fixed 60s pause is the safe fallback when
 #     the response carries no `Retry-After` header.
-#   * 502/503/504 -- transient gateway errors, retried with exponential backoff.
-#     This mirrors the retry strategy consumers previously applied at the session
-#     level (e.g. VDR's make_session), so nothing is lost by routing requests
-#     through the helper.
+#   * 502/503/504 -- transient gateway errors, retried with exponential backoff,
+#     for a GET or HEAD ONLY (`_READ_ONLY_METHODS`). The gateway gives up waiting
+#     while the server behind it may still apply the request, so a POST sent again
+#     after a gateway status can create the records twice; a write gets the gateway
+#     status back instead, and its caller must check what the server holds.
+#     A 429 is retried for every method: the quota refuses the request before it runs.
 _MAX_REQUEST_RETRIES = 5
 _RATE_LIMIT_DEFAULT_PAUSE_SECONDS = 60.0
 _RETRYABLE_GATEWAY_STATUSES = frozenset({502, 503, 504})
@@ -206,19 +208,25 @@ def _drop_params_already_in_url(
     return {key: value for key, value in params.items() if key not in existing}
 
 
-def _retry_delay_seconds(response: Response, attempt: int) -> Optional[float]:
-    """Seconds to wait before retrying `response`, or None if it is not retryable.
+def _retry_delay_seconds(response: Response, attempt: int, method: str) -> Optional[float]:
+    """Seconds to wait before retrying the `method` request that got `response`, or None if it is not
+    retryable.
 
-    Retryable: HTTP 429 (wait `Retry-After` or the default quota pause) and
-    transient gateway errors 502/503/504 (exponential backoff). Any other status
-    (2xx success, other 4xx/5xx) returns None for the caller to handle.
+    Retryable: HTTP 429 for every method (wait `Retry-After` or the default quota pause), and the
+    transient gateway errors 502/503/504 for a GET or HEAD only (exponential backoff; see the policy
+    comment above). Any other status, and a gateway status on a write, returns None for the caller.
     """
     status = response.status_code
     if status == 429:
         return _retry_after_seconds(response) or _RATE_LIMIT_DEFAULT_PAUSE_SECONDS
-    if status in _RETRYABLE_GATEWAY_STATUSES:
+    if _gateway_retry_allowed(status, method):
         return _GATEWAY_BACKOFF_SECONDS * (2.0**attempt)
     return None
+
+
+def _gateway_retry_allowed(status: int, method: str) -> bool:
+    """True when `status` is a transient gateway error and `method` cannot write twice."""
+    return status in _RETRYABLE_GATEWAY_STATUSES and method.lower() in _READ_ONLY_METHODS
 
 
 class APIBase:
@@ -293,8 +301,8 @@ class APIBase:
         """Issue a single HTTP request, refreshing auth headers each attempt and
         retrying transient failures.
 
-        Retries HTTP 429 (waiting `Retry-After` or the default quota pause) and
-        transient gateway errors 502/503/504 (exponential backoff), for up to
+        Retries HTTP 429 (waiting `Retry-After` or the default quota pause) and, for a
+        GET or HEAD, transient gateway errors 502/503/504 (exponential backoff), for up to
         `_MAX_REQUEST_RETRIES` retries. Any other response (success or a
         non-transient error) is returned immediately for the caller to handle
         (e.g. `raise_for_status`). A connection failure is handled one level down, in
@@ -310,7 +318,7 @@ class APIBase:
         params = _drop_params_already_in_url(url, params)
         for attempt in range(_MAX_REQUEST_RETRIES + 1):
             response = _send_request(method, url, self._auth_headers, params=params, json_body=json_body)
-            delay = _retry_delay_seconds(response, attempt)
+            delay = _retry_delay_seconds(response, attempt, method)
             if delay is None or attempt == _MAX_REQUEST_RETRIES:
                 return response
             time.sleep(delay)
@@ -404,10 +412,11 @@ class APIBase:
 
         Runs on a worker thread and uses pre-fetched `headers` (shared across
         workers) rather than re-authenticating per request. A 429 pauses every
-        worker via `rate_limit`; transient gateway errors (502/503/504) back off
-        and retry just this chunk. Both retry up to `_MAX_REQUEST_RETRIES`; any
-        other 4xx/5xx (and a transient status that survives all retries) is
-        recorded as a whole-chunk failure.
+        worker via `rate_limit` and retries up to `_MAX_REQUEST_RETRIES`. A gateway
+        error (502/503/504) is retried only for a read-only method, which a batch
+        write never is: the server may have applied the chunk, so it is recorded as a
+        whole-chunk failure whose `error_message` says so. Any other 4xx/5xx (and a
+        429 that survives all retries) is recorded as a whole-chunk failure.
         """
         count = len(chunk)
         for attempt in range(_MAX_REQUEST_RETRIES + 1):
@@ -419,7 +428,7 @@ class APIBase:
                 if status == 429:
                     rate_limit.set_limited()
                     continue
-                if status in _RETRYABLE_GATEWAY_STATUSES:
+                if _gateway_retry_allowed(status, method):
                     time.sleep(_GATEWAY_BACKOFF_SECONDS * (2.0**attempt))
                     continue
 
@@ -428,13 +437,16 @@ class APIBase:
                     detail: Any = response.json()
                 except ValueError:
                     detail = response.text
+                error_message = str(detail)
+                if status in _RETRYABLE_GATEWAY_STATUSES:
+                    error_message = f'gateway status {status}: the server may have applied this chunk; {error_message}'
                 return BatchChunk(
                     index=index,
                     offset=offset,
                     count=count,
                     http_status=status,
                     failed_count=count,
-                    error_message=str(detail),
+                    error_message=error_message,
                 )
 
             try:

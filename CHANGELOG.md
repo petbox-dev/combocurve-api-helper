@@ -45,6 +45,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   applied it and only the response was lost. That error still goes to the caller, which must check what
   the server holds. The direct `requests` calls in `directional.py`, `exports.py` and `forecasts.py` are
   not covered.
+- **A write is no longer sent again after a 502, 503 or 504.** The gateway gives up waiting while the
+  server behind it may still apply the request, so a POST sent again could create the records twice.
+  The gateway retry now applies to GET and HEAD only; a POST, PUT, PATCH or DELETE gets the gateway
+  status back (`raise_for_status` raises `HTTPError`). **Behavior change for batched writes**
+  (`_request_batched`, used by the forecast-parameter PUT): a chunk that gets a gateway status is no
+  longer sent again; it is recorded as a whole-chunk failure whose `error_message` starts
+  `gateway status <code>: the server may have applied this chunk`. A 429 is still retried for every
+  method, because the quota refuses the request before it runs.
 
 ## [2.3.2] - 2026-09-29
 

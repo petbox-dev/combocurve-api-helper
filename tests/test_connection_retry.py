@@ -1,4 +1,5 @@
-"""Unit tests for the connection-failure policy of `base._send_request` -- no live API.
+"""Unit tests for the connection-failure policy of `base._send_request`, and for the gateway-status
+retry of `APIBase._request_with_retry` -- no live API.
 
 Every request carries a timeout. A request that never reached the server is sent again, whatever its
 method; a GET/HEAD that failed after it was sent is sent again; a write that failed after it was sent is
@@ -180,3 +181,39 @@ def test_the_batched_write_path_does_not_resend_a_write_lost_after_send(
     with pytest.raises(requests.ReadTimeout):
         api._request_batched('post', URL, [{'name': 'a'}], chunksize=1, max_workers=1)
     assert len(script.calls) == 1
+
+
+@pytest.mark.parametrize('method', ['get', 'head'])
+@pytest.mark.parametrize('status', [502, 503, 504])
+def test_a_read_is_sent_again_after_a_gateway_status(
+    monkeypatch: MonkeyPatch, sleeps: list[float], method: str, status: int
+) -> None:
+    api = _make_api()
+    script = _install(monkeypatch, [_FakeResponse(status, {}), _FakeResponse(200, [])])
+    assert api._request_with_retry(method, URL).status_code == 200
+    assert len(script.calls) == 2
+
+
+@pytest.mark.parametrize('method', ['post', 'put', 'patch', 'delete'])
+@pytest.mark.parametrize('status', [502, 503, 504])
+def test_a_write_is_not_sent_again_after_a_gateway_status(
+    monkeypatch: MonkeyPatch, sleeps: list[float], method: str, status: int
+) -> None:
+    api = _make_api()
+    script = _install(monkeypatch, [_FakeResponse(status, {}), _FakeResponse(207, {})])
+    assert api._request_with_retry(method, URL, json_body=[{'name': 'a'}]).status_code == status
+    assert len(script.calls) == 1
+    assert sleeps == []
+
+
+@pytest.mark.parametrize('method', ['get', 'post'])
+def test_a_rate_limited_request_is_sent_again_for_every_method(
+    monkeypatch: MonkeyPatch, sleeps: list[float], method: str
+) -> None:
+    api = _make_api()
+    limited = _FakeResponse(429, {})
+    limited.headers['Retry-After'] = '7'
+    script = _install(monkeypatch, [limited, _FakeResponse(200, [])])
+    assert api._request_with_retry(method, URL).status_code == 200
+    assert len(script.calls) == 2
+    assert sleeps == [7.0]
