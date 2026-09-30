@@ -1,3 +1,4 @@
+import math
 import threading
 import time
 import warnings
@@ -95,6 +96,9 @@ class WriteResponse(TypedDict):
 #     A 429 is retried for every method: the quota refuses the request before it runs.
 _MAX_REQUEST_RETRIES = 5
 _RATE_LIMIT_DEFAULT_PAUSE_SECONDS = 60.0
+# Ceiling on an honoured `Retry-After`: `time.sleep` raises OverflowError near 1e10 s, which would
+# abort a batch and lose the results of chunks already applied.
+_MAX_RETRY_AFTER_SECONDS = 3600.0
 _RETRYABLE_GATEWAY_STATUSES = frozenset({502, 503, 504})
 _GATEWAY_BACKOFF_SECONDS = 1.0  # sleep before a gateway retry = _GATEWAY_BACKOFF_SECONDS * 2**attempt
 
@@ -136,7 +140,12 @@ def _safe_to_send_again(method: str, error: requests.RequestException) -> bool:
     connection_lost = isinstance(
         error, (requests.ConnectionError, requests.Timeout, requests.exceptions.ChunkedEncodingError)
     )
-    return connection_lost and method.lower() in _READ_ONLY_METHODS
+    return connection_lost and _is_read_only(method)
+
+
+def _is_read_only(method: str) -> bool:
+    """True when `method` cannot write, so sending it twice cannot apply anything twice."""
+    return method.lower() in _READ_ONLY_METHODS
 
 
 def _send_request(
@@ -171,15 +180,20 @@ def _send_request(
 def _retry_after_seconds(response: Response) -> Optional[float]:
     """Return the `Retry-After` header as seconds if present in delta-seconds form.
 
-    The HTTP-date form is not parsed here; callers fall back to the default pause.
+    The HTTP-date form is not parsed here; callers fall back to the default pause. A value that
+    is negative or not finite (`-1`, `nan`, `inf`) is treated the same way: `time.sleep` raises on it.
+    A value above `_MAX_RETRY_AFTER_SECONDS` is capped to it.
     """
     value = response.headers.get('Retry-After')
     if value is None:
         return None
     try:
-        return float(value)
+        seconds = float(value)
     except ValueError:
         return None
+    if not math.isfinite(seconds) or seconds < 0:
+        return None
+    return min(seconds, _MAX_RETRY_AFTER_SECONDS)
 
 
 def _drop_params_already_in_url(
@@ -218,15 +232,44 @@ def _retry_delay_seconds(response: Response, attempt: int, method: str) -> Optio
     """
     status = response.status_code
     if status == 429:
-        return _retry_after_seconds(response) or _RATE_LIMIT_DEFAULT_PAUSE_SECONDS
+        retry_after = _retry_after_seconds(response)
+        # `is None`, not `or`: `Retry-After: 0` is a valid "retry now", not a missing header.
+        return _RATE_LIMIT_DEFAULT_PAUSE_SECONDS if retry_after is None else retry_after
     if _gateway_retry_allowed(status, method):
         return _GATEWAY_BACKOFF_SECONDS * (2.0**attempt)
     return None
 
 
+def _whole_chunk_failure(
+    index: int, offset: int, count: int, *, http_status: int, error_message: str, may_have_applied: bool
+) -> BatchChunk:
+    """A chunk that failed as a whole, with one placeholder result per record.
+
+    The placeholders keep `BatchWriteResult.results[i]` aligned with `data[i]` after the chunks are
+    stitched together; without them every later chunk's results shift left, and a caller that picks
+    records to resend by position picks the wrong ones. Each has the shape of a 207 error element.
+    """
+    placeholder: Item = {
+        'status': 'ChunkFailed',
+        'code': http_status,
+        'errors': [{'name': 'ChunkFailed', 'message': error_message}],
+        'mayHaveApplied': may_have_applied,
+    }
+    return BatchChunk(
+        index=index,
+        offset=offset,
+        count=count,
+        http_status=http_status,
+        failed_count=count,
+        results=[dict(placeholder) for _ in range(count)],
+        error_message=error_message,
+        may_have_applied=may_have_applied,
+    )
+
+
 def _gateway_retry_allowed(status: int, method: str) -> bool:
     """True when `status` is a transient gateway error and `method` cannot write twice."""
-    return status in _RETRYABLE_GATEWAY_STATUSES and method.lower() in _READ_ONLY_METHODS
+    return status in _RETRYABLE_GATEWAY_STATUSES and _is_read_only(method)
 
 
 class APIBase:
@@ -264,16 +307,26 @@ class APIBase:
 
         return api_base
 
+    def __getstate__(self) -> dict[str, Any]:
+        """Pickle / deepcopy state without `_auth_lock`: a lock cannot be pickled, and a copy needs its own."""
+        state = dict(self.__dict__)
+        state.pop('_auth_lock', None)
+        return state
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        """Restore pickled state and give the copy a new `_auth_lock`."""
+        self.__dict__.update(state)
+        self._auth_lock = threading.Lock()
+
     def _auth_headers(self) -> dict[str, str]:
         """Auth headers for one request, fetched under a lock.
 
         `ComboCurveAuth.get_auth_headers` refreshes an expired token IN PLACE, and two
-        threads refreshing at once is undefined. Every caller now goes through here so the
-        header fetch is serialised; the lock is held only for that fetch, never across the
+        threads refreshing at once is undefined. Every header fetch goes through here so it
+        is serialised; the lock is held only for that fetch, never across the
         HTTP request itself. `aries pull` fans GETs across a thread pool, so several threads
         can hit an expired token in the same instant -- without this they refresh concurrently.
-        The batched-write path (`_request_batched`) instead fetches headers once up front and
-        shares them across workers, which is equally safe.
+        The batched-write workers (`_send_one_chunk`) fetch through here per request too.
         """
         with self._auth_lock:
             return dict(self.auth.get_auth_headers())
@@ -309,8 +362,9 @@ class APIBase:
         `_send_request` (timeout, and a second send only when it cannot write twice).
 
         Every verb funnels through here EXCEPT the batched-write path (`_send_one_chunk`
-        calls `_send_request` directly and carries its own status retry loop), so this is
-        also where `params` is reconciled against a query string already present on
+        calls `_send_request` directly and carries its own status retry loop) and the direct
+        `requests.*` calls listed in docs/todo/open/direct-requests-calls-bypass-timeout-and-retry.md,
+        so this is also where `params` is reconciled against a query string already present on
         `url` -- see `_drop_params_already_in_url`. The batch path passes no `params`,
         so it has nothing to reconcile today; a future change that adds one there would
         NOT be covered by this.
@@ -402,7 +456,6 @@ class APIBase:
         self,
         method: str,
         url: str,
-        headers: Mapping[str, str],
         index: int,
         offset: int,
         chunk: ItemList,
@@ -410,23 +463,46 @@ class APIBase:
     ) -> BatchChunk:
         """Send one batch chunk with transient-failure retries; parse its 207 body.
 
-        Runs on a worker thread and uses pre-fetched `headers` (shared across
-        workers) rather than re-authenticating per request. A 429 pauses every
-        worker via `rate_limit` and retries up to `_MAX_REQUEST_RETRIES`. A gateway
-        error (502/503/504) is retried only for a read-only method, which a batch
-        write never is: the server may have applied the chunk, so it is recorded as a
-        whole-chunk failure whose `error_message` says so. Any other 4xx/5xx (and a
-        429 that survives all retries) is recorded as a whole-chunk failure.
+        Runs on a worker thread. Auth headers are fetched through `_auth_headers` for
+        every attempt, so a batch that outlives its token (a 429 pause is 60 s) sends a
+        refreshed one. A 429 pauses every worker via `rate_limit` (for the response's
+        `Retry-After` when present) and retries up to `_MAX_REQUEST_RETRIES`. A gateway
+        error (502/503/504) is retried only for a read-only method, which a batch write
+        never is. Any other 4xx/5xx, and a 429 that survives all retries, is recorded as a
+        whole-chunk failure.
+
+        A write that got a gateway status, or whose connection was lost after it was sent,
+        is recorded as a whole-chunk failure with `may_have_applied=True`: the server may
+        have applied it. A connection failure does not raise out of the batch, so the other
+        chunks' results still reach the caller.
         """
         count = len(chunk)
         for attempt in range(_MAX_REQUEST_RETRIES + 1):
             rate_limit.wait_if_limited()
-            response = _send_request(method, url, lambda: headers, json_body=chunk)
+            try:
+                response = _send_request(method, url, self._auth_headers, json_body=chunk)
+            except requests.RequestException as error:
+                never_sent = _request_was_never_sent(error)
+                may_have_applied = not _is_read_only(method) and not never_sent
+                if may_have_applied:
+                    outcome = 'the server may have applied this chunk'
+                elif never_sent:
+                    outcome = 'the chunk was not sent'
+                else:
+                    outcome = 'a read-only request changes nothing on the server'
+                return _whole_chunk_failure(
+                    index,
+                    offset,
+                    count,
+                    http_status=0,  # no response was received
+                    error_message=f'connection failed ({type(error).__name__}): {outcome}; {error}',
+                    may_have_applied=may_have_applied,
+                )
             status = response.status_code
 
             if attempt < _MAX_REQUEST_RETRIES:
                 if status == 429:
-                    rate_limit.set_limited()
+                    rate_limit.set_limited(_retry_after_seconds(response))
                     continue
                 if _gateway_retry_allowed(status, method):
                     time.sleep(_GATEWAY_BACKOFF_SECONDS * (2.0**attempt))
@@ -438,15 +514,16 @@ class APIBase:
                 except ValueError:
                     detail = response.text
                 error_message = str(detail)
-                if status in _RETRYABLE_GATEWAY_STATUSES:
+                may_have_applied = status in _RETRYABLE_GATEWAY_STATUSES and not _is_read_only(method)
+                if may_have_applied:
                     error_message = f'gateway status {status}: the server may have applied this chunk; {error_message}'
-                return BatchChunk(
-                    index=index,
-                    offset=offset,
-                    count=count,
+                return _whole_chunk_failure(
+                    index,
+                    offset,
+                    count,
                     http_status=status,
-                    failed_count=count,
                     error_message=error_message,
+                    may_have_applied=may_have_applied,
                 )
 
             try:
@@ -490,9 +567,9 @@ class APIBase:
         ``on_progress``, if given, is invoked once per completed chunk from the
         calling thread.
 
-        Auth headers are fetched once up front and shared across workers (avoids
-        concurrent token refreshes); a batch is expected to finish well within a
-        token's lifetime.
+        Auth headers are fetched per request through `_auth_headers`, whose lock keeps
+        the workers from refreshing the token concurrently. A chunk that failed with
+        `may_have_applied=True` must not be sent again before checking the server.
         """
         chunk_specs: list[tuple[int, int, ItemList]] = []
         offset = 0
@@ -501,13 +578,12 @@ class APIBase:
             chunk_specs.append((index, offset, chunk_list))
             offset += len(chunk_list)
 
-        headers = self._auth_headers()
         rate_limit = _RateLimitState(pause_seconds=_RATE_LIMIT_DEFAULT_PAUSE_SECONDS)
         completed: list[BatchChunk] = []
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = [
-                executor.submit(self._send_one_chunk, method, url, headers, index, off, chunk_list, rate_limit)
+                executor.submit(self._send_one_chunk, method, url, index, off, chunk_list, rate_limit)
                 for index, off, chunk_list in chunk_specs
             ]
             for future in as_completed(futures):

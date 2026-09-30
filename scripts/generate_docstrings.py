@@ -451,8 +451,10 @@ def main() -> None:
 
     any_stale = False
     all_unsourced: list[str] = []
+    total_replaced = 0
     for path in sorted(SRC_DIR.glob('*.py')):
         outcome = rewrite_file(path, examples, args.check)
+        total_replaced += outcome.replaced
         all_unsourced += [f'{path.name}:{marker}' for marker in outcome.unsourced]
         if outcome.changed:
             any_stale = True
@@ -461,6 +463,11 @@ def main() -> None:
         print('\nno collection example (left as-is):')
         for marker in all_unsourced:
             print(f'  {marker}')
+    if total_replaced == 0:
+        # No marker matched a collection example (an empty collection, or every operation renamed):
+        # every block is "unsourced", and exiting 0 would pass --check having verified nothing.
+        print(f'\nno docstring marker matched the collection ({args.collection}): no verdict', file=sys.stderr)
+        sys.exit(2)
     if args.check and any_stale:
         print('\nDocstring examples are out of sync. Run scripts/generate_docstrings.py.')
         sys.exit(1)

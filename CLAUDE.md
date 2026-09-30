@@ -155,7 +155,8 @@ there are four parallel methods following one naming scheme:
 GET goes through `_request_items_pages`; POST/PATCH/PUT/DELETE go through `_request_items_pages_chunks`,
 which splits `data` into `chunksize` batches (via `more_itertools.chunked`). Pagination is automatic:
 both loops follow `get_next_page_url(response.headers)` from the upstream `combocurve-api-v1` package until
-exhausted. Auth headers are re-fetched (`self.auth.get_auth_headers()`) before every individual request.
+exhausted. Auth headers are re-fetched through `self._auth_headers()` (which serialises the token refresh
+under `_auth_lock`) before every individual request, the batched-write workers included.
 
 **Type vocabulary** (defined in `base.py`, re-exported from `__init__.py`): `JsonValue` — the recursive
 JSON-value union (`str | int | float | bool | Sequence[JsonValue] | Mapping[str, JsonValue] | None`, spelled
@@ -209,7 +210,8 @@ in both — in practice `take`, which callers legitimately pass as a filter — 
 reconciles them once, in `_request_with_retry`: **the url wins**, so an explicit filter overrides the
 method's default page size. Do not re-introduce a second reconciliation point, and do not assume a value
 passed in `params` survives — if the url already carries that key, it is dropped. Note the batched-write
-path is the one exception that does NOT funnel through `_request_with_retry`: `_send_one_chunk` calls
+path does NOT funnel through `_request_with_retry` (nor do the direct `requests.*` calls described in the
+next paragraph): `_send_one_chunk` calls
 `_send_request` directly and has its own status retry loop. It passes no `params` today, so nothing is wrong —
 but a query parameter added there would not be reconciled.
 
@@ -326,5 +328,7 @@ the template in `scripts/`, never the output** — editing the output makes the 
   from `OSError` — a truncated `Content-Length` read raises `IncompleteRead`, and this endpoint serves
   `Content-Length`), a non-JSON body, valid JSON that is not an object, and an object with no top-level
   `item` list. That last one is the dangerous case: it yields zero examples, so every marker looks
-  "unsourced" and `--check` would exit **0**, passing the test having verified nothing. A bad local
-  `--collection PATH` deliberately still raises, so a typo is not mistaken for "offline".
+  "unsourced" and `--check` would exit **0**, passing the test having verified nothing. The same holds
+  for a valid collection that matches no marker (empty, or every operation renamed): `main` exits 2 when
+  no marker matched. A bad local `--collection PATH` deliberately still raises, so a typo is not
+  mistaken for "offline".

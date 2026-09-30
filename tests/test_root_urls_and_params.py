@@ -17,66 +17,25 @@ Two defects motivated these, both live-verified against api.combocurve.com on
    as `TypeError: `None,200` is not a valid number`.
 """
 
-import threading
 from typing import Any, Optional, cast
 
 import pytest
 import requests
 from pytest import MonkeyPatch
 
-from combocurve_api_helper import ComboCurveAPI
 from combocurve_api_helper.base import APIBase, _drop_params_already_in_url
+from tests.http_fakes import FakeResponse, make_offline_api
 
 V1 = 'https://api.combocurve.com/v1'
-
-
-class _FakeResponse:
-    """Minimal stand-in for requests.Response carrying no next-page Link header."""
-
-    def __init__(self, body: Any) -> None:
-        self.status_code = 200
-        self._body = body
-        self.headers: dict[str, str] = {}
-
-    def json(self) -> Any:
-        return self._body
-
-    def raise_for_status(self) -> None:
-        return None
-
-
-class _StubAuth:
-    """Stands in for ComboCurveAuth; the transport only ever asks it for headers."""
-
-    def get_auth_headers(self) -> dict[str, str]:
-        return {}
-
-
-def _make_api() -> ComboCurveAPI:
-    """A client with no credentials read from disk.
-
-    `ComboCurveAPI()` runs `ServiceAccount.from_file(...)`, so constructing one makes
-    these tests unrunnable without `~/.combocurve/combocurve.json` -- exactly the CI
-    machine where a 404-route regression is cheapest to catch. Nothing here needs auth,
-    so `__new__` skips `APIBase.__init__` and a stub supplies the one method the request
-    path calls. Matches the policy `tests/test_production_delete.py` states.
-    """
-    api = ComboCurveAPI.__new__(ComboCurveAPI)
-    api.auth = _StubAuth()
-    # `__init__` and `from_alternate_config` both set this; bypassing `__init__` here means
-    # supplying it too, since `_request_with_retry` -> `_auth_headers` acquires it.
-    api._auth_lock = threading.Lock()
-
-    return api
 
 
 def _capture_requests(monkeypatch: MonkeyPatch) -> list[tuple[str, Any]]:
     """Record every (url, params) pair `_request_with_retry` dispatches."""
     calls: list[tuple[str, Any]] = []
 
-    def fake_request(method: str, url: str, **kwargs: Any) -> _FakeResponse:
+    def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
         calls.append((url, kwargs.get('params')))
-        return _FakeResponse([])
+        return FakeResponse(200, [])
 
     monkeypatch.setattr(requests, 'request', fake_request)
     return calls
@@ -89,20 +48,20 @@ def _capture_requests(monkeypatch: MonkeyPatch) -> list[tuple[str, Any]]:
 
 def test_root_volume_url_builders_are_flat_and_hyphenated() -> None:
     """The nested `forecasts/` spelling is the project-scoped route; at root it 404s."""
-    api = _make_api()
+    api = make_offline_api()
     assert api.get_root_forecast_monthly_volumes_url() == f'{V1}/forecast-monthly-volumes'
     assert api.get_root_forecast_daily_volumes_url() == f'{V1}/forecast-daily-volumes'
 
 
 def test_project_scoped_volume_urls_still_nest() -> None:
     """Guard the other half of the distinction: these SHOULD nest under forecasts/."""
-    api = _make_api()
+    api = make_offline_api()
     assert api.get_forecast_monthly_volumes_url('P', 'F') == f'{V1}/projects/P/forecasts/F/monthly-volumes'
     assert api.get_forecast_daily_volumes_url('P', 'F') == f'{V1}/projects/P/forecasts/F/daily-volumes'
 
 
 def test_well_identifiers_url_is_plural() -> None:
-    assert _make_api().get_well_identifiers_url() == f'{V1}/wells-identifiers'
+    assert make_offline_api().get_well_identifiers_url() == f'{V1}/wells-identifiers'
 
 
 ###############################
@@ -112,14 +71,19 @@ def test_well_identifiers_url_is_plural() -> None:
 
 @pytest.mark.parametrize(
     'method',
-    ['get_root_forecast_monthly_volumes', 'get_root_forecast_daily_volumes'],
+    [
+        'get_root_forecast_monthly_volumes',
+        'get_root_forecast_daily_volumes',
+        'count_root_forecast_monthly_volumes',
+        'count_root_forecast_daily_volumes',
+    ],
 )
 @pytest.mark.parametrize('filters', [None, {}, {'take': '5'}, {'forecast': ''}])
 def test_unscoped_volume_request_is_refused(
     monkeypatch: MonkeyPatch, method: str, filters: Optional[dict[str, str]]
 ) -> None:
     """The API 400s without project/forecast/well, so it never leaves the process."""
-    api = _make_api()
+    api = make_offline_api()
     calls = _capture_requests(monkeypatch)
 
     with pytest.raises(ValueError, match='at least one of project, forecast, well'):
@@ -130,7 +94,7 @@ def test_unscoped_volume_request_is_refused(
 
 @pytest.mark.parametrize('scope', ['project', 'forecast', 'well'])
 def test_any_one_scope_filter_is_accepted(monkeypatch: MonkeyPatch, scope: str) -> None:
-    api = _make_api()
+    api = make_offline_api()
     calls = _capture_requests(monkeypatch)
 
     api.get_root_forecast_monthly_volumes({scope: 'X'})
@@ -181,7 +145,7 @@ def test_build_params_string_keeps_multiple_filters_in_order() -> None:
 
 def test_filters_take_wins_over_the_method_default(monkeypatch: MonkeyPatch) -> None:
     """A caller-supplied `take` must not be duplicated by `{'take': GET_LIMIT}`."""
-    api = _make_api()
+    api = make_offline_api()
     calls = _capture_requests(monkeypatch)
 
     api.get_root_forecast_monthly_volumes({'forecast': 'F', 'take': '50'})
@@ -198,7 +162,7 @@ def test_none_take_falls_back_to_the_method_default(monkeypatch: MonkeyPatch) ->
     old f-string rendered it as the literal text `None`. This pins the runtime
     tolerance, it does not bless `None` as a supported filter value.
     """
-    api = _make_api()
+    api = make_offline_api()
     calls = _capture_requests(monkeypatch)
 
     api.get_root_forecast_monthly_volumes(cast('dict[str, str]', {'forecast': 'F', 'take': None}))
@@ -219,7 +183,7 @@ def test_a_valueless_query_key_still_counts_as_present() -> None:
 
 
 def test_unrelated_params_survive_the_dedupe(monkeypatch: MonkeyPatch) -> None:
-    api = _make_api()
+    api = make_offline_api()
     calls = _capture_requests(monkeypatch)
 
     api.get_root_forecast_monthly_volumes({'forecast': 'F'})
@@ -228,7 +192,7 @@ def test_unrelated_params_survive_the_dedupe(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_dedupe_is_a_noop_without_a_query_string(monkeypatch: MonkeyPatch) -> None:
-    api = _make_api()
+    api = make_offline_api()
     calls = _capture_requests(monkeypatch)
 
     api.get_root_econ_runs()

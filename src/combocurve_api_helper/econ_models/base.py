@@ -2,7 +2,7 @@ import csv
 import io
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Literal, NamedTuple, Optional, TextIO, Union
+from typing import Any, NamedTuple, Optional, TextIO, Union
 
 from .._csv_writer import RowWriter
 from . import formats
@@ -16,12 +16,12 @@ class Context(NamedTuple):
     # has no scope field, so a company-endpoint model (`get_company_*`) is indistinguishable
     # from a project one; pass scope='company' to stamp it correctly. Default 'project'
     # keeps the historical output for every existing caller.
-    scope: Literal['project', 'company'] = 'project'
+    scope: formats.ModelScope = 'project'
 
 
 def common_columns(model: dict[str, Any], context: Optional[Context]) -> dict[str, str]:
     out: dict[str, str] = {}
-    scope: Literal['project', 'company'] = 'project'
+    scope: formats.ModelScope = 'project'
     if context is not None:
         out['Model Id'] = context.id or model.get('id', '') or ''
         out['Created At'] = formats.to_csv_datetime(context.created_at or model.get('createdAt'))

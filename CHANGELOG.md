@@ -5,14 +5,21 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.4.0] - 2026-09-29
+## [2.4.0] - 2026-09-30
 
 ### Added
 
-- **HEAD count methods for every list route (all 64 HEAD routes in the collection).** Each
-  `count_<rest>` sits beside its list method `get_<rest>`, takes the same arguments plus `filters`,
+- **HEAD count methods for every list route (all 64 HEAD routes in the collection).** A
+  `count_<rest>` sits beside most list methods `get_<rest>`, takes the same arguments plus `filters`,
   and returns the `X-Query-Count` header of a HEAD request as an `int`: the number of matching
-  documents, with no documents fetched. For example `count_projects(filters)`,
+  documents, with no documents fetched. The company per-type econ-model routes have no per-type
+  twin; count them with `count_company_econ_models_by_type`. Where the list method takes no `filters`
+  (assignments by id, scenario combos, econ runs, econ-run one-liners), the count accepts the filters
+  the HEAD route lists, so a filtered count has no list call to compare with.
+  `count_root_forecast_{daily,monthly}_volumes` refuse unscoped `filters` locally, as the list methods
+  do (verified live 2026-09-30: an unscoped HEAD returns 400). The econ-run url builders
+  `get_econ_runs_url`, `get_econ_run_onelines_url` and `get_econ_run_monthly_export_id_url` take an
+  optional `filters`. For example `count_projects(filters)`,
   `count_project_wells(project_id, filters)`, `count_forecast_outputs(project_id, forecast_id,
   filters)`, `count_econ_run_onelines(project_id, scenario_id, econ_run_id, filters)`. Econ models:
   `count_econ_models`, `count_econ_models_by_type`, `count_econ_model_assignments_by_type_by_id`,
@@ -53,6 +60,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   longer sent again; it is recorded as a whole-chunk failure whose `error_message` starts
   `gateway status <code>: the server may have applied this chunk`. A 429 is still retried for every
   method, because the quota refuses the request before it runs.
+- **Batched writes: a lost connection no longer discards the whole batch.** A chunk whose connection
+  failed used to raise out of `_request_batched` while the other chunks were still sent, so the caller
+  lost every chunk's result. It is now recorded as a whole-chunk failure (`http_status` 0) and the
+  other results are returned. New `BatchChunk.may_have_applied` is `True` for a write chunk that got a
+  gateway status or lost its connection after it was sent: check the server before sending it again.
+  The batch workers also fetch auth headers per request (a throttled batch could outlive its token),
+  and a 429 on a chunk now waits for the response's `Retry-After` instead of a fixed 60 s.
+- **Batched writes: `results[i]` no longer shifts after a failed chunk.** A chunk that failed as a
+  whole contributed no results, so every later result moved left and `results[i]` described a
+  different record than `data[i]`. Each record of such a chunk now gets a placeholder result
+  `{'status': 'ChunkFailed', 'code': <status or 0>, 'errors': [...], 'mayHaveApplied': <bool>}`.
+- **The client could not be pickled or deep-copied** since the auth lock arrived in 2.3.0
+  (`TypeError: cannot pickle '_thread.lock' object`). The lock is now left out of the pickled state
+  and a new one is made on restore.
+- **`get_project_wells` ignored its `filters`** and returned every well in the project; it now
+  sends them, so its result agrees with `count_project_wells` for the same filters.
+- **`Retry-After: 0` waited 60 s.** A zero is now honoured; a negative or non-finite value falls back
+  to the 60 s default instead of raising in `time.sleep`, and a value above 3600 s is capped at 3600 s.
+- **`scripts/generate_docstrings.py --check` passed having verified nothing** when the collection
+  matched no docstring marker (an empty collection, or every operation renamed). It now exits 2 (no
+  verdict). `production.py`'s daily-production example was marked `Example data:` on a GET with no
+  body, so it was never refreshed and showed raw `<number>` placeholders; it is now
+  `Example response:` and regenerated.
+
+### Dependencies
+
+- `urllib3` is now a declared dependency (it was already installed through `requests`): the
+  connection-failure classification imports `urllib3.exceptions`.
 
 ## [2.3.2] - 2026-09-29
 
@@ -140,9 +175,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   literal `'headers'` for this path segment, so any other value 404s with
   `CustomColumnHeaderNotFoundError`. The method also hard-coded `columns[0]`, silently discarding
   every custom header beyond the first and raising an unhandled `IndexError` for the common case
-  of a project with zero custom headers. Now `custom_column` is a required argument (no wrong
-  default to fall into) and the method returns the full `ItemList` (`[]` when a project has none).
-  Verified live against three dev projects.
+  of a project with zero custom headers. The argument is renamed `collection` -> `custom_column`
+  (it was already required), and the method returns the full `ItemList` (`[]` when a project has
+  none) instead of one `Item`. **Breaking** for a caller that passed `collection=` by keyword
+  (`TypeError`) or indexed the returned dict. Verified live against three dev projects.
+
+## [2.2.1] - 2026-09-06
+
+### Fixed
+
+- **The StreamProperties CSV converter dropped `btuContent`.** It assumed ComboCurve's export never
+  carries `btu` rows. An export shows one `Key='btu'` row per off-default category (`unshrunk gas` /
+  `shrunk gas`, Value in the ordinary Value column, Unit `mbtu/mcf`); `to_row_dicts` now writes them
+  and `from_row_dicts` reads them back into `btuContent`. A category at the default (1000) gets no
+  row, so it reads back as absent; that omission is the reported behaviour, not shown by the export
+  (see `docs/todo/open/econ-model-csv-values-unverified-against-a-raw-export.md`). The dedicated
+  `BTU (MBTU/MCF)` column stays blank.
 
 ## [2.2.0] - 2026-09-04
 

@@ -11,36 +11,18 @@ from typing import Any
 import requests
 from pytest import MonkeyPatch
 
-from combocurve_api_helper import BatchWriteResult, ComboCurveAPI
-
-
-class _FakeResponse:
-    """Minimal stand-in for requests.Response."""
-
-    def __init__(self, status_code: int, body: Any) -> None:
-        self.status_code = status_code
-        self._body = body
-        self.headers: dict[str, str] = {}
-        self.text = str(body)
-
-    def json(self) -> Any:
-        return self._body
-
-
-def _make_api(monkeypatch: MonkeyPatch) -> ComboCurveAPI:
-    api = ComboCurveAPI()
-    monkeypatch.setattr(api.auth, 'get_auth_headers', lambda: {})
-    return api
+from combocurve_api_helper import BatchWriteResult
+from tests.http_fakes import FakeResponse, make_offline_api
 
 
 def test_request_batched_chunks_and_stitches_207_in_order(monkeypatch: MonkeyPatch) -> None:
-    api = _make_api(monkeypatch)
+    api = make_offline_api()
 
     def fake_request(
         method: str, url: str, headers: Any = None, params: Any = None, json: Any = None, timeout: Any = None
-    ) -> _FakeResponse:
+    ) -> FakeResponse:
         n = len(json)
-        return _FakeResponse(
+        return FakeResponse(
             207,
             {
                 'successCount': n,
@@ -66,16 +48,16 @@ def test_request_batched_chunks_and_stitches_207_in_order(monkeypatch: MonkeyPat
 
 
 def test_request_batched_preserves_partial_and_whole_chunk_failures(monkeypatch: MonkeyPatch) -> None:
-    api = _make_api(monkeypatch)
+    api = make_offline_api()
 
     def fake_request(
         method: str, url: str, headers: Any = None, params: Any = None, json: Any = None, timeout: Any = None
-    ) -> _FakeResponse:
+    ) -> FakeResponse:
         if json[0]['well'] == 'BAD':
-            return _FakeResponse(400, {'generalErrors': [{'message': 'bad batch'}]})
+            return FakeResponse(400, {'generalErrors': [{'message': 'bad batch'}]})
         n = len(json)
         results = [{'status': 'Error' if i == 0 else 'Success'} for i in range(n)]
-        return _FakeResponse(207, {'successCount': n - 1, 'failedCount': 1, 'results': results, 'generalErrors': []})
+        return FakeResponse(207, {'successCount': n - 1, 'failedCount': 1, 'results': results, 'generalErrors': []})
 
     monkeypatch.setattr(requests, 'request', fake_request)
 
@@ -92,8 +74,8 @@ def test_request_batched_preserves_partial_and_whole_chunk_failures(monkeypatch:
 
 
 def test_request_batched_empty_data(monkeypatch: MonkeyPatch) -> None:
-    api = _make_api(monkeypatch)
-    monkeypatch.setattr(requests, 'request', lambda *a, **k: _FakeResponse(207, {}))
+    api = make_offline_api()
+    monkeypatch.setattr(requests, 'request', lambda *a, **k: FakeResponse(207, {}))
     result = api._request_batched('put', 'https://x/parameters', [], chunksize=25)
     assert result.ok
     assert result.success_count == 0
@@ -103,15 +85,15 @@ def test_request_batched_empty_data(monkeypatch: MonkeyPatch) -> None:
 
 def test_request_batched_does_not_send_a_write_again_after_a_gateway_5xx(monkeypatch: MonkeyPatch) -> None:
     """The server behind the gateway may have applied the chunk: a second send could write it twice."""
-    api = _make_api(monkeypatch)
+    api = make_offline_api()
     monkeypatch.setattr(time, 'sleep', lambda _s: None)  # skip real backoff
     calls = {'n': 0}
 
     def fake_request(
         method: str, url: str, headers: Any = None, params: Any = None, json: Any = None, timeout: Any = None
-    ) -> _FakeResponse:
+    ) -> FakeResponse:
         calls['n'] += 1
-        return _FakeResponse(503, {'error': 'temporarily unavailable'})
+        return FakeResponse(503, {'error': 'temporarily unavailable'})
 
     monkeypatch.setattr(requests, 'request', fake_request)
     data: list[dict[str, Any]] = [{'well': f'w{i}'} for i in range(10)]
@@ -124,18 +106,19 @@ def test_request_batched_does_not_send_a_write_again_after_a_gateway_5xx(monkeyp
     assert chunk.http_status == 503
     assert chunk.error_message is not None
     assert chunk.error_message.startswith('gateway status 503: the server may have applied this chunk')
+    assert chunk.may_have_applied
 
 
 def test_request_batched_does_not_retry_non_gateway_5xx(monkeypatch: MonkeyPatch) -> None:
-    api = _make_api(monkeypatch)
+    api = make_offline_api()
     monkeypatch.setattr(time, 'sleep', lambda _s: None)
     calls = {'n': 0}
 
     def fake_request(
         method: str, url: str, headers: Any = None, params: Any = None, json: Any = None, timeout: Any = None
-    ) -> _FakeResponse:
+    ) -> FakeResponse:
         calls['n'] += 1
-        return _FakeResponse(500, {'error': 'boom'})
+        return FakeResponse(500, {'error': 'boom'})
 
     monkeypatch.setattr(requests, 'request', fake_request)
     result = api._request_batched('put', 'https://x', [{'well': 'w0'}], chunksize=25, max_workers=1)
@@ -143,3 +126,26 @@ def test_request_batched_does_not_retry_non_gateway_5xx(monkeypatch: MonkeyPatch
     assert not result.ok
     assert result.failed_count == 1
     assert calls['n'] == 1  # 500 is not a retryable gateway status
+
+
+def test_request_batched_reports_a_gateway_error_page_that_is_not_json(monkeypatch: MonkeyPatch) -> None:
+    """A real gateway 503 carries an HTML page, so `json()` raises and the text is the detail."""
+    api = make_offline_api()
+    page = '<html><body>503 Service Unavailable</body></html>'
+    monkeypatch.setattr(requests, 'request', lambda *a, **k: FakeResponse(503, text=page))
+    result = api._request_batched('put', 'https://x', [{'well': 'w0'}], chunksize=25, max_workers=1)
+
+    (chunk,) = result.chunks
+    assert chunk.failed_count == 1
+    assert chunk.error_message == f'gateway status 503: the server may have applied this chunk; {page}'
+
+
+def test_request_batched_counts_nothing_from_a_success_with_no_json_body(monkeypatch: MonkeyPatch) -> None:
+    api = make_offline_api()
+    monkeypatch.setattr(requests, 'request', lambda *a, **k: FakeResponse(207, text=''))
+    result = api._request_batched('put', 'https://x', [{'well': 'w0'}], chunksize=25, max_workers=1)
+
+    (chunk,) = result.chunks
+    assert chunk.http_status == 207
+    assert chunk.success_count == 0
+    assert chunk.results == []

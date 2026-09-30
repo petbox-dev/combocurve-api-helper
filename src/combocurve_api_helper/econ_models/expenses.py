@@ -75,8 +75,8 @@ _CARBON_SPECIES_TO_CSV = {'ch4': 'ch4', 'co2': 'co2', 'co2E': 'co2e', 'n2O': 'n2
 _CARBON_SPECIES_FROM_CSV = {v: k for k, v in _CARBON_SPECIES_TO_CSV.items()}
 # carbonExpenses also carries a model-level scalar 'category' key (API) sitting
 # alongside the species dicts -- always 'co2e' in the real API shape. This is a
-# known, documented CSV-format limitation (like StreamProperties.unshrunkGas or
-# Capex $/ft): there is no CSV column for it, so it cannot be round-tripped from
+# known, documented CSV-format limitation (like Capex $/ft): there is no CSV
+# column for it, so it cannot be round-tripped from
 # a CSV cell. On the inverse pass we reconstruct it as the constant 'co2e'
 # whenever at least one carbon species row exists (see from_row_dicts). If a
 # source model's carbonExpenses has ONLY this scalar (no species leaves, so no

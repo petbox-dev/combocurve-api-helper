@@ -9,23 +9,31 @@ thread pool, so this guards the case where several threads hit an expired token 
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from types import SimpleNamespace
+from typing import Any
 
 import requests
 from pytest import MonkeyPatch
 
-from combocurve_api_helper import ComboCurveAPI
+from combocurve_api_helper import ComboCurveAPI, base, config
+from tests.http_fakes import FakeResponse, StubAuth, make_offline_api
 
 
-class _FakeResponse:
-    """Minimal stand-in for requests.Response: _request_with_retry only reads status_code."""
-
-    def __init__(self, status_code: int) -> None:
-        self.status_code = status_code
-        self.headers: dict[str, str] = {}
+def test_both_constructors_set_the_lock_the_header_fetch_needs(monkeypatch: MonkeyPatch) -> None:
+    """`make_offline_api` sets the lock itself, so this pins the two real constructors."""
+    monkeypatch.setattr('combocurve_api_helper.base.ServiceAccount.from_file', lambda path: object())
+    monkeypatch.setattr(base, 'ComboCurveAuth', lambda account, apikey: StubAuth())
+    monkeypatch.setattr(config.Configuration, 'from_file', lambda path: SimpleNamespace(apikey='key'))
+    clients: list[Any] = [
+        ComboCurveAPI(),
+        ComboCurveAPI.from_alternate_config('combocurve.json', 'cc-api.config.json'),
+    ]
+    for client in clients:
+        assert client._auth_headers() == {}
 
 
 def test_auth_headers_are_fetched_serially_under_threads(monkeypatch: MonkeyPatch) -> None:
-    api = ComboCurveAPI()
+    api = make_offline_api()
 
     concurrent = 0
     peak = 0
@@ -45,7 +53,7 @@ def test_auth_headers_are_fetched_serially_under_threads(monkeypatch: MonkeyPatc
         return {}
 
     monkeypatch.setattr(api.auth, 'get_auth_headers', counting_get_auth_headers)
-    monkeypatch.setattr(requests, 'request', lambda *args, **kwargs: _FakeResponse(200))
+    monkeypatch.setattr(requests, 'request', lambda *args, **kwargs: FakeResponse(200))
 
     with ThreadPoolExecutor(max_workers=8) as executor:
         futures = [executor.submit(api._request_with_retry, 'get', 'https://example/resource') for _ in range(8)]

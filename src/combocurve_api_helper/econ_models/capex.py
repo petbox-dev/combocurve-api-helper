@@ -34,9 +34,8 @@ from .formats import (
 # consumer anywhere in the repo -- see enums.py) with a matching
 # `OFFSET_TO_HEADER_CSV`/`OFFSET_TO_API_DATEKEY` entry, so no local override table is needed
 # here anymore; the bare enums.py imports above are used directly.
-# `OFFSET_TO_SCHEDULE_CSV`/`OFFSET_FROM_SCHEDULE_CSV` remain untouched: no `fromSchedule`
-# row using this token is known, so extending it would be speculative; an unmapped token
-# still raises loudly.
+# `fromSchedule` rows use the schedule tokens in `OFFSET_TO_SCHEDULE_CSV`/`OFFSET_FROM_SCHEDULE_CSV`
+# (`SpudStart`, `CompletionStart`, see enums.py); an unmapped token still raises loudly.
 
 # escalationStart API key -> CSV 'Escalation Start Criteria' display. THREE shapes occur
 # (all verified against real CC CAPEX UI exports, plus a None escalationStart rendered
@@ -113,7 +112,7 @@ class CapexOtherRow(BaseModel):
     rows), and the seven probabilistic-distribution fields are deliberately left as
     free-form extras (`extra='allow'`) rather than ~40 individually-named optional
     fields: a real row carries exactly one criterion key (plus, for fromHeaders/
-    fromSchedule, one companion date key out of 24 possible OffsetTo tokens), so
+    fromSchedule, one companion date key, one per `OffsetTo` token), so
     naming all of them would be both unwieldy and -- for any token this mapper doesn't
     yet recognize -- would silently swallow the raw value under pydantic's default
     `extra='ignore'`. Keeping them as extras (accessible via `model_extra`) preserves

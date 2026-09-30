@@ -5,6 +5,8 @@ from typing import Any
 import pytest
 
 from combocurve_api_helper.econ_models.capex import CapexMapper
+from combocurve_api_helper.econ_models.drift import key_drift
+from combocurve_api_helper.econ_models.enums import OFFSET_TO_API_DATEKEY, OFFSET_TO_HEADER_CSV, OFFSET_TO_SCHEDULE_CSV
 
 # API leaf shape: every listed key is always present on an otherCapex row, plus exactly
 # ONE criterion key (+ companion date-header key for fromHeaders/fromSchedule).
@@ -146,6 +148,17 @@ def test_from_schedule_spud_start_and_completion_start() -> None:
 
     rebuilt = mapper.from_row_dicts(rows)
     assert rebuilt['otherCapex'] == m['otherCapex']
+    # The drift audit must not report the keys this mapper handles as unknown.
+    assert key_drift('Capex', m) == []
+
+
+def test_drift_baseline_holds_every_offset_companion_key_the_mapper_handles() -> None:
+    handled_tokens = set(OFFSET_TO_HEADER_CSV) | set(OFFSET_TO_SCHEDULE_CSV)
+    companion_keys = {OFFSET_TO_API_DATEKEY[token] for token in handled_tokens}
+    model: dict[str, Any] = {
+        'otherCapex': {'rows': [dict.fromkeys(companion_keys | {'fromHeaders', 'fromSchedule'}, 0)]}
+    }
+    assert key_drift('Capex', model) == []
 
 
 def test_roundtrip() -> None:

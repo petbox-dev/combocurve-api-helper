@@ -28,12 +28,16 @@ class BatchChunk:
     index: int  # 0-based chunk number (order the chunks were split from the payload)
     offset: int  # index of this chunk's first record in the full payload
     count: int  # number of records in this chunk
-    http_status: int
+    http_status: int  # 0 when no response was received (the connection failed)
     success_count: int = 0
     failed_count: int = 0
     results: ItemList = field(default_factory=list)  # 207 results[], aligned to this chunk's payload
     general_errors: ItemList = field(default_factory=list)
-    error_message: str = ''  # set on whole-chunk failure (4xx/5xx or exhausted 429 retries)
+    error_message: str = ''  # set on whole-chunk failure (4xx/5xx, exhausted 429 retries, lost connection)
+    # True when the chunk failed but the server may still have applied it: a write that got a
+    # gateway status (502/503/504) or lost its connection after it was sent. Do not send such a
+    # chunk again without first checking what the server holds; a second send can write it twice.
+    may_have_applied: bool = False
 
     @property
     def is_chunk_failure(self) -> bool:
@@ -78,7 +82,9 @@ class _RateLimitState:
         if remaining > 0:
             time.sleep(remaining)
 
-    def set_limited(self) -> None:
-        """Record a 429 hit — all workers pause until `pause_seconds` from now."""
+    def set_limited(self, retry_after_seconds: float | None = None) -> None:
+        """Record a 429 hit — all workers pause for `retry_after_seconds` (the response's
+        `Retry-After`) when given, else for `pause_seconds`."""
+        pause = self.pause_seconds if retry_after_seconds is None else retry_after_seconds
         with self.lock:
-            self.resume_at = max(self.resume_at, time.monotonic() + self.pause_seconds)
+            self.resume_at = max(self.resume_at, time.monotonic() + pause)

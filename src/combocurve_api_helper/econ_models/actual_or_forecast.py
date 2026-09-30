@@ -36,7 +36,7 @@ class PhaseSwitchData(BaseModel):
       (explicit modern form of the built-in 'Forecast As Of' model's default).
 
     An empty node (`{}`) under a PRESENT `replaceActualWithForecast` key is
-    "Ignore Historical Production" and is handled by the mapper before validation. The phase key
+    "Ignore Historical Production" and is handled by `_resolve_phase` before validation. The phase key
     entirely absent from `replaceActualWithForecast`, or `replaceActualWithForecast`
     itself absent (whole `actualOrForecast` == `{}`) is the legacy/unset
     representation and is resolved by `_phase_criteria` via the fixed model name
@@ -59,9 +59,9 @@ def _phase_criteria(data: PhaseSwitchData, model_name: str) -> tuple[str, str]:
         return _CRITERIA_NEVER, ''
     if data.as_of_date is True:
         return _CRITERIA_AS_OF_DATE, ''
-    # No explicit marker -- legacy whole-node `{}` / absent-phase representation (the
-    # caller has already routed an empty node under a present `replaceActualWithForecast`
-    # key to "Ignore Historical Production"). CC's
+    # No explicit marker -- legacy whole-node `{}` / absent-phase representation (an
+    # empty node under a present `replaceActualWithForecast` key never reaches here:
+    # `_resolve_phase` routes it to "Ignore Historical Production"). CC's
     # front end resolves this via the model's fixed, non-deletable built-in name:
     # 'Forecast As Of' always means "replace with forecast as of the project's As Of
     # Date" even when unmigrated/empty; every other model (including the other built-in,
@@ -69,6 +69,26 @@ def _phase_criteria(data: PhaseSwitchData, model_name: str) -> tuple[str, str]:
     if model_name == _MODEL_NAME_FORECAST_AS_OF:
         return _CRITERIA_AS_OF_DATE, ''
     return _CRITERIA_NEVER, ''
+
+
+def _resolve_phase(node: Any, model_name: str, phase: str) -> tuple[str, str]:
+    """The CSV (Criteria, Value) for one phase's `replaceActualWithForecast` node.
+
+    `node` is `None` when the phase key, or `replaceActualWithForecast` itself, is absent,
+    so `node == {}` holds only for an empty node under a present key.
+    """
+    if node == {}:
+        # Verified live 2026-09-29: a phase whose ComboCurve screen reads "Ignore Hist Prod"
+        # (CSV export: "Ignore Historical Production") arrives as an EMPTY node under a
+        # present `replaceActualWithForecast` key.
+        return _CRITERIA_IGNORE_HIST_PROD, ''
+    try:
+        data = PhaseSwitchData.model_validate(node or {})
+    except ValidationError as error:
+        raise NotImplementedError(
+            f'Unknown ActualOrForecast replaceActualWithForecast[{phase!r}] shape: {node!r}'
+        ) from error
+    return _phase_criteria(data, model_name)
 
 
 class ActualOrForecastMapper(EconModelMapper):
@@ -86,22 +106,8 @@ class ActualOrForecastMapper(EconModelMapper):
         # 2026-09-29 against ComboCurve's own CSV export: a model whose API shape is
         # `{"ignoreHistoryProd": true}` (no `replaceActualWithForecast`) exports Never on every
         # phase, so the flag does not mean "Ignore Historical Production".
-        has_phase_nodes = 'replaceActualWithForecast' in aof
         for phase in _PHASES:
-            node = rwf.get(phase)
-            if has_phase_nodes and node == {}:
-                # Verified live 2026-09-29: a phase whose ComboCurve screen reads "Ignore Hist Prod"
-                # (CSV export: "Ignore Historical Production") arrives as an EMPTY node under a
-                # present `replaceActualWithForecast` key.
-                criteria, value = _CRITERIA_IGNORE_HIST_PROD, ''
-            else:
-                try:
-                    data = PhaseSwitchData.model_validate(node or {})
-                except ValidationError as e:
-                    raise NotImplementedError(
-                        f'Unknown ActualOrForecast replaceActualWithForecast[{phase!r}] shape: {node!r}'
-                    ) from e
-                criteria, value = _phase_criteria(data, model_name)
+            criteria, value = _resolve_phase(rwf.get(phase), model_name, phase)
             row = dict(common)
             row.update(
                 {
@@ -147,7 +153,8 @@ class ActualOrForecastMapper(EconModelMapper):
         all_never = all(by_phase[p]['Criteria'] == _CRITERIA_NEVER for p in _PHASES)
         # `ignoreHistoryProd` has NO CSV column and does not change the CSV (ComboCurve's
         # export ignores it too), so its true/false value is NOT recoverable here --
-        # documented limitation; every reconstruction writes `ignoreHistoryProd: False`.
+        # documented limitation; an explicit reconstruction writes `ignoreHistoryProd: False`,
+        # and the all-Never collapse below writes `{}` with no flag.
         # A model with any Ignore Historical Production phase reconstructs to the explicit
         # form below, with `{}` on those phases (the per-phase `{}` is distinct from the
         # legacy whole-node `{}`).

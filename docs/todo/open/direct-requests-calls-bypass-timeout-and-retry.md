@@ -5,7 +5,8 @@ Opened: 2026-09-29
 
 ## What happens now
 
-Eight public methods call `requests.get/post/put/patch` themselves instead of going through
+Eight call sites (six public methods and the two private v2-export helpers behind eight more public
+wrappers, 14 public methods in all) call `requests.get/post/put/patch` themselves instead of going through
 `APIBase._request_with_retry` (and so `base._send_request`). They send one request with no timeout
 and no retry of any kind: no 429 pause, no 502/503/504 backoff for the GET, no connection retry. A
 connection that stalls without a reset blocks the call forever; a dropped connection or a 429 raises

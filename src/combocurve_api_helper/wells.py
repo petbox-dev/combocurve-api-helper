@@ -315,11 +315,11 @@ class Wells(APIBase):
 
     def get_project_wells(self, project_id: str, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
-        Returns a list of project wells scoped from the project's id.
+        Returns a list of project wells scoped from the project's id, matching `filters`.
 
         https://docs.api.combocurve.com/api/get-project-wells
         """
-        url = self.get_project_wells_url(project_id)
+        url = self.get_project_wells_url(project_id, filters)
         params = {'take': GET_LIMIT}
         wells = self._get_items(url, params)
 

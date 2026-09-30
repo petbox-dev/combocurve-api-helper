@@ -120,7 +120,8 @@ OFFSET_FROM_SCHEDULE_CSV: dict[str, str] = {v: k for k, v in OFFSET_TO_SCHEDULE_
 
 # OffsetTo value -> companion API date-header key carried alongside a fromHeaders/
 # fromSchedule otherCapex row (e.g. {'fromHeaders': 'offset_to_spud_date', 'spudDate': 0}).
-# Ported verbatim from cc-afe-sync's `CapExRow._dateLookup`, re-keyed by the OffsetTo
+# Ported from cc-afe-sync's `CapExRow._dateLookup` (plus the `fromSchedule` tokens
+# `SpudStart`/`CompletionStart`, verified live 2026-09-17), re-keyed by the OffsetTo
 # *value* (str) instead of the enum member so it composes with plain dict lookups
 # elsewhere in this package. `_None` is intentionally omitted -- it is not a real
 # fromHeaders/fromSchedule token.

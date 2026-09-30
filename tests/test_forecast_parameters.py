@@ -105,14 +105,14 @@ def test_extra_export_columns_are_ignored() -> None:
     asserts the output is exactly the 23-column subset with the read keys mapped correctly."""
     ignored_export_columns = {
         'project_name': 'Sample Project',
-        'project_id': WELL_A,
+        'project_id': '0000000000000000000000aa',
         'forecast_name': 'Sample Forecast',
-        'forecast_id': WELL_A,
+        'forecast_id': '0000000000000000000000bb',
         'well_number': '1H',
         'status': 'In Progress',
         'stream_scope': 'field',
         'sub_type': 'rate',
-        'eur': 1234.5,
+        'eur': 9876.5,
         'eur_per_ft': 0.5,
         'q_final': 1.0,
         'cum_start': 0.0,

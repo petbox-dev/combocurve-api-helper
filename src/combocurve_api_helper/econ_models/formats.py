@@ -1,9 +1,12 @@
 import datetime
 from decimal import Decimal
-from typing import Any, Optional, Union
+from typing import Any, Literal, Optional, Union
+
+# Scope of a non-`unique` econ model: the endpoint family it was read from (see `model_type`).
+ModelScope = Literal['project', 'company']
 
 
-def model_type(unique: bool, scope: str = 'project') -> str:
+def model_type(unique: bool, scope: ModelScope = 'project') -> str:
     """CSV 'Model Type' value for a model.
 
     A `unique` model (one written inline on a single well/assignment) is always

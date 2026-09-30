@@ -37,12 +37,17 @@ class EconRuns(APIBase):
     # URLs
     ######
 
-    def get_econ_runs_url(self, project_id: str, scenario_id: str) -> str:
+    def get_econ_runs_url(self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of econ runs for a specific project id and
         scenario id.
         """
-        return f'{self.API_BASE_URL}/projects/{project_id}/scenarios/{scenario_id}/econ-runs'
+        url = f'{self.API_BASE_URL}/projects/{project_id}/scenarios/{scenario_id}/econ-runs'
+        if filters is None:
+            return url
+
+        url += self._build_params_string(filters)
+        return url
 
     def get_econ_run_by_id_url(self, project_id: str, scenario_id: str, econ_run_id: str) -> str:
         """
@@ -51,13 +56,20 @@ class EconRuns(APIBase):
         base_url = self.get_econ_runs_url(project_id, scenario_id)
         return f'{base_url}/{econ_run_id}'
 
-    def get_econ_run_onelines_url(self, project_id: str, scenario_id: str, econ_run_id: str) -> str:
+    def get_econ_run_onelines_url(
+        self, project_id: str, scenario_id: str, econ_run_id: str, filters: Optional[dict[str, str]] = None
+    ) -> str:
         """
         Returns the API url for onelines for a specific project id, scenario id,
         and econ run id.
         """
         base_url = self.get_econ_run_by_id_url(project_id, scenario_id, econ_run_id)
-        return f'{base_url}/one-liners'
+        url = f'{base_url}/one-liners'
+        if filters is None:
+            return url
+
+        url += self._build_params_string(filters)
+        return url
 
     def get_econ_run_combo_names_url(self, project_id: str, scenario_id: str, econ_run_id: str) -> str:
         """
@@ -67,13 +79,20 @@ class EconRuns(APIBase):
         base_url = self.get_econ_run_onelines_url(project_id, scenario_id, econ_run_id)
         return f'{base_url}/combo-names'
 
-    def get_econ_run_monthly_export_id_url(self, project_id: str, scenario_id: str, econ_run_id: str) -> str:
+    def get_econ_run_monthly_export_id_url(
+        self, project_id: str, scenario_id: str, econ_run_id: str, filters: Optional[dict[str, str]] = None
+    ) -> str:
         """
         Returns the API url for monthly exports for a specific project id,
         scenario id, and econ run id.
         """
         base_url = self.get_econ_run_by_id_url(project_id, scenario_id, econ_run_id)
-        return f'{base_url}/monthly-exports'
+        url = f'{base_url}/monthly-exports'
+        if filters is None:
+            return url
+
+        url += self._build_params_string(filters)
+        return url
 
     def get_econ_run_monthly_export_url(
         self, project_id: str, scenario_id: str, econ_run_id: str, monthly_export_id: str
@@ -136,7 +155,7 @@ class EconRuns(APIBase):
 
         https://docs.api.combocurve.com/api/head-econ-runs
         """
-        return self._count_items(self.get_econ_runs_url(project_id, scenario_id) + self._build_params_string(filters))
+        return self._count_items(self.get_econ_runs_url(project_id, scenario_id, filters))
 
     def get_econ_run_by_id(
         self, project_id: str, scenario_id: str, econ_run_id: str, add_combo_names: bool = True
@@ -194,9 +213,7 @@ class EconRuns(APIBase):
 
         https://docs.api.combocurve.com/api/head-one-liners
         """
-        return self._count_items(
-            self.get_econ_run_onelines_url(project_id, scenario_id, econ_run_id) + self._build_params_string(filters)
-        )
+        return self._count_items(self.get_econ_run_onelines_url(project_id, scenario_id, econ_run_id, filters))
 
     def count_econ_run_monthly_exports(
         self, project_id: str, scenario_id: str, econ_run_id: str, filters: Optional[dict[str, str]] = None
@@ -209,10 +226,7 @@ class EconRuns(APIBase):
 
         https://docs.api.combocurve.com/api/head-monthly-exports
         """
-        return self._count_items(
-            self.get_econ_run_monthly_export_id_url(project_id, scenario_id, econ_run_id)
-            + self._build_params_string(filters)
-        )
+        return self._count_items(self.get_econ_run_monthly_export_id_url(project_id, scenario_id, econ_run_id, filters))
 
     def get_econ_run_oneline_by_id(self, project_id: str, scenario_id: str, econ_run_id: str, oneline_id: str) -> Item:
         """

@@ -57,7 +57,7 @@ def test_forecast_and_null_route_types_have_no_methods() -> None:
     # generate no methods. A name like get_actual_forecast_models is legitimate
     # (methodBase "actual_forecast"), so a bare substring check on "forecast"
     # would false-positive -- match the leading base segment after the verb.
-    verbs = ('get_', 'post_', 'put_', 'delete_')
+    verbs = ('get_', 'post_', 'put_', 'delete_', 'count_')
     null_route_bases = {str(m['econModelType']).lower() for m in config.ECON_MODELS if m['route'] is None}
     for name in _generated_method_names():
         base = name

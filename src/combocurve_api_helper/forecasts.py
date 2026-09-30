@@ -952,6 +952,10 @@ class Forecasts(APIBase):
         silently dropped. Prefer this when you need to detect partial failures or
         want parallel throughput; `on_progress` is called once per completed
         chunk (from the calling thread) for progress reporting.
+
+        A failed chunk with `may_have_applied=True` (a gateway status, or a connection
+        lost after the chunk was sent) is counted in `failed_count`, but the server may
+        have applied it: check the server before sending it again.
         """
         url = self.get_forecast_parameters_url(project_id, forecast_id)
         return self._request_batched(

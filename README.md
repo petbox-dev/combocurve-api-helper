@@ -21,7 +21,9 @@ A utility library mapped to ComboCurve's API.
 - **Forecasts & type curves** — read forecasts, write forecast parameters, and
   `put_forecast_parameters_batched()` for parallel, chunked (25 well x phase per
   request), 207-aware bulk writes that return a `BatchWriteResult` (per-record
-  `success_count` / `failed_count` / `ok`, results in original payload order).
+  `success_count` / `failed_count` / `ok`, results in original payload order). A
+  failed chunk marked `may_have_applied` may still have been written: check the
+  server before sending it again.
 - **Forecast runs** — submit a forecast run as an async job and poll its status.
 - **Econ models** — CREATE / UPDATE / DELETE for econ-model types (project
   per-type and generic; company generics), plus an exact, invertible
@@ -31,7 +33,7 @@ A utility library mapped to ComboCurve's API.
 - **Lookup tables** — scenario, type-curve, and scenario-assignment CRUD.
 - **Econ runs** — trigger scenario economics and read results.
 - **Directional** — directional survey access.
-- **Counts** — a `count_*` method beside each list method returns the number of
+- **Counts** — a `count_*` method for every list route returns the number of
   matching documents from a HEAD request, without fetching them.
 - **Resilient transport** — a request timeout, and automatic retry with backoff on
   HTTP 429 (honoring `Retry-After`). A GET or HEAD is also retried after a transient

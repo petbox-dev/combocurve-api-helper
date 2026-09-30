@@ -30,14 +30,14 @@ _CATEGORY_FROM_CSV = {v: k for k, v in _CATEGORY_TO_CSV.items()}
 
 # `btuContent` API key -> CSV 'Category' column value, for the 'btu'-Key rows. These
 # reuse the ordinary Key/Category/Value/Unit columns (Key='btu'); the dedicated
-# 'BTU (MBTU/MCF)' column is unrelated and always blank -- see StreamPropertiesMapper.
+# 'BTU (MBTU/MCF)' column (csv_columns.py) is unrelated and always blank.
 _BTU_KEY_TO_CSV = {'unshrunkGas': 'unshrunk gas', 'shrunkGas': 'shrunk gas'}
 _BTU_CATEGORY_FROM_CSV = {v: k for k, v in _BTU_KEY_TO_CSV.items()}
 _BTU_UNIT = 'mbtu/mcf'
-# CC's real CSV export omits a 'btu' row for a category whose value equals this
-# default (1000) rather than omitting btuContent from the CSV altogether -- confirmed
-# against a live export dated 2026-09-06 showing unshrunkGas=1100/shrunkGas=900 as two
-# 'btu' rows.
+# CC's CSV export writes a 'btu' row per off-default category: an export dated 2026-09-06
+# showed unshrunkGas=1100/shrunkGas=900 as two 'btu' rows. That a category AT this default
+# (1000) gets no row is not shown by that export; it is the reported behaviour, unverified.
+# The export file looked resaved, so it does not settle the Value format ('1100' vs '1100.0').
 _BTU_DEFAULT = 1000
 
 # (StreamPropertyGroup python attribute name, API category key), in the same canonical
@@ -173,30 +173,30 @@ class StreamPropertiesMapper(EconModelMapper):
                     )
                     rows.append({c: row.get(c, '') for c in self.columns})
 
+        rows.extend(self._btu_rows(model, common))
+        return rows
+
+    def _btu_rows(self, model: dict[str, Any], common: dict[str, str]) -> list[dict[str, str]]:
+        """One 'btu' row per `btuContent` category whose value is not the default."""
         btu_content = model.get('btuContent') or {}
+        btu_rows: list[dict[str, str]] = []
         for api_key, csv_category in _BTU_KEY_TO_CSV.items():
-            value = btu_content.get(api_key)
+            btu_value = btu_content.get(api_key)
             # CC's CSV omits the row when the value is the default (1000), not just
             # when btuContent is absent -- checked per category, independently.
-            if value is None or value == _BTU_DEFAULT:
+            if btu_value is None or btu_value == _BTU_DEFAULT:
                 continue
             row = dict(common)
             row.update(
                 {
                     'Key': 'btu',
                     'Category': csv_category,
-                    'Criteria': '',
-                    'Value': num_to_csv(value),
-                    'Period': '',
+                    'Value': num_to_csv(btu_value),
                     'Unit': _BTU_UNIT,
-                    'Gas Shrinkage Condition': '',
-                    'Rate Type': '',
-                    'Rate Rows Calculation Method': '',
                 }
             )
-            rows.append({c: row.get(c, '') for c in self.columns})
-
-        return rows
+            btu_rows.append({column: row.get(column, '') for column in self.columns})
+        return btu_rows
 
     def from_row_dicts(self, rows: list[dict[str, str]]) -> dict[str, Any]:
         groups: dict[str, dict[str, list[StreamPropertyRow]]] = {'yields': {}, 'shrinkage': {}, 'lossFlare': {}}

@@ -153,8 +153,9 @@ def test_gas_shrinkage_condition_uses_presence_not_truthiness() -> None:
 
 
 def test_csv_rows_roundtrip_exact() -> None:
-    # Unlike the API dict round-trip (which loses the exact unshrunkGas literal, plus
-    # btuContent and rateType/rowsCalculationMethod entirely -- see test_roundtrip), the
+    # Unlike the API dict round-trip (which loses the exact unshrunkGas literal, any
+    # btuContent category at its default, and rateType/rowsCalculationMethod entirely
+    # -- see test_roundtrip), the
     # CSV representation itself round-trips exactly through from_row_dicts -> to_row_dicts
     # for the stream-properties data columns. 'Last Update' is excluded: it is sourced
     # from the API model's top-level 'updatedAt'/context, which from_row_dicts does not
@@ -209,6 +210,18 @@ def test_btu_content_roundtrip() -> None:
     model['btuContent'] = {'unshrunkGas': 1000, 'shrunkGas': 900}
     rebuilt = m.from_row_dicts(m.to_row_dicts(model))
     assert rebuilt['btuContent'] == {'shrunkGas': 900}
+
+
+def test_unknown_btu_category_raises() -> None:
+    model = dict(API)
+    model['btuContent'] = {'unshrunkGas': 1100}
+    mapper = StreamPropertiesMapper()
+    rows = mapper.to_row_dicts(model)
+    for row in rows:
+        if row['Key'] == 'btu':
+            row['Category'] = 'wet gas'
+    with pytest.raises(NotImplementedError, match='Unknown btu Category'):
+        mapper.from_row_dicts(rows)
 
 
 def test_nonempty_company_custom_streams_raises() -> None:

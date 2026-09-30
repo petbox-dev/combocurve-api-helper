@@ -262,11 +262,12 @@ class Root(APIBase):
     def count_root_forecast_daily_volumes(self, filters: Optional[dict[str, str]] = None) -> int:
         """
         Returns the number of forecast daily-volume documents matching `filters`, from the
-        `X-Query-Count` header of a HEAD request (no documents are fetched).
+        `X-Query-Count` header of a HEAD request (no documents are fetched). `filters` must
+        scope the query, as for `get_root_forecast_daily_volumes`.
 
         https://docs.api.combocurve.com/api/head-root-forecast-daily-volumes
         """
-        return self._count_items(self.get_root_forecast_daily_volumes_url(filters))
+        return self._count_items(self.get_root_forecast_daily_volumes_url(_require_volume_scope(filters)))
 
     def get_root_forecast_monthly_volumes(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """
@@ -288,11 +289,12 @@ class Root(APIBase):
     def count_root_forecast_monthly_volumes(self, filters: Optional[dict[str, str]] = None) -> int:
         """
         Returns the number of forecast monthly-volume documents matching `filters`, from the
-        `X-Query-Count` header of a HEAD request (no documents are fetched).
+        `X-Query-Count` header of a HEAD request (no documents are fetched). `filters` must
+        scope the query, as for `get_root_forecast_monthly_volumes`.
 
         https://docs.api.combocurve.com/api/head-root-forecast-monthly-volumes
         """
-        return self._count_items(self.get_root_forecast_monthly_volumes_url(filters))
+        return self._count_items(self.get_root_forecast_monthly_volumes_url(_require_volume_scope(filters)))
 
     def get_users_roles(self) -> ItemList:
         """

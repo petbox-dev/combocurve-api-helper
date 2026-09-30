@@ -38,6 +38,19 @@ from combocurve_api_helper import ComboCurveAPI
 # Mirrors scripts/generate_docstrings.py COLLECTION_URL (the collection is never vendored).
 _COLLECTION_URL = 'https://docs.api.combocurve.com/downloads/combocurve-api.postman_collection.json'
 _SLUG_RE = re.compile(r'https://docs\.api\.combocurve\.com/api/([a-z0-9-]+)')
+# Methods whose route is in the collection but that the naming convention cannot pair with a
+# callable builder (no `<verb>` -> `get_` builder of that name, or a by-type builder that asserts on
+# the placeholder type). Their paths were checked by hand on 2026-09-30.
+_UNCHECKED_BY_DESIGN = (
+    'count_econ_model_assignments_by_type_by_id',
+    'count_econ_run_monthly_exports',
+    'delete_scenario_combo',
+    'get_custom_columns_daily_production',
+    'get_custom_columns_monthly_production',
+    'get_custom_columns_wells',
+    'get_type_curve_representative_fits',
+    'post_export',
+)
 
 # A 24-hex ObjectId stands in for every required path argument. Nothing is sent, so the
 # value only has to be recognizable again in the built url.
@@ -125,6 +138,7 @@ def test_url_builders_match_the_collection_route_paths() -> None:
         pytest.skip(f'ComboCurve Postman collection unreachable: {exc}')
 
     mismatches: list[str] = []
+    unchecked: list[str] = []
     checked = 0
 
     for name, method in inspect.getmembers(ComboCurveAPI, inspect.isfunction):
@@ -137,7 +151,10 @@ def test_url_builders_match_the_collection_route_paths() -> None:
 
         builder_name, builder = _builder_for(name)
         expected = collection.get(slug_match.group(1))
-        if builder is None or expected is None:
+        if expected is None:
+            continue
+        if builder is None:
+            unchecked.append(name)
             continue
 
         try:
@@ -146,6 +163,7 @@ def test_url_builders_match_the_collection_route_paths() -> None:
             # Builder needs an argument shape the placeholder cannot satisfy (the by-type
             # econ-model builders assert on an unknown `econ_model_type`); the slug test
             # still covers its docs link.
+            unchecked.append(name)
             continue
 
         checked += 1
@@ -155,10 +173,13 @@ def test_url_builders_match_the_collection_route_paths() -> None:
             )
 
     assert not mismatches, 'url builders whose path disagrees with the collection:\n' + '\n'.join(sorted(mismatches))
-    # Floor set just under the count at the time of writing (110 of 116 slug-carrying
-    # methods resolve to a builder). A convention drift that silently stops checking
+    # Floor set just under the count at the time of writing (142 builders checked on
+    # 2026-09-30, 30 of them count_* methods). A convention drift that silently stops checking
     # most of the surface should fail loudly rather than pass vacuously.
-    assert checked >= 100, f'only {checked} builders were checked -- the slug/builder naming convention drifted'
+    assert checked >= 135, f'only {checked} builders were checked -- the slug/builder naming convention drifted'
+    # A method whose route IS in the collection but whose builder the convention cannot find or
+    # call is unchecked here; each one is named, so a new one fails instead of dropping out silently.
+    assert sorted(unchecked) == sorted(_UNCHECKED_BY_DESIGN), f'unchecked routes changed: {sorted(unchecked)}'
 
 
 def test_the_five_previously_broken_routes_stay_fixed() -> None:
