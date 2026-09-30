@@ -91,11 +91,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   verdict). `production.py`'s daily-production example was marked `Example data:` on a GET with no
   body, so it was never refreshed and showed raw `<number>` placeholders; it is now
   `Example response:` and regenerated.
+- **Econ-model drift check reported the `fromSchedule` Capex keys as drift.** The Capex baseline in
+  `econ_models/drift.py` now lists `fromSchedule`, `spudStart` and `completionStart` (the
+  `fromSchedule` row keys handled since 2.3.1).
 
 ### Dependencies
 
 - `urllib3` is now a declared dependency (it was already installed through `requests`): the
   connection-failure classification imports `urllib3.exceptions`.
+- Dev group: `python-dotenv`, so `tests/conftest.py` can load the live-test dev ids from a gitignored
+  `.env` (names in `.env.example`). Not a runtime dependency.
 
 ## [2.3.2] - 2026-09-29
 
