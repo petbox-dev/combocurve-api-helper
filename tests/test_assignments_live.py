@@ -23,15 +23,20 @@ from combocurve_api_helper import ComboCurveAPI
 
 DEV = pathlib.Path.home() / '.combocurve' / 'dev'
 
-pytestmark = pytest.mark.skipif(
-    not os.environ.get('CC_LIVE_TEST') or not (DEV / 'combocurve.json').exists(),
-    reason='requires CC_LIVE_TEST=1 and ~/.combocurve/dev credentials',
-)
+# The dev target ids come from the environment, with no defaults: this repo is public.
+PROJECT_ID = os.environ.get('CC_DEV_PROJECT_ID', '')
+SCENARIO_ID = os.environ.get('CC_DEV_SCENARIO_ID', '')
+DATES_MODEL_ID = os.environ.get('CC_DEV_DATES_MODEL_ID', '')
 
-# Dev "Test Project" defaults; override via env for a different target.
-PROJECT_ID = os.environ.get('CC_DEV_PROJECT_ID', '65568dbb4a8039d4e89a2f4b')
-SCENARIO_ID = os.environ.get('CC_DEV_SCENARIO_ID', '65568dbf4a8039d4e89b5059')
-DATES_MODEL_ID = os.environ.get('CC_DEV_DATES_MODEL_ID', '65568dbb4a8039d4e89a2f6b')
+pytestmark = pytest.mark.skipif(
+    not os.environ.get('CC_LIVE_TEST')
+    or not (DEV / 'combocurve.json').exists()
+    or not (PROJECT_ID and SCENARIO_ID and DATES_MODEL_ID),
+    reason=(
+        'requires CC_LIVE_TEST=1, ~/.combocurve/dev credentials, and CC_DEV_PROJECT_ID, '
+        'CC_DEV_SCENARIO_ID, CC_DEV_DATES_MODEL_ID'
+    ),
+)
 
 
 def _dev_api() -> ComboCurveAPI:

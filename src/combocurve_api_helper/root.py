@@ -1,8 +1,26 @@
+import warnings
 from typing import Optional, cast
 
 from .base import APIBase, Item, ItemList, WriteResponse
 
 GET_LIMIT = 200
+
+
+def _custom_column_argument(custom_column: Optional[str], collection: Optional[str]) -> str:
+    """The project custom-columns path segment, from `custom_column` or its deprecated alias.
+
+    2.2.2 renamed the keyword `collection` to `custom_column`, which broke keyword callers.
+    `collection=` is accepted again with a `DeprecationWarning`; passing both, or neither, raises.
+    """
+    if collection is not None:
+        if custom_column is not None:
+            raise TypeError('pass custom_column or its deprecated alias collection, not both')
+        warnings.warn('the collection argument is deprecated; pass custom_column', DeprecationWarning, stacklevel=3)
+        return collection
+    if custom_column is None:
+        raise TypeError("missing required argument: 'custom_column'")
+    return custom_column
+
 
 # The root volume routes reject any request that does not scope itself to at least one
 # of these. Enforced locally so the mistake is a ValueError at the call site rather than
@@ -110,13 +128,20 @@ class Root(APIBase):
         return f'{self.API_BASE_URL}/users/roles'
 
     def get_project_custom_columns_url(
-        self, project_id: str, custom_column: str, filters: Optional[dict[str, str]] = None
+        self,
+        project_id: str,
+        custom_column: Optional[str] = None,
+        filters: Optional[dict[str, str]] = None,
+        *,
+        collection: Optional[str] = None,
     ) -> str:
         """
         Returns the API url for a project's custom columns. `custom_column` -- "Currently
-        only `headers` is supported" per the docs.
+        only `headers` is supported" per the docs. `custom_column` is required; `collection`
+        is its deprecated keyword alias (the name before 2.2.2).
         """
-        url = f'{self.API_BASE_URL}/projects/{project_id}/custom-columns/{custom_column}'
+        segment = _custom_column_argument(custom_column, collection)
+        url = f'{self.API_BASE_URL}/projects/{project_id}/custom-columns/{segment}'
         if filters is None:
             return url
 
@@ -326,14 +351,20 @@ class Root(APIBase):
         return self._get_items(url, params)
 
     def get_project_custom_columns(
-        self, project_id: str, custom_column: str, filters: Optional[dict[str, str]] = None
+        self,
+        project_id: str,
+        custom_column: Optional[str] = None,
+        filters: Optional[dict[str, str]] = None,
+        *,
+        collection: Optional[str] = None,
     ) -> ItemList:
         """
         Returns a project's custom well-header definitions. `custom_column` is
         "Currently only `headers` is supported" per the docs -- unlike the sibling
         `get_custom_columns`, whose `collection` argument is a collection name
         ('wells', 'daily-productions', ...), this one is not. The project-scoped
-        counterpart to `get_custom_columns`.
+        counterpart to `get_custom_columns`. `custom_column` is required; `collection`
+        is its deprecated keyword alias (the name before 2.2.2) and warns.
 
         The response is a list with one entry per project custom header -- 0 if the
         project has none defined, or several for a project with multiple. Verified
@@ -351,5 +382,6 @@ class Root(APIBase):
             }
         ]
         """
-        url = self.get_project_custom_columns_url(project_id, custom_column, filters)
+        segment = _custom_column_argument(custom_column, collection)
+        url = self.get_project_custom_columns_url(project_id, segment, filters)
         return self._get_items(url)

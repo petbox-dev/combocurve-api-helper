@@ -28,7 +28,7 @@ Network-dependent, skipped when the collection can't be fetched -- same policy a
 import inspect
 import re
 import warnings
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 import pytest
 import requests
@@ -114,10 +114,14 @@ def _builder_for(method_name: str) -> tuple[str, Callable[..., str]] | tuple[Non
 
 def _built_path(builder: Callable[..., str]) -> str:
     """Call `builder` with placeholders for its required args and normalize the result."""
+    # Required path arguments, plus an optional `str` path segment whose value is required in
+    # practice (`get_project_custom_columns_url`'s `custom_column` defaults to None only so its
+    # deprecated keyword alias can stand in for it). `filters` is a dict, so it is never filled.
     required = [
         name
         for name, parameter in list(inspect.signature(builder).parameters.items())[1:]
-        if parameter.default is inspect.Parameter.empty and name != 'self'
+        if parameter.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD
+        and (parameter.default is inspect.Parameter.empty or parameter.annotation == Optional[str])
     ]
     # A couple of builders validate an enum argument (`phase`, `series`) and warn when
     # the placeholder is not one of its names. The path is still assembled, and the path

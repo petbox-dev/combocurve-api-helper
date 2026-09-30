@@ -198,3 +198,25 @@ def test_dedupe_is_a_noop_without_a_query_string(monkeypatch: MonkeyPatch) -> No
     api.get_root_econ_runs()
 
     assert calls[0] == (f'{V1}/econ-runs', {'take': 200})
+
+
+def test_project_custom_columns_accepts_the_deprecated_collection_keyword(monkeypatch: MonkeyPatch) -> None:
+    # 2.2.2 renamed `collection` to `custom_column`; `collection=` callers must keep working.
+    api = make_offline_api()
+    calls = _capture_requests(monkeypatch)
+    api.get_project_custom_columns('P', 'headers')
+    api.get_project_custom_columns('P', custom_column='headers')
+    with pytest.warns(DeprecationWarning, match='collection'):
+        api.get_project_custom_columns('P', collection='headers')
+    with pytest.warns(DeprecationWarning, match='collection'):
+        url = api.get_project_custom_columns_url('P', collection='headers')
+    assert url == f'{V1}/projects/P/custom-columns/headers'
+    assert [called_url for called_url, _ in calls] == [f'{V1}/projects/P/custom-columns/headers'] * 3
+
+
+def test_project_custom_columns_needs_exactly_one_name_for_the_segment() -> None:
+    api = make_offline_api()
+    with pytest.raises(TypeError, match='missing required argument'):
+        api.get_project_custom_columns_url('P')
+    with pytest.raises(TypeError, match='not both'):
+        api.get_project_custom_columns_url('P', custom_column='headers', collection='headers')

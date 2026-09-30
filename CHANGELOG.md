@@ -74,6 +74,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The client could not be pickled or deep-copied** since the auth lock arrived in 2.3.0
   (`TypeError: cannot pickle '_thread.lock' object`). The lock is now left out of the pickled state
   and a new one is made on restore.
+- **StreamProperties `btu` rows wrote `Value` as `1100`; ComboCurve writes `1100.0`.** Checked
+  against a raw 2026-09-06 export; `btu` rows now use the same decimal form as every other
+  StreamProperties `Value`, and the real-export fixture carries a `btu` model.
+- **`get_project_custom_columns(..., collection=...)` works again.** 2.2.2 renamed the keyword to
+  `custom_column`, so a keyword caller got `TypeError`. `collection=` is accepted again as a
+  deprecated alias (it warns `DeprecationWarning`); passing both, or neither, raises `TypeError`. The
+  same holds for `get_project_custom_columns_url`. The 2.2.2 return type (`ItemList`, not one
+  `Item`) stands.
 - **`get_project_wells` ignored its `filters`** and returned every well in the project; it now
   sends them, so its result agrees with `count_project_wells` for the same filters.
 - **`Retry-After: 0` waited 60 s.** A zero is now honoured; a negative or non-finite value falls back
@@ -188,9 +196,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   carries `btu` rows. An export shows one `Key='btu'` row per off-default category (`unshrunk gas` /
   `shrunk gas`, Value in the ordinary Value column, Unit `mbtu/mcf`); `to_row_dicts` now writes them
   and `from_row_dicts` reads them back into `btuContent`. A category at the default (1000) gets no
-  row, so it reads back as absent; that omission is the reported behaviour, not shown by the export
-  (see `docs/todo/open/econ-model-csv-values-unverified-against-a-raw-export.md`). The dedicated
-  `BTU (MBTU/MCF)` column stays blank.
+  row, so it reads back as absent. The dedicated `BTU (MBTU/MCF)` column stays blank. (The `Value`
+  cell was written `1100`, not ComboCurve's `1100.0`, until 2.4.0.)
 
 ## [2.2.0] - 2026-09-04
 

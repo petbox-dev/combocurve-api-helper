@@ -38,7 +38,10 @@ class TestRoot:
         # 'daily-productions' that `get_custom_columns` takes, 404s with
         # CustomColumnHeaderNotFoundError). The response is a list -- 0 entries for a
         # project with no custom headers, one per header for a project that has them.
-        project_id = os.environ.get('CC_DEV_PROJECT_ID', '65568dbb4a8039d4e89a2f4b')
+        # No default id: this repo is public, so the dev project id comes from the environment.
+        project_id = os.environ.get('CC_DEV_PROJECT_ID')
+        if not project_id:
+            pytest.skip('requires CC_DEV_PROJECT_ID')
         result = api.get_project_custom_columns(project_id, 'headers')
         assert isinstance(result, list)
         for header in result:

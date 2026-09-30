@@ -98,10 +98,9 @@ def test_to_row_dicts_values() -> None:
 
 
 def test_btu_content_emitted_only_off_default() -> None:
-    # Verified live 2026-09-06: a real Stream Properties CSV export carries 'btu'-Key
-    # rows (Category 'unshrunk gas'/'shrunk gas', Value/Unit columns, 'mbtu/mcf') for
-    # whichever category is off the default (1000) -- one row per off-default category,
-    # independently.
+    # Verified against a raw export dated 2026-09-06: a Stream Properties CSV export carries
+    # 'btu'-Key rows (Category 'unshrunk gas'/'shrunk gas', Value/Unit columns, 'mbtu/mcf',
+    # Value written '1100.0') for a model whose categories are off the default (1000).
     model = dict(API)
     model['btuContent'] = {'unshrunkGas': 1100, 'shrunkGas': 900}
     rows = StreamPropertiesMapper().to_row_dicts(model)
@@ -111,13 +110,13 @@ def test_btu_content_emitted_only_off_default() -> None:
 
     unshrunk = next(r for r in btu_rows if r['Category'] == 'unshrunk gas')
     assert (unshrunk['Value'], unshrunk['Unit'], unshrunk['Criteria'], unshrunk['Period']) == (
-        '1100',
+        '1100.0',
         'mbtu/mcf',
         '',
         '',
     )
     shrunk = next(r for r in btu_rows if r['Category'] == 'shrunk gas')
-    assert (shrunk['Value'], shrunk['Unit']) == ('900', 'mbtu/mcf')
+    assert (shrunk['Value'], shrunk['Unit']) == ('900.0', 'mbtu/mcf')
 
 
 def test_btu_content_one_category_off_default() -> None:
@@ -130,7 +129,7 @@ def test_btu_content_one_category_off_default() -> None:
     btu_rows = [r for r in rows if r['Key'] == 'btu']
     assert len(btu_rows) == 1
     assert btu_rows[0]['Category'] == 'shrunk gas'
-    assert btu_rows[0]['Value'] == '900'
+    assert btu_rows[0]['Value'] == '900.0'
 
 
 def test_gas_shrinkage_condition_uses_presence_not_truthiness() -> None:

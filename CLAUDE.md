@@ -71,7 +71,7 @@ ruff check src tests scripts                  # lint (rules in pyproject.toml [t
 ruff format --check src tests scripts         # format check (line-length 120, single quotes; drop --check to apply)
 pytest                                        # tests (testpaths = tests)
 pytest tests/test_keysort.py::test_reverse_flips_the_order   # single test
-CC_LIVE_TEST=1 pytest tests/test_api.py       # live read-only tests (needs ~/.combocurve/dev creds)
+CC_LIVE_TEST=1 CC_DEV_PROJECT_ID=<id> pytest tests/test_api.py   # live read-only tests (needs ~/.combocurve/dev creds)
 ```
 
 `scripts/test.sh` / `scripts/test.ps1` / `scripts/test.bat` are the canonical pre-commit checks --
@@ -136,6 +136,10 @@ run in CI or on machines without dev access. The dev filenames are `combocurve.j
 unconditionally true and the live tests silently un-runnable, which is exactly what happened to
 `test_api.py` (it looked for `cc_api_config.json`) until 2.1.0. `test_api.py` is read-only;
 **`test_assignments_live.py` performs writes** (it creates and deletes a throwaway scenario qualifier).
+The dev target ids are environment variables with **no defaults**, because a real id must not sit in
+this public repo: `CC_DEV_PROJECT_ID` (the one `test_api.py` test that needs it skips without it), and
+`CC_DEV_PROJECT_ID`, `CC_DEV_SCENARIO_ID`, `CC_DEV_DATES_MODEL_ID` (`test_assignments_live.py` skips
+unless all three are set).
 
 ## Architecture
 

@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from . import formats
 from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
-from .formats import csv_to_num, num_to_csv, num_to_csv_float
+from .formats import csv_to_num, num_to_csv_float
 
 # API group key -> CSV 'Key' column value.
 _KEY_TO_CSV = {
@@ -34,10 +34,11 @@ _CATEGORY_FROM_CSV = {v: k for k, v in _CATEGORY_TO_CSV.items()}
 _BTU_KEY_TO_CSV = {'unshrunkGas': 'unshrunk gas', 'shrunkGas': 'shrunk gas'}
 _BTU_CATEGORY_FROM_CSV = {v: k for k, v in _BTU_KEY_TO_CSV.items()}
 _BTU_UNIT = 'mbtu/mcf'
-# CC's CSV export writes a 'btu' row per off-default category: an export dated 2026-09-06
-# showed unshrunkGas=1100/shrunkGas=900 as two 'btu' rows. That a category AT this default
-# (1000) gets no row is not shown by that export; it is the reported behaviour, unverified.
-# The export file looked resaved, so it does not settle the Value format ('1100' vs '1100.0').
+# CC's CSV export writes a 'btu' row per off-default category, Value in the num_to_csv_float
+# form: a raw export dated 2026-09-06 shows unshrunkGas=1100/shrunkGas=900 as two 'btu' rows
+# valued '1100.0'/'900.0' (tests/econ_models/fixtures/stream_properties.csv carries them), and
+# no 'btu' row for any of its 149 other models. That ONE category at the default is dropped
+# while the other is written is the reported behaviour; no export shows that mix.
 _BTU_DEFAULT = 1000
 
 # (StreamPropertyGroup python attribute name, API category key), in the same canonical
@@ -191,7 +192,7 @@ class StreamPropertiesMapper(EconModelMapper):
                 {
                     'Key': 'btu',
                     'Category': csv_category,
-                    'Value': num_to_csv(btu_value),
+                    'Value': num_to_csv_float(btu_value),
                     'Unit': _BTU_UNIT,
                 }
             )
