@@ -33,8 +33,10 @@ A utility library mapped to ComboCurve's API.
 - **Directional** — directional survey access.
 - **Counts** — a `count_*` method beside each list method returns the number of
   matching documents from a HEAD request, without fetching them.
-- **Resilient transport** — automatic retry with backoff on HTTP 429 (honoring
-  `Retry-After`) and transient gateway errors (502 / 503 / 504).
+- **Resilient transport** — a request timeout, and automatic retry with backoff on
+  HTTP 429 (honoring `Retry-After`). A GET or HEAD is also retried after a transient
+  gateway error (502 / 503 / 504) or a lost connection; a write is sent again only when
+  it never reached the server, so it is never applied twice.
 
 Method docstrings carry an `Example response:` block and a link to the matching
 `docs.api.combocurve.com` operation (see [Docstring examples](#docstring-examples)).
