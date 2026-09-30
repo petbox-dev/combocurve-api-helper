@@ -71,7 +71,7 @@ ruff check src tests scripts                  # lint (rules in pyproject.toml [t
 ruff format --check src tests scripts         # format check (line-length 120, single quotes; drop --check to apply)
 pytest                                        # tests (testpaths = tests)
 pytest tests/test_keysort.py::test_reverse_flips_the_order   # single test
-CC_LIVE_TEST=1 CC_DEV_PROJECT_ID=<id> pytest tests/test_api.py   # live read-only tests (needs ~/.combocurve/dev creds)
+CC_LIVE_TEST=1 pytest tests/test_api.py       # live read-only tests (needs ~/.combocurve/dev creds and .env)
 ```
 
 `scripts/test.sh` / `scripts/test.ps1` / `scripts/test.bat` are the canonical pre-commit checks --
@@ -139,7 +139,9 @@ unconditionally true and the live tests silently un-runnable, which is exactly w
 The dev target ids are environment variables with **no defaults**, because a real id must not sit in
 this public repo: `CC_DEV_PROJECT_ID` (the one `test_api.py` test that needs it skips without it), and
 `CC_DEV_PROJECT_ID`, `CC_DEV_SCENARIO_ID`, `CC_DEV_DATES_MODEL_ID` (`test_assignments_live.py` skips
-unless all three are set).
+unless all three are set). Put them in a repo-root `.env` (gitignored; copy `.env.example`):
+`tests/conftest.py` loads it with `python-dotenv` (a `dev` dependency-group entry), searching upward
+from `tests/`, so the working directory does not matter. A variable already set in the shell wins.
 
 ## Architecture
 

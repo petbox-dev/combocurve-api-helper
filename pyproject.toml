@@ -61,6 +61,7 @@ classifiers = [
 [dependency-groups]
 dev = [
     "mypy>=1.7.0",
+    "python-dotenv>=1.0",  # tests/conftest.py loads the gitignored .env (live-test dev ids)
     "ruff>=0.15",
     "types-requests>=2.32.0.20241016",
 ]
