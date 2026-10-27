@@ -25,6 +25,8 @@ Network-dependent, skipped when the collection can't be fetched -- same policy a
 `test_docstring_slugs.py` / `test_docstrings_current.py`.
 """
 
+from __future__ import annotations
+
 import inspect
 import re
 import warnings

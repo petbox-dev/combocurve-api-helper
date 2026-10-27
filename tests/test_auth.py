@@ -5,6 +5,7 @@ generated per test session and decoded back with its public half.
 """
 
 import json
+import os
 import pickle
 import time
 import warnings
@@ -297,8 +298,9 @@ class TestCredentialsDirectory:
         with pytest.warns(DeprecationWarning, match=r'3.1.0') as recorded:
             client_auth = auth.auth_from_credentials_directory(tmp_path)
         assert isinstance(client_auth, auth.OAuthClientAuth)
-        # Attributed to this test, not to a frame inside the package.
-        assert recorded[0].filename == __file__
+        # Attributed to this test, not to a frame inside the package. `normcase`: on Windows the drive
+        # letter's case differs between `__file__` and the frame's filename on some Python versions (3.9).
+        assert os.path.normcase(recorded[0].filename) == os.path.normcase(__file__)
 
     def test_no_api_key_raises(self, tmp_path: Path) -> None:
         with pytest.raises(FileNotFoundError, match=r'api-key.txt'):
