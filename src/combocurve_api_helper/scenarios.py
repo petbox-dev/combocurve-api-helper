@@ -597,7 +597,8 @@ post_put_scenario_combos_response = """
                                 "qualifierName": "string"
                             }
                         ],
-                        "selected": true
+                        "selected": true,
+                        "facilityNetworkName": "string"
                     }
                 ]
             }
