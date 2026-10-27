@@ -60,13 +60,43 @@ python -m pip install git+https://github.com/petbox-dev/combocurve-api-helper.gi
 
 ### Setup
 
-Two files are required in `~/.combocurve`:
+Create a credential on your company's **API & Sync** page in ComboCurve and download the ZIP
+(the download link works once). Unzip it into `~/.combocurve`. The files can sit directly in
+`~/.combocurve` or in the `combocurve/` folder the ZIP creates:
 
-- `cc-api.config.json`  
-- `combocurve.json`
+- `api-key.txt`
+- `api-credentials.json` (OAuth client credentials, the current type), or
+  `api-service-account-key.json` (the legacy service account)
 
-These are given by ComboCurve when configuring API access. Example files are provided
-in `./config-examples/` to demonstrate the expected file structures.
+```python
+from combocurve_api_helper import ComboCurveAPI
+
+api = ComboCurveAPI()  # reads ~/.combocurve
+api = ComboCurveAPI.from_credentials_directory('path/to/unzipped/download')  # any other directory
+```
+
+Each download has its own API key; keep `api-key.txt` with the credential file it came with.
+OAuth tokens are fetched from ComboCurve and cached for their lifetime of one hour. A refused token
+request raises `ComboCurveAuthError`. Example files are in `./config-examples/`.
+
+`api-credentials.example.json`:
+```json
+{
+  "type": "combocurve_oauth2_client",
+  "client_id": "<client_id>",
+  "client_secret": "<client_secret>",
+  "token_uri": "https://api.combocurve.com/v1/oauth/token",
+  "audience": "https://api.combocurve.com"
+}
+```
+
+#### Older layout (deprecated, removed in 3.0.0)
+
+Before 2.5.0 the package read `~/.combocurve/combocurve.json` (the credential JSON, renamed) and
+`~/.combocurve/cc-api.config.json` (the API key wrapped in JSON), and
+`ComboCurveAPI.from_alternate_config(combocurve_json_path, cc_api_config_json_path)` read them from
+another directory. Both still work, with a `DeprecationWarning`, and `combocurve.json` may now hold
+either credential type.
 
 <br>
 

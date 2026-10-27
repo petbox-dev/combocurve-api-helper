@@ -96,9 +96,9 @@ runtime guards for untyped callers; keep that form rather than deleting the guar
 
 ## Python floor is 3.9.13 — annotation style follows from it
 
-`requires-python = '>=3.9.13'`. The patch-level floor is **not** arbitrary: `combocurve-api-v1` has
-declared `requires-python = >=3.9.13` since its 0.2.5, so that is this package's real floor. Declaring
-it makes `pip` fail at install of *this* package rather than part-way through dependency resolution.
+`requires-python = '>=3.9.13'`. The patch level came from `combocurve-api-v1`, which declared
+`>=3.9.13` from its 0.2.5. 2.5.0 removed that dependency, so nothing now needs the patch level; it was
+kept so that release did not change the install floor.
 
 What that permits, and what it does not:
 
@@ -118,23 +118,59 @@ What that permits, and what it does not:
 A `TYPE_CHECKING` block requires `from __future__ import annotations` in the same module, or the
 deferred import raises `NameError` when the annotation is evaluated.
 
-## Configuration is read at import time (gotcha)
+## Credentials, and the import-time read (gotcha)
 
-Importing the package executes `config.py`, which loads two JSON files from `~/.combocurve/`:
+ComboCurve issues two credential types. Both come as a ZIP from the company "API & Sync" page, with
+the files in a `combocurve/` folder:
 
-- `combocurve.json` — Google service-account credentials (`ServiceAccount`)
-- `cc-api.config.json` — `{"apikey": "..."}`
+| Type | Credential file | Token | Extra header |
+|---|---|---|---|
+| OAuth client credentials (v2, current) | `api-credentials.json` (`type: combocurve_oauth2_client`) | POST to `https://api.combocurve.com/v1/oauth/token`, 1 hour | `x-backend-version: v2` on **every** request |
+| Service account (v1, legacy; no longer issued) | `api-service-account-key.json` (`type: service_account`) | RS256 JWT signed locally | none |
 
-`config.cfg = Configuration.from_file(CC_API_CONFIG_JSON)` runs at module load, so **the package cannot
-be imported without these files present**. Example shapes are in `config-examples/`. To point at
-different files (e.g. dev creds), construct the client with
-`ComboCurveAPI.from_alternate_config(combocurve_json_path, cc_api_config_json_path)` instead of `ComboCurveAPI()`.
+Both carry `api-key.txt`, sent as `x-api-key`. **Each download has its own key, and a key works only
+with its own credential** (verified 2026-10-27: the service account with the OAuth key answers 403
+`API api.combocurve.com is invalid for the consumer project`; the same 403 comes from an OAuth token
+without `x-backend-version`). The shipped `api-credentials.json` spells the ids `client_id` /
+`client_secret`, while the docs page shows `clientId` / `clientSecret`; `OAuthClientCredentials` reads
+both. The token request body uses the camelCase names (verified live).
+
+**The OAuth backend's `Link` header points at its internal Cloud Run host**
+(`external-api-<n>.us-central1.run.app`), not `api.combocurve.com`. Following it answers 401 and sends
+the credentials to that host. `_next_page_url_on_request_origin` keeps the request's scheme and host
+and takes only the path and query from `Link`. Never follow a `Link` url as given. `auth.py` implements both (`OAuthClientAuth`,
+`ServiceAccountAuth`); there is no dependency on `combocurve-api-v1` since 2.5.0. Both cache the
+token and replace it 60 s before expiry (or at half its lifetime, if shorter). **Do not fetch an OAuth
+token per request**: the token endpoint allows 10 requests per `clientId` per 15 minutes. The expiry
+is wall-clock time so that a pickled client keeps a valid token in another process. A refused token
+raises `ComboCurveAuthError`, which is deliberately not a `requests.RequestException` so that
+`_send_request` does not send it again.
+
+Where the credentials come from:
+
+- `ComboCurveAPI.from_credentials_directory(path)` reads an unzipped download: `api-key.txt` with one
+  credential file, at the top of `path` or in its `combocurve/` folder. If both credential files are
+  present it uses OAuth with a `DeprecationWarning`; that becomes an error in 3.1.0.
+- `ComboCurveAPI()` does the same with `~/.combocurve`, and falls back to the older layout
+  (`combocurve.json` + `cc-api.config.json` `{"apikey": ...}`) with a `DeprecationWarning`. The
+  older `combocurve.json` may hold either type; its `type` field selects the auth (no `type` means
+  service account, because `combocurve-api-v1` never read it).
+- `ComboCurveAPI.from_alternate_config(...)` reads the older layout; deprecated, removed in 3.0.0.
+- `ComboCurveAPI(auth=...)` takes any object with `get_auth_headers()`.
+
+`_deprecation.warn_deprecated` attributes each warning to the first caller outside the package, because
+the call depth differs per entry point and Python shows a `DeprecationWarning` only for `__main__`.
+
+**Importing the package still needs an API key in `~/.combocurve/`**: `config.cfg` is loaded at module
+load, from `api-key.txt` (native layout, preferred) or `cc-api.config.json`. That read is removed in
+3.0.0. Example files are in `config-examples/`.
 `test_api.py` and `test_assignments_live.py` exercise the live API using dev creds under
-`~/.combocurve/dev/`; both skip unless `CC_LIVE_TEST=1` and those creds are present, so they do not
-run in CI or on machines without dev access. The dev filenames are `combocurve.json` and
-**`cc-api.config.json`** — the same names `config.py` uses. Getting that wrong makes the skip predicate
-unconditionally true and the live tests silently un-runnable, which is exactly what happened to
-`test_api.py` (it looked for `cc_api_config.json`) until 2.1.0. `test_api.py` is read-only;
+`~/.combocurve/dev/`, an unzipped credential download read with `from_credentials_directory`; both
+skip unless `CC_LIVE_TEST=1` and `find_native_credentials_directory` finds `api-key.txt` there, so they
+do not run in CI or on machines without dev access. The skip predicate uses the same lookup as the
+loader on purpose: a hand-written filename that does not match makes the predicate always true and the
+live tests silently un-runnable, which is what happened to `test_api.py` (it looked for
+`cc_api_config.json`) until 2.1.0. `test_api.py` is read-only;
 **`test_assignments_live.py` performs writes** (it creates and deletes a throwaway scenario qualifier).
 The dev target ids are environment variables with **no defaults**, because a real id must not sit in
 this public repo: `CC_DEV_PROJECT_ID` (the one `test_api.py` test that needs it skips without it), and
@@ -160,8 +196,8 @@ there are four parallel methods following one naming scheme:
 
 GET goes through `_request_items_pages`; POST/PATCH/PUT/DELETE go through `_request_items_pages_chunks`,
 which splits `data` into `chunksize` batches (via `more_itertools.chunked`). Pagination is automatic:
-both loops follow `get_next_page_url(response.headers)` from the upstream `combocurve-api-v1` package until
-exhausted. Auth headers are re-fetched through `self._auth_headers()` (which serialises the token refresh
+both loops follow `get_next_page_url(response.headers)` (`base.py`; it accepts `; rel="next"` with a space,
+which the replaced `combocurve-api-v1` parser did not) until exhausted. Auth headers are re-fetched through `self._auth_headers()` (which serialises the token refresh
 under `_auth_lock`) before every individual request, the batched-write workers included.
 
 **Type vocabulary** (defined in `base.py`, re-exported from `__init__.py`): `JsonValue` — the recursive

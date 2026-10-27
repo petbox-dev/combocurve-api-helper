@@ -1,6 +1,6 @@
 """Unit test for serialised auth-header retrieval (_auth_headers) -- no live API.
 
-`ComboCurveAuth.get_auth_headers` refreshes an expired token in place, so two threads
+`get_auth_headers` refreshes an expired token in place, so two threads
 refreshing at once is undefined. `_request_with_retry` fetches headers through
 `_auth_headers`, which holds a lock across the fetch. `aries pull` drives GETs from a
 thread pool, so this guards the case where several threads hit an expired token together.
@@ -8,7 +8,9 @@ thread pool, so this guards the case where several threads hit an expired token 
 
 import threading
 import time
+import warnings
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
@@ -19,15 +21,19 @@ from combocurve_api_helper import ComboCurveAPI, base, config
 from tests.http_fakes import FakeResponse, StubAuth, make_offline_api
 
 
-def test_both_constructors_set_the_lock_the_header_fetch_needs(monkeypatch: MonkeyPatch) -> None:
-    """`make_offline_api` sets the lock itself, so this pins the two real constructors."""
-    monkeypatch.setattr('combocurve_api_helper.base.ServiceAccount.from_file', lambda path: object())
-    monkeypatch.setattr(base, 'ComboCurveAuth', lambda account, apikey: StubAuth())
+def test_every_constructor_sets_the_lock_the_header_fetch_needs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    """`make_offline_api` passes a stub auth, so this pins the constructors that read credentials."""
+    monkeypatch.setattr(base, 'default_auth', StubAuth)
+    monkeypatch.setattr(base, 'auth_from_credentials_directory', lambda directory: StubAuth())
+    monkeypatch.setattr(base, 'auth_from_credentials_file', lambda path, api_key: StubAuth())
     monkeypatch.setattr(config.Configuration, 'from_file', lambda path: SimpleNamespace(apikey='key'))
-    clients: list[Any] = [
-        ComboCurveAPI(),
-        ComboCurveAPI.from_alternate_config('combocurve.json', 'cc-api.config.json'),
-    ]
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', DeprecationWarning)
+        clients: list[Any] = [
+            ComboCurveAPI(),
+            ComboCurveAPI.from_credentials_directory(tmp_path),
+            ComboCurveAPI.from_alternate_config('combocurve.json', 'cc-api.config.json'),
+        ]
     for client in clients:
         assert client._auth_headers() == {}
 
