@@ -411,7 +411,8 @@ class Forecasts(APIBase):
                             "startDate": "2020-01-01",
                             "swDate": "2020-01-01",
                             "qSw": 123.45,
-                            "slope": 123.45
+                            "slope": 123.45,
+                            "slopeValue": 123.45
                         }
                     ],
                     "eur": 123.45
@@ -439,7 +440,8 @@ class Forecasts(APIBase):
                             "startDate": "2020-01-01",
                             "swDate": "2020-01-01",
                             "qSw": 123.45,
-                            "slope": 123.45
+                            "slope": 123.45,
+                            "slopeValue": 123.45
                         }
                     ],
                     "eur": 123.45
@@ -459,7 +461,8 @@ class Forecasts(APIBase):
                             "startDate": "2020-01-01",
                             "swDate": "2020-01-01",
                             "qSw": 123.45,
-                            "slope": 123.45
+                            "slope": 123.45,
+                            "slopeValue": 123.45
                         }
                     ],
                     "eur": 123.45
@@ -479,7 +482,8 @@ class Forecasts(APIBase):
                             "startDate": "2020-01-01",
                             "swDate": "2020-01-01",
                             "qSw": 123.45,
-                            "slope": 123.45
+                            "slope": 123.45,
+                            "slopeValue": 123.45
                         }
                     ],
                     "eur": 123.45
@@ -500,7 +504,8 @@ class Forecasts(APIBase):
                             "startDate": "2020-01-01",
                             "swDate": "2020-01-01",
                             "qSw": 123.45,
-                            "slope": 123.45
+                            "slope": 123.45,
+                            "slopeValue": 123.45
                         }
                     ],
                     "basePhase": "string",
@@ -564,7 +569,8 @@ class Forecasts(APIBase):
                         "startDate": "2020-01-01",
                         "swDate": "2020-01-01",
                         "qSw": 123.45,
-                        "slope": 123.45
+                        "slope": 123.45,
+                        "slopeValue": 123.45
                     }
                 ],
                 "eur": 123.45
@@ -592,7 +598,8 @@ class Forecasts(APIBase):
                         "startDate": "2020-01-01",
                         "swDate": "2020-01-01",
                         "qSw": 123.45,
-                        "slope": 123.45
+                        "slope": 123.45,
+                        "slopeValue": 123.45
                     }
                 ],
                 "eur": 123.45
@@ -612,7 +619,8 @@ class Forecasts(APIBase):
                         "startDate": "2020-01-01",
                         "swDate": "2020-01-01",
                         "qSw": 123.45,
-                        "slope": 123.45
+                        "slope": 123.45,
+                        "slopeValue": 123.45
                     }
                 ],
                 "eur": 123.45
@@ -632,7 +640,8 @@ class Forecasts(APIBase):
                         "startDate": "2020-01-01",
                         "swDate": "2020-01-01",
                         "qSw": 123.45,
-                        "slope": 123.45
+                        "slope": 123.45,
+                        "slopeValue": 123.45
                     }
                 ],
                 "eur": 123.45
@@ -653,7 +662,8 @@ class Forecasts(APIBase):
                         "startDate": "2020-01-01",
                         "swDate": "2020-01-01",
                         "qSw": 123.45,
-                        "slope": 123.45
+                        "slope": 123.45,
+                        "slopeValue": 123.45
                     }
                 ],
                 "basePhase": "string",

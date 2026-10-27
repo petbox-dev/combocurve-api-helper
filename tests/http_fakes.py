@@ -7,7 +7,6 @@ One copy, so a double cannot drift from production on its own. `FakeResponse` ma
 `requests.exceptions.JSONDecodeError` for a body that is not JSON (a gateway's HTML error page).
 """
 
-import threading
 from collections.abc import Mapping
 from typing import Any, Optional
 
@@ -53,27 +52,18 @@ class FakeResponse:
 
 
 class StubAuth:
-    """Stands in for `ComboCurveAuth`; the transport only asks it for headers. Counts the fetches."""
+    """Stands in for the auth object; the transport only asks it for headers. Counts the fetches."""
 
     def __init__(self) -> None:
         self.fetches = 0
 
     def get_auth_headers(self) -> dict[str, str]:
-        """No headers: the real call builds a JWT locally, so it has no network error path to model."""
+        """No headers: the transport tests model HTTP responses, not the token request."""
         self.fetches += 1
         return {}
 
 
 def make_offline_api(auth: Optional[StubAuth] = None) -> ComboCurveAPI:
-    """A client that reads no credentials from disk.
-
-    `ComboCurveAPI()` runs `ServiceAccount.from_file(...)`, so constructing one makes a test
-    unrunnable without `~/.combocurve/combocurve.json`. (Importing the package still needs
-    `~/.combocurve/cc-api.config.json`: `config.py` reads it at import.) `__new__` skips
-    `APIBase.__init__`, so this sets the two attributes
-    `__init__` sets: the auth object and the lock `_auth_headers` acquires.
-    """
-    api = ComboCurveAPI.__new__(ComboCurveAPI)
-    api.auth = auth if auth is not None else StubAuth()
-    api._auth_lock = threading.Lock()
-    return api
+    """A client that reads no credentials from disk. (Importing the package still needs an API key in
+    `~/.combocurve`: `config.py` reads it at import.)"""
+    return ComboCurveAPI(auth=auth if auth is not None else StubAuth())

@@ -5,7 +5,7 @@ Verifies the new write surface against a real dev project: PUT an assignment
 scenario grid, DELETE it via the corrected query-filter route, confirm removal.
 Self-cleaning: creates and removes a throwaway qualifier slot.
 
-Skipped unless CC_LIVE_TEST=1 and ~/.combocurve/dev creds are present, so CI
+Skipped unless CC_LIVE_TEST=1 and ~/.combocurve/dev holds an unzipped ComboCurve credential download, so CI
 and other machines are unaffected. Verified 2026-07 against dev "Test Project".
 """
 
@@ -20,6 +20,7 @@ import pytest
 import requests
 
 from combocurve_api_helper import ComboCurveAPI
+from combocurve_api_helper.config import find_native_credentials_directory
 
 DEV = pathlib.Path.home() / '.combocurve' / 'dev'
 
@@ -30,7 +31,7 @@ DATES_MODEL_ID = os.environ.get('CC_DEV_DATES_MODEL_ID', '')
 
 pytestmark = pytest.mark.skipif(
     not os.environ.get('CC_LIVE_TEST')
-    or not (DEV / 'combocurve.json').exists()
+    or find_native_credentials_directory(DEV) is None
     or not (PROJECT_ID and SCENARIO_ID and DATES_MODEL_ID),
     reason=(
         'requires CC_LIVE_TEST=1, ~/.combocurve/dev credentials, and CC_DEV_PROJECT_ID, '
@@ -40,10 +41,7 @@ pytestmark = pytest.mark.skipif(
 
 
 def _dev_api() -> ComboCurveAPI:
-    return ComboCurveAPI.from_alternate_config(
-        str(DEV / 'combocurve.json'),
-        str(DEV / 'cc-api.config.json'),
-    )
+    return ComboCurveAPI.from_credentials_directory(DEV)
 
 
 def _dates_assignments(api: ComboCurveAPI, well: str) -> list[Any]:

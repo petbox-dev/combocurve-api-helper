@@ -5,6 +5,52 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-10-27
+
+### Added
+
+- **OAuth client credentials (v2).** ComboCurve now issues OAuth credentials only: `api-credentials.json`
+  (`client_id`, `client_secret`; the docs page spells them `clientId`, `clientSecret`, and both
+  spellings are read) with `api-key.txt`. The client gets a bearer token from
+  `https://api.combocurve.com/v1/oauth/token`, caches it for its one-hour lifetime, replaces it 60 s
+  before it expires, and sends `x-backend-version: v2` on every request. A refused token request raises
+  the new `ComboCurveAuthError`. It is not sent again: the token endpoint allows 10 requests per client
+  per 15 minutes.
+- **`ComboCurveAPI.from_credentials_directory(path)`** reads the unzipped credential download as
+  ComboCurve ships it: `api-key.txt` with `api-credentials.json` (OAuth) or
+  `api-service-account-key.json` (legacy), at the top of `path` or in the ZIP's `combocurve/` folder.
+  `ComboCurveAPI()` reads the same files from `~/.combocurve`.
+- `ComboCurveAPI(auth=...)` takes any object with a `get_auth_headers()` method.
+
+### Fixed
+
+- **Pagination stays on `api.combocurve.com`.** The OAuth (v2) backend writes its internal Cloud Run
+  host into the `Link` header. Following that url answered 401 after the first page, and sent the
+  bearer token and API key to a host taken from a response header. The client now takes only the path
+  and query from `Link` and keeps the host of the request (verified live: every page of a project list
+  paginates, and matches the legacy credential's result).
+
+### Changed
+
+- **`combocurve-api-v1` is no longer a dependency.** The legacy service-account JWT is signed in
+  `auth.py`, with the same claims and header, without the deprecated `datetime.utcnow()`. It depends on
+  `pyjwt[crypto]` directly (it was a transitive dependency before); that becomes an optional `legacy`
+  extra in 3.0.0.
+- Pagination reads the `Link` header with the package's own parser, which also accepts `; rel="next"`
+  with a space, an unquoted `rel`, and several relation types. The replaced parser required `;rel=`
+  with no space.
+- The older `combocurve.json` may hold either credential type; its `type` field selects the auth.
+- The API key that `config.cfg` loads at import comes from `~/.combocurve/api-key.txt` when present,
+  else from `cc-api.config.json` as before.
+
+### Deprecated
+
+- The `combocurve.json` + `cc-api.config.json` layout, read by `ComboCurveAPI()` when `~/.combocurve`
+  holds no `api-key.txt`, and `ComboCurveAPI.from_alternate_config`. Both warn and are removed in 3.0.0.
+- A credential directory with both `api-credentials.json` and `api-service-account-key.json` uses the
+  OAuth file and warns. From 3.1.0 it raises. Each download has its own API key, and a key works only
+  with its own credential, so one directory cannot serve both.
+
 ## [2.4.0] - 2026-09-30
 
 ### Added

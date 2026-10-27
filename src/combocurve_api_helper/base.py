@@ -1,4 +1,5 @@
 import math
+import re
 import threading
 import time
 import warnings
@@ -8,18 +9,18 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Callable, ClassVar, Optional, Union
-from urllib.parse import parse_qsl, quote, urlencode, urlsplit
+from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
 
 import requests
 import urllib3.exceptions
-from combocurve_api_v1 import ComboCurveAuth, ServiceAccount
-from combocurve_api_v1.pagination import get_next_page_url
 from more_itertools import chunked
 from requests import Response
 from typing_extensions import Self, TypeAlias, TypedDict
 
 from . import config
 from ._batch import BatchChunk, BatchWriteResult, _RateLimitState
+from ._deprecation import warn_deprecated
+from .auth import APIAuth, auth_from_credentials_directory, auth_from_credentials_file, default_auth
 
 # A single JSON value: the recursive union of everything `json.loads` can yield.
 # Models real API payloads faithfully -- `null` (None), arrays of objects, and
@@ -272,6 +273,43 @@ def _gateway_retry_allowed(status: int, method: str) -> bool:
     return status in _RETRYABLE_GATEWAY_STATUSES and _is_read_only(method)
 
 
+# One `<url>` and the parameters after it, up to the next `<`. URLs cannot hold `<` or `>`.
+_LINK_HEADER_ENTRY = re.compile(r'<([^<>]*)>([^<]*)')
+
+
+def get_next_page_url(response_headers: Mapping[str, str]) -> Optional[str]:
+    """The `rel="next"` url of the `Link` header (RFC 8288), or None on the last page.
+
+    Replaces `combocurve_api_v1.pagination.get_next_page_url`, whose pattern required `;rel=` with no
+    space: `; rel="next"`, legal in the RFC, matched nothing and ended pagination with no error. This
+    accepts optional whitespace, an unquoted value, and a space-separated list of relation types.
+    """
+    for url, parameters in _LINK_HEADER_ENTRY.findall(response_headers.get('Link', '')):
+        for parameter in parameters.split(';'):
+            name, _, value = parameter.partition('=')
+            relation_types = value.strip().rstrip(',').strip().strip('"').split()
+            if name.strip().lower() == 'rel' and 'next' in relation_types:
+                return str(url)
+    return None
+
+
+def _next_page_url_on_request_origin(response_headers: Mapping[str, str], request_url: str) -> Optional[str]:
+    """The next-page url with the scheme and host of `request_url`; only its path and query come from
+    the `Link` header.
+
+    The OAuth (v2) backend writes its internal Cloud Run host into `Link`
+    (`https://external-api-<n>.us-central1.run.app/v1/...`, verified 2026-10-27), not
+    `api.combocurve.com`. Following it as given answers 401, and it sends the bearer token and API key to
+    a host taken from a response header. The same path and query on the request's own host answer 200.
+    """
+    next_page_url = get_next_page_url(response_headers)
+    if next_page_url is None:
+        return None
+    request_parts = urlsplit(request_url)
+    link_parts = urlsplit(next_page_url)
+    return urlunsplit((request_parts.scheme, request_parts.netloc, link_parts.path, link_parts.query, ''))
+
+
 class APIBase:
     API_BASE_URL = 'https://api.combocurve.com/v1'
     API_BASE_URL_V2 = 'https://api.combocurve.com/v2'  # async export routes are the only /v2 routes
@@ -281,31 +319,38 @@ class APIBase:
     }
     ECON_MODELS = config.ECON_MODELS
 
-    def __init__(self) -> None:
-        account = ServiceAccount.from_file(str(config.COMBOCURVE_JSON))
-        self.auth = ComboCurveAuth(account, config.cfg.apikey)
+    def __init__(self, auth: Optional[APIAuth] = None) -> None:
+        """
+        With no `auth`, read the credentials in `~/.combocurve`: the files of the unzipped ComboCurve
+        credential download (`api-key.txt` with `api-credentials.json` or
+        `api-service-account-key.json`), else the deprecated `combocurve.json` + `cc-api.config.json`.
+        """
+        self.auth: APIAuth = auth if auth is not None else default_auth()
         self._auth_lock = threading.Lock()
+
+    @classmethod
+    def from_credentials_directory(cls, directory: Union[str, Path]) -> Self:
+        """
+        Read the credentials from an unzipped ComboCurve credential download in `directory`: either
+        type (OAuth `api-credentials.json` or legacy `api-service-account-key.json`) with
+        `api-key.txt`, at the top of `directory` or in the ZIP's `combocurve/` folder.
+        """
+        return cls(auth=auth_from_credentials_directory(directory))
 
     @classmethod
     def from_alternate_config(
         cls, combocurve_json_path: Union[str, Path], cc_api_config_json_path: Union[str, Path]
     ) -> Self:
-        api_base = cls.__new__(cls)
-        super(APIBase, api_base).__init__()
-
-        cfg = config.Configuration.from_file(cc_api_config_json_path)
-
-        if isinstance(combocurve_json_path, str):
-            account = ServiceAccount.from_file(combocurve_json_path)
-        elif isinstance(combocurve_json_path, Path):
-            account = ServiceAccount.from_file(combocurve_json_path.absolute())
-
-        api_base.auth = ComboCurveAuth(account, cfg.apikey)
-        # `from_alternate_config` builds the instance via `__new__`, bypassing `__init__`,
-        # so the lock that guards token refresh must be set here too -- see `_auth_headers`.
-        api_base._auth_lock = threading.Lock()
-
-        return api_base
+        """
+        Deprecated; removed in 3.0.0. Use `from_credentials_directory`. `combocurve_json_path` may hold
+        either credential type; its `type` field selects the auth.
+        """
+        warn_deprecated(
+            'from_alternate_config is deprecated and is removed in 3.0.0; use from_credentials_directory '
+            'with the directory of the unzipped ComboCurve credential download.'
+        )
+        api_key = config.Configuration.from_file(cc_api_config_json_path).apikey
+        return cls(auth=auth_from_credentials_file(combocurve_json_path, api_key))
 
     def __getstate__(self) -> dict[str, Any]:
         """Pickle / deepcopy state without `_auth_lock`: a lock cannot be pickled, and a copy needs its own."""
@@ -396,7 +441,7 @@ class APIBase:
 
             yield response
 
-            next_page_url: Optional[str] = get_next_page_url(response.headers)
+            next_page_url: Optional[str] = _next_page_url_on_request_origin(response.headers, url)
             if next_page_url is None:
                 # no more pages to process
                 break
@@ -443,7 +488,7 @@ class APIBase:
 
                 yield response
 
-                next_page_url: Optional[str] = get_next_page_url(response.headers)
+                next_page_url: Optional[str] = _next_page_url_on_request_origin(response.headers, chunk_url)
                 if next_page_url is None:
                     # no more pages to process
                     break

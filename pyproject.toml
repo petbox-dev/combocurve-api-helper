@@ -18,15 +18,16 @@ maintainers = [
 ]
 readme = {file = 'README.md', content-type = 'text/markdown'}
 license = {file = 'LICENSE'}
-# 3.9.13, not 3.9.0: `combocurve-api-v1` has declared `requires-python = >=3.9.13`
-# since 0.2.5, so that is this package's real floor. Declaring the true value makes
-# pip fail at install of THIS package with a clear message, rather than part-way
-# through dependency resolution.
+# 3.9.13, not 3.9.0: the floor that `combocurve-api-v1` (>= 0.2.5) set. 2.5.0 removes that
+# dependency, so nothing now needs the patch level; it is kept so this release does not
+# change the install floor.
 requires-python = '>=3.9.13'
 dependencies = [
-    'combocurve-api-v1',
     'more-itertools',
     'pydantic>=2,<3',
+    # Signs the legacy (v1) service-account JWT. Required in 2.5.0, which drops `combocurve-api-v1`
+    # (the package that brought it in before); an optional `legacy` extra from 3.0.0.
+    'pyjwt[crypto]>=2',
     'requests',
     'typing-extensions',
     'urllib3',
@@ -150,13 +151,3 @@ strict = true
 warn_unreachable = true
 warn_no_return = true
 disallow_any_unimported = true
-
-
-# The upstream combocurve-api-v1 package ships no py.typed marker / stubs.
-# Scope the missing-imports allowance to it rather than enabling it globally.
-[[tool.mypy.overrides]]
-module = [
-    'combocurve_api_v1',
-    'combocurve_api_v1.*',
-]
-ignore_missing_imports = true

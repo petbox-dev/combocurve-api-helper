@@ -1,7 +1,8 @@
-__version__ = '2.4.0'
+__version__ = '2.5.0'
 
 from ._batch import BatchChunk as BatchChunk
 from ._batch import BatchWriteResult as BatchWriteResult
+from .auth import ComboCurveAuthError as ComboCurveAuthError
 
 # Explicit re-export (`as`) so downstream `mypy --strict`
 # (--no-implicit-reexport) sees these public types as exported.
