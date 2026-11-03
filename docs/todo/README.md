@@ -14,6 +14,7 @@ This repo is public: no confidential project, model, well or fund names in any d
 
 | Item | Opened | Severity | Summary |
 |---|---|---|---|
+| [production-taxes-rate-criteria-not-mapped](open/production-taxes-rate-criteria-not-mapped.md) | 2026-11-03 | medium | `criteria: oil_rate` (and other phases' rate criteria) raises in `to_row_dicts`; one such model stops the whole export |
 | [direct-requests-calls-bypass-timeout-and-retry](open/direct-requests-calls-bypass-timeout-and-retry.md) | 2026-09-29 | low | 8 call sites (14 public methods) call `requests.*` directly: no timeout, no connection or status retry |
 | [econ-model-csv-values-unverified-against-a-raw-export](open/econ-model-csv-values-unverified-against-a-raw-export.md) | 2026-09-30 | low | One `btu` category at the default and `Model Type = 'company'` rest on no raw export |
 | [count-methods-and-list-methods-do-not-pair-everywhere](open/count-methods-and-list-methods-do-not-pair-everywhere.md) | 2026-09-30 | low | 4 list methods take no `filters` their counts accept; no company per-type counts; company `Emission`/`FluidModel` routes 400 |
