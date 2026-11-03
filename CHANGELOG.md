@@ -5,6 +5,17 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2026-11-03
+
+### Added
+
+- **`put_project_monthly_productions_batched(project_id, data, *, chunksize=PUT_LIMIT, max_workers=10, on_progress=None)`.**
+  The monthly-production twin of `put_forecast_parameters_batched`: sends the records in parallel
+  chunks of at most `chunksize` (default `PUT_LIMIT`, 20,000) with coordinated 429 backoff, and
+  returns the stitched `BatchWriteResult` so per-record failures and whole-chunk failures are
+  reported rather than flattened away. `put_project_monthly_productions` is unchanged and still
+  sends one request for the whole payload.
+
 ## [2.5.0] - 2026-10-27
 
 ### Added

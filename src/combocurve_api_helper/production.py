@@ -1,9 +1,10 @@
 from collections.abc import Mapping
 from types import MappingProxyType
-from typing import Optional, cast
+from typing import Callable, Optional, cast
 
 from requests.structures import CaseInsensitiveDict
 
+from ._batch import BatchChunk, BatchWriteResult
 from .base import APIBase, ItemList, WriteResponse
 
 GET_LIMIT = 20_000
@@ -309,6 +310,32 @@ class Production(APIBase):
         monthly_production = cast('list[WriteResponse]', self._put_items(url, data))
 
         return monthly_production
+
+    def put_project_monthly_productions_batched(
+        self,
+        project_id: str,
+        data: ItemList,
+        *,
+        chunksize: int = PUT_LIMIT,
+        max_workers: int = 10,
+        on_progress: Optional[Callable[[BatchChunk], None]] = None,
+    ) -> BatchWriteResult:
+        """Upsert project monthly production in parallel chunks, returning the 207 envelope.
+
+        Like `put_project_monthly_productions`, but sends chunks of at most `chunksize`
+        records (default `PUT_LIMIT`, the route's documented cap) concurrently and returns
+        a `BatchWriteResult` instead of a flattened `ItemList`, so ``result.results[i]``
+        corresponds to ``data[i]`` and per-record failures are preserved. `on_progress`
+        is called once per completed chunk from the calling thread.
+
+        A failed chunk with `may_have_applied=True` (a gateway status, or a connection
+        lost after the chunk was sent) is counted in `failed_count`, but the server may
+        have applied it: check the server before sending it again.
+        """
+        url = self.get_project_monthly_productions_url(project_id)
+        return self._request_batched(
+            'put', url, data, chunksize=chunksize, max_workers=max_workers, on_progress=on_progress
+        )
 
     def patch_project_monthly_productions(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
