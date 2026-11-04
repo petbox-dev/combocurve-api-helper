@@ -19,13 +19,13 @@ def test_put_project_monthly_productions_batched_chunks_and_preserves_the_envelo
     ) -> FakeResponse:
         seen_urls.append(url)
         assert method == 'put'
-        n = len(json)
+        record_count = len(json)
         return FakeResponse(
             207,
             {
-                'successCount': n,
+                'successCount': record_count,
                 'failedCount': 0,
-                'results': [{'status': 'Success', 'well': rec['well']} for rec in json],
+                'results': [{'status': 'Success', 'well': record['well']} for record in json],
                 'generalErrors': [],
             },
         )
@@ -40,7 +40,7 @@ def test_put_project_monthly_productions_batched_chunks_and_preserves_the_envelo
     assert isinstance(result, BatchWriteResult)
     assert result.ok and result.success_count == 7
     assert [c.count for c in result.chunks] == [3, 3, 1]
-    assert [rec['well'] for rec in result.results] == [f'w{i}' for i in range(7)]
+    assert [record['well'] for record in result.results] == [f'w{i}' for i in range(7)]
     assert all(url.endswith('/projects/000000000000000000000001/monthly-productions') for url in seen_urls)
 
 
