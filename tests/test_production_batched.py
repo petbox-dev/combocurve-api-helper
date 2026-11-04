@@ -39,7 +39,7 @@ def test_put_project_monthly_productions_batched_chunks_and_preserves_the_envelo
 
     assert isinstance(result, BatchWriteResult)
     assert result.ok and result.success_count == 7
-    assert [c.count for c in result.chunks] == [3, 3, 1]
+    assert [chunk.count for chunk in result.chunks] == [3, 3, 1]
     assert [record['well'] for record in result.results] == [f'w{i}' for i in range(7)]
     assert all(url.endswith('/projects/000000000000000000000001/monthly-productions') for url in seen_urls)
 
