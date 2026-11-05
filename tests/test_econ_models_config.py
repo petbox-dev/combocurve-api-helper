@@ -58,3 +58,12 @@ def test_method_base_matches_route_derivation() -> None:
             assert base == 'fluid'
         else:
             assert base == route.replace('-', '_')
+
+
+def test_has_company_route_is_false_only_for_emission_fluid_model_and_routeless_entries() -> None:
+    """ComboCurve answers 400 on `/econ-models/emissions` and `/econ-models/fluid-models` (verified
+    live 2026-09-30), so those two types carry no company route, as does every entry with no route."""
+    for entry in config.ECON_MODELS:
+        assert 'hasCompanyRoute' in entry
+        expected = entry['route'] is not None and entry['econModelType'] not in {'Emission', 'FluidModel'}
+        assert entry['hasCompanyRoute'] is expected, entry['econModelType']

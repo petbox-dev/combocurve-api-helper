@@ -58,8 +58,20 @@ This release moves those methods to the v2 routes. 2.x keeps the v1 methods (bug
 - The credential paths deprecated in 2.5.0 keep working; their removal moved to a 3.x release,
   not before 2027-01-31 (as stated in 2.7.0).
 
+### Removed
+
+- `get_company_emission_models`, `get_company_emissions_model_by_id`,
+  `get_company_emissions_models_url`, `get_company_emissions_model_by_id_url`,
+  `get_company_fluid_models`, `get_company_fluid_model_by_id`, `get_company_fluid_models_url` and
+  `get_company_fluid_models_by_id_url`. ComboCurve has no company route for the Emission and
+  FluidModel econ models: the server answered 400 (verified live 2026-09-30). Use the project
+  route (`get_econ_models_by_type`). `econModels.json` now has `hasCompanyRoute` for each type.
+
 ### Fixed
 
+- **Company per-type methods refuse a type with no company route.** `get_company_econ_models_by_type`,
+  `get_company_econ_models_by_type_url` and the other company per-type methods raise `ValueError` for
+  Emission and FluidModel before any request. Before, they sent the request and got a 400.
 - **Single-object requests have a timeout and retries.** `post_directional_surveys`,
   `put_directional_survey_by_id`, the v2 export methods (`post_export_*`, `get_export_*_by_job_id`),
   `post_export`, `post_forecast_wells`, `patch_forecast_by_id` and `post_forecast_run` called

@@ -278,8 +278,9 @@ retries: 502/503/504 are retried for GET/HEAD only (`_gateway_retry_allowed`), b
 out after the server applied the write; 429 is retried for every method. One call has a 600 s
 wall-clock budget (`_CALL_DEADLINE_SECONDS`) across every retry, and an honoured `Retry-After` is capped at
 120 s (`_MAX_RETRY_AFTER_SECONDS`); a retry whose pause would reach the deadline is not made. The direct
-`requests.get/post/put/patch` calls in `directional.py`, `exports.py` and `forecasts.py` do not go
-through `_send_request`: they have no timeout and no retry.
+single-object calls in `directional.py`, `exports.py` and `forecasts.py` (eight sites) also send through
+`_request_with_retry`, so they have the timeout and the retries (since 3.0.0; `tests/test_single_object_requests_use_the_transport.py`;
+todo item closed: `docs/todo/closed/direct-requests-calls-bypass-timeout-and-retry.md`).
 
 Relatedly, `_build_params_string` percent-encodes and drops `None` values, so callers must NOT pre-encode.
 It keeps `,` literal and encodes a space as `%20`, not `+`: two callers comma-join list filters

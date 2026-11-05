@@ -13,16 +13,17 @@ Opened: 2026-09-30
   list method raises `TypeError`, so nothing is silent.
 - The 16 company per-type list methods (`get_company_capex_models`, ...) have no
   `count_company_<type>_models` twin; `count_company_econ_models_by_type` covers them.
-- `ECON_MODELS` gives `Emission` and `FluidModel` company routes that do not exist. Verified live
-  2026-09-30: `HEAD` and `GET /v1/econ-models/emissions` and `/fluid-models` return 400
-  (`is not a valid ObjectId`); `/v1/econ-models/capex` returns 200. The get and the count both fail
-  loudly.
+- Settled: `ECON_MODELS` gave `Emission` and `FluidModel` company routes that do not exist. Verified
+  live 2026-09-30: `HEAD` and `GET /v1/econ-models/emissions` and `/fluid-models` return 400
+  (`is not a valid ObjectId`); `/v1/econ-models/capex` returns 200. 3.0.0: `econModels.json` carries
+  `hasCompanyRoute` (false for these two), the eight hand-written company methods for them are
+  removed, and the company per-type url builder raises `ValueError` before any request. 2.7.1 gets
+  only the `ValueError`.
 
 ## What would unblock it
 
 A decision: add `filters` to the four list methods (additive), or document the asymmetry per method.
-For the company routes: mark `Emission`/`FluidModel` as project-only in `econModels.json`, or raise
-locally.
+The company-route bullet needs no decision (settled above).
 
 ## Files
 

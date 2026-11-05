@@ -5,7 +5,8 @@
         "route": "general-options",
         "methodBase": "general_options",
         "hasCrud": true,
-        "assignable": false
+        "assignable": false,
+        "hasCompanyRoute": true
     },
     {
         "qualifier": "actualOrForecast",
@@ -13,7 +14,8 @@
         "route": "actual-forecast",
         "methodBase": "actual_forecast",
         "hasCrud": true,
-        "assignable": true
+        "assignable": true,
+        "hasCompanyRoute": true
     },
     {
         "qualifier": "capex",
@@ -21,7 +23,8 @@
         "route": "capex",
         "methodBase": "capex",
         "hasCrud": true,
-        "assignable": true
+        "assignable": true,
+        "hasCompanyRoute": true
     },
     {
         "qualifier": "dates",
@@ -29,7 +32,8 @@
         "route": "date-settings",
         "methodBase": "date_settings",
         "hasCrud": true,
-        "assignable": true
+        "assignable": true,
+        "hasCompanyRoute": true
     },
     {
         "qualifier": "depreciation",
@@ -37,7 +41,8 @@
         "route": "depreciation",
         "methodBase": "depreciation",
         "hasCrud": true,
-        "assignable": true
+        "assignable": true,
+        "hasCompanyRoute": true
     },
     {
         "qualifier": "differentials",
@@ -45,7 +50,8 @@
         "route": "differentials",
         "methodBase": "differentials",
         "hasCrud": true,
-        "assignable": true
+        "assignable": true,
+        "hasCompanyRoute": true
     },
     {
         "qualifier": "emission",
@@ -53,7 +59,8 @@
         "route": "emissions",
         "methodBase": "emissions",
         "hasCrud": true,
-        "assignable": true
+        "assignable": true,
+        "hasCompanyRoute": false
     },
     {
         "qualifier": "escalation",
@@ -61,7 +68,8 @@
         "route": "escalations",
         "methodBase": "escalations",
         "hasCrud": true,
-        "assignable": true
+        "assignable": true,
+        "hasCompanyRoute": true
     },
     {
         "qualifier": "expenses",
@@ -69,7 +77,8 @@
         "route": "expenses",
         "methodBase": "expenses",
         "hasCrud": true,
-        "assignable": true
+        "assignable": true,
+        "hasCompanyRoute": true
     },
     {
         "qualifier": "forecast",
@@ -77,7 +86,8 @@
         "route": null,
         "methodBase": null,
         "hasCrud": false,
-        "assignable": false
+        "assignable": false,
+        "hasCompanyRoute": false
     },
     {
         "qualifier": "fluidModel",
@@ -85,7 +95,8 @@
         "route": "fluid-models",
         "methodBase": "fluid",
         "hasCrud": true,
-        "assignable": true
+        "assignable": true,
+        "hasCompanyRoute": false
     },
     {
         "qualifier": "network",
@@ -93,7 +104,8 @@
         "route": null,
         "methodBase": null,
         "hasCrud": false,
-        "assignable": false
+        "assignable": false,
+        "hasCompanyRoute": false
     },
     {
         "qualifier": "operations",
@@ -101,7 +113,8 @@
         "route": "operations",
         "methodBase": "operations",
         "hasCrud": true,
-        "assignable": true
+        "assignable": true,
+        "hasCompanyRoute": true
     },
     {
         "qualifier": "ownershipReversion",
@@ -109,7 +122,8 @@
         "route": "ownership-reversions",
         "methodBase": "ownership_reversions",
         "hasCrud": true,
-        "assignable": true
+        "assignable": true,
+        "hasCompanyRoute": true
     },
     {
         "qualifier": "pricing",
@@ -117,7 +131,8 @@
         "route": "pricing",
         "methodBase": "pricing",
         "hasCrud": true,
-        "assignable": true
+        "assignable": true,
+        "hasCompanyRoute": true
     },
     {
         "qualifier": "productionTaxes",
@@ -125,7 +140,8 @@
         "route": "production-taxes",
         "methodBase": "production_taxes",
         "hasCrud": true,
-        "assignable": true
+        "assignable": true,
+        "hasCompanyRoute": true
     },
     {
         "qualifier": "pSeries",
@@ -133,7 +149,8 @@
         "route": null,
         "methodBase": null,
         "hasCrud": false,
-        "assignable": false
+        "assignable": false,
+        "hasCompanyRoute": false
     },
     {
         "qualifier": "reservesCategory",
@@ -141,7 +158,8 @@
         "route": "reserves-categories",
         "methodBase": "reserves_categories",
         "hasCrud": true,
-        "assignable": true
+        "assignable": true,
+        "hasCompanyRoute": true
     },
     {
         "qualifier": "risking",
@@ -149,7 +167,8 @@
         "route": "riskings",
         "methodBase": "riskings",
         "hasCrud": true,
-        "assignable": true
+        "assignable": true,
+        "hasCompanyRoute": true
     },
     {
         "qualifier": "schedule",
@@ -157,7 +176,8 @@
         "route": null,
         "methodBase": null,
         "hasCrud": false,
-        "assignable": false
+        "assignable": false,
+        "hasCompanyRoute": false
     },
     {
         "qualifier": "streamProperties",
@@ -165,6 +185,7 @@
         "route": "stream-properties",
         "methodBase": "stream_properties",
         "hasCrud": true,
-        "assignable": true
+        "assignable": true,
+        "hasCompanyRoute": true
     }
 ]
