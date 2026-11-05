@@ -36,7 +36,7 @@ _REP_WELL_SORT_ORDER: Mapping[str, int] = MappingProxyType({'wellName': 0, 'well
 # Forecast outputs take at most 100 `well` values per request (migration guide).
 FORECAST_OUTPUTS_WELLS_PER_REQUEST = 100
 FORECAST_OUTPUTS_GET_LIMIT = 200
-_V1_TYPE_CURVE_ONLY_FIELDS = ('fits', 'regressionType')
+_V1_TYPE_CURVE_ONLY_FIELDS = ('fits', 'regressionType', 'normalizations')
 _SUCCESS_CODES = (200, 201)
 _ResultType = TypeVar('_ResultType')
 
@@ -211,6 +211,20 @@ class TypeCurvesV1Compatibility(TypeCurves):
             envelopes = self.patch_type_curves(project_id, [bodies[position] for position in update_positions])
             _place_results(envelopes, update_positions, results, general_errors)
 
+        for position, result in enumerate(results):
+            if result is None:
+                results[position] = {
+                    'status': 'Error',
+                    'code': 0,
+                    'errors': [
+                        {
+                            'name': 'MissingResult',
+                            'message': 'the server returned no result for this record',
+                            'location': f'[{position}]',
+                        }
+                    ],
+                }
+
         for position, fits in enumerate(fits_bodies):
             result = results[position]
             if fits is None or result is None or result.get('code') not in _SUCCESS_CODES:
@@ -341,6 +355,10 @@ class TypeCurvesV1Compatibility(TypeCurves):
         """
         Deletes one type-curve lookup table. When nothing matched (`X-Delete-Count: 0`) and the id is
         a v1 id, the migrated table's id is tried once (deprecated).
+
+        A genuine v2 id whose table was already deleted also reads `X-Delete-Count: 0` and is tried
+        once swapped. ObjectIds lead with a timestamp; swapping the halves of a v2 id puts random
+        bytes there, so the swapped id naming another live table is a negligible coincidence.
 
         https://docs.api.combocurve.com/api/type-curves-v2-preview/delete-v2-type-curve-lookup-table-by-id
         """

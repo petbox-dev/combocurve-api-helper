@@ -1,5 +1,6 @@
 """Deprecated v1 type-curve behavior on the v2 routes. No network."""
 
+import copy
 import json
 import warnings
 from pathlib import Path
@@ -148,6 +149,53 @@ def test_a_failed_fits_write_becomes_a_failed_result(monkeypatch: MonkeyPatch) -
     assert (envelopes[0]['successCount'], envelopes[0]['failedCount']) == (0, 1)
 
 
+def test_post_with_only_v1_normalizations_strips_them_and_warns(monkeypatch: MonkeyPatch) -> None:
+    transport = install(
+        monkeypatch,
+        FakeResponse(
+            207,
+            {'successCount': 1, 'failedCount': 0, 'results': [{'status': 'Created', 'code': 201, 'id': TYPE_CURVE_ID}]},
+        ),
+    )
+
+    with pytest.warns(DeprecationWarning, match='post_type_curves'):
+        make_offline_api().post_type_curves(PROJECT_ID, [{'name': 'Sample', 'normalizations': []}])
+
+    assert len(transport.calls) == 1
+    assert transport.calls[0].body == [{'name': 'Sample'}]
+
+
+def test_a_record_with_no_returned_result_becomes_a_missing_result_error(monkeypatch: MonkeyPatch) -> None:
+    record = load('v1_type_curve_ratio_linear.json')
+    transport = install(
+        monkeypatch,
+        FakeResponse(
+            207,
+            {'successCount': 1, 'failedCount': 0, 'results': [{'status': 'Created', 'code': 201, 'id': TYPE_CURVE_ID}]},
+        ),
+        FakeResponse(200, {'gas': {}}),
+    )
+
+    with pytest.warns(DeprecationWarning):
+        envelopes = make_offline_api().post_type_curves(PROJECT_ID, [record, copy.deepcopy(record)])
+
+    results = envelopes[0]['results']
+    assert len(results) == 2
+    assert results[1] == {
+        'status': 'Error',
+        'code': 0,
+        'errors': [
+            {
+                'name': 'MissingResult',
+                'message': 'the server returned no result for this record',
+                'location': '[1]',
+            }
+        ],
+    }
+    assert (envelopes[0]['successCount'], envelopes[0]['failedCount']) == (1, 1)
+    assert [call.method for call in transport.calls] == ['POST', 'PUT']
+
+
 def test_put_type_curves_patches_existing_names_and_posts_new_ones(monkeypatch: MonkeyPatch) -> None:
     existing = {'id': TYPE_CURVE_ID, 'name': 'Existing'}
     transport = install(
@@ -218,7 +266,7 @@ def test_v1_lookup_table_id_fallback_on_delete_when_nothing_matched(monkeypatch:
     assert len(transport.calls) == 2
 
 
-def test_a_v2_id_that_is_missing_raises_the_original_404(monkeypatch: MonkeyPatch) -> None:
+def test_a_missing_id_raises_after_one_fallback(monkeypatch: MonkeyPatch) -> None:
     install(
         monkeypatch,
         FakeResponse(404, {'name': 'LookupTableNotFoundError'}),
