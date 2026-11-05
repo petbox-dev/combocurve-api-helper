@@ -1,6 +1,6 @@
 from typing import Any
 
-from combocurve_api_helper.econ_models.base import Context, common_columns
+from combocurve_api_helper.econ_models.base import Context, common_columns, model_scope
 from combocurve_api_helper.econ_models.csv_columns import COLUMNS
 
 
@@ -78,3 +78,13 @@ def test_common_columns_without_context_omits_pipeline_cols() -> None:
     c = common_columns(m, None)
     assert 'Model Id' not in c and 'Project Name' not in c
     assert c['Model Type'] == 'unique'
+
+
+def test_model_scope_reads_company_from_model_type() -> None:
+    """CC's export of a company-level model writes 'Model Type' 'company'
+    (fixtures/stream_properties_company.csv). The API payload has no scope field, so the
+    scope comes from the rows; 'project' and 'unique' are both project scope."""
+    assert model_scope([{'Model Type': 'company'}]) == 'company'
+    assert model_scope([{'Model Type': 'project'}]) == 'project'
+    assert model_scope([{'Model Type': 'unique'}]) == 'project'
+    assert model_scope([]) == 'project'

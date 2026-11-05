@@ -56,6 +56,20 @@ def model_identity(rows: list[dict[str, str]]) -> tuple[str, bool]:
     return name, unique
 
 
+def model_scope(rows: list[dict[str, str]]) -> formats.ModelScope:
+    """The scope of a model's CSV rows: 'company' when 'Model Type' is 'company', else
+    'project' (a 'unique' model is project scope).
+
+    The API payload `from_row_dicts` returns has no scope field: the scope decides the route
+    (`post_company_econ_models_by_type` or the project route) and is passed back to
+    `to_row_dicts` as `Context(scope=...)`. CC's company export writes 'company' with a blank
+    'Project Name' (fixtures/stream_properties_company.csv).
+    """
+    if any(row.get('Model Type') == 'company' for row in rows):
+        return 'company'
+    return 'project'
+
+
 def group_rows_by_model_name(rows: list[dict[str, str]]) -> list[list[dict[str, str]]]:
     """Split CSV rows into per-model groups keyed by 'Model Name', preserving first-seen order.
 
@@ -84,6 +98,10 @@ class EconModelMapper(RowWriter, ABC):
     """
 
     econ_model_type: str
+    # CSV columns that hold a float-valued quantity (a rate, price, percent or $ amount). They
+    # are written in float form ('9.0', `formats.num_to_csv_float`) and read back as `float`
+    # (`formats.csv_to_float`); offsets, periods and counts stay integers.
+    float_columns: frozenset[str] = frozenset()
 
     @abstractmethod
     def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:

@@ -1,7 +1,7 @@
 from . import _csv_generated
 from ._csv_generated import *  # noqa: F403 -- per-type CSV convenience functions
 from .actual_or_forecast import ActualOrForecastMapper
-from .base import Context, EconModelMapper
+from .base import Context, EconModelMapper, model_scope
 from .capex import CapexMapper
 from .date_settings import DateSettingsMapper
 from .differentials import DifferentialsMapper
@@ -19,6 +19,7 @@ __all__ = [
     'EconModelMapper',
     'MAPPERS',
     'get_mapper',
+    'model_scope',
     'StreamPropertiesMapper',
     'DifferentialsMapper',
     'ProductionTaxesMapper',

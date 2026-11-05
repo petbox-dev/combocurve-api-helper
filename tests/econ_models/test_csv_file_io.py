@@ -9,7 +9,7 @@ import pathlib
 import pytest
 
 from combocurve_api_helper.econ_models import Context, get_mapper
-from combocurve_api_helper.econ_models.base import group_rows_by_model_name
+from combocurve_api_helper.econ_models.base import group_rows_by_model_name, model_scope
 from tests.econ_models.csv_fixture_io import (
     FIXTURE_FILES,
     FIXTURES_DIR,
@@ -43,9 +43,10 @@ def test_to_csv_reemits_model_parameter_columns(econ_model_type: str) -> None:
         path = os.path.join(FIXTURES_DIR, filename)
         rows = read_csv_rows(path)
         models = [mapper.from_row_dicts(g) for g in group_by_model_name(rows).values()]
-        reparsed = list(csv.DictReader(io.StringIO(mapper.to_csv(models))))
-        expected = [project_columns(r, compare_columns) for r in rows]
-        actual = [project_columns(r, compare_columns) for r in reparsed]
+        # One CC export holds one scope; a company export needs it passed back (see model_scope).
+        reparsed = list(csv.DictReader(io.StringIO(mapper.to_csv(models, Context(scope=model_scope(rows))))))
+        expected = [project_columns(r, compare_columns, mapper.float_columns) for r in rows]
+        actual = [project_columns(r, compare_columns, mapper.float_columns) for r in reparsed]
         assert actual == expected, f'{econ_model_type} / {filename}'
 
 

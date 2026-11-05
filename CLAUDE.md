@@ -66,7 +66,8 @@ item includes its row in the README index. Never write `# TODO:` in code.
 Run from the repo root:
 
 ```bash
-mypy src tests scripts                        # type check (primary gate; README also documents `mypy --package combocurve_api_helper`)
+make install                                  # pip install -e . --group dev (editable, dev dependency group)
+mypy src tests scripts                        # type check (primary gate)
 ruff check src tests scripts                  # lint (rules in pyproject.toml [tool.ruff.lint])
 ruff format --check src tests scripts         # format check (line-length 120, single quotes; drop --check to apply)
 pytest                                        # tests (testpaths = tests)
@@ -74,16 +75,21 @@ pytest tests/test_keysort.py::test_reverse_flips_the_order   # single test
 CC_LIVE_TEST=1 pytest tests/test_api.py       # live read-only tests (needs ~/.combocurve/dev creds and .env)
 ```
 
-`scripts/test.sh` / `scripts/test.ps1` / `scripts/test.bat` are the canonical pre-commit checks --
-all three run ruff (`check` + `format --check`), mypy, then pytest. Per the README contributing flow,
-type checking must pass before committing.
+`make test` and `scripts/test.sh` / `scripts/test.ps1` / `scripts/test.bat` are the canonical
+pre-commit checks -- all four run ruff (`check` + `format --check`), mypy, then pytest (`make lint` is
+the same without pytest). The README contributing flow documents `make test`; it must pass before
+committing. The Makefile uses POSIX commands, so on Windows it runs from Git Bash or WSL, not PowerShell.
+
+`make build` cleans `build/`, `dist/` and the egg-info, then runs `python -m build`. `make publish` runs
+`make test`, `make build`, then `twine upload dist/*` -- it uploads to PyPI, so never run it unless the
+user asks.
 
 **`scripts/` is in the gate on purpose.** It holds the codegen and audit tools, and their *string
 literals* emit source that lands in `src/` -- a stale annotation there ships code that cannot run.
 This is not hypothetical: `audit_econ_model_drift.py` printed a `_BASELINE_KEYS: Dict[str, ...]`
 literal for pasting into `drift.py`, which imports no `Dict` and has no `from __future__ import
 annotations`, so pasting raised `NameError`. A repo-wide typing sweep rewrote every real annotation
-in that file but could not see inside the string. Keep `scripts/` in all three runners.
+in that file but could not see inside the string. Keep `scripts/` in all four runners (the Makefile `lint` target and the three `scripts/test.*`).
 
 `mypy` is `strict = true` in `pyproject.toml`, plus `warn_unreachable`, `warn_no_return`, and
 `disallow_any_unimported`. Every function needs full parameter and return annotations. Note
@@ -318,7 +324,8 @@ header is `econ_models/csv_columns.py` `COLUMNS`. **The `get_mapper` / `MAPPERS`
    generated (see Generated content) -- write the description + link, leave example JSON to the generator.
 
 `__version__` is set manually in `__init__.py` and is the source setuptools reads (`pyproject.toml`
-`[tool.setuptools.dynamic]`); bump it there when releasing.
+`[tool.setuptools.dynamic]`); bump it there when releasing. `make publish` uploads whatever version
+`__init__.py` carries.
 
 ## Generated content (do not hand-edit)
 

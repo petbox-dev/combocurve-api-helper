@@ -1,7 +1,7 @@
 [build-system]
 requires = [
-    'setuptools',
-    'wheel',
+    # 77: the first release that reads an SPDX `project.license` string and `license-files`.
+    'setuptools>=77',
 ]
 build-backend = 'setuptools.build_meta'
 
@@ -11,13 +11,14 @@ name = 'combocurve-api-helper'
 dynamic = ['version']
 description = "A library mapped to ComboCurve's API."
 authors = [
-    {name = 'David S. Fulford'},
+    {name = 'David S. Fulford', email = 'petbox.dev@gmail.com'},
 ]
 maintainers = [
-    {name = 'David S. Fulford'},
+    {name = 'David S. Fulford', email = 'petbox.dev@gmail.com'},
 ]
 readme = {file = 'README.md', content-type = 'text/markdown'}
-license = {file = 'LICENSE'}
+license = 'MIT'
+license-files = ['LICENSE']
 # 3.9.13, not 3.9.0: the floor that `combocurve-api-v1` (>= 0.2.5) set. 2.5.0 removes that
 # dependency, so nothing now needs the patch level; it is kept so this release does not
 # change the install floor.
@@ -41,7 +42,6 @@ classifiers = [
     'Intended Audience :: Education',
     'Intended Audience :: Developers',
     'Natural Language :: English',
-    'License :: OSI Approved :: MIT License',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
@@ -61,7 +61,8 @@ classifiers = [
 
 [dependency-groups]
 dev = [
-    "mypy>=1.7.0",
+    "mypy>=1.15",
+    "pytest>=8",
     "python-dotenv>=1.0",  # tests/conftest.py loads the gitignored .env (live-test dev ids)
     "ruff>=0.15",
     "types-requests>=2.32.0.20241016",

@@ -1,5 +1,13 @@
 # Econ-model CSV values not verified against a raw ComboCurve export
 
+Closed: 2026-11-03 -- settled by: dev-project exports. One `btu` category at 1000 and the other
+at 1200 gives one `btu` row, for the off-default category only (`_btu_rows` already did this;
+`fixtures/stream_properties_btu_one_default.csv`). A company-level model exports `Model Type`
+`company` with a blank `Project Name` (`fixtures/stream_properties_company.csv`). The API payload
+has no scope field, so `model_identity` does not return it; the new `model_scope(rows)` reads it
+from the rows, and a caller passes it back as `Context(scope=...)`.
+If this was wrong, you will see: a `test_fixtures.py` failure on either fixture.
+
 Severity: low
 Opened: 2026-09-30
 
@@ -21,6 +29,17 @@ the `num_to_csv_float` form. `_btu_rows` wrote `'1100'` and was corrected; the t
 `fixtures/stream_properties.csv`, so the gate covers the format. The same export has no `btu` row
 for any of its 149 other models, so a model with both categories at the default gets none.
 A resaved copy of that export (unquoted, `1100`) had misled the first reading.
+
+## Settled 2026-11-03
+
+- **ProductionTaxes `null` value.** A scenario export writes it as `nan` (unquoted), not blank. The
+  mapper now writes `nan` and reads `nan` or blank as `null`; `fixtures/production_taxes_null_value.csv`.
+- **CC's "include defaults" export option.** For StreamProperties it writes every yield, shrinkage and
+  loss & flare row, but still no `btu` row at 1000 (38 of 41 models had none). The mapper's
+  API -> CSV output matched that export on all 41 models of the project;
+  `fixtures/stream_properties_with_defaults.csv`. For ProductionTaxes the option changes nothing.
+- Neither 2026-11-03 Stream Properties export (39 and 41 models) has a model with one `btu` category
+  at 1000 and the other not; the three `btu` models have both at 1550.0.
 
 ## What would unblock it
 

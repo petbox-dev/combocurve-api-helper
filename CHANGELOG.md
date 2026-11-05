@@ -9,12 +9,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`econ_models.model_scope(rows)`** returns `'company'` when a model's CSV rows say
+  `Model Type` `company` (CC's company export), else `'project'`. The API payload has no scope
+  field, so pass it back as `Context(scope=...)` when writing the model out again, and use it to
+  pick the company or project route.
+
 - **`put_project_monthly_productions_batched(project_id, data, *, chunksize=PUT_LIMIT, max_workers=10, on_progress=None)`.**
   The monthly-production twin of `put_forecast_parameters_batched`: sends the records in parallel
   chunks of at most `chunksize` (default `PUT_LIMIT`, 20,000) with coordinated 429 backoff, and
   returns the stitched `BatchWriteResult` so per-record failures and whole-chunk failures are
   reported rather than flattened away. `put_project_monthly_productions` is unchanged and still
   sends one request for the whole payload.
+
+### Fixed
+
+- **ProductionTaxes CSV mapper handles every live model.** Over 8,149 live ProductionTaxes models,
+  `to_row_dicts` raised on 1,532 and stopped any export loop that hit one. Fixed:
+  - criteria `oil_rate`, `gas_rate`, `water_rate` (CSV `oil rate`, `gas rate`, `water rate`),
+    `offset_to_as_of_date` (`as of`), `offset_to_discount_date` (`disc date`),
+    `offset_to_first_segment` (`maj seg`) and `offset_to_end_history` (`end hist`), as a raw CC
+    export spells them;
+  - units `dollar_per_month` (`$/month`) and `dollar_per_boe` (`$/boe`);
+  - a `null` value, written as `nan` as CC's export writes it, and read back as `null`.
+- **ProductionTaxes inverse keeps numbers and rows.** `from_row_dicts` returned the periods of an
+  offset or rate criteria as strings (`['36', '1164']`); it now returns numbers, as the API serves
+  them. A model with two ad valorem rows (% of revenue plus $/month or $/boe) wrote both as
+  `Ad Val Tax`, and the inverse merged them into one row; they are now numbered `Ad Val Tax 1` and
+  `Ad Val Tax 2`, as two severance rows of one phase already are.
+- **ProductionTaxes `dates` Period is `MM/YYYY`, as CC exports it.** The mapper wrote `'%b-%y'`
+  (`Jul-23`), which is how Excel displays CC's `07/2023`. That form lost the century: reading it
+  back turned `1976-01-01` into `2076-01-01` and `2000-01-01` into `1900-01-01` (223 live models).
+  The mapper now writes `07/2023` and `01/1900`, and still reads the old `Jul-23` form.
+
+### Changed
+
+- **ProductionTaxes CSV `Value` is a float column.** It writes a whole number as `9.0`, not `9`,
+  and `from_row_dicts` returns it as `float`. `EconModelMapper.float_columns` (default empty)
+  declares such columns; ProductionTaxes is the only mapper that sets it in this release.
+- **License metadata is an SPDX expression.** `pyproject.toml` declares `license = 'MIT'` and
+  `license-files = ['LICENSE']` in place of the deprecated `license = {file = 'LICENSE'}` table, and
+  drops the `License :: OSI Approved :: MIT License` classifier. The build needs `setuptools>=77`.
+  The distributions now carry `Metadata-Version: 2.4` with `License-Expression: MIT`; uploading them
+  needs `twine>=6.1.0`. The license itself does not change.
 
 ## [2.5.0] - 2026-10-27
 

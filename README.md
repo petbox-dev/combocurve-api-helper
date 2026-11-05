@@ -223,7 +223,16 @@ payload = mapper.from_row_dicts(rows)  # reconstruct a single API payload
     git remote add upstream https://github.com/petbox-dev/combocurve-api-helper.git
     ```
 
-4. Create a new branch:
+4. Install the package in editable mode, with the `dev` dependency group:
+
+    ```sh
+    make install
+    ```
+
+    `make install` runs `pip install -e . --group dev --config-settings editable_mode=compat`.
+    `--group` needs pip 25.1 or later.
+
+5. Create a new branch:
     - Always create a new branch for your feature or fix
     - A common convention is to name the branch your GitHub username, a forward slash, and a brief description of the work you're doing
 
@@ -231,29 +240,46 @@ payload = mapper.from_row_dicts(rows)  # reconstruct a single API payload
     git checkout -b <your-username>/<your-branch-name>
     ```
 
-5. Make your changes, and commit:
-    - After adding your files, or making edits, ensure typechecking succeeds, then commit your changes
+6. Make your changes, and commit:
+    - After adding your files, or making edits, ensure the gate succeeds, then commit your changes
 
     ```sh
-    mypy --package combocurve_api_helper
+    make test
 
     git add .
     git commit -m "<description of changes>"
     ```
 
-6. Push to your fork:
+    `make test` runs `ruff check`, `ruff format --check` and `mypy` over `src tests scripts`, then `pytest`.
+    Without `make` (Windows PowerShell or CMD), run `scripts/test.ps1` or `scripts/test.bat`; they run the same checks.
+
+7. Push to your fork:
 
     ```sh
     git push origin <the-name-of-your-branch>
     ```
 
-7. Create a pull request:
+8. Create a pull request:
 
     - Go to ["Pull Requests" tab](https://github.com/petbox-dev/combocurve-api-helper/compare) in this repo, and click "compare across forks"
     - Choose your branch as the source and keep the default `main` branch as the target
         - ie: `petbox-dev/combocurve-api-helper` (`main`) `<-` `your-username/combocurve-api-helper` (`your-branch-name`)
     - Fill the title and description with a summary of the proposed changes
     - Request a review from `@dsfulf`
+
+### Make targets
+
+| Target | Action |
+|---|---|
+| `make help` | List the targets |
+| `make install` | Install editable into the current environment, with the `dev` dependency group |
+| `make lint` | `ruff check`, `ruff format --check`, `mypy` over `src tests scripts` |
+| `make test` | `make lint`, then `pytest` |
+| `make build` | `make clean`, then `python -m build` into an empty `dist/` |
+| `make publish` | `make test`, `make build`, then `twine upload dist/*` to PyPI (maintainers only) |
+| `make clean` | Remove `build/`, `dist/` and `src/combocurve_api_helper.egg-info/` |
+
+The Makefile uses POSIX shell commands (`rm -rf`, `echo -e`, `column`). On Windows, run it from Git Bash or WSL.
 
 ## Docstring examples
 
@@ -282,7 +308,7 @@ operations as of 2026-07 — so the collection is used instead.)
 ## License
 MIT License
 
-Copyright (c) 2023 Petroleum Engineering Toolbox
+Copyright (c) 2026 Petroleum Engineering Toolbox
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

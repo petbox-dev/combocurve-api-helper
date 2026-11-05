@@ -131,13 +131,12 @@ def num_to_csv(value: Any) -> str:
 
 
 def num_to_csv_float(value: Any) -> str:
-    """Like num_to_csv, but always renders with a decimal point.
+    """Like num_to_csv, but always renders with a decimal point ('100' -> '100.0').
 
-    StreamProperties 'Value' and Expenses 'Value'/'Paying WI / Earning WI' always
-    display whole numbers as e.g. '100.0', not '100' -- unlike most other numeric
-    columns across the econ-model CSV exports (Capex, Differentials, ProductionTaxes),
-    which drop the trailing '.0' (handled by num_to_csv above). Per-type/per-column,
-    not universal.
+    Used for every column a mapper lists in `float_columns`. CC's own export writes a number
+    in the form CC stores it ('9' for an integer, '9.0' for a double), and the API's JSON drops
+    the '.0', so that form cannot be recovered from API data; a float-valued column is
+    therefore always written in float form.
     """
     s = _float_str(float(value))
     if '.' not in s:
@@ -146,10 +145,16 @@ def num_to_csv_float(value: Any) -> str:
 
 
 def csv_to_num(s: str) -> Union[int, float]:
+    """An integer-valued cell (offset, period, count): '12' -> 12, '12.0' -> 12."""
     f = float(s)
     if f == int(f):
         return int(f)
     return f
+
+
+def csv_to_float(s: str) -> float:
+    """A cell of a `float_columns` column: always a float ('9' -> 9.0)."""
+    return float(s)
 
 
 # CC's `entireWellLife` field is the "flat criteria" marker. Both 'Flat' and the

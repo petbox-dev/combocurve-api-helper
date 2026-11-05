@@ -15,6 +15,7 @@ import os
 import pytest
 
 from combocurve_api_helper.econ_models import MAPPERS
+from combocurve_api_helper.econ_models.base import Context, model_scope
 from tests.econ_models.csv_fixture_io import (
     FIXTURE_FILES,
     FIXTURES_DIR,
@@ -56,8 +57,9 @@ def test_csv_round_trip_matches_real_export(econ_model_type: str) -> None:
         rows = read_csv_rows(os.path.join(FIXTURES_DIR, filename))
         for model_name, model_rows in group_by_model_name(rows).items():
             rebuilt_api = mapper.from_row_dicts(model_rows)
-            rebuilt_rows = mapper.to_row_dicts(rebuilt_api)
+            # The API payload carries no scope; a company export needs it passed back.
+            rebuilt_rows = mapper.to_row_dicts(rebuilt_api, Context(scope=model_scope(model_rows)))
 
-            expected = [project_columns(row, compare_columns) for row in model_rows]
-            actual = [project_columns(row, compare_columns) for row in rebuilt_rows]
+            expected = [project_columns(row, compare_columns, mapper.float_columns) for row in model_rows]
+            actual = [project_columns(row, compare_columns, mapper.float_columns) for row in rebuilt_rows]
             assert actual == expected, f'{econ_model_type} / {filename} / model {model_name!r}'
