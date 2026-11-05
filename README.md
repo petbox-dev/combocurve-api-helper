@@ -222,8 +222,18 @@ monthly = api.get_type_curve_volumes(project_id, type_curve_id, 'monthly')
 
 The v1 methods (`get_type_curve_monthly_fits`, `get_type_curve_representative_fits`,
 `put_type_curves`, v1 lookup-table fields) still work with a `DeprecationWarning` until at least
-2027-01-31. To keep the v1 methods unchanged, pin `combocurve-api-helper<3`. They stop working on
-2026-11-07 regardless.
+2027-01-31. The v1 routes stop on 2026-11-07, so pinning `combocurve-api-helper<3` keeps the old
+code, not a working v1 API.
+
+| Deprecated v1 method or field | v2 replacement |
+|---|---|
+| `get_type_curve_daily_fits`, `get_type_curve_monthly_fits` | `get_type_curve_volumes` |
+| `get_type_curve_representative_fits` | `get_type_curve_wells` and forecast outputs |
+| `put_type_curves` | `patch_type_curves` / `post_type_curves` |
+| `post_type_curves` with v1 `fits` | `post_type_curves`, then `put_type_curve_fits` |
+| v1 lookup-table rule fields | `riskFactorPeak*` and `normalization` |
+
+Each is kept until at least 2027-01-31.
 
 ## Contributing
 

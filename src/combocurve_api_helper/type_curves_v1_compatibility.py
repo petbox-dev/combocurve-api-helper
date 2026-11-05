@@ -1,8 +1,8 @@
 """Deprecated v1 type-curve behavior kept on the v2 routes for transition.
 
-Kept until at least 2027-01-31, then removed in a 3.x release (docs/todo T1). To remove: delete
-this module and put `TypeCurves` back in `ComboCurveAPI`'s bases. Every method here warns once
-per call with `_deprecation_message`.
+Kept until at least 2027-01-31, then removed in a 3.x release
+(docs/todo/open/type-curve-v1-wrappers-outlive-the-v1-api.md). To remove: delete this module
+and put `TypeCurves` back in `ComboCurveAPI`'s bases. Every method here warns once per call with `_deprecation_message`.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from .type_curve_conversions import (
     representative_well_from_v2,
     volumes_to_v1,
 )
-from .typecurves import TypeCurves
+from .typecurves import TypeCurves, _error_name
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
@@ -37,7 +37,6 @@ _REP_WELL_SORT_ORDER: Mapping[str, int] = MappingProxyType({'wellName': 0, 'well
 FORECAST_OUTPUTS_WELLS_PER_REQUEST = 100
 FORECAST_OUTPUTS_GET_LIMIT = 200
 _V1_TYPE_CURVE_ONLY_FIELDS = ('fits', 'regressionType', 'normalizations')
-_SUCCESS_CODES = (200, 201)
 _ResultType = TypeVar('_ResultType')
 
 
@@ -50,6 +49,34 @@ def _deprecation_message(method_name: str, replacement: str) -> str:
 
 def _has_v1_type_curve_fields(record: Item) -> bool:
     return any(field in record for field in _V1_TYPE_CURVE_ONLY_FIELDS)
+
+
+def _is_success_code(code: object) -> bool:
+    return isinstance(code, int) and 200 <= code < 300
+
+
+def _is_lookup_table_not_found(error: requests.HTTPError) -> bool:
+    return (
+        error.response is not None
+        and error.response.status_code == 404
+        and _error_name(error.response) == 'LookupTableNotFoundError'
+    )
+
+
+def _stage_failure_result(error: requests.RequestException, stage: str, location: str) -> Item:
+    """A failed result for a stage whose request failed as a whole. `mayHaveApplied` is True unless
+    the server answered with an HTTP error status (as `base._whole_chunk_failure` marks it)."""
+    response = error.response if isinstance(error, requests.HTTPError) else None
+    if response is not None:
+        status, message = response.status_code, _error_message(response)
+    else:
+        status, message = 0, f'{type(error).__name__}: {error}'
+    return {
+        'status': 'Error',
+        'code': status,
+        'errors': [{'name': f'{stage}Error', 'message': message, 'location': location}],
+        'mayHaveApplied': response is None,
+    }
 
 
 def _error_message(response: requests.Response | None) -> str:
@@ -203,13 +230,23 @@ class TypeCurvesV1Compatibility(TypeCurves):
         results: list[Item | None] = [None] * len(bodies)
         general_errors: list[WriteError] = []
         if create_positions:
-            envelopes = TypeCurves.post_type_curves(
-                self, project_id, [bodies[position] for position in create_positions]
-            )
-            _place_results(envelopes, create_positions, results, general_errors)
+            try:
+                envelopes = TypeCurves.post_type_curves(
+                    self, project_id, [bodies[position] for position in create_positions]
+                )
+            except requests.RequestException as error:
+                for position in create_positions:
+                    results[position] = _stage_failure_result(error, 'Create', f'[{position}]')
+            else:
+                _place_results(envelopes, create_positions, results, general_errors)
         if update_positions:
-            envelopes = self.patch_type_curves(project_id, [bodies[position] for position in update_positions])
-            _place_results(envelopes, update_positions, results, general_errors)
+            try:
+                envelopes = self.patch_type_curves(project_id, [bodies[position] for position in update_positions])
+            except requests.RequestException as error:
+                for position in update_positions:
+                    results[position] = _stage_failure_result(error, 'Patch', f'[{position}]')
+            else:
+                _place_results(envelopes, update_positions, results, general_errors)
 
         for position, result in enumerate(results):
             if result is None:
@@ -227,28 +264,18 @@ class TypeCurvesV1Compatibility(TypeCurves):
 
         for position, fits in enumerate(fits_bodies):
             result = results[position]
-            if fits is None or result is None or result.get('code') not in _SUCCESS_CODES:
+            if fits is None or result is None or not _is_success_code(result.get('code')):
                 continue
-            type_curve_id = str(result.get('id'))
+            type_curve_id = str(result.get('id') or bodies[position].get('id'))
             try:
                 self.put_type_curve_fits(project_id, type_curve_id, fits)
-            except requests.HTTPError as error:
-                status = error.response.status_code if error.response is not None else 0
-                results[position] = {
-                    'status': 'Error',
-                    'code': status,
-                    'id': type_curve_id,
-                    'errors': [
-                        {
-                            'name': 'FitsWriteError',
-                            'message': _error_message(error.response),
-                            'location': f'[{position}].fits',
-                        }
-                    ],
-                }
+            except requests.RequestException as error:
+                failure = _stage_failure_result(error, 'FitsWrite', f'[{position}].fits')
+                failure['id'] = type_curve_id
+                results[position] = failure
 
         present = [result for result in results if result is not None]
-        failed_count = sum(1 for result in present if result.get('code') not in _SUCCESS_CODES)
+        failed_count = sum(1 for result in present if not _is_success_code(result.get('code')))
         return [
             WriteResponse(
                 successCount=len(present) - failed_count,
@@ -277,12 +304,13 @@ class TypeCurvesV1Compatibility(TypeCurves):
     def _with_v1_lookup_table_id(
         self, method_name: str, lookup_table_id: str, call: Callable[[str], _ResultType]
     ) -> _ResultType:
-        """Call with `lookup_table_id`; on a 404, call once more with the id CC gave the migrated
-        v1 table (halves swapped, seen 2 of 2 on 2026-11-05) and warn. A second 404 raises."""
+        """Call with `lookup_table_id`; on a `LookupTableNotFoundError` 404, call once more with the
+        id CC gave the migrated v1 table (halves swapped, seen 2 of 2 on 2026-11-05) and warn. A
+        second 404 raises."""
         try:
             return call(lookup_table_id)
         except requests.HTTPError as error:
-            if error.response is None or error.response.status_code != 404:
+            if not _is_lookup_table_not_found(error):
                 raise
             try:
                 swapped_id = lookup_table_id_from_v1(lookup_table_id)
@@ -353,21 +381,33 @@ class TypeCurvesV1Compatibility(TypeCurves):
 
     def delete_type_curve_lookup_table_by_id(self, project_id: str, lookup_table_id: str) -> CaseInsensitiveDict[str]:
         """
-        Deletes one type-curve lookup table. When nothing matched (`X-Delete-Count: 0`) and the id is
-        a v1 id, the migrated table's id is tried once (deprecated).
+        Deletes one type-curve lookup table. When nothing matched (`X-Delete-Count: 0`, or a 404
+        `LookupTableNotFoundError`) and the id is a v1 id, the migrated table's id is tried once
+        (deprecated).
 
-        A genuine v2 id whose table was already deleted also reads `X-Delete-Count: 0` and is tried
-        once swapped. ObjectIds lead with a timestamp; swapping the halves of a v2 id puts random
-        bytes there, so the swapped id naming another live table is a negligible coincidence.
+        A migrated table's swapped v2 id is its v1 id, which v2 does not resolve (live 2026-11-05),
+        and swapping a v2 id that was never a v1 id gives an id with random bytes where the
+        timestamp belongs; either way the retry cannot delete another live table except by an
+        ObjectId collision.
 
         https://docs.api.combocurve.com/api/type-curves-v2-preview/delete-v2-type-curve-lookup-table-by-id
         """
-        headers = super().delete_type_curve_lookup_table_by_id(project_id, lookup_table_id)
-        if headers.get('X-Delete-Count') != '0':
+        headers: CaseInsensitiveDict[str] | None = None
+        not_found_error: requests.HTTPError | None = None
+        try:
+            headers = super().delete_type_curve_lookup_table_by_id(project_id, lookup_table_id)
+        except requests.HTTPError as error:
+            if not _is_lookup_table_not_found(error):
+                raise
+            not_found_error = error
+        if headers is not None and headers.get('X-Delete-Count') != '0':
             return headers
         try:
             swapped_id = lookup_table_id_from_v1(lookup_table_id)
         except ValueError:
+            if headers is None and not_found_error is not None:
+                raise not_found_error from None
+            assert headers is not None
             return headers
         swapped_headers = super().delete_type_curve_lookup_table_by_id(project_id, swapped_id)
         if swapped_headers.get('X-Delete-Count') not in (None, '0'):

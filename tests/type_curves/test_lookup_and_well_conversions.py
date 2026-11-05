@@ -90,6 +90,28 @@ def test_lookup_table_id_from_v1_refuses_a_non_object_id() -> None:
         lookup_table_id_from_v1('not-an-id')
 
 
+def test_lookup_table_id_from_v1_refuses_a_trailing_newline() -> None:
+    with pytest.raises(ValueError):
+        lookup_table_id_from_v1('aaaaaaaaaaaabbbbbbbbbbbb\n')
+
+
+def test_a_lone_phased_rule_converts_to_one_rule_without_phase() -> None:
+    table: Item = {'name': 'Sample', 'rules': [{'filter': [{'value': 'TX'}], 'phase': 'oil'}]}
+
+    rules = cast('Any', lookup_table_from_v1(table))['rules']
+
+    assert rules == [{'filter': [{'value': 'TX'}]}]
+
+
+def test_a_phased_rule_and_an_unphased_rule_with_the_same_filter_are_both_kept() -> None:
+    table: Item = {
+        'name': 'Sample',
+        'rules': [{'filter': [{'value': 'TX'}], 'phase': 'oil'}, {'filter': [{'value': 'TX'}]}],
+    }
+
+    assert len(cast('Any', lookup_table_from_v1(table))['rules']) == 2
+
+
 WELL_ROW: Item = {
     'id': '000000000000000000000011',
     'wellName': 'Sample Well 1',

@@ -312,7 +312,7 @@ def _next_page_url_on_request_origin(response_headers: Mapping[str, str], reques
 
 class APIBase:
     API_BASE_URL = 'https://api.combocurve.com/v1'
-    API_BASE_URL_V2 = 'https://api.combocurve.com/v2'  # async export routes are the only /v2 routes
+    API_BASE_URL_V2 = 'https://api.combocurve.com/v2'  # async export and type-curve routes are the /v2 routes
     REFERENCE_WELLHEADER = config.REFERENCE_WELLHEADER
     WELLHEADER_COLUMNS: ClassVar[dict[str, str]] = {
         header_key.lower(): header_key for header_key in config.REFERENCE_WELLHEADER

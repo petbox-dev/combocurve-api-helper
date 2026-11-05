@@ -67,9 +67,10 @@ def fits_for_put(fits: Item) -> Item:
     v2 returns a `linear` segment's `slope` as its sign (-1/0/1) but reads `slope` on write as
     the value and ignores `qEnd`, so a read-back segment written verbatim stores a different
     curve (live 2026-11-05: `qStart 500`, `qEnd 400`, 364 days, `slope -1` stored `qEnd 136`).
-    This recomputes `slope = (qEnd - qStart) / days` on every `linear` segment that has both
-    rates and both dates, and drops the read-only `updatedAt` of each phase. Other segments pass
-    unchanged.
+    This recomputes `slope = (qEnd - qStart) / days` on every `linear` segment in read form:
+    `slope` is -1, 0 or 1 and `qEnd` is present, with both rates and both dates. A segment in
+    write form (any other slope) keeps its slope even when it carries `qEnd`. The read-only
+    `updatedAt` of each phase is dropped. Other segments pass unchanged.
     """
     writable = copy.deepcopy(fits)
     for phase in PHASES:
@@ -80,6 +81,8 @@ def fits_for_put(fits: Item) -> Item:
         for segments in _series_segment_lists(phase_fit):
             for segment in segments:
                 if segment.get('segmentType') != 'linear':
+                    continue
+                if segment.get('slope') not in (-1, 0, 1) or 'qEnd' not in segment:
                     continue
                 slope_value = _linear_slope_value(segment)
                 if slope_value is not None:
@@ -232,7 +235,7 @@ _V1_RISK_FACTOR_FIELDS = {
     'riskFactorWater': 'riskFactorPeakWater',
 }
 _V1_ONLY_RULE_FIELDS = (*_V1_RISK_FACTOR_FIELDS, 'applyNormalization', 'phase', 'resolution')
-_OBJECT_ID = re.compile(r'^[0-9a-f]{24}$')
+_OBJECT_ID = re.compile(r'[0-9a-f]{24}')
 
 
 def lookup_table_uses_v1_fields(table: Item) -> bool:
@@ -313,7 +316,7 @@ def lookup_table_id_from_v1(lookup_table_id: str) -> str:
 
     Seen on 2 of 2 tables before the switch-over (2026-11-05); CC does not document it.
     """
-    if not _OBJECT_ID.match(lookup_table_id):
+    if not _OBJECT_ID.fullmatch(lookup_table_id):
         raise ValueError(f'{lookup_table_id!r} is not a 24-character hex ObjectId')
     return lookup_table_id[12:] + lookup_table_id[:12]
 

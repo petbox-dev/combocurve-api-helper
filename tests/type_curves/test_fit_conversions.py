@@ -169,3 +169,10 @@ def test_conversions_do_not_change_their_input() -> None:
     fits_from_v1(type_curve)
 
     assert type_curve == before
+
+
+def test_fits_for_put_keeps_the_slope_of_a_write_form_segment_that_carries_q_end() -> None:
+    """slope -0.3 is not a sign: the segment is already in write form, so qEnd is not used."""
+    fits: Item = {'oil': {'fitType': 'rate', 'best': {'segments': [linear_segment(-0.3)]}}}
+
+    assert cast('Any', fits_for_put(fits))['oil']['best']['segments'][0]['slope'] == -0.3

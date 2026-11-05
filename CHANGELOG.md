@@ -45,12 +45,16 @@ This release moves those methods to the v2 routes. 2.x keeps the v1 methods (bug
 - `put_type_curves` (upsert by name: merge existing, create new) and `post_type_curves` with v1
   `fits`/`regressionType`/`normalizations` (create, then `put_type_curve_fits`; not atomic).
   v1 `normalizations` are dropped, not written. A record that the server returns no result for
-  is reported as a failed result named `MissingResult`.
+  is reported as a failed result named `MissingResult`. A create, patch or fits-write request that
+  fails as a whole becomes failed results (`mayHaveApplied: true` when the request may have reached
+  the server), and the fits of the records that succeeded are still written. Any 2xx result code
+  counts as success; a result without `id` uses the id of the request body.
 - v1 lookup-table rule fields (`riskFactorOil/Gas/Water`, `applyNormalization`, `phase`,
   `resolution`), translated on write. v2 rules apply to every phase, so a v1 rule written for one
   phase now applies to all phases. Rules with the same filter that differ by more than `phase`
-  raise `ValueError`.
-- A v1 lookup-table id on the by-id methods: tried once more as the migrated id.
+  raise `ValueError`. `fpdSource: 'schedule'` raises `ValueError` on write (no v2 equivalent).
+- A v1 lookup-table id on the by-id methods: tried once more as the migrated id, when the server
+  answers 404 `LookupTableNotFoundError` (for delete, also `X-Delete-Count: 0`).
 - The credential paths deprecated in 2.5.0 keep working; their removal moved to a 3.x release,
   not before 2027-01-31 (as stated in 2.7.0).
 

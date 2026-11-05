@@ -183,7 +183,10 @@ this public repo: `CC_DEV_PROJECT_ID` (the one `test_api.py` test that needs it 
 `CC_DEV_PROJECT_ID`, `CC_DEV_SCENARIO_ID`, `CC_DEV_DATES_MODEL_ID` (`test_assignments_live.py` skips
 unless all three are set). `test_type_curves_v2_live.py` performs writes (it creates and deletes its own
 type curve) and needs a tenant enrolled in Type Curve 2.0: it skips unless `CC_LIVE_TEST=1`,
-`CC_TC2_PROJECT_ID` and `CC_TC2_TYPE_CURVE_ID` are set (it passed 2026-11-05). Put these variables in a repo-root `.env` (gitignored; copy `.env.example`):
+`CC_TC2_PROJECT_ID` and `CC_TC2_TYPE_CURVE_ID` are set (it passed 2026-11-05). Unlike the other live
+tests, it uses the DEFAULT `~/.combocurve` credentials (production), not `~/.combocurve/dev`, because
+the dev tenant is not enrolled in v2. It writes only `API Helper Fixture*` objects in the
+`CC_TC2_PROJECT_ID` project and deletes them. Put these variables in a repo-root `.env` (gitignored; copy `.env.example`):
 `tests/conftest.py` loads it with `python-dotenv` (a `dev` dependency-group entry), searching upward
 from `tests/`, so the working directory does not matter. A variable already set in the shell wins.
 

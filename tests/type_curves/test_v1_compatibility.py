@@ -226,6 +226,89 @@ def test_put_type_curves_patches_existing_names_and_posts_new_ones(monkeypatch: 
     assert [result['id'] for result in envelopes[0]['results']] == [TYPE_CURVE_ID, '000000000000000000000009']
 
 
+def test_a_failed_patch_stage_still_writes_the_fits_of_created_records(monkeypatch: MonkeyPatch) -> None:
+    created_id = '000000000000000000000009'
+    record = load('v1_type_curve_ratio_linear.json')
+    record['name'] = 'New'
+    transport = install(
+        monkeypatch,
+        FakeResponse(200, [{'id': TYPE_CURVE_ID, 'name': 'Existing'}]),
+        FakeResponse(
+            207,
+            {'successCount': 1, 'failedCount': 0, 'results': [{'status': 'Created', 'code': 201, 'id': created_id}]},
+        ),
+        FakeResponse(400, {'name': 'ValidationError', 'message': 'bad patch'}),
+        FakeResponse(200, {'gas': {}}),
+    )
+
+    with pytest.warns(DeprecationWarning, match='put_type_curves'):
+        envelopes = make_offline_api().put_type_curves(PROJECT_ID, [{'name': 'Existing'}, record])
+
+    assert [(call.method, call.url) for call in transport.calls][-1] == ('PUT', f'{BASE}/{created_id}/fits')
+    results = cast('Any', envelopes[0]['results'])
+    assert results[1]['code'] == 201
+    assert (results[0]['status'], results[0]['code']) == ('Error', 400)
+    assert results[0]['errors'][0]['name'] == 'PatchError'
+    assert (envelopes[0]['successCount'], envelopes[0]['failedCount']) == (1, 1)
+
+
+def test_a_connection_failure_in_the_create_stage_marks_the_results_as_maybe_applied(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    def refuse(*arguments: Any, **keywords: Any) -> Any:
+        raise requests.ConnectionError('reset')
+
+    monkeypatch.setattr(requests, 'request', refuse)
+
+    with pytest.warns(DeprecationWarning):
+        envelopes = make_offline_api().post_type_curves(PROJECT_ID, [load('v1_type_curve_ratio_linear.json')])
+
+    result = envelopes[0]['results'][0]
+    assert (result['status'], result['code']) == ('Error', 0)
+    assert result['mayHaveApplied'] is True
+    assert envelopes[0]['failedCount'] == 1
+
+
+def test_a_patch_result_without_an_id_writes_fits_to_the_body_id(monkeypatch: MonkeyPatch) -> None:
+    record = load('v1_type_curve_ratio_linear.json')
+    record['name'] = 'Existing'
+    transport = install(
+        monkeypatch,
+        FakeResponse(200, [{'id': TYPE_CURVE_ID, 'name': 'Existing'}]),
+        FakeResponse(207, {'successCount': 1, 'failedCount': 0, 'results': [{'status': 'OK', 'code': 204}]}),
+        FakeResponse(200, {'gas': {}}),
+    )
+
+    with pytest.warns(DeprecationWarning):
+        envelopes = make_offline_api().put_type_curves(PROJECT_ID, [record])
+
+    assert (transport.calls[-1].method, transport.calls[-1].url) == ('PUT', f'{BASE}/{TYPE_CURVE_ID}/fits')
+    assert (envelopes[0]['successCount'], envelopes[0]['failedCount']) == (1, 0)
+
+
+def test_a_lookup_table_404_with_another_error_name_does_not_fall_back(monkeypatch: MonkeyPatch) -> None:
+    transport = install(monkeypatch, FakeResponse(404, {'name': 'ProjectNotFoundError'}))
+
+    with pytest.raises(requests.HTTPError):
+        make_offline_api().get_type_curve_lookup_table_by_id(PROJECT_ID, V1_TABLE_ID)
+
+    assert len(transport.calls) == 1
+
+
+def test_delete_falls_back_when_the_server_answers_lookup_table_not_found(monkeypatch: MonkeyPatch) -> None:
+    transport = install(
+        monkeypatch,
+        FakeResponse(404, {'name': 'LookupTableNotFoundError'}),
+        FakeResponse(204, None, headers={'X-Delete-Count': '1'}),
+    )
+
+    with pytest.warns(DeprecationWarning, match='lookup-table id'):
+        headers = make_offline_api().delete_type_curve_lookup_table_by_id(PROJECT_ID, V1_TABLE_ID)
+
+    assert headers['X-Delete-Count'] == '1'
+    assert transport.calls[1].url.endswith('/lookup-tables/bbbbbbbbbbbbaaaaaaaaaaaa')
+
+
 def test_v1_lookup_table_fields_are_translated(monkeypatch: MonkeyPatch) -> None:
     table = load('v1_lookup_table_per_phase.json')
     table['rules'] = [rule for rule in table['rules'] if rule['filter'][0]['value'] != 'NM']
