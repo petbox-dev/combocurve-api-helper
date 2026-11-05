@@ -3,6 +3,7 @@ from typing import Optional, Union, cast
 from requests import Response
 
 from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
+from .config import EconModelEntry
 
 GET_LIMIT = 200
 POST_LIMIT = 500
@@ -45,15 +46,22 @@ class CompanyModels(APIBase):
         a different function for each model type.
         """
 
-        def _get_route_for_model(econ_model_type: str) -> Union[str, None]:
+        def _get_model_entry(econ_model_type: str) -> Union[EconModelEntry, None]:
             for model in APIBase.ECON_MODELS:
                 if model['econModelType'].casefold() == econ_model_type.casefold():
-                    return model['route']
+                    return model
 
             return None
 
-        route = _get_route_for_model(econ_model_type)
-        assert route is not None, f'Invalid econ model type: {econ_model_type}'
+        entry = _get_model_entry(econ_model_type)
+        assert entry is not None and entry['route'] is not None, f'Invalid econ model type: {econ_model_type}'
+        if not entry['hasCompanyRoute']:
+            raise ValueError(
+                f'ComboCurve has no company route for {econ_model_type}; '
+                'use the project route (get_econ_models_by_type)'
+            )
+
+        route = entry['route']
         url = f'{self.API_BASE_URL}/econ-models/{route}'
         if filters is None:
             return url
