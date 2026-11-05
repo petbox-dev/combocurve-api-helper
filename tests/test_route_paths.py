@@ -3,7 +3,8 @@
 Route literals are hand-written, and through 2.1.0 **five** of them were wrong --
 `forecast-monthly-volumes`, `forecast-daily-volumes` and `wells-identifiers` were
 misspelled in `root.py`, and `type-curves/{id}/fits/{daily,monthly}` were spelled
-`{daily,monthly}-fits` in `typecurves.py`. Every one 404'd with the Google-ESP body
+`{daily,monthly}-fits` in `typecurves.py` (those two routes are v1 and no longer exist in 3.0.0;
+three stay pinned here). Every one 404'd with the Google-ESP body
 `{"code": 5, "message": "Method does not exist."}`, i.e. the method could never
 succeed for any caller. Three were caught by hand; the last two only fell out of
 this check.
@@ -50,7 +51,6 @@ _UNCHECKED_BY_DESIGN = (
     'get_custom_columns_daily_production',
     'get_custom_columns_monthly_production',
     'get_custom_columns_wells',
-    'get_type_curve_representative_fits',
     'post_export',
 )
 
@@ -180,15 +180,16 @@ def test_url_builders_match_the_collection_route_paths() -> None:
 
     assert not mismatches, 'url builders whose path disagrees with the collection:\n' + '\n'.join(sorted(mismatches))
     # Floor set just under the count at the time of writing (142 builders checked on
-    # 2026-09-30, 30 of them count_* methods). A convention drift that silently stops checking
+    # 2026-09-30, 30 of them count_* methods). 2026-11-05: v1 type-curve methods removed in 3.0.0
+    # (133 checked now). A convention drift that silently stops checking
     # most of the surface should fail loudly rather than pass vacuously.
-    assert checked >= 135, f'only {checked} builders were checked -- the slug/builder naming convention drifted'
+    assert checked >= 128, f'only {checked} builders were checked -- the slug/builder naming convention drifted'
     # A method whose route IS in the collection but whose builder the convention cannot find or
     # call is unchecked here; each one is named, so a new one fails instead of dropping out silently.
     assert sorted(unchecked) == sorted(_UNCHECKED_BY_DESIGN), f'unchecked routes changed: {sorted(unchecked)}'
 
 
-def test_the_five_previously_broken_routes_stay_fixed() -> None:
+def test_the_previously_broken_routes_stay_fixed() -> None:
     """Offline pin for the specific 404s, so a revert fails without needing the network."""
     api = ComboCurveAPI.__new__(ComboCurveAPI)
     base = ComboCurveAPI.API_BASE_URL
@@ -196,5 +197,3 @@ def test_the_five_previously_broken_routes_stay_fixed() -> None:
     assert api.get_root_forecast_monthly_volumes_url() == f'{base}/forecast-monthly-volumes'
     assert api.get_root_forecast_daily_volumes_url() == f'{base}/forecast-daily-volumes'
     assert api.get_well_identifiers_url() == f'{base}/wells-identifiers'
-    assert api.get_type_curve_daily_fits_url('P', 'T') == f'{base}/projects/P/type-curves/T/fits/daily'
-    assert api.get_type_curve_monthly_fits_url('P', 'T') == f'{base}/projects/P/type-curves/T/fits/monthly'

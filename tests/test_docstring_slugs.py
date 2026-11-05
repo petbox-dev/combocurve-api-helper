@@ -17,7 +17,10 @@ import requests
 # Mirrors scripts/generate_docstrings.py COLLECTION_URL (the collection is never vendored).
 _COLLECTION_URL = 'https://docs.api.combocurve.com/downloads/combocurve-api.postman_collection.json'
 _SRC = pathlib.Path(__file__).resolve().parents[1] / 'src' / 'combocurve_api_helper'
-_SLUG_RE = re.compile(r'https://docs\.api\.combocurve\.com/api/([a-z0-9-]+)')
+_SLUG_RE = re.compile(r'https://docs\.api\.combocurve\.com/api/([a-z0-9-]+(?:/[a-z0-9-]+)*)')
+# The Type Curve 2.0 reference is not in the Postman collection (checked 2026-11-05;
+# docs/todo/open/v2-type-curve-routes-have-no-postman-source.md). Its links are skipped here.
+_NOT_IN_COLLECTION_PREFIX = 'type-curves-v2-preview/'
 
 
 def _collection_item_names() -> set[str]:
@@ -47,6 +50,8 @@ def test_all_docstring_slugs_exist_in_collection() -> None:
     for path in sorted(_SRC.glob('*.py')):
         for lineno, line in enumerate(path.read_text(encoding='utf-8').split('\n'), start=1):
             for slug in _SLUG_RE.findall(line):
+                if slug.startswith(_NOT_IN_COLLECTION_PREFIX):
+                    continue
                 if slug not in names:
                     missing.append(f'{path.name}:{lineno} -> {slug}')
 
