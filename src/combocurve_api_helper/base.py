@@ -158,16 +158,30 @@ def _is_read_only(method: str) -> bool:
     return method.lower() in _READ_ONLY_METHODS
 
 
+class _CallDeadlinePassed(requests.ConnectTimeout):
+    """No time remained for a send. A `ConnectTimeout`, because that class says "never sent", which is
+    true here, so a caller does not report a write as possibly applied."""
+
+
+def _retry_fits_before_deadline(method: str, pause_seconds: float, deadline: float) -> bool:
+    """True when a status retry of `method` after `pause_seconds` may start. A GET or HEAD needs the
+    pause to end before `deadline`; its read timeout then shrinks to the time that remains. A write
+    also needs the full read timeout to fit after the pause: a shortened timeout could turn a
+    known-not-applied 429 into a lost connection, and then "the server may have applied it"."""
+    needed = pause_seconds
+    if not _is_read_only(method):
+        return time.monotonic() + needed + _REQUEST_TIMEOUT_SECONDS[1] <= deadline
+    return time.monotonic() + needed < deadline
+
+
 def _timeout_within(deadline: float) -> tuple[float, float]:
     """The (connect, read) timeout for a send that must end by `deadline` (a `time.monotonic()` time):
-    `_REQUEST_TIMEOUT_SECONDS`, each part cut to the time that remains. Raises `requests.ConnectTimeout`
-    when none remains. That class says "never sent", which is true, so a caller does not report a write
-    as possibly applied."""
+    `_REQUEST_TIMEOUT_SECONDS`, each part cut to the time that remains. Connect and read can each use
+    the whole remainder, so one late send can run up to about twice the remainder. Raises
+    `_CallDeadlinePassed` when none remains."""
     remaining = deadline - time.monotonic()
     if remaining <= 0:
-        raise requests.ConnectTimeout(
-            f'call deadline of {_CALL_DEADLINE_SECONDS:.0f} s passed before the request was sent'
-        )
+        raise _CallDeadlinePassed(f'call deadline of {_CALL_DEADLINE_SECONDS:.0f} s passed before the request was sent')
     connect_seconds, read_seconds = _REQUEST_TIMEOUT_SECONDS
     return min(connect_seconds, remaining), min(read_seconds, remaining)
 
@@ -187,15 +201,17 @@ def _send_request(
     returned whatever its status: status retries are the caller's (`_retry_delay_seconds`).
 
     `deadline` is an absolute `time.monotonic()` time, or None for no overall limit. Each send's timeout
-    is cut to the time that remains. A connection retry whose pause would reach the deadline is not made:
+    is cut to the time that remains (connect and read can each use the remainder, so one late send can
+    run up to about twice the remainder). A connection retry whose pause would reach the deadline is not made:
     the last error is raised. A send with no time left is not made (`requests.ConnectTimeout`)."""
     for failure in range(_MAX_CONNECTION_RETRIES + 1):
+        headers = dict(auth_headers())  # first: a token fetch takes time and counts against the deadline
         timeout = _REQUEST_TIMEOUT_SECONDS if deadline is None else _timeout_within(deadline)
         try:
             return requests.request(
                 method,
                 url,
-                headers=dict(auth_headers()),
+                headers=headers,
                 params=params,
                 json=json_body,
                 timeout=timeout,
@@ -439,9 +455,8 @@ class APIBase:
         `_send_request` (timeout, and a second send only when it cannot write twice).
 
         Every verb funnels through here EXCEPT the batched-write path (`_send_one_chunk`
-        calls `_send_request` directly and carries its own status retry loop) and the direct
-        `requests.*` calls listed in docs/todo/open/direct-requests-calls-bypass-timeout-and-retry.md,
-        so this is also where `params` is reconciled against a query string already present on
+        calls `_send_request` directly and carries its own status retry loop), so this is also
+        where `params` is reconciled against a query string already present on
         `url` -- see `_drop_params_already_in_url`. The batch path passes no `params`,
         so it has nothing to reconcile today; a future change that adds one there would
         NOT be covered by this.
@@ -455,8 +470,8 @@ class APIBase:
             delay = _retry_delay_seconds(response, attempt, method)
             if delay is None or attempt == _MAX_REQUEST_RETRIES:
                 return response
-            if time.monotonic() + delay >= deadline:
-                return response  # the pause would reach the deadline: the caller reports this status
+            if not _retry_fits_before_deadline(method, delay, deadline):
+                return response  # the caller reports this status
             time.sleep(delay)
         raise RuntimeError('unreachable: retry loop always returns')
 
@@ -564,11 +579,23 @@ class APIBase:
         """
         count = len(chunk)
         deadline = time.monotonic() + _CALL_DEADLINE_SECONDS
+        last_status: Optional[int] = None
         for attempt in range(_MAX_REQUEST_RETRIES + 1):
             rate_limit.wait_if_limited()
             try:
                 response = _send_request(method, url, self._auth_headers, json_body=chunk, deadline=deadline)
             except requests.RequestException as error:
+                if isinstance(error, _CallDeadlinePassed) and last_status is not None:
+                    # A shared 429 pause of another worker used the time left: report the status
+                    # this chunk last got, not a connection failure.
+                    return _whole_chunk_failure(
+                        index,
+                        offset,
+                        count,
+                        http_status=last_status,
+                        error_message=f'call deadline passed after status {last_status}: {error}',
+                        may_have_applied=last_status in _RETRYABLE_GATEWAY_STATUSES and not _is_read_only(method),
+                    )
                 never_sent = _request_was_never_sent(error)
                 may_have_applied = not _is_read_only(method) and not never_sent
                 if may_have_applied:
@@ -586,18 +613,19 @@ class APIBase:
                     may_have_applied=may_have_applied,
                 )
             status = response.status_code
+            last_status = status
 
             if attempt < _MAX_REQUEST_RETRIES:
-                # A pause that would reach the deadline is not taken: the status is recorded below.
+                # A retry that does not fit the deadline is not made: the status is recorded below.
                 if status == 429:
                     retry_after = _retry_after_seconds(response)
                     pause_seconds = rate_limit.pause_seconds if retry_after is None else retry_after
-                    if time.monotonic() + pause_seconds < deadline:
+                    if _retry_fits_before_deadline(method, pause_seconds, deadline):
                         rate_limit.set_limited(retry_after)
                         continue
                 elif _gateway_retry_allowed(status, method):
                     pause_seconds = _GATEWAY_BACKOFF_SECONDS * (2.0**attempt)
-                    if time.monotonic() + pause_seconds < deadline:
+                    if _retry_fits_before_deadline(method, pause_seconds, deadline):
                         time.sleep(pause_seconds)
                         continue
 

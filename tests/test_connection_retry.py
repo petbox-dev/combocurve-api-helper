@@ -15,6 +15,7 @@ import requests
 import urllib3.exceptions
 from pytest import MonkeyPatch
 
+from combocurve_api_helper._batch import _RateLimitState
 from combocurve_api_helper.base import (
     _CALL_DEADLINE_SECONDS,
     _MAX_CONNECTION_RETRIES,
@@ -63,7 +64,13 @@ class _Script:
     def __call__(self, method: str, url: str, **kwargs: Any) -> Any:
         self.calls.append({'method': method, **kwargs})
         if self._clock is not None:
-            self._clock.now += self._seconds_per_call  # a slow server: the send takes this long
+            # A slow server: the send takes `seconds_per_call`, but never longer than its read timeout,
+            # which ends it with a `ReadTimeout` as `requests` does.
+            read_timeout = kwargs['timeout'][1]
+            if self._seconds_per_call > read_timeout:
+                self._clock.now += read_timeout
+                raise requests.ReadTimeout('read timed out')
+            self._clock.now += self._seconds_per_call
         outcome = next(self._outcomes)
         if isinstance(outcome, BaseException):
             raise outcome
@@ -360,24 +367,23 @@ def test_a_get_that_keeps_answering_504_stops_at_the_deadline_and_returns_the_la
 ) -> None:
     api = make_offline_api()
     last = FakeResponse(504, {'last': True})
-    script = _install(
-        monkeypatch, [FakeResponse(504, {}), FakeResponse(504, {}), last, FakeResponse(200, [])], clock, 200.0
-    )
-    started = clock.now
+    script = _install(monkeypatch, [FakeResponse(504, {}), last, FakeResponse(200, [])], clock, 299.0)
     response = api._request_with_retry('get', URL)
     assert cast('Any', response) is last
-    assert len(script.calls) == 3  # sends end at +200, +401 and +603: a 4 s backoff would pass the deadline
-    assert clock.sleeps == [1.0, 2.0]
-    assert clock.now - started == pytest.approx(603.0)
+    assert len(script.calls) == 2  # sends end at +299 and +599: a 2 s backoff would pass the deadline
+    assert clock.sleeps == [1.0]
 
 
-def test_the_read_timeout_shrinks_to_the_remaining_budget_on_a_late_retry(
+def test_the_read_timeout_shrinks_to_the_remaining_budget_on_a_late_get_retry(
     monkeypatch: MonkeyPatch, clock: _FakeClock
 ) -> None:
     api = make_offline_api()
-    script = _install(monkeypatch, [FakeResponse(504, {}), FakeResponse(504, {}), FakeResponse(504, {})], clock, 200.0)
-    api._request_with_retry('get', URL)
-    assert [call['timeout'] for call in script.calls] == [(30.0, 300.0), (30.0, 300.0), (30.0, 600.0 - 403.0)]
+    limited = FakeResponse(429, {}, headers={'Retry-After': '120'})
+    script = _install(monkeypatch, [limited] * 3, clock, 100.0)
+    assert api._request_with_retry('get', URL).status_code == 429
+    # sends start at +0, +220 and +440; the pause after the third (+540 + 120) would pass the deadline
+    assert [call['timeout'] for call in script.calls] == [(30.0, 300.0), (30.0, 300.0), (30.0, 160.0)]
+    assert clock.sleeps == [120.0, 120.0]
 
 
 def test_a_get_whose_connection_keeps_failing_stops_before_the_deadline_and_raises_the_last_error(
@@ -392,30 +398,93 @@ def test_a_get_whose_connection_keeps_failing_stops_before_the_deadline_and_rais
     assert clock.sleeps == [2.0]
 
 
-def test_a_429_pause_that_would_pass_the_deadline_returns_the_429(monkeypatch: MonkeyPatch, clock: _FakeClock) -> None:
+def test_a_post_is_not_retried_when_its_full_read_timeout_would_not_fit(
+    monkeypatch: MonkeyPatch, clock: _FakeClock
+) -> None:
+    """A write sent with a shortened read timeout could turn a known-not-applied 429 into "may have applied"."""
     api = make_offline_api()
     limited = FakeResponse(429, {}, headers={'Retry-After': '120'})
-    script = _install(monkeypatch, [limited] * 3, clock, 250.0)
+    script = _install(monkeypatch, [limited, FakeResponse(200, {})], clock, 200.0)
     assert api._request_with_retry('post', URL, json_body=[{'name': 'a'}]).status_code == 429
-    assert len(script.calls) == 2  # sends end at +250 and +620 (after a 120 s pause): a second pause would pass
+    assert len(script.calls) == 1  # +200 + 120 s pause + 300 s read timeout = +620 passes the deadline
+    assert clock.sleeps == []
+
+
+def test_a_post_is_retried_with_the_full_read_timeout_when_it_fits(monkeypatch: MonkeyPatch, clock: _FakeClock) -> None:
+    api = make_offline_api()
+    limited = FakeResponse(429, {}, headers={'Retry-After': '120'})
+    script = _install(monkeypatch, [limited, limited, limited], clock, 100.0)
+    assert api._request_with_retry('post', URL, json_body=[{'name': 'a'}]).status_code == 429
+    # +100 + 120 + 300 = +520 fits; the second send ends at +320, and +320 + 120 + 300 does not fit
+    assert [call['timeout'] for call in script.calls] == [(30.0, 300.0), (30.0, 300.0)]
     assert clock.sleeps == [120.0]
 
 
-def test_a_send_after_the_deadline_is_refused_without_sending() -> None:
+def test_a_get_in_the_same_situation_is_retried_with_the_shrunk_timeout(
+    monkeypatch: MonkeyPatch, clock: _FakeClock
+) -> None:
+    api = make_offline_api()
+    limited = FakeResponse(429, {}, headers={'Retry-After': '120'})
+    script = _install(monkeypatch, [limited, limited, limited], clock, 200.0)
+    assert api._request_with_retry('get', URL).status_code == 429
+    assert [call['timeout'] for call in script.calls] == [(30.0, 300.0), (30.0, 280.0)]
+    assert clock.sleeps == [120.0]
+
+
+def test_a_send_after_the_deadline_is_refused_without_sending(monkeypatch: MonkeyPatch) -> None:
     from combocurve_api_helper.base import _send_request
 
+    script = _install(monkeypatch, [FakeResponse(200, {})])
     with pytest.raises(requests.Timeout, match='call deadline of 600 s passed before the request was sent'):
         _send_request('post', URL, lambda: {}, json_body=[{'name': 'a'}], deadline=time.monotonic() - 1.0)
+    assert script.calls == []
     assert _CALL_DEADLINE_SECONDS == 600.0
+
+
+def test_the_token_fetch_counts_against_the_deadline(monkeypatch: MonkeyPatch, clock: _FakeClock) -> None:
+    from combocurve_api_helper.base import _send_request
+
+    script = _install(monkeypatch, [FakeResponse(200, {})])
+
+    def slow_headers() -> dict[str, str]:
+        clock.now += 100.0  # a token refresh takes 100 s
+        return {}
+
+    _send_request('get', URL, slow_headers, deadline=clock.now + 150.0)
+    assert script.calls[0]['timeout'] == (30.0, 50.0)
 
 
 def test_the_batched_write_path_stops_at_the_deadline(monkeypatch: MonkeyPatch, clock: _FakeClock) -> None:
     api = make_offline_api()
     limited = FakeResponse(429, {'detail': 'quota'}, headers={'Retry-After': '120'})
-    script = _install(monkeypatch, [limited] * (_MAX_CONNECTION_RETRIES + 10), clock, 250.0)
+    script = _install(monkeypatch, [limited] * 10, clock, 100.0)
     result = api._request_batched('post', URL, [{'name': 'a'}], chunksize=1, max_workers=1)
-    assert len(script.calls) == 2  # sends end at +250 and +620: a second 120 s pause would pass the deadline
+    # same rule as `_request_with_retry`: a write is sent again only when pause + full read timeout fit
+    assert [call['timeout'] for call in script.calls] == [(30.0, 300.0), (30.0, 300.0)]
     (chunk,) = result.chunks
     assert chunk.http_status == 429
     assert not chunk.may_have_applied
     assert not result.ok
+
+
+def test_a_batch_chunk_refused_by_the_deadline_after_a_shared_pause_reports_the_deadline(
+    monkeypatch: MonkeyPatch, clock: _FakeClock
+) -> None:
+    api = make_offline_api()
+    limited = FakeResponse(429, {}, headers={'Retry-After': '1'})
+    script = _install(monkeypatch, [limited, FakeResponse(207, {})], clock, 10.0)
+    # Another worker's pause (shared state) holds this chunk past the deadline after its first 429.
+    real_set_limited = _RateLimitState.set_limited
+
+    def set_limited_far(self: _RateLimitState, retry_after_seconds: Optional[float] = None) -> None:
+        real_set_limited(self, retry_after_seconds)
+        self.resume_at = clock.now + 700.0
+
+    monkeypatch.setattr(_RateLimitState, 'set_limited', set_limited_far)
+    result = api._request_batched('post', URL, [{'name': 'a'}], chunksize=1, max_workers=1)
+    assert len(script.calls) == 1
+    (chunk,) = result.chunks
+    assert chunk.http_status == 429
+    assert not chunk.may_have_applied
+    assert 'call deadline' in chunk.error_message
+    assert 'connection failed' not in chunk.error_message

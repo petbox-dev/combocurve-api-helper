@@ -81,8 +81,9 @@ This release moves those methods to the v2 routes. 2.x keeps the v1 methods (bug
 - **One call has a time limit.** The retries of one call could hold a caller for about 91 minutes.
   A call now has 600 s in total, counted across every retry. A retry whose pause would pass that limit
   is not made: a status retry returns the last response, and a connection retry raises the last error.
-  Each send's read timeout shrinks to the time that remains. A `Retry-After` is capped at 120 s (was
-  3600 s). A write is never sent again because of the limit. Also in 2.7.1.
+  Each send's read timeout shrinks to the time that remains. A write is not retried when its full
+  read timeout would not fit. A `Retry-After` is capped at 120 s (was 3600 s). A write is never sent
+  again because of the limit. Also in 2.7.1.
 
 ## [2.7.0] - 2026-11-05
 
