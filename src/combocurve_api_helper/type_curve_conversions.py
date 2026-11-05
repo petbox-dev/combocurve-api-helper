@@ -8,10 +8,14 @@ Every function returns a new object and never changes its input. Behavior verifi
 from __future__ import annotations
 
 import copy
+import json
+import re
 from datetime import date
 from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from .base import Item, ItemList
 
 PHASES: tuple[str, str, str] = ('oil', 'gas', 'water')
@@ -220,3 +224,144 @@ def volumes_to_v1(volume_rows: ItemList) -> ItemList:
             row_v1[phase] = {series: values.get(series) for series in SERIES}
         rows_v1.append(row_v1)
     return rows_v1
+
+
+_V1_RISK_FACTOR_FIELDS = {
+    'riskFactorOil': 'riskFactorPeakOil',
+    'riskFactorGas': 'riskFactorPeakGas',
+    'riskFactorWater': 'riskFactorPeakWater',
+}
+_V1_ONLY_RULE_FIELDS = (*_V1_RISK_FACTOR_FIELDS, 'applyNormalization', 'phase', 'resolution')
+_OBJECT_ID = re.compile(r'^[0-9a-f]{24}$')
+
+
+def lookup_table_uses_v1_fields(table: Item) -> bool:
+    """True when any rule of `table` carries a field that v2 removed or renamed."""
+    return any(field in rule for rule in _as_item_list(table.get('rules')) for field in _V1_ONLY_RULE_FIELDS)
+
+
+def _rule_from_v1(rule: Item) -> Item:
+    """One v1 rule with v2 field names; `phase` and `resolution` dropped."""
+    if rule.get('fpdSource') == 'schedule':
+        raise ValueError("fpdSource 'schedule' has no v2 equivalent; use another source, or 'fixed' with fixedDate")
+    converted: Item = {
+        field: copy.deepcopy(value) for field, value in rule.items() if field not in _V1_ONLY_RULE_FIELDS
+    }
+    for v1_field, v2_field in _V1_RISK_FACTOR_FIELDS.items():
+        if v1_field in rule:
+            converted[v2_field] = copy.deepcopy(rule[v1_field])
+    if rule.get('applyNormalization') is True:
+        converted['normalization'] = {'source': 'own'}
+    return converted
+
+
+def lookup_table_from_v1(table: Item) -> Item:
+    """A v1 lookup table with v2 rule fields.
+
+    `riskFactorOil/Gas/Water` become `riskFactorPeak*`; `applyNormalization: true` becomes
+    `normalization: {'source': 'own'}` (false or absent: no `normalization`); `resolution` is
+    dropped. v2 rules apply to every phase, so rules with the same filter that differ only by
+    `phase` collapse to the first; rules with the same filter that differ in anything else raise
+    `ValueError` naming the filter, because merging them would change which type curve a well gets.
+    `fpdSource: 'schedule'` raises `ValueError` (no v2 equivalent).
+    """
+    rules_v2: ItemList = []
+    rule_by_phased_filter: dict[str, Item] = {}
+    for rule in _as_item_list(table.get('rules')):
+        converted = _rule_from_v1(rule)
+        if 'phase' not in rule:
+            rules_v2.append(converted)
+            continue
+        filter_key = json.dumps(rule.get('filter'), sort_keys=True)
+        earlier = rule_by_phased_filter.get(filter_key)
+        if earlier is None:
+            rule_by_phased_filter[filter_key] = converted
+            rules_v2.append(converted)
+        elif earlier != converted:
+            raise ValueError(
+                f'rules for filter {filter_key} differ by phase; v2 rules apply to every phase, '
+                'so they cannot be merged without changing which type curve a well gets'
+            )
+    table_v2: Item = {field: copy.deepcopy(value) for field, value in table.items() if field != 'rules'}
+    table_v2['rules'] = rules_v2
+    return table_v2
+
+
+def lookup_table_to_v1(table: Item) -> Item:
+    """A v2 lookup table with v1 rule fields. `normalization.source == 'shared'` has no v1 form:
+    `ValueError`."""
+    v2_to_v1 = {v2_field: v1_field for v1_field, v2_field in _V1_RISK_FACTOR_FIELDS.items()}
+    rules_v1: ItemList = []
+    for rule in _as_item_list(table.get('rules')):
+        converted: Item = {}
+        for field, value in rule.items():
+            if field == 'normalization':
+                normalization = _as_item(value) or {}
+                if normalization.get('source') != 'own':
+                    raise ValueError(f'normalization source {normalization.get("source")!r} (shared) has no v1 form')
+                converted['applyNormalization'] = True
+            else:
+                converted[v2_to_v1.get(field, field)] = copy.deepcopy(value)
+        rules_v1.append(converted)
+    table_v1: Item = {field: copy.deepcopy(value) for field, value in table.items() if field != 'rules'}
+    table_v1['rules'] = rules_v1
+    return table_v1
+
+
+def lookup_table_id_from_v1(lookup_table_id: str) -> str:
+    """The v2 id CC gave a migrated v1 lookup table: the two 12-hex halves swapped.
+
+    Seen on 2 of 2 tables before the switch-over (2026-11-05); CC does not document it.
+    """
+    if not _OBJECT_ID.match(lookup_table_id):
+        raise ValueError(f'{lookup_table_id!r} is not a 24-character hex ObjectId')
+    return lookup_table_id[12:] + lookup_table_id[:12]
+
+
+def _representative_phase_from_output(output: Item, excluded: bool, length: object, series: str) -> Item:
+    """One phase block of a v1 representative-well row from that phase's forecast output."""
+    phase_row: Item = {'rep': not excluded, 'hasForecast': True}
+    forecast_type = output.get('forecastType')
+    ratio = _as_item(output.get('ratio'))
+    series_output = ratio if forecast_type == 'ratio' and ratio is not None else _as_item(output.get(series))
+    output_eur = series_output.get('eur') if series_output is not None else None
+    if isinstance(output_eur, (int, float)):
+        phase_row['eur'] = output_eur / 1000
+        if isinstance(length, (int, float)) and length:
+            phase_row['eurPll'] = output_eur / length
+    parts = [forecast_type, output.get('forecastSubType')]
+    if forecast_type == 'ratio' and ratio is not None:
+        parts.append(ratio.get('basePhase'))
+    phase_row['forecastType'] = ';'.join(str(part) for part in parts if part not in (None, ''))
+    if 'data_freq' in output:
+        phase_row['dataFrequency'] = output['data_freq']
+    return phase_row
+
+
+def representative_well_from_v2(well_row: Item, outputs_by_phase: Mapping[str, Item], forecast_series: str) -> Item:
+    """A v1 representative-well row from a v2 `/wells` row and that well's forecast outputs.
+
+    Verified against v1 on 2026-11-05 for `best` (3 wells x 3 phases, exact): `eur` = output
+    `<series>.eur / 1000`; `eurPll` = output `<series>.eur / perfLateralLength` (not divided by
+    1000; left out when the length is absent or zero); `forecastType` = `forecastType;forecastSubType`,
+    plus `;basePhase` for a ratio output (`ratio.eur` is read). A phase with no output reads as v1
+    gave it: `eur 0`, `eurPll 0`, `not_forecasted`, `hasForecast false`, `rep false`. `valid`,
+    `hasData` and (with no output) `dataFrequency` have no v2 source and are left out.
+    """
+    excluded = well_row.get('excluded') is True
+    length = well_row.get('perfLateralLength')
+    series = forecast_series.lower()
+    row: Item = {
+        'api14': well_row.get('api14'),
+        'wellName': well_row.get('wellName'),
+        'wellNumber': well_row.get('wellNumber'),
+        'wellId': well_row.get('id'),
+        'chosenID': well_row.get('chosenID'),
+    }
+    for phase in PHASES:
+        output = outputs_by_phase.get(phase)
+        if output is None:
+            row[phase] = {'eur': 0, 'eurPll': 0, 'forecastType': 'not_forecasted', 'hasForecast': False, 'rep': False}
+        else:
+            row[phase] = _representative_phase_from_output(output, excluded, length, series)
+    return row
