@@ -58,6 +58,15 @@ This release moves those methods to the v2 routes. 2.x keeps the v1 methods (bug
 - The credential paths deprecated in 2.5.0 keep working; their removal moved to a 3.x release,
   not before 2027-01-31 (as stated in 2.7.0).
 
+### Fixed
+
+- **Single-object requests have a timeout and retries.** `post_directional_surveys`,
+  `put_directional_survey_by_id`, the v2 export methods (`post_export_*`, `get_export_*_by_job_id`),
+  `post_export`, `post_forecast_wells`, `patch_forecast_by_id` and `post_forecast_run` called
+  `requests` directly, with no timeout and no retry. A stalled connection blocked the call forever.
+  They now send through the shared transport: the request timeout, the 429 retry, the gateway retry
+  for a GET, and a second send only when the request never reached the server. Also in 2.7.1.
+
 ## [2.7.0] - 2026-11-05
 
 ### Deprecated

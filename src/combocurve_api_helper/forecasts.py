@@ -3,7 +3,6 @@ from collections.abc import Mapping
 from types import MappingProxyType
 from typing import Callable, Optional, cast
 
-import requests
 from more_itertools import chunked
 
 from ._batch import BatchChunk, BatchWriteResult
@@ -248,13 +247,12 @@ class Forecasts(APIBase):
         # NOTE: we can't use `self._post_items` since it expects the base data to be a list
         # whereas this particular endpoint receives an object
 
-        headers = self._auth_headers()
         url = self.get_forecast_wells_url(project_id, forecast_id)
 
         items: ItemList = []
         for well_ids_chunk in chunked(well_ids, chunksize):
             data = {'wellIds': well_ids_chunk}
-            response = requests.post(url, headers=headers, json=data)
+            response = self._request_with_retry('post', url, json_body=data)
             response.raise_for_status()
 
             items.extend(self._extract_json(response))
@@ -330,10 +328,9 @@ class Forecasts(APIBase):
         """
         # The by-id PATCH endpoint receives a single object body (e.g. {'name': ...}),
         # not a list, so `self._patch_items` (which chunks a list) does not apply.
-        headers = self._auth_headers()
         url = self.get_forecast_by_id_url(project_id, forecast_id)
 
-        response = requests.patch(url, headers=headers, json=data)
+        response = self._request_with_retry('patch', url, json_body=data)
         response.raise_for_status()
 
         return self._extract_json(response)[0]
@@ -996,14 +993,13 @@ class Forecasts(APIBase):
         """
         # The run endpoint receives a single object body ({configurationId}), not
         # a list, so `self._post_items` (which chunks a list) does not apply.
-        headers = self._auth_headers()
         url = self.get_forecast_run_url(project_id, forecast_id)
 
         data: dict[str, str] = {}
         if configuration_id is not None:
             data['configurationId'] = configuration_id
 
-        response = requests.post(url, headers=headers, json=data)
+        response = self._request_with_retry('post', url, json_body=data)
         response.raise_for_status()
 
         return self._extract_json(response)
