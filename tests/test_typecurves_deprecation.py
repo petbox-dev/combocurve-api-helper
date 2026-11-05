@@ -15,6 +15,7 @@ from tests.http_fakes import FakeResponse, make_offline_api
 
 PROJECT_ID = '000000000000000000000001'
 TYPE_CURVE_ID = '000000000000000000000002'
+LOOKUP_TABLE_ID = '000000000000000000000003'
 WRITE_ITEM: dict[str, Any] = {'name': 'Sample Type Curve 1'}
 WRITE_DATA: list[dict[str, Any]] = [WRITE_ITEM]
 
@@ -35,6 +36,18 @@ ENDPOINT_CALLS: dict[str, Callable[[ComboCurveAPI], object]] = {
     'get_type_curve_volumes': lambda api: api.get_type_curve_volumes(PROJECT_ID, TYPE_CURVE_ID, 'daily'),
     'get_type_curve_wells': lambda api: api.get_type_curve_wells(PROJECT_ID, TYPE_CURVE_ID),
     'count_type_curve_wells': lambda api: api.count_type_curve_wells(PROJECT_ID, TYPE_CURVE_ID),
+    'get_type_curve_lookup_tables': lambda api: api.get_type_curve_lookup_tables(PROJECT_ID),
+    'count_type_curve_lookup_tables': lambda api: api.count_type_curve_lookup_tables(PROJECT_ID),
+    'get_type_curve_lookup_table_by_id': lambda api: api.get_type_curve_lookup_table_by_id(PROJECT_ID, LOOKUP_TABLE_ID),
+    'post_type_curve_lookup_table': lambda api: api.post_type_curve_lookup_table(PROJECT_ID, WRITE_ITEM),
+    'post_type_curve_lookup_tables': lambda api: api.post_type_curve_lookup_tables(PROJECT_ID, WRITE_DATA),
+    'put_type_curve_lookup_tables': lambda api: api.put_type_curve_lookup_tables(PROJECT_ID, WRITE_DATA),
+    'put_type_curve_lookup_table_by_id': lambda api: api.put_type_curve_lookup_table_by_id(
+        PROJECT_ID, LOOKUP_TABLE_ID, WRITE_ITEM
+    ),
+    'delete_type_curve_lookup_table_by_id': lambda api: api.delete_type_curve_lookup_table_by_id(
+        PROJECT_ID, LOOKUP_TABLE_ID
+    ),
 }
 
 

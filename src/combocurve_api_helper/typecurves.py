@@ -84,6 +84,19 @@ class TypeCurves(APIBase):
         url = f'{self.get_type_curve_by_id_url(project_id, type_curve_id)}/wells'
         return url + self._build_params_string(filters)
 
+    def get_type_curve_lookup_tables_url(self, project_id: str, filters: dict[str, str] | None = None) -> str:
+        """Returns the v2 API url of the type-curve lookup tables of a project."""
+        url = f'{self.API_BASE_URL_V2}/projects/{project_id}/type-curves/lookup-tables'
+        return url + self._build_params_string(filters)
+
+    def get_type_curve_lookup_tables_batch_url(self, project_id: str) -> str:
+        """Returns the v2 API url of the type-curve lookup-table batch route of a project."""
+        return f'{self.get_type_curve_lookup_tables_url(project_id)}/batch'
+
+    def get_type_curve_lookup_table_by_id_url(self, project_id: str, lookup_table_id: str) -> str:
+        """Returns the v2 API url of one type-curve lookup table."""
+        return f'{self.get_type_curve_lookup_tables_url(project_id)}/{lookup_table_id}'
+
     ##########
     # Plumbing
     ##########
@@ -277,3 +290,81 @@ class TypeCurves(APIBase):
         https://docs.api.combocurve.com/api/type-curves-v2-preview/head-v2-type-curve-wells
         """
         return self._count_items(self.get_type_curve_wells_url(project_id, type_curve_id, filters))
+
+    def get_type_curve_lookup_tables(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
+        """
+        Returns the type-curve lookup tables of a project.
+
+        https://docs.api.combocurve.com/api/type-curves-v2-preview/get-v2-type-curve-lookup-tables
+        """
+        url = self.get_type_curve_lookup_tables_url(project_id, filters)
+        return self._keysort(self._get_items(url, {'take': GET_LIMIT}), LIST_SORT_ORDER)
+
+    def count_type_curve_lookup_tables(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+        """
+        Returns the number of type-curve lookup tables matching `filters`.
+
+        https://docs.api.combocurve.com/api/type-curves-v2-preview/head-v2-type-curve-lookup-tables
+        """
+        return self._count_items(self.get_type_curve_lookup_tables_url(project_id, filters))
+
+    def get_type_curve_lookup_table_by_id(self, project_id: str, lookup_table_id: str) -> Item:
+        """
+        Returns one type-curve lookup table. A table migrated from v1 has a new id (live
+        2026-11-05): the v1 id answers 404.
+
+        https://docs.api.combocurve.com/api/type-curves-v2-preview/get-v2-type-curve-lookup-table-by-id
+        """
+        url = self.get_type_curve_lookup_table_by_id_url(project_id, lookup_table_id)
+        return self._request_one_item('get', url)
+
+    def post_type_curve_lookup_table(self, project_id: str, data: Item) -> Item:
+        """
+        Creates one type-curve lookup table and returns it as stored. `caseInsensitiveMatching`
+        defaults to `true` when left out (live 2026-11-05).
+
+        https://docs.api.combocurve.com/api/type-curves-v2-preview/post-v2-type-curve-lookup-table
+        """
+        return self._request_one_item('post', self.get_type_curve_lookup_tables_url(project_id), data)
+
+    def post_type_curve_lookup_tables(self, project_id: str, data: ItemList) -> list[WriteResponse]:
+        """
+        Creates type-curve lookup tables, at most 500 per request. Create only: a used name is a
+        per-record 409.
+
+        https://docs.api.combocurve.com/api/type-curves-v2-preview/post-v2-type-curve-lookup-tables-batch
+        """
+        url = self.get_type_curve_lookup_tables_batch_url(project_id)
+        return cast('list[WriteResponse]', self._post_items(url, data, chunksize=LOOKUP_TABLE_BATCH_LIMIT))
+
+    def put_type_curve_lookup_tables(self, project_id: str, data: ItemList) -> list[WriteResponse]:
+        """
+        Creates or replaces type-curve lookup tables matched by name, at most 500 per request; a
+        replaced table keeps its id.
+
+        https://docs.api.combocurve.com/api/type-curves-v2-preview/put-v2-type-curve-lookup-tables-batch
+        """
+        url = self.get_type_curve_lookup_tables_batch_url(project_id)
+        return cast('list[WriteResponse]', self._put_items(url, data, chunksize=LOOKUP_TABLE_BATCH_LIMIT))
+
+    def put_type_curve_lookup_table_by_id(self, project_id: str, lookup_table_id: str, data: Item) -> Item:
+        """
+        Replaces one type-curve lookup table (name, settings, rules) and returns it as stored. Never
+        creates. A rule field left out is gone.
+
+        https://docs.api.combocurve.com/api/type-curves-v2-preview/put-v2-type-curve-lookup-table-by-id
+        """
+        url = self.get_type_curve_lookup_table_by_id_url(project_id, lookup_table_id)
+        return self._request_one_item('put', url, data)
+
+    def delete_type_curve_lookup_table_by_id(self, project_id: str, lookup_table_id: str) -> CaseInsensitiveDict[str]:
+        """
+        Deletes one type-curve lookup table. Returns the response headers; 'X-Delete-Count' is 0
+        when nothing matched (documented).
+
+        https://docs.api.combocurve.com/api/type-curves-v2-preview/delete-v2-type-curve-lookup-table-by-id
+        """
+        url = self.get_type_curve_lookup_table_by_id_url(project_id, lookup_table_id)
+        response = self._request_with_retry('delete', url)
+        response.raise_for_status()
+        return response.headers
