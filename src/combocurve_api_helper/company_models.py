@@ -44,6 +44,9 @@ class CompanyModels(APIBase):
         Returns the API url of econ models for a specific project id and model
         type. Allows `econModelType` passed as a parameter rather than calling
         a different function for each model type.
+
+        A type whose `hasCompanyRoute` is false (Emission, FluidModel) raises `ValueError`
+        before any request.
         """
 
         def _get_model_entry(econ_model_type: str) -> Union[EconModelEntry, None]:

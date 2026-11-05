@@ -21,7 +21,7 @@ This repo is public: no confidential project, model, well or fund names in any d
 | [v2-type-curve-routes-have-no-postman-source](open/v2-type-curve-routes-have-no-postman-source.md) | 2026-11-05 | low | The collection has no v2 type-curve operations; the route and slug tests skip them; the `-preview` docs path can move at GA |
 | [forecast-output-slope-is-now-a-sign](open/forecast-output-slope-is-now-a-sign.md) | 2026-11-05 | low | Forecast outputs `slope` is the sign since 2026-10 and `slopeValue` the value; no consumer in this package is checked |
 | [v1-type-curve-normalizations-are-not-written-to-v2](open/v1-type-curve-normalizations-are-not-written-to-v2.md) | 2026-11-05 | low | The write wrappers drop v1 `normalizations`; the migration of `linear`, `power_law_fit` and `eur_and_q_peak` is unseen |
-| [published-routes-without-a-method](open/published-routes-without-a-method.md) | 2026-11-05 | low | 86 published v1 operations have no method (57 new Aug-Oct 2026), plus 6 docs-only embedded-lookup-table operations |
+| [published-routes-without-a-method](open/published-routes-without-a-method.md) | 2026-11-05 | low | 79 published v1 operations have no method (50 new Aug-Oct 2026; scenario run, scenario model assignments and forecast wells are wrapped), plus 6 docs-only embedded-lookup-table operations |
 | [no-test-checks-that-published-routes-are-wrapped](open/no-test-checks-that-published-routes-are-wrapped.md) | 2026-11-05 | low | Make the call-based route audit a network-gated test (approved for after 3.0.0) |
 
 ## Done

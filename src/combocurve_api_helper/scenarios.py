@@ -6,6 +6,7 @@ from requests.structures import CaseInsensitiveDict
 from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
 
 GET_LIMIT = 200
+GET_LIMIT_MODEL_ASSIGNMENTS = 500  # the documented maximum of `take` on the model-assignments route
 
 
 class Scenarios(APIBase):
@@ -104,6 +105,38 @@ class Scenarios(APIBase):
         """
         base_url = self.get_scenario_by_id_url(project_id, scenario_id)
         url = f'{base_url}/assignments/econ-models'
+        if filters is None:
+            return url
+
+        url += self._build_params_string(filters)
+        return url
+
+    def get_scenario_run_url(self, project_id: str, scenario_id: str) -> str:
+        """
+        Returns the API url to run a specific scenario.
+        Route: /v1/projects/{projectId}/scenarios/{scenarioId}/run
+        """
+        base_url = self.get_scenario_by_id_url(project_id, scenario_id)
+        return f'{base_url}/run'
+
+    def get_scenario_run_by_job_id_url(self, project_id: str, scenario_id: str, job_id: str) -> str:
+        """
+        Returns the API url for the status of a specific scenario run job.
+        Route: /v1/projects/{projectId}/scenarios/{scenarioId}/run/{jobId}
+        """
+        base_url = self.get_scenario_run_url(project_id, scenario_id)
+        return f'{base_url}/{job_id}'
+
+    def get_scenario_model_assignments_url(
+        self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None
+    ) -> str:
+        """
+        Returns the API url for the scenario's model assignments (per-well assignments of
+        models to qualifiers, one row per well and incremental index).
+        Route: /v1/projects/{projectId}/scenarios/{scenarioId}/assignments/models
+        """
+        base_url = self.get_scenario_by_id_url(project_id, scenario_id)
+        url = f'{base_url}/assignments/models'
         if filters is None:
             return url
 
@@ -397,6 +430,192 @@ class Scenarios(APIBase):
         headers = scenarios[0].headers
 
         return headers
+
+    # Scenario run
+
+    def post_scenario_run(self, project_id: str, scenario_id: str, data: Optional[Item] = None) -> Item:
+        """
+        Starts an (async) run of a specific scenario. All fields of `data` are optional
+        (`wellIds`, `incrementalIndex`, `econSettingId`, `econReportSettingId`, `comboSettingId`,
+        `runModels`, `runMode`, `suggestedHeaders`, `prodAnalyticsType`, `timeZone`). The route does
+        not accept `scenarioWellAssignmentIds`.
+
+        ComboCurve answers 202 with the job id. Poll `get_scenario_run_by_job_id` for the status.
+
+        https://docs.api.combocurve.com/api/post-scenario-run
+
+        Example data:
+        {
+            "wellIds": [
+                "string"
+            ],
+            "incrementalIndex": 123,
+            "econSettingId": "5e272d38b78910dd2a1bd691",
+            "econReportSettingId": "5e272d38b78910dd2a1bd691",
+            "comboSettingId": "5e272d38b78910dd2a1bd691",
+            "runModels": "economics_only",
+            "runMode": "fast",
+            "suggestedHeaders": true,
+            "prodAnalyticsType": "daysOn",
+            "timeZone": "string"
+        }
+
+        Example response:
+        {
+            "jobId": "5e272d38b78910dd2a1bd691"
+        }
+        """
+        # The run endpoint receives a single object body, not a list, so `self._post_items`
+        # (which chunks a list) does not apply.
+        url = self.get_scenario_run_url(project_id, scenario_id)
+        response = self._request_with_retry('post', url, json_body={} if data is None else data)
+        response.raise_for_status()
+
+        return self._extract_json(response)[0]
+
+    def get_scenario_run_by_job_id(self, project_id: str, scenario_id: str, job_id: str) -> Item:
+        """
+        Returns the status of a specific scenario run job from its job id.
+
+        https://docs.api.combocurve.com/api/get-scenario-run-status
+
+        Example response:
+        {
+            "jobId": "5e272d38b78910dd2a1bd691",
+            "status": "pending",
+            "progress": 123,
+            "createdAt": "2020-01-01T00:00:00.000Z",
+            "startedAt": "2020-01-01T00:00:00.000Z",
+            "completedAt": "2020-01-01T00:00:00.000Z",
+            "result": {
+                "runModels": "economics_only",
+                "project": "string",
+                "scenario": "string",
+                "econRunId": "5e272d38b78910dd2a1bd691"
+            },
+            "error": "string"
+        }
+        """
+        url = self.get_scenario_run_by_job_id_url(project_id, scenario_id, job_id)
+        jobs = self._get_items(url)
+
+        return jobs[0]
+
+    # Scenario model assignments
+
+    def get_scenario_model_assignments(
+        self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None
+    ) -> ItemList:
+        """
+        Returns the scenario's model assignments: one row per well and incremental index, each
+        listing its models and, per model, the qualifier name -> model id assignments.
+
+        `filters` take `model`, `qualifierName`, `wellId` (up to 100 values), `incrementalIndex`.
+        The rows are returned in the order received.
+
+        https://docs.api.combocurve.com/api/get-scenario-model-assignments
+
+        Example response:
+        [
+            {
+                "wellId": "5e272d38b78910dd2a1bd691",
+                "incrementalIndex": 123,
+                "models": [
+                    {
+                        "model": "forecast",
+                        "assignments": [
+                            {
+                                "qualifierName": "string",
+                                "modelId": "5e272d38b78910dd2a1bd691",
+                                "series": "P50"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+        """
+        url = self.get_scenario_model_assignments_url(project_id, scenario_id, filters)
+        params = {'take': GET_LIMIT_MODEL_ASSIGNMENTS}
+        return self._get_items(url, params=params)
+
+    def put_scenario_model_assignments(
+        self, project_id: str, scenario_id: str, data: ItemList, add_wells_to_forecast: bool = False
+    ) -> list[WriteResponse]:
+        """
+        Upserts scenario model assignments. Each entry of `data` has `model`, `qualifierName`,
+        `incrementalIndex`, `wellIds` or `allWells`, `modelId` and `series`.
+
+        **With `add_wells_to_forecast=True` this also changes the forecast: ComboCurve adds the
+        targeted wells to it.**
+
+        https://docs.api.combocurve.com/api/put-scenario-model-assignments
+
+        Example data:
+        [
+            {
+                "model": "forecast",
+                "qualifierName": "string",
+                "incrementalIndex": 123,
+                "wellIds": [
+                    "string"
+                ],
+                "allWells": true,
+                "modelId": "5e272d38b78910dd2a1bd691",
+                "series": "P50"
+            }
+        ]
+
+        Example response:
+        {
+            "generalErrors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string"
+                }
+            ],
+            "results": [
+                {
+                    "status": "string",
+                    "code": 123,
+                    "wellsUpdated": 123,
+                    "wellsFailed": 123,
+                    "wellsAddedToForecast": 123,
+                    "errors": [
+                        {
+                            "name": "Example",
+                            "message": "string",
+                            "location": "string"
+                        }
+                    ]
+                }
+            ],
+            "failedCount": 123,
+            "successCount": 123
+        }
+        """
+        filters: Optional[dict[str, str]] = {'addWellsToForecast': 'true'} if add_wells_to_forecast else None
+        url = self.get_scenario_model_assignments_url(project_id, scenario_id, filters)
+        assignments = cast('list[WriteResponse]', self._put_items(url, data))
+
+        return assignments
+
+    def delete_scenario_model_assignments(
+        self, project_id: str, scenario_id: str, data: ItemList
+    ) -> CaseInsensitiveDict[str]:
+        """
+        Deletes scenario model assignments. Each entry of `data` has `model`, `qualifierName`,
+        `incrementalIndex`, `wellIds` or `allWells`, and `modelId`.
+
+        https://docs.api.combocurve.com/api/delete-scenario-model-assignments
+
+        Returns the headers from the delete response.
+        """
+        url = self.get_scenario_model_assignments_url(project_id, scenario_id)
+        responses = self._delete_responses(url, data)
+
+        return responses[0].headers
 
     # Scenario lookup-tables (project-scoped: /scenarios/lookup-tables)
 

@@ -37,6 +37,13 @@ This release moves those methods to the v2 routes. 2.x keeps the v1 methods (bug
 - `tests/test_type_curves_v2_live.py`: a live round trip that writes and deletes its own type curve.
   It needs `CC_LIVE_TEST=1`, `CC_TC2_PROJECT_ID` and `CC_TC2_TYPE_CURVE_ID`, and a tenant enrolled
   in Type Curve 2.0. It passed on 2026-11-05.
+- Scenario run: `post_scenario_run` starts a run (ComboCurve answers 202 with a job id) and
+  `get_scenario_run_by_job_id` returns the job status.
+- Scenario model assignments: `get_scenario_model_assignments`, `put_scenario_model_assignments` and
+  `delete_scenario_model_assignments`. `put_scenario_model_assignments(add_wells_to_forecast=True)`
+  also adds the wells to the forecast.
+- Forecast wells: `get_forecast_wells` and `count_forecast_wells`. `get_forecast_wells_url` takes
+  `filters`.
 
 ### Deprecated (kept until at least 2027-01-31, then removed in a 3.x release)
 

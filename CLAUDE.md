@@ -312,6 +312,8 @@ Postman collection, so `test_route_paths.py` and `test_docstring_slugs.py` skip 
 
 **Bundled reference data** lives in `assets/`: `wellHeader.json` populates `APIBase.REFERENCE_WELLHEADER`
 and `WELLHEADER_COLUMNS` (lowercased-name → canonical-name map); `econModels.json` populates `ECON_MODELS`.
+Each `econModels.json` entry carries `hasCompanyRoute` (false for Emission and FluidModel: ComboCurve has no
+company route for them; verified live 2026-09-30).
 `package-data` in `pyproject.toml` ships these in the wheel.
 
 **Module sizes / where the bulk is:** `models.py` (~104 methods) and `company_models.py` (~71) dominate —
