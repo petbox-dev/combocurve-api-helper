@@ -28,7 +28,17 @@ from .production import Production
 from .projects import Projects
 from .root import Root
 from .scenarios import Scenarios
-from .typecurves import TypeCurves
+from .type_curve_conversions import fits_for_put as fits_for_put
+from .type_curve_conversions import fits_from_v1 as fits_from_v1
+from .type_curve_conversions import fits_to_v1 as fits_to_v1
+from .type_curve_conversions import lookup_table_from_v1 as lookup_table_from_v1
+from .type_curve_conversions import lookup_table_id_from_v1 as lookup_table_id_from_v1
+from .type_curve_conversions import lookup_table_to_v1 as lookup_table_to_v1
+from .type_curve_conversions import normalization_for_put as normalization_for_put
+from .type_curve_conversions import representative_well_from_v2 as representative_well_from_v2
+from .type_curve_conversions import type_curve_to_v1 as type_curve_to_v1
+from .type_curve_conversions import volumes_to_v1 as volumes_to_v1
+from .type_curves_v1_compatibility import TypeCurvesV1Compatibility
 from .wells import Wells
 
 
@@ -42,7 +52,7 @@ class ComboCurveAPI(
     Models,
     CompanyModels,
     Forecasts,
-    TypeCurves,
+    TypeCurvesV1Compatibility,
     Directional,
     ForecastConfigurations,
     OwnershipQualifiers,
