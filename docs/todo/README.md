@@ -19,6 +19,12 @@ This repo is public: no confidential project, model, well or fund names in any d
 | [request-retries-have-no-overall-deadline](open/request-retries-have-no-overall-deadline.md) | 2026-09-30 | low | Up to 18 sends per GET, about 91 min worst case with gateway backoff; a 429 `Retry-After` is honoured up to 3600 s per retry |
 | [base-py-mixes-transport-policy-with-the-client-class](open/base-py-mixes-transport-policy-with-the-client-class.md) | 2026-09-30 | low | Move the retry/timeout policy out of `base.py` into `_transport.py` |
 | [docstring-freshness-check-tolerates-unsourced-markers](open/docstring-freshness-check-tolerates-unsourced-markers.md) | 2026-09-30 | low | `--check` exits 0 with unsourced markers; no `urlopen` timeout; collapsed arrays hide a length change |
+| [type-curve-v1-wrappers-outlive-the-v1-api](open/type-curve-v1-wrappers-outlive-the-v1-api.md) | 2026-11-05 | low | `type_curves_v1_compatibility.py` stays until at least 2027-01-31; the file lists the removal steps |
+| [v2-type-curve-routes-have-no-postman-source](open/v2-type-curve-routes-have-no-postman-source.md) | 2026-11-05 | low | The collection has no v2 type-curve operations; the route and slug tests skip them; the `-preview` docs path can move at GA |
+| [forecast-output-slope-is-now-a-sign](open/forecast-output-slope-is-now-a-sign.md) | 2026-11-05 | low | Forecast outputs `slope` is the sign since 2026-10 and `slopeValue` the value; no consumer in this package is checked |
+| [v1-type-curve-normalizations-are-not-written-to-v2](open/v1-type-curve-normalizations-are-not-written-to-v2.md) | 2026-11-05 | low | The write wrappers drop v1 `normalizations`; the migration of `linear`, `power_law_fit` and `eur_and_q_peak` is unseen |
+| [published-routes-without-a-method](open/published-routes-without-a-method.md) | 2026-11-05 | low | 86 published v1 operations have no method (57 new Aug-Oct 2026), plus 6 docs-only embedded-lookup-table operations |
+| [no-test-checks-that-published-routes-are-wrapped](open/no-test-checks-that-published-routes-are-wrapped.md) | 2026-11-05 | low | Make the call-based route audit a network-gated test (approved for after 3.0.0) |
 
 ## Done
 

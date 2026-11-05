@@ -5,7 +5,56 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.7.0] - Unreleased
+## [3.0.0] - Unreleased
+
+ComboCurve stopped the v1 type-curve and type-curve lookup-table routes on 2026-11-07 (one-way).
+This release moves those methods to the v2 routes. 2.x keeps the v1 methods (bug fixes only, branch `2.x`).
+
+### Changed
+
+- **Type curves use `/v2/projects/{projectId}/type-curves`.** `get_type_curves`,
+  `count_type_curves`, `get_type_curve_by_id`, `delete_type_curves` and the type-curve lookup-table
+  methods keep their names. Reads return the v2 shape: no embedded `fits`, `forecastSeries`,
+  `excludedWells`; fields with no value are left out, never `null`.
+- `post_type_curves` sends to the batch route (100 per request).
+- `delete_type_curves` with no match returns `X-Delete-Count: 0` (v2 answers 404).
+- A migrated lookup table has a new id; the old id answers 404 (see Deprecated).
+- The type-curve methods no longer emit the 2.7.0 `DeprecationWarning`. Only the methods in the
+  Deprecated list below warn.
+
+### Added
+
+- `post_type_curve`, `patch_type_curve`, `patch_type_curves`, `delete_type_curve_by_id`,
+  `get_type_curve_fits`, `put_type_curve_fits`, `get_type_curve_normalization`,
+  `put_type_curve_normalization`, `get_type_curve_volumes`, `get_type_curve_wells`,
+  `count_type_curve_wells`, `post_type_curve_lookup_table`, `put_type_curve_lookup_table_by_id`.
+- `type_curve_conversions`, exported from the package: `fits_for_put`, `normalization_for_put`
+  (make a v2 read body safe to write back: a `linear` segment read back verbatim is stored with a
+  different `qEnd`), `fits_from_v1`, `fits_to_v1`, `type_curve_to_v1`, `volumes_to_v1`,
+  `lookup_table_from_v1`, `lookup_table_to_v1`, `lookup_table_id_from_v1`,
+  `representative_well_from_v2`.
+- `_build_params_string` repeats a key for a sequence value (`?well=a&well=b`).
+- `tests/test_type_curves_v2_live.py`: a live round trip that writes and deletes its own type curve.
+  It needs `CC_LIVE_TEST=1`, `CC_TC2_PROJECT_ID` and `CC_TC2_TYPE_CURVE_ID`, and a tenant enrolled
+  in Type Curve 2.0. It passed on 2026-11-05.
+
+### Deprecated (kept until at least 2027-01-31, then removed in a 3.x release)
+
+- `get_type_curve_daily_fits`, `get_type_curve_monthly_fits` (wrap `get_type_curve_volumes`).
+- `get_type_curve_representative_fits` (wells + forecast outputs; `valid`, `hasData` left out).
+- `put_type_curves` (upsert by name: merge existing, create new) and `post_type_curves` with v1
+  `fits`/`regressionType`/`normalizations` (create, then `put_type_curve_fits`; not atomic).
+  v1 `normalizations` are dropped, not written. A record that the server returns no result for
+  is reported as a failed result named `MissingResult`.
+- v1 lookup-table rule fields (`riskFactorOil/Gas/Water`, `applyNormalization`, `phase`,
+  `resolution`), translated on write. v2 rules apply to every phase, so a v1 rule written for one
+  phase now applies to all phases. Rules with the same filter that differ by more than `phase`
+  raise `ValueError`.
+- A v1 lookup-table id on the by-id methods: tried once more as the migrated id.
+- The credential paths deprecated in 2.5.0 keep working; their removal moved to a 3.x release,
+  not before 2027-01-31 (as stated in 2.7.0).
+
+## [2.7.0] - 2026-11-05
 
 ### Deprecated
 
@@ -30,7 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   own export writes the form CC stores, which the API's JSON does not expose, so CSV text may now
   differ from a CC export as `3.0` vs `3`; the values are equal.
 
-## [2.6.0] - 2026-11-03
+## [2.6.0] - 2026-11-04
 
 ### Added
 

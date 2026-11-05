@@ -181,7 +181,9 @@ live tests silently un-runnable, which is what happened to `test_api.py` (it loo
 The dev target ids are environment variables with **no defaults**, because a real id must not sit in
 this public repo: `CC_DEV_PROJECT_ID` (the one `test_api.py` test that needs it skips without it), and
 `CC_DEV_PROJECT_ID`, `CC_DEV_SCENARIO_ID`, `CC_DEV_DATES_MODEL_ID` (`test_assignments_live.py` skips
-unless all three are set). Put them in a repo-root `.env` (gitignored; copy `.env.example`):
+unless all three are set). `test_type_curves_v2_live.py` performs writes (it creates and deletes its own
+type curve) and needs a tenant enrolled in Type Curve 2.0: it skips unless `CC_LIVE_TEST=1`,
+`CC_TC2_PROJECT_ID` and `CC_TC2_TYPE_CURVE_ID` are set (it passed 2026-11-05). Put these variables in a repo-root `.env` (gitignored; copy `.env.example`):
 `tests/conftest.py` loads it with `python-dotenv` (a `dev` dependency-group entry), searching upward
 from `tests/`, so the working directory does not matter. A variable already set in the shell wins.
 
@@ -189,7 +191,7 @@ from `tests/`, so the working directory does not matter. A variable already set 
 
 **Single entrypoint via mixin composition.** `ComboCurveAPI` (`__init__.py`) is an empty class that
 multiply-inherits every endpoint group: `Root, Projects, Scenarios, Production, EconRuns, Wells, Models,
-CompanyModels, Forecasts, TypeCurves, Directional`. Each of those is a mixin in its own module that
+CompanyModels, Forecasts, TypeCurvesV1Compatibility (over TypeCurves), Directional`. Each of those is a mixin in its own module that
 subclasses `APIBase`. Users only ever instantiate `ComboCurveAPI`.
 
 **`base.py` is the HTTP engine.** `APIBase` holds the auth object and all request plumbing. For each verb
@@ -292,6 +294,16 @@ and asserts the paired `*_url` builder produces that item's path — run it (net
 `projects` → `projects/{project_id}/scenarios` and `projects/{project_id}/forecasts` →
 `.../scenarios/{scenario_id}/well-assignments`. So scenario/forecast methods take `project_id`, etc.
 
+**Type curves are on `/v2` (3.0.0).** `typecurves.py` is the native v2 mixin; it uses
+`API_BASE_URL_V2`. `type_curve_conversions.py` holds the pure v1<->v2 conversions.
+`type_curves_v1_compatibility.py` (`TypeCurvesV1Compatibility(TypeCurves)`, in `ComboCurveAPI`'s
+bases) keeps the deprecated v1 behavior until at least 2027-01-31; remove it by deleting the module
+and listing `TypeCurves` again. v2 traps verified live 2026-11-05: `regressionType` is rejected on a
+fit phase; `PUT /fits` deletes phases left out; a `linear` segment read back verbatim is stored with
+a different `qEnd` (`fits_for_put`); a `1_to_1` normalization read is refused on write
+(`normalization_for_put`); migrated lookup tables have new ids. The v2 reference is not in the
+Postman collection, so `test_route_paths.py` and `test_docstring_slugs.py` skip v2 links (todo).
+
 **Bundled reference data** lives in `assets/`: `wellHeader.json` populates `APIBase.REFERENCE_WELLHEADER`
 and `WELLHEADER_COLUMNS` (lowercased-name → canonical-name map); `econModels.json` populates `ECON_MODELS`.
 `package-data` in `pyproject.toml` ships these in the wheel.
@@ -334,6 +346,9 @@ every other column as exact text. A new mapper column holding a float quantity g
 `__version__` is set manually in `__init__.py` and is the source setuptools reads (`pyproject.toml`
 `[tool.setuptools.dynamic]`); bump it there when releasing. `make publish` uploads whatever version
 `__init__.py` carries.
+
+Releases (pushes to `main` and PyPI publishes) are recorded in `releases.json`; read it before a version
+bump, and add an entry after each push or publish succeeds (skill `code-fix:release-ledger`).
 
 ## Generated content (do not hand-edit)
 
