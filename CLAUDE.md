@@ -258,8 +258,7 @@ in both — in practice `take`, which callers legitimately pass as a filter — 
 reconciles them once, in `_request_with_retry`: **the url wins**, so an explicit filter overrides the
 method's default page size. Do not re-introduce a second reconciliation point, and do not assume a value
 passed in `params` survives — if the url already carries that key, it is dropped. Note the batched-write
-path does NOT funnel through `_request_with_retry` (nor do the direct `requests.*` calls described in the
-next paragraph): `_send_one_chunk` calls
+path does NOT funnel through `_request_with_retry`: `_send_one_chunk` calls
 `_send_request` directly and has its own status retry loop. It passes no `params` today, so nothing is wrong —
 but a query parameter added there would not be reconciled.
 
@@ -270,9 +269,12 @@ the server (connect timeout, refused connection, DNS failure) or is a GET/HEAD. 
 that failed after it was sent raises: the server may have applied it, and a second send could create the
 records twice. Do not widen this to a blanket retry on `ConnectionError`. The same rule holds for status
 retries: 502/503/504 are retried for GET/HEAD only (`_gateway_retry_allowed`), because the gateway can time
-out after the server applied the write; 429 is retried for every method. The direct
-`requests.get/post/put/patch` calls in `directional.py`, `exports.py` and `forecasts.py` do not go
-through `_send_request`: they have no timeout and no retry.
+out after the server applied the write; 429 is retried for every method. One call has a 600 s
+wall-clock budget (`_CALL_DEADLINE_SECONDS`) across every retry, and an honoured `Retry-After` is capped at
+120 s (`_MAX_RETRY_AFTER_SECONDS`); a retry whose pause would reach the deadline is not made. The direct
+single-object calls in `directional.py`, `exports.py` and `forecasts.py` (eight sites) also send through
+`_request_with_retry`, so they have the timeout and the retries (since 2.7.1;
+`tests/test_single_object_requests_use_the_transport.py`).
 
 Relatedly, `_build_params_string` percent-encodes and drops `None` values, so callers must NOT pre-encode.
 It keeps `,` literal and encodes a space as `%20`, not `+`: two callers comma-join list filters
