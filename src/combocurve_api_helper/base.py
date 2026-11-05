@@ -202,12 +202,14 @@ def _send_request(
 
     `deadline` is an absolute `time.monotonic()` time, or None for no overall limit. Each send's timeout
     is cut to the time that remains (connect and read can each use the remainder, so one late send can
-    run up to about twice the remainder). A connection retry whose pause would reach the deadline is not made:
-    the last error is raised. A send with no time left is not made (`requests.ConnectTimeout`)."""
+    run up to about twice the remainder). A connection retry whose pause would reach the deadline is
+    not made: the last error is raised. A send with no time left is not made (`requests.ConnectTimeout`)."""
     for failure in range(_MAX_CONNECTION_RETRIES + 1):
-        headers = dict(auth_headers())  # first: a token fetch takes time and counts against the deadline
-        timeout = _REQUEST_TIMEOUT_SECONDS if deadline is None else _timeout_within(deadline)
         try:
+            # The token fetch is inside the `try`: its connection failure is retried like this request's
+            # (see auth.py). It runs first, so its time counts against the deadline.
+            headers = dict(auth_headers())
+            timeout = _REQUEST_TIMEOUT_SECONDS if deadline is None else _timeout_within(deadline)
             return requests.request(
                 method,
                 url,
@@ -216,6 +218,8 @@ def _send_request(
                 json=json_body,
                 timeout=timeout,
             )
+        except _CallDeadlinePassed:
+            raise  # a refusal is final: it is a ConnectTimeout, which the branch below would retry
         except requests.RequestException as error:
             if failure == _MAX_CONNECTION_RETRIES or not _safe_to_send_again(method, error):
                 raise

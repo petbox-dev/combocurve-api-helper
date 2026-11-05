@@ -488,3 +488,56 @@ def test_a_batch_chunk_refused_by_the_deadline_after_a_shared_pause_reports_the_
     assert not chunk.may_have_applied
     assert 'call deadline' in chunk.error_message
     assert 'connection failed' not in chunk.error_message
+
+
+def test_a_token_fetch_that_fails_to_connect_is_retried(monkeypatch: MonkeyPatch, sleeps: list[float]) -> None:
+    from combocurve_api_helper.base import _send_request
+
+    script = _install(monkeypatch, [FakeResponse(200, {})])
+    fetches: list[int] = []
+
+    def flaky_headers() -> dict[str, str]:
+        fetches.append(1)
+        if len(fetches) == 1:
+            raise requests.ConnectTimeout('token endpoint: connect timed out')
+        return {}
+
+    assert _send_request('post', URL, flaky_headers, json_body=[{'name': 'a'}]).status_code == 200
+    assert len(fetches) == 2
+    assert len(script.calls) == 1
+    assert sleeps == [2.0]
+
+
+def test_a_token_fetch_that_fails_to_connect_is_retried_under_a_deadline(
+    monkeypatch: MonkeyPatch, clock: _FakeClock
+) -> None:
+    from combocurve_api_helper.base import _send_request
+
+    script = _install(monkeypatch, [FakeResponse(200, {})])
+    fetches: list[int] = []
+
+    def flaky_headers() -> dict[str, str]:
+        fetches.append(1)
+        if len(fetches) == 1:
+            raise requests.ConnectTimeout('token endpoint: connect timed out')
+        return {}
+
+    assert _send_request('get', URL, flaky_headers, deadline=clock.now + 600.0).status_code == 200
+    assert len(script.calls) == 1
+
+
+def test_a_deadline_refusal_is_not_retried(monkeypatch: MonkeyPatch, sleeps: list[float]) -> None:
+    from combocurve_api_helper.base import _send_request
+
+    script = _install(monkeypatch, [FakeResponse(200, {})])
+    fetches: list[int] = []
+
+    def counting_headers() -> dict[str, str]:
+        fetches.append(1)
+        return {}
+
+    with pytest.raises(requests.ConnectTimeout, match='call deadline'):
+        _send_request('get', URL, counting_headers, deadline=time.monotonic() - 1.0)
+    assert len(fetches) == 1
+    assert script.calls == []
+    assert sleeps == []
