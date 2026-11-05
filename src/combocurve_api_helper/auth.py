@@ -239,10 +239,10 @@ def auth_from_credentials_directory(directory: str | Path) -> APIAuth:
 
     `directory` holds `api-key.txt` and one of `api-credentials.json` (OAuth) or
     `api-service-account-key.json` (legacy), at its top or in the ZIP's `combocurve/` folder. When
-    both credential files are present the OAuth one is used, with a `DeprecationWarning`: from 3.1.0
-    that raises. Each download carries its own `api-key.txt`, and a key works only with its own
-    credential (verified 2026-10-27: the service account with the OAuth download's key answers 403), so
-    one directory cannot serve both.
+    both credential files are present the OAuth one is used, with a `DeprecationWarning`; that raises
+    in a 3.x release, not before 2027-01-31. Each download carries its own `api-key.txt`, and a key
+    works only with its own credential (verified 2026-10-27: the service account with the OAuth
+    download's key answers 403), so one directory cannot serve both.
     """
     native_directory = config.find_native_credentials_directory(directory)
     if native_directory is None:
@@ -257,7 +257,8 @@ def auth_from_credentials_directory(directory: str | Path) -> APIAuth:
             warn_deprecated(
                 f'{native_directory} holds both {config.API_CREDENTIALS_JSON} and {config.SERVICE_ACCOUNT_KEY_JSON}; '
                 f'using {config.API_CREDENTIALS_JSON}, so {config.API_KEY_TXT} must be the key from the same download. '
-                'From 3.1.0 this raises: each download has its own API key, so keep one per directory.'
+                'In a 3.x release, not before 2027-01-31, this raises: each download has its own API key, '
+                'so keep one per directory.'
             )
         credentials_path = oauth_path
     elif service_account_path.is_file():
@@ -277,7 +278,8 @@ def default_auth() -> APIAuth:
         return auth_from_credentials_directory(config.COMBOCURVE_DIRECTORY)
     warn_deprecated(
         f'Reading {config.COMBOCURVE_JSON.name} and {config.CC_API_CONFIG_JSON.name} is deprecated and is '
-        f'removed in 3.0.0. Unzip the ComboCurve credential download into {config.COMBOCURVE_DIRECTORY} '
+        'removed in a 3.x release, not before 2027-01-31. '
+        f'Unzip the ComboCurve credential download into {config.COMBOCURVE_DIRECTORY} '
         f'({config.API_KEY_TXT} with {config.API_CREDENTIALS_JSON} or {config.SERVICE_ACCOUNT_KEY_JSON}).'
     )
     return auth_from_credentials_file(config.COMBOCURVE_JSON, config.cfg.apikey)

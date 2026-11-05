@@ -342,12 +342,12 @@ class APIBase:
         cls, combocurve_json_path: Union[str, Path], cc_api_config_json_path: Union[str, Path]
     ) -> Self:
         """
-        Deprecated; removed in 3.0.0. Use `from_credentials_directory`. `combocurve_json_path` may hold
-        either credential type; its `type` field selects the auth.
+        Deprecated; removed in a 3.x release, not before 2027-01-31. Use `from_credentials_directory`.
+        `combocurve_json_path` may hold either credential type; its `type` field selects the auth.
         """
         warn_deprecated(
-            'from_alternate_config is deprecated and is removed in 3.0.0; use from_credentials_directory '
-            'with the directory of the unzipped ComboCurve credential download.'
+            'from_alternate_config is deprecated and is removed in a 3.x release, not before 2027-01-31; '
+            'use from_credentials_directory with the directory of the unzipped ComboCurve credential download.'
         )
         api_key = config.Configuration.from_file(cc_api_config_json_path).apikey
         return cls(auth=auth_from_credentials_file(combocurve_json_path, api_key))

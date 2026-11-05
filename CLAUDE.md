@@ -156,12 +156,12 @@ Where the credentials come from:
 
 - `ComboCurveAPI.from_credentials_directory(path)` reads an unzipped download: `api-key.txt` with one
   credential file, at the top of `path` or in its `combocurve/` folder. If both credential files are
-  present it uses OAuth with a `DeprecationWarning`; that becomes an error in 3.1.0.
+  present it uses OAuth with a `DeprecationWarning`; that becomes an error in a 3.x release, not before 2027-01-31.
 - `ComboCurveAPI()` does the same with `~/.combocurve`, and falls back to the older layout
   (`combocurve.json` + `cc-api.config.json` `{"apikey": ...}`) with a `DeprecationWarning`. The
   older `combocurve.json` may hold either type; its `type` field selects the auth (no `type` means
   service account, because `combocurve-api-v1` never read it).
-- `ComboCurveAPI.from_alternate_config(...)` reads the older layout; deprecated, removed in 3.0.0.
+- `ComboCurveAPI.from_alternate_config(...)` reads the older layout; deprecated, removed in a 3.x release, not before 2027-01-31.
 - `ComboCurveAPI(auth=...)` takes any object with `get_auth_headers()`.
 
 `_deprecation.warn_deprecated` attributes each warning to the first caller outside the package, because
@@ -169,7 +169,7 @@ the call depth differs per entry point and Python shows a `DeprecationWarning` o
 
 **Importing the package still needs an API key in `~/.combocurve/`**: `config.cfg` is loaded at module
 load, from `api-key.txt` (native layout, preferred) or `cc-api.config.json`. That read is removed in
-3.0.0. Example files are in `config-examples/`.
+a 3.x release, not before 2027-01-31. Example files are in `config-examples/`.
 `test_api.py` and `test_assignments_live.py` exercise the live API using dev creds under
 `~/.combocurve/dev/`, an unzipped credential download read with `from_credentials_directory`; both
 skip unless `CC_LIVE_TEST=1` and `find_native_credentials_directory` finds `api-key.txt` there, so they

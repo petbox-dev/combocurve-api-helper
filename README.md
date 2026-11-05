@@ -90,7 +90,7 @@ request raises `ComboCurveAuthError`. Example files are in `./config-examples/`.
 }
 ```
 
-#### Older layout (deprecated, removed in 3.0.0)
+#### Older layout (deprecated, removed in a 3.x release, not before 2027-01-31)
 
 Before 2.5.0 the package read `~/.combocurve/combocurve.json` (the credential JSON, renamed) and
 `~/.combocurve/cc-api.config.json` (the API key wrapped in JSON), and

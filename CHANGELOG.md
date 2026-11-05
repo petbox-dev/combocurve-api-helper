@@ -7,8 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.7.0] - Unreleased
 
+### Deprecated
+
+- **v1 type curves.** Every public type-curve and type-curve lookup-table method
+  (`get_type_curves`, `count_type_curves`, `get_type_curve_by_id`, the representative, daily and
+  monthly fits, `post_`/`put_`/`delete_type_curves`, and the six `*_type_curve_lookup_table*`
+  methods) emits a `DeprecationWarning`: v1 type curves stop responding on 2026-11-07; upgrade to
+  combocurve-api-helper 3.0.0. The `*_url` builders send no request and do not warn.
+
 ### Changed
 
+- **Removal dates moved.** The older credential layout (`combocurve.json` + `cc-api.config.json`),
+  `from_alternate_config` and the import-time API-key read are removed, and a directory with both
+  credential files raises, in a 3.x release, not before 2027-01-31; 2.5.0 announced 3.0.0 and
+  3.1.0. The `pyjwt[crypto]` dependency moves to an optional `legacy` extra on the same terms. The
+  `DeprecationWarning` texts say so.
 - **Econ-model CSV float columns are written in float form and read as `float`.** Each mapper
   declares `float_columns` (rates, prices, percents, $ amounts, WI/NRI, multipliers); those write a
   whole number as `9.0`, not `9`, and `from_row_dicts` returns them as `float`. Offsets, periods and

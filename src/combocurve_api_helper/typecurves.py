@@ -4,9 +4,13 @@ from typing import Optional, cast
 
 from requests.structures import CaseInsensitiveDict
 
+from ._deprecation import warn_deprecated
 from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
 
 GET_LIMIT = 200
+
+# Every endpoint method below warns with this; the `*_url` builders send no request and do not.
+V1_TYPE_CURVES_DEPRECATION = 'v1 type curves stop responding on 2026-11-07; upgrade to combocurve-api-helper 3.0.0'
 
 
 # Representative wells carry no timestamps; name then well id. The id key is `wellId`,
@@ -79,6 +83,7 @@ class TypeCurves(APIBase):
 
         The example request and response are large; see them on the docs page linked above.
         """
+        warn_deprecated(V1_TYPE_CURVES_DEPRECATION)
         url = self.get_type_curves_url(project_id)
         return cast('list[WriteResponse]', self._post_items(url, data))
 
@@ -90,6 +95,7 @@ class TypeCurves(APIBase):
 
         The example request and response are large; see them on the docs page linked above.
         """
+        warn_deprecated(V1_TYPE_CURVES_DEPRECATION)
         url = self.get_type_curves_url(project_id)
         return cast('list[WriteResponse]', self._put_items(url, data))
 
@@ -103,6 +109,7 @@ class TypeCurves(APIBase):
 
         https://docs.api.combocurve.com/api/delete-type-curves
         """
+        warn_deprecated(V1_TYPE_CURVES_DEPRECATION)
         filters = self._require_any_filter({'name': name, 'id': id}, 'name or id')
 
         url = self.get_type_curves_url(project_id, filters)
@@ -1645,6 +1652,7 @@ class TypeCurves(APIBase):
             }
         ]
         """
+        warn_deprecated(V1_TYPE_CURVES_DEPRECATION)
         url = self.get_type_curves_url(project_id, filters)
         params = {'take': GET_LIMIT}
         type_curves = self._get_items(url, params)
@@ -1658,6 +1666,7 @@ class TypeCurves(APIBase):
 
         https://docs.api.combocurve.com/api/head-type-curves
         """
+        warn_deprecated(V1_TYPE_CURVES_DEPRECATION)
         return self._count_items(self.get_type_curves_url(project_id, filters))
 
     def get_type_curve_by_id(self, project_id: str, type_curve_id: str) -> Item:
@@ -3193,6 +3202,7 @@ class TypeCurves(APIBase):
             ]
         }
         """
+        warn_deprecated(V1_TYPE_CURVES_DEPRECATION)
         url = self.get_type_curve_by_id_url(project_id, type_curve_id)
         params = {'take': GET_LIMIT}
         type_curves = self._get_items(url, params)
@@ -3247,6 +3257,7 @@ class TypeCurves(APIBase):
             }
         ]
         """
+        warn_deprecated(V1_TYPE_CURVES_DEPRECATION)
         url = self.get_type_curve_representative_wells_url(project_id, type_curve_id)
         params = {'take': GET_LIMIT}
         representative_wells = self._get_items(url, params)
@@ -3285,6 +3296,7 @@ class TypeCurves(APIBase):
             }
         ]
         """
+        warn_deprecated(V1_TYPE_CURVES_DEPRECATION)
         url = self.get_type_curve_daily_fits_url(project_id, type_curve_id)
         params = {'take': GET_LIMIT}
         daily_fits = self._get_items(url, params)
@@ -3322,6 +3334,7 @@ class TypeCurves(APIBase):
             }
         ]
         """
+        warn_deprecated(V1_TYPE_CURVES_DEPRECATION)
         url = self.get_type_curve_monthly_fits_url(project_id, type_curve_id)
         params = {'take': GET_LIMIT}
         monthly_fits = self._get_items(url, params)
@@ -3359,6 +3372,7 @@ class TypeCurves(APIBase):
         """
         Returns a list of type-curve lookup-tables for a specific project id.
         """
+        warn_deprecated(V1_TYPE_CURVES_DEPRECATION)
         url = self.get_type_curve_lookup_tables_url(project_id, filters)
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
@@ -3370,12 +3384,14 @@ class TypeCurves(APIBase):
 
         https://docs.api.combocurve.com/api/head-type-curve-lookup-tables
         """
+        warn_deprecated(V1_TYPE_CURVES_DEPRECATION)
         return self._count_items(self.get_type_curve_lookup_tables_url(project_id, filters))
 
     def get_type_curve_lookup_table_by_id(self, project_id: str, lookup_table_id: str) -> Item:
         """
         Returns a specific type-curve lookup-table from its id.
         """
+        warn_deprecated(V1_TYPE_CURVES_DEPRECATION)
         url = self.get_type_curve_lookup_table_by_id_url(project_id, lookup_table_id)
         lookup_tables = self._get_items(url)
         return lookup_tables[0]
@@ -3384,6 +3400,7 @@ class TypeCurves(APIBase):
         """
         Creates type-curve lookup-tables for a specific project id.
         """
+        warn_deprecated(V1_TYPE_CURVES_DEPRECATION)
         url = self.get_type_curve_lookup_tables_url(project_id)
         return cast('list[WriteResponse]', self._post_items(url, data))
 
@@ -3391,6 +3408,7 @@ class TypeCurves(APIBase):
         """
         Upserts type-curve lookup-tables for a specific project id.
         """
+        warn_deprecated(V1_TYPE_CURVES_DEPRECATION)
         url = self.get_type_curve_lookup_tables_url(project_id)
         return cast('list[WriteResponse]', self._put_items(url, data))
 
@@ -3400,6 +3418,7 @@ class TypeCurves(APIBase):
 
         Returns the headers from the delete response.
         """
+        warn_deprecated(V1_TYPE_CURVES_DEPRECATION)
         url = self.get_type_curve_lookup_table_by_id_url(project_id, lookup_table_id)
         lookup_tables = self._delete_responses(url, data=[])
         return lookup_tables[0].headers

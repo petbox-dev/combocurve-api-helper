@@ -295,7 +295,9 @@ class TestCredentialsDirectory:
         write_native_directory(
             tmp_path, oauth_credentials=OAUTH_CREDENTIALS, service_account_credentials=service_account_credentials
         )
-        with pytest.warns(DeprecationWarning, match=r'3.1.0') as recorded:
+        with pytest.warns(
+            DeprecationWarning, match=r'In a 3\.x release, not before 2027-01-31, this raises'
+        ) as recorded:
             client_auth = auth.auth_from_credentials_directory(tmp_path)
         assert isinstance(client_auth, auth.OAuthClientAuth)
         # Attributed to this test, not to a frame inside the package. `normcase`: on Windows the drive
@@ -348,7 +350,7 @@ class TestClientConstruction:
     ) -> None:
         document = OAUTH_CREDENTIALS if credentials_type == 'oauth' else service_account_credentials
         write_json(home_directory / 'combocurve.json', document)
-        with pytest.warns(DeprecationWarning, match=r'3.0.0'):
+        with pytest.warns(DeprecationWarning, match=r'removed in a 3\.x release, not before 2027-01-31'):
             api = ComboCurveAPI()
         expected = auth.OAuthClientAuth if credentials_type == 'oauth' else auth.ServiceAccountAuth
         assert isinstance(api.auth, expected)

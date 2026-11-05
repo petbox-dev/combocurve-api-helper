@@ -18,7 +18,7 @@ API_KEY_TXT = 'api-key.txt'
 CREDENTIALS_ZIP_FOLDER = 'combocurve'
 
 # The older layout: the credential JSON renamed to `combocurve.json`, the key wrapped in JSON.
-# Deprecated in 2.5.0, removed in 3.0.0.
+# Deprecated in 2.5.0, removed in a 3.x release, not before 2027-01-31.
 COMBOCURVE_JSON = COMBOCURVE_DIRECTORY / 'combocurve.json'
 CC_API_CONFIG_JSON = COMBOCURVE_DIRECTORY / 'cc-api.config.json'
 
