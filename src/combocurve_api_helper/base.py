@@ -873,7 +873,7 @@ class APIBase:
         return present
 
     @staticmethod
-    def _build_params_string(filters: Optional[Mapping[str, Optional[str]]] = None) -> str:
+    def _build_params_string(filters: Optional[Mapping[str, Union[str, Sequence[str], None]]] = None) -> str:
         """Render `filters` as a query string, or `''` when there is nothing to send.
 
         `None` values are DROPPED rather than rendered, matching how `requests` treats a
@@ -893,10 +893,15 @@ class APIBase:
         for no benefit: `,` is a legal unencoded query character (RFC 3986 sub-delim). Do
         NOT add `+` to `safe` to match -- a literal `+` is decoded as a space under
         form-urlencoded query rules, so `quote` correctly emits it as `%2B`.
+
+        A non-`str` sequence value repeats its key once per element (`{'well': ['a', 'b']}` ->
+        `?well=a&well=b`), which is how the forecast-outputs `well` filter and the v2 type-curve
+        `phase` filter take several values; a comma-joined `well` is a 400 (verified live
+        2026-11-05). A `str` value is never split.
         """
         pairs = [(key, value) for key, value in (filters or {}).items() if value is not None]
 
-        return '?' + urlencode(pairs, safe=',', quote_via=quote) if pairs else ''
+        return '?' + urlencode(pairs, doseq=True, safe=',', quote_via=quote) if pairs else ''
 
     @staticmethod
     def _keysort(items: ItemList, order: Mapping[str, int], reverse: bool = False) -> ItemList:
