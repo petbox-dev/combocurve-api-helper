@@ -9,6 +9,12 @@ GET_LIMIT = 200
 GET_LIMIT_MODEL_ASSIGNMENTS = 500  # the documented maximum of `take` on the model-assignments route
 
 
+def _require_assignment_records(data: ItemList) -> None:
+    """An empty list would reach the transport's no-body branch, so refuse it before any request."""
+    if not data:
+        raise ValueError('data must hold at least one assignment record')
+
+
 class Scenarios(APIBase):
     ######
     # URLs
@@ -511,7 +517,8 @@ class Scenarios(APIBase):
         listing its models and, per model, the qualifier name -> model id assignments.
 
         `filters` take `model`, `qualifierName`, `wellId` (up to 100 values), `incrementalIndex`.
-        The rows are returned in the order received.
+        The rows are returned in the order received. `incrementalIndex` can be absent from a row
+        (seen live 2026-11-05; Postman shows it).
 
         https://docs.api.combocurve.com/api/get-scenario-model-assignments
 
@@ -595,6 +602,7 @@ class Scenarios(APIBase):
             "successCount": 123
         }
         """
+        _require_assignment_records(data)
         filters: Optional[dict[str, str]] = {'addWellsToForecast': 'true'} if add_wells_to_forecast else None
         url = self.get_scenario_model_assignments_url(project_id, scenario_id, filters)
         assignments = cast('list[WriteResponse]', self._put_items(url, data))
@@ -612,6 +620,7 @@ class Scenarios(APIBase):
 
         Returns the headers from the delete response.
         """
+        _require_assignment_records(data)
         url = self.get_scenario_model_assignments_url(project_id, scenario_id)
         responses = self._delete_responses(url, data)
 

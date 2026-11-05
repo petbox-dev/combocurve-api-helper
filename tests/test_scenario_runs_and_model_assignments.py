@@ -161,6 +161,16 @@ def test_delete_scenario_model_assignments_sends_the_array_body(monkeypatch: Mon
     assert recorder.calls[0]['json'] == ASSIGNMENT_DATA
 
 
+@pytest.mark.parametrize('method_name', ['put_scenario_model_assignments', 'delete_scenario_model_assignments'])
+def test_an_empty_assignment_list_is_refused_before_any_request(monkeypatch: MonkeyPatch, method_name: str) -> None:
+    recorder = _install(monkeypatch, FakeResponse(207, []))
+
+    with pytest.raises(ValueError, match='data must hold at least one assignment record'):
+        getattr(make_offline_api(), method_name)(PROJECT_ID, SCENARIO_ID, [])
+
+    assert recorder.calls == []
+
+
 # Forecast wells
 
 
@@ -172,14 +182,16 @@ def test_forecast_wells_url_carries_the_filters() -> None:
 
 
 def test_get_forecast_wells_takes_the_module_limit_and_sorts_by_well_name(monkeypatch: MonkeyPatch) -> None:
+    # Key order as the live route sends it (id first); rows arrive in reverse wellName order.
     rows: ItemList = [
+        {'id': 'b', 'wellName': 'Sample Well 2', 'createdAt': 'c', 'updatedAt': 'u'},
         {'id': 'a', 'wellName': 'Sample Well 1', 'createdAt': 'c', 'updatedAt': 'u'},
     ]
     recorder = _install(monkeypatch, FakeResponse(200, rows))
 
     result = make_offline_api().get_forecast_wells(PROJECT_ID, FORECAST_ID, {'state': 'TX'})
 
-    assert result == rows
+    assert [well['wellName'] for well in result] == ['Sample Well 1', 'Sample Well 2']
     assert recorder.calls[0]['method'] == 'GET'
     assert recorder.calls[0]['url'].endswith(f'/forecasts/{FORECAST_ID}/wells?state=TX')
     assert recorder.calls[0]['params'] == {'take': 200}
