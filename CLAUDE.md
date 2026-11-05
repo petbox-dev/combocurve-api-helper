@@ -275,7 +275,9 @@ the server (connect timeout, refused connection, DNS failure) or is a GET/HEAD. 
 that failed after it was sent raises: the server may have applied it, and a second send could create the
 records twice. Do not widen this to a blanket retry on `ConnectionError`. The same rule holds for status
 retries: 502/503/504 are retried for GET/HEAD only (`_gateway_retry_allowed`), because the gateway can time
-out after the server applied the write; 429 is retried for every method. The direct
+out after the server applied the write; 429 is retried for every method. One call has a 600 s
+wall-clock budget (`_CALL_DEADLINE_SECONDS`) across every retry, and an honoured `Retry-After` is capped at
+120 s (`_MAX_RETRY_AFTER_SECONDS`); a retry whose pause would reach the deadline is not made. The direct
 `requests.get/post/put/patch` calls in `directional.py`, `exports.py` and `forecasts.py` do not go
 through `_send_request`: they have no timeout and no retry.
 

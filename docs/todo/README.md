@@ -15,7 +15,6 @@ This repo is public: no confidential project, model, well or fund names in any d
 | Item | Opened | Severity | Summary |
 |---|---|---|---|
 | [count-methods-and-list-methods-do-not-pair-everywhere](open/count-methods-and-list-methods-do-not-pair-everywhere.md) | 2026-09-30 | low | 4 list methods take no `filters` their counts accept; no company per-type counts; company `Emission`/`FluidModel` routes 400 |
-| [request-retries-have-no-overall-deadline](open/request-retries-have-no-overall-deadline.md) | 2026-09-30 | low | Up to 18 sends per GET, about 91 min worst case with gateway backoff; a 429 `Retry-After` is honoured up to 3600 s per retry |
 | [base-py-mixes-transport-policy-with-the-client-class](open/base-py-mixes-transport-policy-with-the-client-class.md) | 2026-09-30 | low | Move the retry/timeout policy out of `base.py` into `_transport.py` |
 | [docstring-freshness-check-tolerates-unsourced-markers](open/docstring-freshness-check-tolerates-unsourced-markers.md) | 2026-09-30 | low | `--check` exits 0 with unsourced markers; no `urlopen` timeout; collapsed arrays hide a length change |
 | [type-curve-v1-wrappers-outlive-the-v1-api](open/type-curve-v1-wrappers-outlive-the-v1-api.md) | 2026-11-05 | low | `type_curves_v1_compatibility.py` stays until at least 2027-01-31; the file lists the removal steps |
@@ -29,6 +28,7 @@ This repo is public: no confidential project, model, well or fund names in any d
 
 | Item | Closed | Settled by |
 |---|---|---|
+| [request-retries-have-no-overall-deadline](closed/request-retries-have-no-overall-deadline.md) | 2026-11-05 | 600 s deadline per call across all retries; `Retry-After` capped at 120 s |
 | [direct-requests-calls-bypass-timeout-and-retry](closed/direct-requests-calls-bypass-timeout-and-retry.md) | 2026-11-05 | All eight single-object call sites send through `_request_with_retry` (3.0.0; 2.7.1 on `2.x`) |
 | [econ-model-csv-number-form-differs-from-cc-export](closed/econ-model-csv-number-form-differs-from-cc-export.md) | 2026-11-03 | Decided: every float-valued column writes `9.0` and reads as `float` (`float_columns`) |
 | [production-taxes-rate-criteria-not-mapped](closed/production-taxes-rate-criteria-not-mapped.md) | 2026-11-03 | Rate and offset criteria, `$/month`/`$/boe` units and `null` values mapped, checked against a raw CC export; all 8,149 live models export |
