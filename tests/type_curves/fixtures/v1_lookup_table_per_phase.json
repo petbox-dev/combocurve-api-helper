@@ -1,0 +1,99 @@
+{
+  "id": "000000000000000000000011",
+  "name": "Sample Lookup Table Per Phase",
+  "project": "000000000000000000000012",
+  "createdAt": "2026-11-05T19:31:05.398Z",
+  "updatedAt": "2026-11-05T19:31:05.398Z",
+  "caseInsensitiveMatching": false,
+  "rules": [
+    {
+      "filter": [
+        {
+          "key": "state",
+          "operator": "equal",
+          "value": "TX"
+        }
+      ],
+      "typeCurve": "000000000000000000000013",
+      "phase": "oil",
+      "resolution": "monthly",
+      "applyNormalization": false,
+      "applySeries": "best",
+      "fpdSource": "first_prod_date",
+      "riskFactorOil": 1,
+      "riskFactorGas": 1,
+      "riskFactorWater": 1
+    },
+    {
+      "filter": [
+        {
+          "key": "state",
+          "operator": "equal",
+          "value": "TX"
+        }
+      ],
+      "typeCurve": "000000000000000000000013",
+      "phase": "gas",
+      "resolution": "monthly",
+      "applyNormalization": false,
+      "applySeries": "best",
+      "fpdSource": "first_prod_date",
+      "riskFactorOil": 1,
+      "riskFactorGas": 1,
+      "riskFactorWater": 1
+    },
+    {
+      "filter": [
+        {
+          "key": "state",
+          "operator": "equal",
+          "value": "NM"
+        }
+      ],
+      "typeCurve": "000000000000000000000013",
+      "phase": "oil",
+      "resolution": "monthly",
+      "applyNormalization": false,
+      "applySeries": "best",
+      "fpdSource": "first_prod_date",
+      "riskFactorOil": 1,
+      "riskFactorGas": 1,
+      "riskFactorWater": 1
+    },
+    {
+      "filter": [
+        {
+          "key": "state",
+          "operator": "equal",
+          "value": "NM"
+        }
+      ],
+      "typeCurve": "000000000000000000000014",
+      "phase": "gas",
+      "resolution": "daily",
+      "applyNormalization": false,
+      "applySeries": "best",
+      "fpdSource": "first_prod_date",
+      "riskFactorOil": 1,
+      "riskFactorGas": 1,
+      "riskFactorWater": 1
+    },
+    {
+      "filter": [
+        {
+          "key": "state",
+          "operator": "equal",
+          "value": "OK"
+        }
+      ],
+      "typeCurve": "000000000000000000000013",
+      "applyNormalization": true,
+      "applySeries": "best",
+      "fpdSource": "fixed",
+      "riskFactorOil": 0.9,
+      "riskFactorGas": 1,
+      "riskFactorWater": 1,
+      "fixedDate": "2026-01-01"
+    }
+  ]
+}

@@ -1,0 +1,362 @@
+{
+  "id": "000000000000000000000006",
+  "fits": {
+    "gas": {
+      "resolution": "monthly",
+      "align": false,
+      "normalize": true,
+      "best": {
+        "segments": [
+          {
+            "diEffSec": -14.64851883512133,
+            "diNominal": -0.007530119834042386,
+            "endDate": "1900-04-01",
+            "qEnd": 22673.31819412629,
+            "qStart": 11513.013889816188,
+            "segmentIndex": 1,
+            "segmentType": "exp_inc",
+            "slope": 1,
+            "startDate": "1900-01-01",
+            "swDate": "1900-01-01"
+          },
+          {
+            "b": 1.5077730480890191e-05,
+            "diEffSec": 0.4627347760572199,
+            "diNominal": 0.0017009344745738757,
+            "endDate": "1901-02-24",
+            "qEnd": 13076.47457643162,
+            "qStart": 22844.695432940665,
+            "segmentIndex": 2,
+            "segmentType": "arps",
+            "slope": -1,
+            "startDate": "1900-04-02",
+            "swDate": "1900-01-01"
+          },
+          {
+            "b": 0.6764555049774857,
+            "diEffSec": 0.6541583490712901,
+            "diNominal": 0.004253061819305632,
+            "endDate": "1960-01-01",
+            "qEnd": 12.065973242985505,
+            "qStart": 13054.251442640663,
+            "realizedDSwEffSec": 0.06,
+            "segmentIndex": 3,
+            "segmentType": "arps_modified",
+            "slope": -1,
+            "startDate": "1901-02-25",
+            "swDate": "1924-02-03",
+            "targetDSwEffSec": 0.06,
+            "qSw": 111.29480431100308
+          }
+        ]
+      },
+      "type": "rate",
+      "p10": {
+        "segments": [
+          {
+            "diEffSec": -1.1602784638208852,
+            "diNominal": -0.0021087943376383333,
+            "endDate": "1900-04-01",
+            "qEnd": 28689.026997493256,
+            "qStart": 23729.600253478315,
+            "segmentIndex": 1,
+            "segmentType": "exp_inc",
+            "slope": 1,
+            "startDate": "1900-01-01",
+            "swDate": "1900-01-01"
+          },
+          {
+            "b": 1e-05,
+            "diEffSec": 0.2836082628718247,
+            "diNominal": 0.0009131518109461832,
+            "endDate": "1901-02-18",
+            "qEnd": 21425.655488192402,
+            "qStart": 28749.59009028776,
+            "segmentIndex": 2,
+            "segmentType": "arps",
+            "slope": -1,
+            "startDate": "1900-04-02",
+            "swDate": "1900-01-01"
+          },
+          {
+            "b": 0.6999419831918482,
+            "diEffSec": 0.6156770427751195,
+            "diNominal": 0.003727455082186801,
+            "endDate": "1960-01-01",
+            "qEnd": 26.486212497072287,
+            "qStart": 21406.099600043257,
+            "realizedDSwEffSec": 0.06,
+            "segmentIndex": 3,
+            "segmentType": "arps_modified",
+            "slope": -1,
+            "startDate": "1901-02-19",
+            "swDate": "1923-03-06",
+            "targetDSwEffSec": 0.06,
+            "qSw": 258.54934190681337
+          }
+        ]
+      },
+      "p50": {
+        "segments": [
+          {
+            "diEffSec": -31.19775369937509,
+            "diNominal": -0.00950553508344418,
+            "endDate": "1900-04-01",
+            "qEnd": 23408.31006245823,
+            "qStart": 9950.202798125169,
+            "segmentIndex": 1,
+            "segmentType": "exp_inc",
+            "slope": 1,
+            "startDate": "1900-01-01",
+            "swDate": "1900-01-01"
+          },
+          {
+            "b": 1.067633588144464e-05,
+            "diEffSec": 0.4607932856783784,
+            "diNominal": 0.0016910562726797915,
+            "endDate": "1900-11-06",
+            "qEnd": 16345.40933510938,
+            "qStart": 23631.879465015274,
+            "segmentIndex": 2,
+            "segmentType": "arps",
+            "slope": -1,
+            "startDate": "1900-04-02",
+            "swDate": "1900-01-01"
+          },
+          {
+            "b": 0.6600594596578861,
+            "diEffSec": 0.6967195389360317,
+            "diNominal": 0.004968868161512991,
+            "endDate": "1960-01-01",
+            "qEnd": 10.87556661921564,
+            "qStart": 16345.40933510938,
+            "realizedDSwEffSec": 0.06,
+            "segmentIndex": 3,
+            "segmentType": "arps_modified",
+            "slope": -1,
+            "startDate": "1900-11-07",
+            "swDate": "1924-07-02",
+            "targetDSwEffSec": 0.06,
+            "qSw": 97.80686250675382
+          }
+        ]
+      },
+      "p90": {
+        "segments": [
+          {
+            "diEffSec": -906976540.6878145,
+            "diNominal": -0.05646988951160901,
+            "endDate": "1900-04-01",
+            "qEnd": 12992.557184162417,
+            "qStart": 80.62767010500735,
+            "segmentIndex": 1,
+            "segmentType": "exp_inc",
+            "slope": 1,
+            "startDate": "1900-01-01",
+            "swDate": "1900-01-01"
+          },
+          {
+            "b": 2e-05,
+            "diEffSec": 0.4034884692838281,
+            "diNominal": 0.0014145362802449662,
+            "endDate": "1901-04-01",
+            "qEnd": 8214.969213035238,
+            "qStart": 13747.356605022636,
+            "segmentIndex": 2,
+            "segmentType": "arps",
+            "slope": -1,
+            "startDate": "1900-04-02",
+            "swDate": "1900-01-01"
+          },
+          {
+            "b": 0.6,
+            "diEffSec": 0.9517178270843312,
+            "diNominal": 0.023555045760629285,
+            "endDate": "1940-09-20",
+            "qEnd": 1.000161876845313,
+            "qStart": 8203.357175481184,
+            "realizedDSwEffSec": 0.06,
+            "segmentIndex": 3,
+            "segmentType": "arps_modified",
+            "slope": -1,
+            "startDate": "1901-04-02",
+            "swDate": "1927-12-29",
+            "targetDSwEffSec": 0.06,
+            "qSw": 2.1981875090715777
+          }
+        ]
+      },
+      "normalizations": {
+        "normalizationType": "eur",
+        "perfLateralLength": 10000,
+        "eur": {
+          "type": "1_to_1",
+          "base": "eur_pll"
+        }
+      }
+    },
+    "oil": {
+      "align": false,
+      "normalizations": {
+        "normalizationType": "eur",
+        "eur": {
+          "base": "eur_pll"
+        }
+      }
+    },
+    "water": {
+      "resolution": "monthly",
+      "align": false,
+      "normalize": true,
+      "best": {
+        "segments": [
+          {
+            "b": 0.4316629581726107,
+            "diEffSec": 0.5525494049033066,
+            "diNominal": 0.002632246869764208,
+            "endDate": "1905-05-10",
+            "qEnd": 25.470798379943453,
+            "qStart": 319.4466457369768,
+            "segmentIndex": 1,
+            "segmentType": "arps",
+            "slope": -1,
+            "startDate": "1900-08-02",
+            "swDate": "1900-01-01"
+          },
+          {
+            "b": 0.7889822667327036,
+            "diEffSec": 0.3647207588991155,
+            "diNominal": 0.001493531586344173,
+            "endDate": "1931-03-06",
+            "qEnd": 0.8000943500154438,
+            "qStart": 25.448309124731143,
+            "realizedDSwEffSec": 0.08,
+            "segmentIndex": 2,
+            "segmentType": "arps_modified",
+            "slope": -1,
+            "startDate": "1905-05-11",
+            "swDate": "1918-03-27",
+            "targetDSwEffSec": 0.08,
+            "qSw": 2.3537039386129868
+          }
+        ]
+      },
+      "type": "rate",
+      "p10": {
+        "segments": [
+          {
+            "b": 0.4145994254057775,
+            "diEffSec": 0.5064592369243088,
+            "diNominal": 0.0022461079048556377,
+            "endDate": "1904-12-19",
+            "qEnd": 65.44781319201611,
+            "qStart": 574.4988967344825,
+            "segmentIndex": 1,
+            "segmentType": "arps",
+            "slope": -1,
+            "startDate": "1900-09-02",
+            "swDate": "1900-01-01"
+          },
+          {
+            "b": 0.8584973510217924,
+            "diEffSec": 0.4304500349424546,
+            "diNominal": 0.001981541656915094,
+            "endDate": "1939-12-14",
+            "qEnd": 0.8000608639425068,
+            "qStart": 65.38812136863412,
+            "realizedDSwEffSec": 0.08,
+            "segmentIndex": 2,
+            "segmentType": "arps_modified",
+            "slope": -1,
+            "startDate": "1904-12-20",
+            "swDate": "1917-04-30",
+            "targetDSwEffSec": 0.08,
+            "qSw": 5.275731929756788
+          }
+        ]
+      },
+      "p50": {
+        "segments": [
+          {
+            "b": 0.1352954677833909,
+            "diEffSec": 0.6099734653334314,
+            "diNominal": 0.0027491848312036393,
+            "endDate": "1903-06-23",
+            "qEnd": 26.30497932544936,
+            "qStart": 285.73322580645157,
+            "segmentIndex": 1,
+            "segmentType": "arps",
+            "slope": -1,
+            "startDate": "1900-09-02",
+            "swDate": "1900-01-01"
+          },
+          {
+            "b": 0.5974300321140023,
+            "diEffSec": 0.38074237745382744,
+            "diNominal": 0.0015191854459905018,
+            "endDate": "1924-05-09",
+            "qEnd": 0.8000546974773832,
+            "qStart": 26.252668017923085,
+            "realizedDSwEffSec": 0.08,
+            "segmentIndex": 2,
+            "segmentType": "arps_modified",
+            "slope": -1,
+            "startDate": "1903-06-24",
+            "swDate": "1920-07-14",
+            "targetDSwEffSec": 0.08,
+            "qSw": 1.0999866873924589
+          }
+        ]
+      },
+      "p90": {
+        "segments": [
+          {
+            "b": 0.001,
+            "diEffSec": 0.47204232738551677,
+            "diNominal": 0.0017493311465896645,
+            "endDate": "1901-11-04",
+            "qEnd": 39.4320079181267,
+            "qStart": 83.3469032258064,
+            "segmentIndex": 1,
+            "segmentType": "arps",
+            "slope": -1,
+            "startDate": "1900-09-02",
+            "swDate": "1900-01-01"
+          },
+          {
+            "b": 0.804570650284015,
+            "diEffSec": 0.9664579624691898,
+            "diNominal": 0.04885034744762762,
+            "endDate": "1903-05-18",
+            "qEnd": 0.8003648961009182,
+            "qStart": 39.36314015479806,
+            "realizedDSwEffSec": 0.08,
+            "segmentIndex": 2,
+            "segmentType": "arps_modified",
+            "slope": -1,
+            "startDate": "1901-11-05",
+            "swDate": "1916-09-06",
+            "targetDSwEffSec": 0.08,
+            "qSw": 0.04996357090789083
+          }
+        ]
+      },
+      "normalizations": {
+        "normalizationType": "eur",
+        "eur": {
+          "base": "eur_pll"
+        }
+      }
+    }
+  },
+  "regressionType": "rate",
+  "forecast": "000000000000000000000007",
+  "name": "Sample Type Curve Paired",
+  "createdAt": "2026-07-23T21:35:19.903Z",
+  "updatedAt": "2026-07-23T21:35:19.903Z",
+  "wells": [
+    "000000000000000000000008",
+    "000000000000000000000009",
+    "000000000000000000000010"
+  ]
+}
