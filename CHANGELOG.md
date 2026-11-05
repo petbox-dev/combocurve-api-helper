@@ -5,6 +5,23 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.1] - Unreleased
+
+### Fixed
+
+- **Single-object requests use the transport.** Eight calls sent through `requests` directly:
+  directional survey POST and PUT, v2 export POST and GET, v1 export POST, forecast wells POST,
+  forecast PATCH and forecast run POST. They had no timeout and no retry. A stalled connection
+  blocked the call forever. They now send through the same transport as every other call.
+- **One call has a 600 s deadline. `Retry-After` is capped at 120 s.** The deadline covers every
+  connection retry and every status retry of one call. A retry whose pause would reach the deadline
+  is not made. A write is sent again only when its full read timeout fits in the time left. The
+  `Retry-After` cap was 3600 s. A failed token request is retried like the request it serves.
+- **Company routes for Emission and FluidModel raise `ValueError`.** ComboCurve has no company route
+  for these two types: it answers 400. `get_company_econ_models_by_type_url` now raises `ValueError`
+  before any request. The eight company methods for these types stay on 2.x, and each raises
+  `ValueError`. 3.0.0 removes them. `econModels.json` has a new `hasCompanyRoute` key.
+
 ## [2.7.0] - Unreleased
 
 ### Deprecated
