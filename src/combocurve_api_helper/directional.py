@@ -1,7 +1,5 @@
 from typing import Optional
 
-import requests
-
 from .base import APIBase, Item, ItemList
 
 GET_LIMIT = 1000
@@ -191,10 +189,9 @@ class Directional(APIBase):
         """
         # The endpoint receives a single object body, not a list, so
         # `self._post_items` (which chunks a list) does not apply.
-        headers = self._auth_headers()
         url = self.get_directional_surveys_url()
 
-        response = requests.post(url, headers=headers, json=data)
+        response = self._request_with_retry('post', url, json_body=data)
         response.raise_for_status()
 
         return self._extract_json(response)[0]
@@ -283,10 +280,9 @@ class Directional(APIBase):
         }
         """
         # The endpoint receives a single object body, not a list.
-        headers = self._auth_headers()
         url = self.get_directional_survey_by_id_url(directional_survey_id)
 
-        response = requests.put(url, headers=headers, json=data)
+        response = self._request_with_retry('put', url, json_body=data)
         response.raise_for_status()
 
         return self._extract_json(response)[0]

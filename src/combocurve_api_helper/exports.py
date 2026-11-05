@@ -1,5 +1,3 @@
-import requests
-
 from .base import APIBase, Item
 
 # The async export routes live under /v2 (every other route in this package is /v1);
@@ -40,10 +38,9 @@ class Exports(APIBase):
         Submits a v2 async export of `kind` (single-object body) and returns the
         job carrying its job id; poll `_get_v2_export` for status/results.
         """
-        headers = self._auth_headers()
         url = self.get_v2_export_url(kind)
 
-        response = requests.post(url, headers=headers, json=data)
+        response = self._request_with_retry('post', url, json_body=data)
         response.raise_for_status()
 
         return self._extract_json(response)[0]
@@ -52,10 +49,9 @@ class Exports(APIBase):
         """
         Returns the status/result of a v2 async export job of `kind` from its job id.
         """
-        headers = self._auth_headers()
         url = self.get_v2_export_by_job_id_url(kind, job_id)
 
-        response = requests.get(url, headers=headers)
+        response = self._request_with_retry('get', url)
         response.raise_for_status()
 
         return self._extract_json(response)[0]
@@ -134,10 +130,9 @@ class Exports(APIBase):
             ]
         }
         """
-        headers = self._auth_headers()
         url = self.get_exports_url()
 
-        response = requests.post(url, headers=headers, json=data)
+        response = self._request_with_retry('post', url, json_body=data)
         response.raise_for_status()
 
         return self._extract_json(response)[0]
