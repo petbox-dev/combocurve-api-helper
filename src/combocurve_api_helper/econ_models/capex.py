@@ -18,6 +18,7 @@ from .enums import (
     Criteria,
 )
 from .formats import (
+    csv_to_float,
     csv_to_num,
     enum_from_csv,
     enum_to_csv,
@@ -248,6 +249,7 @@ def _check_probabilistic(extra: dict[str, Any]) -> None:
 class CapexMapper(EconModelMapper):
     econ_model_type = 'Capex'
     columns = COLUMNS['Capex']
+    float_columns = frozenset({'Tangible (M$)', 'Intangible (M$)', 'Paying WI / Earning WI'})
 
     def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)
@@ -281,8 +283,8 @@ class CapexMapper(EconModelMapper):
             {
                 'Category': enum_to_csv(row_model.category),
                 'Description': row_model.description or '',
-                'Tangible (M$)': num_to_csv(row_model.tangible),
-                'Intangible (M$)': num_to_csv(row_model.intangible),
+                'Tangible (M$)': num_to_csv_float(row_model.tangible),
+                'Intangible (M$)': num_to_csv_float(row_model.intangible),
                 'Criteria': csv_criteria,
                 'From Schedule': from_schedule,
                 'From Headers': from_headers,
@@ -294,7 +296,7 @@ class CapexMapper(EconModelMapper):
                 'Escalation Start Criteria': esc_start_criteria,
                 'Escalation Start Value (Days/Date)': esc_start_value,
                 'Depreciation': escalation_to_csv(row_model.depreciation_model, title=True),
-                'Paying WI / Earning WI': num_to_csv(row_model.deal_terms),
+                'Paying WI / Earning WI': num_to_csv_float(row_model.deal_terms),
             }
         )
         return {c: row.get(c, '') for c in self.columns}
@@ -331,14 +333,14 @@ class CapexMapper(EconModelMapper):
             # `_category_from_csv` fallback exactly.
             'category': enum_from_csv(row.get('Category', '')) or '',
             'description': row.get('Description') or '',
-            'tangible': csv_to_num(row.get('Tangible (M$)') or '0'),
-            'intangible': csv_to_num(row.get('Intangible (M$)') or '0'),
+            'tangible': csv_to_float(row.get('Tangible (M$)') or '0'),
+            'intangible': csv_to_float(row.get('Intangible (M$)') or '0'),
             'capex_expense': row.get('CAPEX or Expense') or '',
             'after_econ_limit': formats.parse_yes_no(row.get('Appear After Econ Limit', '')),
             'calculation': row.get('Calculation') or '',
             'escalation_model': escalation_from_csv(row.get('Escalation') or '', title=True),
             'depreciation_model': escalation_from_csv(row.get('Depreciation') or '', title=True),
-            'deal_terms': csv_to_num(row.get('Paying WI / Earning WI') or '1'),
+            'deal_terms': csv_to_float(row.get('Paying WI / Earning WI') or '1'),
         }
         row_kwargs['escalation_start'] = (
             _escalation_start_from_csv(

@@ -5,6 +5,18 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - Unreleased
+
+### Changed
+
+- **Econ-model CSV float columns are written in float form and read as `float`.** Each mapper
+  declares `float_columns` (rates, prices, percents, $ amounts, WI/NRI, multipliers); those write a
+  whole number as `9.0`, not `9`, and `from_row_dicts` returns them as `float`. Offsets, periods and
+  counts stay integers. ProductionTaxes `Value` did this from 2.6.0; this release adds Capex,
+  Dates, Differentials, Expenses, OwnershipReversion, Pricing, Risking and StreamProperties. CC's
+  own export writes the form CC stores, which the API's JSON does not expose, so CSV text may now
+  differ from a CC export as `3.0` vs `3`; the values are equal.
+
 ## [2.6.0] - 2026-11-03
 
 ### Added

@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from . import formats
 from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
-from .formats import csv_to_num, escalation_from_csv, escalation_to_csv, num_to_csv, num_to_csv_float
+from .formats import csv_to_float, escalation_from_csv, escalation_to_csv, num_to_csv_float
 
 # API phase (variableExpenses top-level key) -> CSV 'Key' column value. `boe`/
 # `totalFluid` ARE real phases. Unlike oil/gas/ngl/dripCondensate, their REAL
@@ -245,7 +245,7 @@ def _settings_columns(leaf: ExpenseLeaf, fixed: bool) -> dict[str, str]:
         'Affect Econ Limit': formats.yes_no(leaf.affect_econ_limit),
         'Deduct bef Sev Tax': formats.yes_no(leaf.deduct_before_severance_tax),
         'Deduct bef Ad Val Tax': formats.yes_no(leaf.deduct_before_ad_val_tax),
-        'Cap': '' if leaf.cap is None else num_to_csv(leaf.cap),
+        'Cap': '' if leaf.cap is None else num_to_csv_float(leaf.cap),
         'Paying WI / Earning WI': '' if leaf.deal_terms is None else num_to_csv_float(leaf.deal_terms),
     }
     if fixed:
@@ -329,9 +329,9 @@ def _build_leaf(members: list[dict[str, str]], fixed: bool) -> dict[str, Any]:
     kwargs['deductBeforeSeveranceTax'] = formats.parse_yes_blank(first.get('Deduct bef Sev Tax', ''))
     kwargs['deductBeforeAdValTax'] = formats.parse_yes_blank(first.get('Deduct bef Ad Val Tax', ''))
     cap_cell = first.get('Cap') or ''
-    kwargs['cap'] = None if not cap_cell else csv_to_num(cap_cell)
+    kwargs['cap'] = None if not cap_cell else csv_to_float(cap_cell)
     deal_terms_cell = first.get('Paying WI / Earning WI') or ''
-    kwargs['dealTerms'] = None if not deal_terms_cell else csv_to_num(deal_terms_cell)
+    kwargs['dealTerms'] = None if not deal_terms_cell else csv_to_float(deal_terms_cell)
     if fixed:
         kwargs['stopAtEconLimit'] = formats.parse_yes_blank(first.get('Stop at Econ Limit', ''))
         kwargs['expenseBeforeFpd'] = formats.parse_yes_blank(first.get('Expense bef FPD', ''))
@@ -378,13 +378,14 @@ def _row_from_csv(m: dict[str, str]) -> dict[str, Any]:
     unit = m['Unit']
     if unit not in _UNIT_TO_KEY:
         raise NotImplementedError(f'Unknown expense Unit: {unit}')
-    row_dict[_UNIT_TO_KEY[unit]] = csv_to_num(m['Value'])
+    row_dict[_UNIT_TO_KEY[unit]] = csv_to_float(m['Value'])
     return ExpenseApiRow.model_validate(row_dict).model_dump(by_alias=True, exclude_none=True)
 
 
 class ExpensesMapper(EconModelMapper):
     econ_model_type = 'Expenses'
     columns = COLUMNS['Expenses']
+    float_columns = frozenset({'Value', 'Cap', 'Paying WI / Earning WI'})
 
     def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)

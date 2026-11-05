@@ -89,11 +89,11 @@ def test_to_row_dicts_values() -> None:
     assert rows[0]['Escalation Start Criteria'] == 'apply to criteria'
     # Day-offsets render WITH a decimal point ('0.0', not '0') to match CC's decimal form.
     assert rows[0]['Escalation Start Value (Days/Date)'] == '0.0'
-    assert rows[0]['Paying WI / Earning WI'] == '1'
+    assert rows[0]['Paying WI / Earning WI'] == '1.0'
     assert rows[0]['Calculation'] == 'gross'
     assert rows[0]['CAPEX or Expense'] == 'capex'
-    assert rows[0]['Intangible (M$)'] == '3000'
-    assert rows[0]['Tangible (M$)'] == '0'
+    assert rows[0]['Intangible (M$)'] == '3000.0'
+    assert rows[0]['Tangible (M$)'] == '0.0'
 
 
 def test_from_headers_first_prod_date() -> None:

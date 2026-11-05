@@ -89,13 +89,14 @@ def test_to_row_dicts_emits_exactly_five_phase_rows_in_order() -> None:
             assert r[blank_col] == ''
 
     values = {r['Phase']: r['Value'] for r in rows}
-    assert values == {'oil': '93.976', 'gas': '93.976', 'ngl': '100', 'drip cond': '100', 'water': '100'}
+    assert values == {'oil': '93.976', 'gas': '93.976', 'ngl': '100.0', 'drip cond': '100.0', 'water': '100.0'}
 
 
-def test_to_row_dicts_int_value_stays_integral() -> None:
+def test_to_row_dicts_whole_multiplier_is_written_as_float() -> None:
+    # Value is a float column (RiskingMapper.float_columns): an API 100 writes '100.0'.
     rows = RiskingMapper().to_row_dicts(SAMPLE_WELL_1_P50)
     ngl = next(r for r in rows if r['Phase'] == 'ngl')
-    assert ngl['Value'] == '100'  # not '100.0'
+    assert ngl['Value'] == '100.0'
 
 
 def test_to_row_dicts_risk_prod_none_defaults_to_yes() -> None:

@@ -148,7 +148,7 @@ def test_to_row_dicts_oil_processing() -> None:
     # 'Value' always renders with a decimal point, e.g. '0.0' not '0' (unlike
     # Capex/Differentials/ProductionTaxes).
     assert oil_processing['Value'] == '0.0'
-    assert oil_processing['Cap'] == '500'
+    assert oil_processing['Cap'] == '500.0'
     assert oil_processing['Deduct bef Ad Val Tax'] == 'yes'
 
 

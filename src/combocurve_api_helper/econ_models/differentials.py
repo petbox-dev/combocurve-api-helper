@@ -6,7 +6,7 @@ from . import formats
 from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
 from .formats import PHASE_TO_CSV_CAMEL as _PHASE_TO_CSV
-from .formats import csv_to_num, escalation_from_csv, escalation_to_csv, num_to_csv
+from .formats import csv_to_float, escalation_from_csv, escalation_to_csv, num_to_csv_float
 
 _TIER_TO_CSV = {
     'firstDifferential': 'differentials_1',
@@ -80,6 +80,7 @@ def _criteria(r: DifferentialRow) -> tuple[str, str]:
 class DifferentialsMapper(EconModelMapper):
     econ_model_type = 'Differentials'
     columns = COLUMNS['Differentials']
+    float_columns = frozenset({'Value'})
 
     def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)
@@ -102,7 +103,7 @@ class DifferentialsMapper(EconModelMapper):
                             'Key': _TIER_TO_CSV[tier],
                             'Phase': _PHASE_TO_CSV[phase],
                             'Criteria': criteria,
-                            'Value': num_to_csv(value),
+                            'Value': num_to_csv_float(value),
                             'Period': period,
                             'Unit': unit,
                             'Escalation': escalation_to_csv(phase_node.escalation_model, title=False),
@@ -136,7 +137,7 @@ class DifferentialsMapper(EconModelMapper):
             row_kwargs: dict[str, Any] = formats.flat_or_dates_row_kwargs(
                 row['Criteria'], row['Period'], formats.ENTIRE_WELL_LIFE_MARKER
             )
-            row_kwargs[_UNIT_TO_ATTR[row['Unit']]] = csv_to_num(row['Value'])
+            row_kwargs[_UNIT_TO_ATTR[row['Unit']]] = csv_to_float(row['Value'])
             node.rows.append(DifferentialRow(**row_kwargs))
 
         return {

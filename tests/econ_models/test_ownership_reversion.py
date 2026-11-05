@@ -314,11 +314,11 @@ def test_to_row_dicts_initial_only_emits_one_row() -> None:
 def test_to_row_dicts_initial_only_forward_shape() -> None:
     row = OwnershipReversionMapper().to_row_dicts(EIGHT_EIGHTHS)[0]
     assert row['Key'] == 'initial'
-    assert row['WI %'] == '100'
-    assert row['NRI %'] == '75'
-    assert row['Lease NRI %'] == '75'
+    assert row['WI %'] == '100.0'
+    assert row['NRI %'] == '75.0'
+    assert row['Lease NRI %'] == '75.0'
     assert row['NPI Type'] == 'expense'
-    assert row['NPI %'] == '0'
+    assert row['NPI %'] == '0.0'
     for col in ('Oil NRI %', 'Gas NRI %', 'NGL NRI %', 'Drip Cond. NRI %'):
         assert row[col] == ''
     for col in (
@@ -345,14 +345,14 @@ def test_to_row_dicts_reversion_row_forward_shape() -> None:
     rows = OwnershipReversionMapper().to_row_dicts(SAMPLE_REVERSION_A_W_PO)
     reversion_row = rows[1]
     assert reversion_row['Reversion Type'] == 'po'
-    assert reversion_row['Reversion Value'] == '12290000'
+    assert reversion_row['Reversion Value'] == '12290000.0'
     assert reversion_row['WI %'] == '0.177749'
     assert reversion_row['NRI %'] == '0.132697'
     assert reversion_row['Lease NRI %'] == '75.00140853'
     assert reversion_row['Balance'] == 'gross'
     assert reversion_row['Include NPI'] == 'yes'
     assert reversion_row['NPI Type'] == ''
-    assert reversion_row['NPI %'] == '0'
+    assert reversion_row['NPI %'] == '0.0'
     # 'reversionTiedTo' is an ABSENCE on this model's firstReversion, yet CC's CSV still renders
     # 'as of' -- the documented display-default fallback.
     assert reversion_row['Reversion Tied To'] == 'as of'

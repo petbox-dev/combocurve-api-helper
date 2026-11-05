@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from . import formats
 from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
-from .formats import csv_to_num, num_to_csv
+from .formats import csv_to_float, num_to_csv_float
 
 # API 'risking' phase key (RiskingModel python attribute name) -> CSV 'Phase' column
 # value, in forward-emission order.
@@ -31,7 +31,7 @@ class RiskingMultiplierRow(BaseModel):
     `multiplier` is typed `Any`, not `Union[int, float]`, so the forward pass carries
     the API's exact value through unchanged (int `97` stays `97`, float `92.816` stays
     `92.816`) -- mirrors `ProductionTaxApiRow.value: list[Any]` in production_taxes.py.
-    Note the CSV->API inverse reconstructs the multiplier via `csv_to_num`, which
+    Note the CSV->API inverse reconstructs the multiplier via `csv_to_float`, which
     renders whole-number floats as int (a `100.0` multiplier comes back as `100`);
     JSON-equivalent and accepted by CC, but not byte-identical for that case.
     """
@@ -93,6 +93,7 @@ class RiskingMapper(EconModelMapper):
 
     econ_model_type = 'Risking'
     columns = COLUMNS['Risking']
+    float_columns = frozenset({'Value'})
 
     def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)
@@ -115,7 +116,7 @@ class RiskingMapper(EconModelMapper):
                         'Description': '',
                         'Risk Hist Prod': risk_prod_csv,
                         'Risk NGL & Drip Cond via Gas Risk': risk_ngl_csv,
-                        'Value': num_to_csv(r.multiplier),
+                        'Value': num_to_csv_float(r.multiplier),
                         'Period': '',
                         'Criteria': 'flat',
                         'Criteria Start': '',
@@ -167,7 +168,7 @@ class RiskingMapper(EconModelMapper):
                     raise NotImplementedError(f'Unknown Risking Criteria: {member["Criteria"]!r}')
                 phase_rows.append(
                     RiskingMultiplierRow(
-                        entire_well_life=formats.ENTIRE_WELL_LIFE_MARKER, multiplier=csv_to_num(member['Value'])
+                        entire_well_life=formats.ENTIRE_WELL_LIFE_MARKER, multiplier=csv_to_float(member['Value'])
                     )
                 )
             kwargs[attr] = RiskingPhaseNode(rows=phase_rows)

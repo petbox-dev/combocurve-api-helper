@@ -6,7 +6,7 @@ from . import formats
 from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
 from .formats import PHASE_TO_CSV_CAMEL as _PHASE_TO_CSV
-from .formats import csv_to_num, escalation_from_csv, escalation_to_csv, num_to_csv
+from .formats import csv_to_float, escalation_from_csv, escalation_to_csv, num_to_csv_float
 
 _PHASE_FROM_CSV = {v: k for k, v in _PHASE_TO_CSV.items()}
 _PHASE_ORDER = ('oil', 'gas', 'ngl', 'dripCondensate')
@@ -74,7 +74,7 @@ class PriceRow(BaseModel):
 class PricePhaseNode(BaseModel):
     """The `{'cap': ..., 'escalationModel': ..., 'rows': [...]}` node for a single phase
     (oil/gas/ngl/dripCondensate) within `priceModel`. Every phase node carries all three
-    keys, `cap` usually `null`; its forward `num_to_csv` rendering when populated is
+    keys, `cap` usually `null`; its forward `num_to_csv_float` rendering when populated is
     inferred from the sibling Differentials/Expenses 'Cap'/'Value' conventions, not
     directly confirmed."""
 
@@ -117,14 +117,14 @@ def _breakeven_from_csv(row: dict[str, str]) -> dict[str, Any]:
     if criteria == _BREAKEVEN_DIRECT_CSV:
         return {
             'basedOnPriceRatio': False,
-            'npvDiscount': csv_to_num(row['Value']),
+            'npvDiscount': csv_to_float(row['Value']),
             'priceRatio': None,
         }
     if criteria == _BREAKEVEN_RATIO_CSV:
         return {
             'basedOnPriceRatio': True,
-            'npvDiscount': csv_to_num(row['Value']),
-            'priceRatio': csv_to_num(row['Price Ratio']),
+            'npvDiscount': csv_to_float(row['Value']),
+            'priceRatio': csv_to_float(row['Price Ratio']),
         }
     raise NotImplementedError(f'Unknown Pricing breakeven Criteria: {criteria!r}')
 
@@ -132,6 +132,7 @@ def _breakeven_from_csv(row: dict[str, str]) -> dict[str, Any]:
 class PricingMapper(EconModelMapper):
     econ_model_type = 'Pricing'
     columns = COLUMNS['Pricing']
+    float_columns = frozenset({'Value', 'Cap', 'Price Ratio'})
 
     def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)
@@ -152,10 +153,10 @@ class PricingMapper(EconModelMapper):
                         'Phase': _PHASE_TO_CSV[phase],
                         'Category': '',
                         'Criteria': criteria,
-                        'Value': num_to_csv(value),
+                        'Value': num_to_csv_float(value),
                         'Period': period,
                         'Unit': unit,
-                        'Cap': '' if node.cap is None else num_to_csv(node.cap),
+                        'Cap': '' if node.cap is None else num_to_csv_float(node.cap),
                         'Price Ratio': '',
                         'Escalation': escalation_to_csv(node.escalation_model, title=True),
                     }
@@ -171,11 +172,11 @@ class PricingMapper(EconModelMapper):
                     'Phase': _BREAKEVEN_PHASE_CSV,
                     'Category': '',
                     'Criteria': _BREAKEVEN_RATIO_CSV if be.based_on_price_ratio else _BREAKEVEN_DIRECT_CSV,
-                    'Value': num_to_csv(be.npv_discount),
+                    'Value': num_to_csv_float(be.npv_discount),
                     'Period': '',
                     'Unit': _BREAKEVEN_UNIT_CSV,
                     'Cap': '',
-                    'Price Ratio': '' if be.price_ratio is None else num_to_csv(be.price_ratio),
+                    'Price Ratio': '' if be.price_ratio is None else num_to_csv_float(be.price_ratio),
                     'Escalation': '',
                 }
             )
@@ -218,7 +219,7 @@ class PricingMapper(EconModelMapper):
                 # DifferentialsMapper's escalationModel-from-first-row convention).
                 cap_cell = row.get('Cap') or ''
                 price_model[phase] = {
-                    'cap': None if not cap_cell else csv_to_num(cap_cell),
+                    'cap': None if not cap_cell else csv_to_float(cap_cell),
                     'escalationModel': escalation_from_csv(row.get('Escalation') or '', title=True),
                     'rows': [],
                 }
@@ -231,7 +232,7 @@ class PricingMapper(EconModelMapper):
             unit_to_attr = _PHASE_UNIT_TO_ATTR[phase]
             if unit not in unit_to_attr:
                 raise NotImplementedError(f'Unknown Pricing Unit {unit!r} for Phase {phase_csv!r}')
-            row_kwargs[unit_to_attr[unit]] = csv_to_num(row['Value'])
+            row_kwargs[unit_to_attr[unit]] = csv_to_float(row['Value'])
             node['rows'].append(PriceRow(**row_kwargs).model_dump(by_alias=True, exclude_none=True))
 
         return {

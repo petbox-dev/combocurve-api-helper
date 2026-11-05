@@ -462,7 +462,7 @@ def test_to_row_dicts_max_cum_legacy_schema_no_min_life_trigger_tolerate_keys() 
     assert row['Min Life Value'] == ''
     # cash-flow criterion -> extra columns DO render, defaulting absent triggerEclCapex to False
     assert row['Include CAPEX'] == 'no'
-    assert row['Discount'] == '0'
+    assert row['Discount'] == '0.0'
     assert row['Econ Limit Delay'] == '0'
     assert row['Trigger ECL CAPEX (Unecon)'] == 'no'
     assert row['Tolerant Negative CF'] == ''
@@ -485,7 +485,7 @@ def test_to_row_dicts_location_max_cum_full_schema() -> None:
     assert row['Cut Off Criteria'] == 'max cum'
     assert row['Align Dependent Phases'] == 'yes'
     assert row['Include CAPEX'] == 'no'
-    assert row['Discount'] == '15'
+    assert row['Discount'] == '15.0'
     assert row['Econ Limit Delay'] == '12'
     assert row['Trigger ECL CAPEX (Unecon)'] == 'yes'
     assert row['Tolerant Negative CF'] == ''

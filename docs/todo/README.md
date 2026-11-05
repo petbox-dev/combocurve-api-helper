@@ -24,6 +24,7 @@ This repo is public: no confidential project, model, well or fund names in any d
 
 | Item | Closed | Settled by |
 |---|---|---|
+| [econ-model-csv-number-form-differs-from-cc-export](closed/econ-model-csv-number-form-differs-from-cc-export.md) | 2026-11-03 | Decided: every float-valued column writes `9.0` and reads as `float` (`float_columns`) |
 | [production-taxes-rate-criteria-not-mapped](closed/production-taxes-rate-criteria-not-mapped.md) | 2026-11-03 | Rate and offset criteria, `$/month`/`$/boe` units and `null` values mapped, checked against a raw CC export; all 8,149 live models export |
 | [econ-model-csv-values-unverified-against-a-raw-export](closed/econ-model-csv-values-unverified-against-a-raw-export.md) | 2026-11-03 | Dev exports show one-`btu`-at-default and company `Model Type`; `model_scope(rows)` added |
 | [production-taxes-model-with-no-rows-loses-its-state](closed/production-taxes-model-with-no-rows-loses-its-state.md) | 2026-11-03 | CC's own export also writes no line for a model with no rows; the mapper matches it |

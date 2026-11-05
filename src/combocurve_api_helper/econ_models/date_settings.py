@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from . import formats
 from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
-from .formats import csv_to_num, enum_from_csv, enum_to_csv, num_to_csv
+from .formats import csv_to_float, csv_to_num, enum_from_csv, enum_to_csv, num_to_csv, num_to_csv_float
 
 # API cutOff 'criterion key' -> CSV 'Cut Off Criteria' column value. These are the only 6
 # criterion keys that appear. NOT a generic camelCase->spaced transform --
@@ -252,7 +252,7 @@ def _cutoff_from_csv(row: dict[str, str]) -> dict[str, Any]:
         min_life={min_life_key: min_life_value},
         trigger_ecl_capex=formats.parse_yes_no(row['Trigger ECL CAPEX (Unecon)']) if is_cashflow else False,
         include_capex=formats.parse_yes_no(row['Include CAPEX']) if is_cashflow else False,
-        discount=csv_to_num(row['Discount']) if crit_key == 'maxCumCashFlow' else 0,
+        discount=csv_to_float(row['Discount']) if crit_key == 'maxCumCashFlow' else 0,
         econ_limit_delay=csv_to_num(row['Econ Limit Delay']) if is_cashflow else 0,
         align_dependent_phases=formats.parse_yes_no(row['Align Dependent Phases']),
         tolerate_negative_cf=(csv_to_num(row['Tolerant Negative CF']) if crit_key == 'firstNegativeCashFlow' else 0),
@@ -317,6 +317,7 @@ class DateSettingsMapper(EconModelMapper):
 
     econ_model_type = 'Dates'
     columns = COLUMNS['Dates']
+    float_columns = frozenset({'Discount'})
 
     def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)
@@ -348,7 +349,7 @@ class DateSettingsMapper(EconModelMapper):
         # read so a maxCumCashFlow model that also omits it renders blank instead of
         # crashing in num_to_csv(None) -- mirrors the tolerate_negative_cf guard just below.
         discount_csv = (
-            num_to_csv(cutoff.discount) if crit_key == 'maxCumCashFlow' and cutoff.discount is not None else ''
+            num_to_csv_float(cutoff.discount) if crit_key == 'maxCumCashFlow' and cutoff.discount is not None else ''
         )
         # 'first negative' (firstNegativeCashFlow) is the ONLY criterion where CC's CSV renders
         # a real 'Tolerant Negative CF' value rather than always leaving it blank (see

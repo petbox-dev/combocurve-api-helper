@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
-from .formats import csv_to_num, from_csv_date, num_to_csv, to_csv_date
+from .formats import csv_to_float, from_csv_date, num_to_csv_float, to_csv_date
 
 # API `ownership` shape: `{"initialOwnership": {...}, "firstReversion": null|{...},
 # "secondReversion": ..., ..., "twentiethReversion": ...}` -- ALL 20 reversion keys are always
@@ -188,12 +188,12 @@ class ReversionTierData(BaseModel):
 
 
 def _opt_num(value: Optional[Union[int, float]]) -> str:
-    return '' if value is None else num_to_csv(value)
+    return '' if value is None else num_to_csv_float(value)
 
 
 def _opt_renum(cell: Optional[str]) -> Optional[Union[int, float]]:
     cell = (cell or '').strip()
-    return None if not cell else csv_to_num(cell)
+    return None if not cell else csv_to_float(cell)
 
 
 def _reversion_value_to_csv(tier: ReversionTierData) -> str:
@@ -212,14 +212,14 @@ def _reversion_value_to_csv(tier: ReversionTierData) -> str:
             f'Reversion type {tier.reversion_type!r} got a string reversionValue (only verified live for '
             f"'Date'): {tier.reversion_value!r}"
         )
-    return num_to_csv(tier.reversion_value)
+    return num_to_csv_float(tier.reversion_value)
 
 
 def _reversion_value_from_csv(reversion_type_api: str, cell: str) -> Union[int, float, str]:
     """Inverse of `_reversion_value_to_csv`."""
     if reversion_type_api == 'Date':
         return from_csv_date(cell)
-    return csv_to_num(cell)
+    return csv_to_float(cell)
 
 
 def _tied_to_to_csv(tied_to: Optional[ReversionTiedTo]) -> str:
@@ -273,6 +273,19 @@ class OwnershipReversionMapper(EconModelMapper):
 
     econ_model_type = 'OwnershipReversion'
     columns = COLUMNS['OwnershipReversion']
+    float_columns = frozenset(
+        {
+            'WI %',
+            'NRI %',
+            'Lease NRI %',
+            'NPI %',
+            'Oil NRI %',
+            'Gas NRI %',
+            'NGL NRI %',
+            'Drip Cond. NRI %',
+            'Reversion Value',
+        }
+    )
 
     def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         common = common_columns(model, context)
@@ -296,9 +309,9 @@ class OwnershipReversionMapper(EconModelMapper):
                 'Key': _INITIAL_KEY_CSV,
                 'Reversion Type': '',
                 'Reversion Value': '',
-                'WI %': num_to_csv(initial.working_interest),
-                'NRI %': num_to_csv(initial.net_revenue_interest),
-                'Lease NRI %': num_to_csv(initial.lease_net_revenue_interest),
+                'WI %': num_to_csv_float(initial.working_interest),
+                'NRI %': num_to_csv_float(initial.net_revenue_interest),
+                'Lease NRI %': num_to_csv_float(initial.lease_net_revenue_interest),
                 'Reversion Tied To': '',
                 'Balance': '',
                 'Include NPI': '',
@@ -325,9 +338,9 @@ class OwnershipReversionMapper(EconModelMapper):
                 'Key': ordinal,
                 'Reversion Type': _REVERSION_TYPE_TO_CSV[tier.reversion_type],
                 'Reversion Value': _reversion_value_to_csv(tier),
-                'WI %': num_to_csv(tier.working_interest),
-                'NRI %': num_to_csv(tier.net_revenue_interest),
-                'Lease NRI %': num_to_csv(tier.lease_net_revenue_interest),
+                'WI %': num_to_csv_float(tier.working_interest),
+                'NRI %': num_to_csv_float(tier.net_revenue_interest),
+                'Lease NRI %': num_to_csv_float(tier.lease_net_revenue_interest),
                 'Reversion Tied To': tied_to_csv,
                 'Balance': tier.balance or '',
                 'Include NPI': tier.include_net_profit_interest or '',
@@ -370,11 +383,11 @@ class OwnershipReversionMapper(EconModelMapper):
     @staticmethod
     def _initial_from_csv(row: dict[str, str]) -> dict[str, Any]:
         data = InitialOwnershipData(
-            working_interest=csv_to_num(row['WI %']),
+            working_interest=csv_to_float(row['WI %']),
             net_profit_interest_type=row.get('NPI Type') or None,
             net_profit_interest=_opt_renum(row.get('NPI %')),
-            net_revenue_interest=csv_to_num(row['NRI %']),
-            lease_net_revenue_interest=csv_to_num(row['Lease NRI %']),
+            net_revenue_interest=csv_to_float(row['NRI %']),
+            lease_net_revenue_interest=csv_to_float(row['Lease NRI %']),
             oil_net_revenue_interest=_opt_renum(row.get('Oil NRI %')),
             gas_net_revenue_interest=_opt_renum(row.get('Gas NRI %')),
             ngl_net_revenue_interest=_opt_renum(row.get('NGL NRI %')),
@@ -407,9 +420,9 @@ class OwnershipReversionMapper(EconModelMapper):
             # not `None`, so that shape round-trips exactly.
             balance=row.get('Balance', ''),
             include_net_profit_interest=row.get('Include NPI', ''),
-            working_interest=csv_to_num(row['WI %']),
-            net_revenue_interest=csv_to_num(row['NRI %']),
-            lease_net_revenue_interest=csv_to_num(row['Lease NRI %']),
+            working_interest=csv_to_float(row['WI %']),
+            net_revenue_interest=csv_to_float(row['NRI %']),
+            lease_net_revenue_interest=csv_to_float(row['Lease NRI %']),
             net_profit_interest=_opt_renum(row.get('NPI %')),
             oil_net_revenue_interest=_opt_renum(row.get('Oil NRI %')),
             gas_net_revenue_interest=_opt_renum(row.get('Gas NRI %')),

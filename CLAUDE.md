@@ -315,6 +315,14 @@ is centralized in `econ_models/formats.py` with matching `*_to_csv` / `*_from_cs
 header is `econ_models/csv_columns.py` `COLUMNS`. **The `get_mapper` / `MAPPERS` key is the PascalCase
 `econModelType`** (see the name-forms section above), not the kebab route or camelCase form.
 
+**Number form is a decision, not a CC match.** Each mapper declares `float_columns` (rates, prices,
+percents, $ amounts, WI/NRI, multipliers): those write `9.0` (`num_to_csv_float`) and read back as
+`float` (`csv_to_float`); offsets, periods and counts stay integers. CC's own export writes the form
+CC stores (`9` or `9.0`), and the API's JSON drops `.0`, so no rule can reproduce CC's text from API
+data. The real-export gate (`test_fixtures.py`) therefore compares `float_columns` by number and
+every other column as exact text. A new mapper column holding a float quantity goes in
+`float_columns`; `test_float_columns.py` lists them all.
+
 ## Adding a new endpoint group
 
 1. Create `src/combocurve_api_helper/<name>.py` with a class subclassing `APIBase` (and `Item`/`ItemList` from `.base`).

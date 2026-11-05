@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from . import formats
 from .base import Context, EconModelMapper, common_columns, model_identity
 from .csv_columns import COLUMNS
-from .formats import csv_to_num, num_to_csv_float
+from .formats import csv_to_float, num_to_csv_float
 
 # API group key -> CSV 'Key' column value.
 _KEY_TO_CSV = {
@@ -133,6 +133,7 @@ def _gas_shrinkage_condition(r: StreamPropertyRow) -> str:
 class StreamPropertiesMapper(EconModelMapper):
     econ_model_type = 'StreamProperties'
     columns = COLUMNS['StreamProperties']
+    float_columns = frozenset({'Value'})
 
     def to_row_dicts(self, model: dict[str, Any], context: Optional[Context] = None) -> list[dict[str, str]]:
         custom_streams = model.get('companyCustomStreams')
@@ -209,7 +210,7 @@ class StreamPropertiesMapper(EconModelMapper):
             if key == 'btu':
                 if row['Category'] not in _BTU_CATEGORY_FROM_CSV:
                     raise NotImplementedError(f'Unknown btu Category: {row["Category"]}')
-                btu_content[_BTU_CATEGORY_FROM_CSV[row['Category']]] = csv_to_num(row['Value'])
+                btu_content[_BTU_CATEGORY_FROM_CSV[row['Category']]] = csv_to_float(row['Value'])
                 continue
             if key not in _KEY_FROM_CSV:
                 raise NotImplementedError(f'Unknown Key: {key}')
@@ -231,9 +232,9 @@ class StreamPropertiesMapper(EconModelMapper):
                 row_kwargs['unshrunk_gas'] = 'Unshrunk Gas'
 
             if group_key == 'yields':
-                row_kwargs['yield_'] = csv_to_num(row['Value'])
+                row_kwargs['yield_'] = csv_to_float(row['Value'])
             else:
-                row_kwargs['pct_remaining'] = csv_to_num(row['Value'])
+                row_kwargs['pct_remaining'] = csv_to_float(row['Value'])
 
             groups[group_key].setdefault(category, []).append(StreamPropertyRow(**row_kwargs))
 

@@ -71,7 +71,7 @@ def test_to_row_dicts_flat_model_values() -> None:
     assert len(rows) == 5
 
     oil = next(r for r in rows if r['Phase'] == 'oil')
-    assert (oil['Criteria'], oil['Period'], oil['Value'], oil['Unit']) == ('flat', '', '70', '$/bbl')
+    assert (oil['Criteria'], oil['Period'], oil['Value'], oil['Unit']) == ('flat', '', '70.0', '$/bbl')
     assert oil['Category'] == ''
     assert oil['Escalation'] == 'None'
 
@@ -79,13 +79,13 @@ def test_to_row_dicts_flat_model_values() -> None:
     assert (gas['Criteria'], gas['Value'], gas['Unit']) == ('flat', '2.5', '$/mmbtu')
 
     ngl = next(r for r in rows if r['Phase'] == 'ngl')
-    assert (ngl['Value'], ngl['Unit']) == ('100', '% of oil price')
+    assert (ngl['Value'], ngl['Unit']) == ('100.0', '% of oil price')
 
     drip = next(r for r in rows if r['Phase'] == 'drip cond')
-    assert (drip['Value'], drip['Unit']) == ('100', '% of oil price')
+    assert (drip['Value'], drip['Unit']) == ('100.0', '% of oil price')
 
     breakeven = next(r for r in rows if r['Phase'] == 'breakeven')
-    assert (breakeven['Criteria'], breakeven['Value'], breakeven['Unit']) == ('direct', '0', 'npv discount %')
+    assert (breakeven['Criteria'], breakeven['Value'], breakeven['Unit']) == ('direct', '0.0', 'npv discount %')
     assert breakeven['Price Ratio'] == ''
     assert breakeven['Escalation'] == ''
     assert breakeven['Category'] == ''
@@ -95,8 +95,8 @@ def test_to_row_dicts_breakeven_based_on_price_ratio() -> None:
     rows = PricingMapper().to_row_dicts(BREAKEVEN_RATIO_MODEL)
     breakeven = next(r for r in rows if r['Phase'] == 'breakeven')
     assert breakeven['Criteria'] == 'based on price ratio'
-    assert breakeven['Value'] == '15'
-    assert breakeven['Price Ratio'] == '20'
+    assert breakeven['Value'] == '15.0'
+    assert breakeven['Price Ratio'] == '20.0'
     assert breakeven['Unit'] == 'npv discount %'
 
 
@@ -105,7 +105,7 @@ def test_to_row_dicts_drip_condensate_dollar_per_bbl_not_confused_with_oil_price
     oil's `price` -- both render CSV Unit '$/bbl', but must not collide."""
     rows = PricingMapper().to_row_dicts(BREAKEVEN_RATIO_MODEL)
     drip = next(r for r in rows if r['Phase'] == 'drip cond')
-    assert (drip['Criteria'], drip['Value'], drip['Unit']) == ('flat', '100', '$/bbl')
+    assert (drip['Criteria'], drip['Value'], drip['Unit']) == ('flat', '100.0', '$/bbl')
     oil_rows = [r for r in rows if r['Phase'] == 'oil']
     assert all(r['Unit'] == '$/bbl' for r in oil_rows)
 
