@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   before any request. The eight company methods for these types stay on 2.x, and each raises
   `ValueError`. 3.0.0 removes them. `econModels.json` has a new `hasCompanyRoute` key.
 
-## [2.7.0] - Unreleased
+## [2.7.0] - 2026-11-05
 
 ### Deprecated
 
@@ -49,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   own export writes the form CC stores, which the API's JSON does not expose, so CSV text may now
   differ from a CC export as `3.0` vs `3`; the values are equal.
 
-## [2.6.0] - 2026-11-03
+## [2.6.0] - 2026-11-04
 
 ### Added
 
