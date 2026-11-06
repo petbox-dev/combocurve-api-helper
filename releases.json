@@ -1,6 +1,13 @@
 {
   "combocurve-api-helper": [
     {
+      "version": "3.0.0",
+      "commit": "c9945fb34497035d86e3823a87d9470f5f467216",
+      "date": "2026-11-05",
+      "target": "pypi",
+      "notes": "built from branch feature/type-curves-v2 before its merge to main (5882fd5); the published wheel's package equals this commit's src/ file by file; full suite passes on Python 3.9.23"
+    },
+    {
       "version": "2.7.1",
       "commit": "7cc1814d98f85235792235b147fc585469ad572a",
       "date": "2026-11-05",
