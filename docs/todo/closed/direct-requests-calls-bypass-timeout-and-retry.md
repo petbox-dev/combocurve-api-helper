@@ -1,7 +1,21 @@
 # Direct requests.* calls bypass the request timeout and every retry
 
-Severity: low
+Closed: 2026-11-05 -- settled by: all eight call sites send through `_request_with_retry` (3.0.0 on
+`feature/type-curves-v2`; the same change on `2.x` as 2.7.1). Test:
+`tests/test_single_object_requests_use_the_transport.py`.
+If this was wrong, you will see: a single-object call (directional surveys, exports, forecast PATCH,
+forecast wells, forecast run) that hangs without a timeout, or a 429 that raises at once.
+
+Corrections on closing: 3.0.0 was not published when this was fixed, so the fix is in 3.0.0 itself.
+The backport branch already existed (`2.x`, at the 2.7.0 commit `cbb21ec`); all eight sites went
+back, not only the two export helpers, because the three files are unchanged since 2.7.0.
+
+Severity: medium
 Opened: 2026-09-29
+
+Raised from low on 2026-11-05: a hosted MCP server now consumes the v2 export wrappers (below), so
+the missing timeout has a live caller. Release plan: fix in 3.0.0 (or the first 3.0.x if 3.0.0 is
+already published), and backport the export part to a 2.7.1.
 
 ## What happens now
 
@@ -21,7 +35,7 @@ at once.
 | `exports.py:140` | `post_export` | POST |
 | `forecasts.py:257` | `post_forecast_wells` (one request per chunk) | POST |
 | `forecasts.py:336` | `patch_forecast_by_id` | PATCH |
-| `forecasts.py:992` | `post_forecast_run` | POST |
+| `forecasts.py:1006` | `post_forecast_run` | POST (line was 992 when opened) |
 
 Each one fetches `self._auth_headers()` once, sends, and calls `raise_for_status()`.
 
@@ -44,6 +58,25 @@ timeout, the 429 retry, the GET/HEAD-only gateway retry and the never-sent conne
 writes then keep the rule: never sent again after they were sent. `_get_v2_export` is a GET, so it
 also gets the connection and gateway retry.
 
+## Blast radius (added 2026-11-05)
+
+A downstream MCP server runs helper calls in a worker-thread pool with a 240 s read deadline. It
+answers the user at the deadline, but it cannot stop the thread. A stalled `_post_v2_export` or
+`_get_v2_export` therefore holds one pool thread for ever; enough of them fill the pool. That server
+holds back its export tools until a helper release has the fix, and pins 2.7.0 until then.
+
+## Release plan
+
+- **3.0.0 (or first 3.0.x):** the full fix above, all eight call sites.
+- **2.7.1 backport:** at least `exports.py` `_post_v2_export` and `_get_v2_export`, so a 2.7.x
+  consumer gets bounded exports without the 3.0.0 type-curve changes. Smallest form: pass
+  `timeout=_REQUEST_TIMEOUT_SECONDS` (`base.py`) to both calls; the full move to
+  `_request_with_retry` is also acceptable if it applies cleanly to 2.7.0.
+- Base the backport on the 2.7.0 release commit `cbb21ec`; it needs a branch, which is the
+  maintainer's call.
+- Test for either release: patch `exports.requests.post/get` (or `_send_request`) and assert the
+  timeout reaches the call; one test per helper.
+
 ## What is still unverified
 
 - Whether the v2 export routes and `post_forecast_run` return a `Link` next-page header (they use
@@ -51,6 +84,8 @@ also gets the connection and gateway retry.
   so this does not block the move.
 - Whether any caller catches a raw `requests.ConnectionError` from these methods and would behave
   differently once a GET is retried.
+- Whether 3.0.0 is already published: the release commit `a8d65f7` exists locally, but the
+  internal index listed 2.7.0 as the newest version on 2026-11-05. This decides 3.0.0 or 3.0.1.
 
 ## Files
 

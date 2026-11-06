@@ -3,6 +3,7 @@ from typing import Optional, Union, cast
 from requests import Response
 
 from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
+from .config import EconModelEntry
 
 GET_LIMIT = 200
 POST_LIMIT = 500
@@ -43,17 +44,27 @@ class CompanyModels(APIBase):
         Returns the API url of econ models for a specific project id and model
         type. Allows `econModelType` passed as a parameter rather than calling
         a different function for each model type.
+
+        A type whose `hasCompanyRoute` is false (Emission, FluidModel) raises `ValueError`
+        before any request.
         """
 
-        def _get_route_for_model(econ_model_type: str) -> Union[str, None]:
+        def _get_model_entry(econ_model_type: str) -> Union[EconModelEntry, None]:
             for model in APIBase.ECON_MODELS:
                 if model['econModelType'].casefold() == econ_model_type.casefold():
-                    return model['route']
+                    return model
 
             return None
 
-        route = _get_route_for_model(econ_model_type)
-        assert route is not None, f'Invalid econ model type: {econ_model_type}'
+        entry = _get_model_entry(econ_model_type)
+        assert entry is not None and entry['route'] is not None, f'Invalid econ model type: {econ_model_type}'
+        if not entry['hasCompanyRoute']:
+            raise ValueError(
+                f'ComboCurve has no company route for {econ_model_type}; '
+                'use the project route (get_econ_models_by_type)'
+            )
+
+        route = entry['route']
         url = f'{self.API_BASE_URL}/econ-models/{route}'
         if filters is None:
             return url
@@ -167,21 +178,6 @@ class CompanyModels(APIBase):
         econ_model_type = 'Differentials'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
-    def get_company_emissions_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
-        """
-        Returns the API url of emissions models for a specific project id.
-        """
-        econ_model_type = 'Emission'
-        return self.get_company_econ_models_by_type_url(econ_model_type, filters)
-
-    def get_company_emissions_model_by_id_url(self, model_id: str) -> str:
-        """
-        Returns the API url of a specific emissions model for a specific
-        project id.
-        """
-        econ_model_type = 'Emission'
-        return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
-
     def get_company_escalations_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of escalations models for a specific project id.
@@ -210,21 +206,6 @@ class CompanyModels(APIBase):
         project id.
         """
         econ_model_type = 'Expenses'
-        return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
-
-    def get_company_fluid_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
-        """
-        Returns the API url of fluid models for a specific project id.
-        """
-        econ_model_type = 'FluidModel'
-        return self.get_company_econ_models_by_type_url(econ_model_type, filters)
-
-    def get_company_fluid_models_by_id_url(self, model_id: str) -> str:
-        """
-        Returns the API url of a specific fluid model for a specific
-        project id.
-        """
-        econ_model_type = 'FluidModel'
         return self.get_company_econ_model_by_type_by_id_url(econ_model_type, model_id)
 
     def get_company_ownership_reversions_models_url(self, filters: Optional[dict[str, str]] = None) -> str:
@@ -626,44 +607,6 @@ class CompanyModels(APIBase):
         expenses = self._get_items(url)
 
         return expenses[0]
-
-    def get_company_emission_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
-        """
-        Returns a list of emissions models.
-        """
-        url = self.get_company_emissions_models_url(filters)
-        params = {'take': GET_LIMIT}
-        emissions = self._get_items(url, params)
-
-        return self._keysort(emissions, SORT_ORDER)
-
-    def get_company_emissions_model_by_id(self, model_id: str) -> Item:
-        """
-        Returns a specific emissions model from its id.
-        """
-        url = self.get_company_emissions_model_by_id_url(model_id)
-        emissions = self._get_items(url)
-
-        return emissions[0]
-
-    def get_company_fluid_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
-        """
-        Returns a list of fluid models.
-        """
-        url = self.get_company_fluid_models_url(filters)
-        params = {'take': GET_LIMIT}
-        fluid_models = self._get_items(url, params)
-
-        return self._keysort(fluid_models, SORT_ORDER)
-
-    def get_company_fluid_model_by_id(self, model_id: str) -> Item:
-        """
-        Returns a specific fluid model from its id.
-        """
-        url = self.get_company_fluid_models_by_id_url(model_id)
-        fluid_models = self._get_items(url)
-
-        return fluid_models[0]
 
     def get_company_capex_models(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """

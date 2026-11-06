@@ -138,6 +138,18 @@ def test_build_params_string_keeps_multiple_filters_in_order() -> None:
     assert APIBase._build_params_string({'project': 'P', 'forecast': 'F'}) == '?project=P&forecast=F'
 
 
+def test_build_params_string_repeats_a_key_for_a_sequence_value() -> None:
+    """Forecast outputs take `?well=a&well=b`; a comma-joined `well` is a 400 (live 2026-11-05)."""
+    rendered = APIBase._build_params_string({'well': ['a1', 'b2'], 'phase': 'oil'})
+
+    assert rendered == '?well=a1&well=b2&phase=oil'
+
+
+def test_build_params_string_keeps_a_string_value_whole() -> None:
+    """A `str` is a sequence too; it must not be split into one pair per character."""
+    assert APIBase._build_params_string({'columns': 'a,b'}) == '?columns=a,b'
+
+
 ##############################
 # two-channel param dedupe   #
 ##############################

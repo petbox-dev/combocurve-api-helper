@@ -1,0 +1,38 @@
+{
+  "oil": {
+    "xAxis": "perf_lateral_length",
+    "yAxis": "eur",
+    "targets": [],
+    "eur": {
+      "segments": []
+    }
+  },
+  "gas": {
+    "xAxis": "perf_lateral_length",
+    "yAxis": "eur",
+    "targets": [
+      {
+        "key": "perf_lateral_length",
+        "value": 10000
+      }
+    ],
+    "eur": {
+      "segments": [
+        {
+          "xStart": 0,
+          "fitType": "1_to_1",
+          "aValue": 1,
+          "bValue": 0
+        }
+      ]
+    }
+  },
+  "water": {
+    "xAxis": "perf_lateral_length",
+    "yAxis": "eur",
+    "targets": [],
+    "eur": {
+      "segments": []
+    }
+  }
+}

@@ -1,5 +1,8 @@
 # Request retries have no overall deadline
 
+Closed: 2026-11-05 -- settled by: 600 s deadline per call across all retries; Retry-After capped at 120 s
+If this was wrong, you will see: a call that fails with the last 429 or 5xx status or the last connection error before its retries ran out, or a `requests.Timeout` saying the call deadline passed, on a slow but healthy server
+
 Severity: low
 Opened: 2026-09-30
 

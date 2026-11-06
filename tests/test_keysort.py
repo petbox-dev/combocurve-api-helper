@@ -34,7 +34,7 @@ from combocurve_api_helper.base import LIST_SORT_ORDER, WELL_LIST_SORT_ORDER, AP
 from combocurve_api_helper.econ_runs import _ECON_RUN_SORT_ORDER
 from combocurve_api_helper.forecasts import _VOLUME_SORT_ORDER
 from combocurve_api_helper.production import _PRODUCTION_SORT_ORDER
-from combocurve_api_helper.typecurves import _REP_WELL_SORT_ORDER
+from combocurve_api_helper.type_curves_v1_compatibility import _REP_WELL_SORT_ORDER
 from combocurve_api_helper.wells import _WELL_COMMENT_SORT_ORDER
 
 if TYPE_CHECKING:

@@ -5,7 +5,97 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.7.0] - Unreleased
+## [3.0.0] - Unreleased
+
+ComboCurve stopped the v1 type-curve and type-curve lookup-table routes on 2026-11-07 (one-way).
+This release moves those methods to the v2 routes. 2.x keeps the v1 methods (bug fixes only, branch `2.x`).
+
+### Changed
+
+- **Type curves use `/v2/projects/{projectId}/type-curves`.** `get_type_curves`,
+  `count_type_curves`, `get_type_curve_by_id`, `delete_type_curves` and the type-curve lookup-table
+  methods keep their names. Reads return the v2 shape: no embedded `fits`, `forecastSeries`,
+  `excludedWells`; fields with no value are left out, never `null`.
+- `post_type_curves` sends to the batch route (100 per request).
+- `delete_type_curves` with no match returns `X-Delete-Count: 0` (v2 answers 404).
+- A migrated lookup table has a new id; the old id answers 404 (see Deprecated).
+- The type-curve methods no longer emit the 2.7.0 `DeprecationWarning`. Only the methods in the
+  Deprecated list below warn.
+
+### Added
+
+- `post_type_curve`, `patch_type_curve`, `patch_type_curves`, `delete_type_curve_by_id`,
+  `get_type_curve_fits`, `put_type_curve_fits`, `get_type_curve_normalization`,
+  `put_type_curve_normalization`, `get_type_curve_volumes`, `get_type_curve_wells`,
+  `count_type_curve_wells`, `post_type_curve_lookup_table`, `put_type_curve_lookup_table_by_id`.
+- `type_curve_conversions`, exported from the package: `fits_for_put`, `normalization_for_put`
+  (make a v2 read body safe to write back: a `linear` segment read back verbatim is stored with a
+  different `qEnd`), `fits_from_v1`, `fits_to_v1`, `type_curve_to_v1`, `volumes_to_v1`,
+  `lookup_table_from_v1`, `lookup_table_to_v1`, `lookup_table_id_from_v1`,
+  `representative_well_from_v2`.
+- `_build_params_string` repeats a key for a sequence value (`?well=a&well=b`).
+- `tests/test_type_curves_v2_live.py`: a live round trip that writes and deletes its own type curve.
+  It needs `CC_LIVE_TEST=1`, `CC_TC2_PROJECT_ID` and `CC_TC2_TYPE_CURVE_ID`, and a tenant enrolled
+  in Type Curve 2.0. It passed on 2026-11-05.
+- Scenario run: `post_scenario_run` starts a run (ComboCurve answers 202 with a job id) and
+  `get_scenario_run_by_job_id` returns the job status.
+- Scenario model assignments: `get_scenario_model_assignments`, `put_scenario_model_assignments` and
+  `delete_scenario_model_assignments`. `put_scenario_model_assignments(add_wells_to_forecast=True)`
+  also adds the wells to the forecast.
+- Forecast wells: `get_forecast_wells` and `count_forecast_wells`. `get_forecast_wells_url` takes
+  `filters`.
+
+### Deprecated (kept until at least 2027-01-31, then removed in a 3.x release)
+
+- `get_type_curve_daily_fits`, `get_type_curve_monthly_fits` (wrap `get_type_curve_volumes`).
+- `get_type_curve_representative_fits` (wells + forecast outputs; `valid`, `hasData` left out).
+- `put_type_curves` (upsert by name: merge existing, create new) and `post_type_curves` with v1
+  `fits`/`regressionType`/`normalizations` (create, then `put_type_curve_fits`; not atomic).
+  v1 `normalizations` are dropped, not written. A record that the server returns no result for
+  is reported as a failed result named `MissingResult`. A create, patch or fits-write request that
+  fails as a whole becomes failed results (`mayHaveApplied: true` when the request may have reached
+  the server), and the fits of the records that succeeded are still written. Any 2xx result code
+  counts as success; a result without `id` uses the id of the request body.
+- v1 lookup-table rule fields (`riskFactorOil/Gas/Water`, `applyNormalization`, `phase`,
+  `resolution`), translated on write. v2 rules apply to every phase, so a v1 rule written for one
+  phase now applies to all phases. Rules with the same filter that differ by more than `phase`
+  raise `ValueError`. `fpdSource: 'schedule'` raises `ValueError` on write (no v2 equivalent).
+- A v1 lookup-table id on the by-id methods: tried once more as the migrated id, when the server
+  answers 404 `LookupTableNotFoundError` (for delete, also `X-Delete-Count: 0`).
+- The credential paths deprecated in 2.5.0 keep working; their removal moved to a 3.x release,
+  not before 2027-01-31 (as stated in 2.7.0).
+
+### Removed
+
+- `get_company_emission_models`, `get_company_emissions_model_by_id`,
+  `get_company_emissions_models_url`, `get_company_emissions_model_by_id_url`,
+  `get_company_fluid_models`, `get_company_fluid_model_by_id`, `get_company_fluid_models_url` and
+  `get_company_fluid_models_by_id_url`. ComboCurve has no company route for the Emission and
+  FluidModel econ models: the server answered 400 (verified live 2026-09-30). Use the project
+  route (`get_econ_models_by_type`). `econModels.json` now has `hasCompanyRoute` for each type.
+
+### Fixed
+
+- **`get_directional_surveys` works again.** It asked for 1000 surveys per page. The API allows at
+  most 100 and answered 400, so every call failed. The page size is now 100. Also in 2.7.1.
+- **Company per-type methods refuse a type with no company route.** `get_company_econ_models_by_type`,
+  `get_company_econ_models_by_type_url` and the other company per-type methods raise `ValueError` for
+  Emission and FluidModel before any request. Before, they sent the request and got a 400. Also in
+  2.7.1 (the methods stay on 2.x).
+- **Single-object requests have a timeout and retries.** `post_directional_surveys`,
+  `put_directional_survey_by_id`, the v2 export methods (`post_export_*`, `get_export_*_by_job_id`),
+  `post_export`, `post_forecast_wells`, `patch_forecast_by_id` and `post_forecast_run` called
+  `requests` directly, with no timeout and no retry. A stalled connection blocked the call forever.
+  They now send through the shared transport: the request timeout, the 429 retry, the gateway retry
+  for a GET, and a second send only when the request never reached the server. Also in 2.7.1.
+- **One call has a time limit.** The retries of one call could hold a caller for about 91 minutes.
+  A call now has 600 s in total, counted across every retry. A retry whose pause would pass that limit
+  is not made: a status retry returns the last response, and a connection retry raises the last error.
+  Each send's read timeout shrinks to the time that remains. A write is not retried when its full
+  read timeout would not fit. A `Retry-After` is capped at 120 s (was 3600 s). A write is never sent
+  again because of the limit. Also in 2.7.1.
+
+## [2.7.0] - 2026-11-05
 
 ### Deprecated
 
@@ -30,7 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   own export writes the form CC stores, which the API's JSON does not expose, so CSV text may now
   differ from a CC export as `3.0` vs `3`; the values are equal.
 
-## [2.6.0] - 2026-11-03
+## [2.6.0] - 2026-11-04
 
 ### Added
 

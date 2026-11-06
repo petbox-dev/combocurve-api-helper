@@ -18,7 +18,8 @@ A utility library mapped to ComboCurve's API.
 - **Projects, scenarios, wells** — list / create / update / delete, plus custom
   columns.
 - **Production** — daily and monthly volumes.
-- **Forecasts & type curves** — read forecasts, write forecast parameters, and
+- **Forecasts & type curves** — read forecasts, write forecast parameters, read and
+  write type curves on the v2 routes, and
   `put_forecast_parameters_batched()` for parallel, chunked (25 well x phase per
   request), 207-aware bulk writes that return a `BatchWriteResult` (per-record
   `success_count` / `failed_count` / `ok`, results in original payload order). A
@@ -204,6 +205,35 @@ with open('expenses.csv', newline='') as f:
     rows = list(csv.DictReader(f))
 payload = mapper.from_row_dicts(rows)  # reconstruct a single API payload
 ```
+
+### Type curves (v2)
+
+ComboCurve stopped the v1 type-curve routes on 2026-11-07. From 3.0.0 the type-curve methods use
+`/v2/projects/{projectId}/type-curves`. Fits and normalization are separate:
+
+```python
+from combocurve_api_helper import ComboCurveAPI, fits_for_put
+
+api = ComboCurveAPI()
+fits = api.get_type_curve_fits(project_id, type_curve_id)
+api.put_type_curve_fits(project_id, other_type_curve_id, fits_for_put(fits))  # never send a read body verbatim
+monthly = api.get_type_curve_volumes(project_id, type_curve_id, 'monthly')
+```
+
+The v1 methods (`get_type_curve_monthly_fits`, `get_type_curve_representative_fits`,
+`put_type_curves`, v1 lookup-table fields) still work with a `DeprecationWarning` until at least
+2027-01-31. The v1 routes stop on 2026-11-07, so pinning `combocurve-api-helper<3` keeps the old
+code, not a working v1 API.
+
+| Deprecated v1 method or field | v2 replacement |
+|---|---|
+| `get_type_curve_daily_fits`, `get_type_curve_monthly_fits` | `get_type_curve_volumes` |
+| `get_type_curve_representative_fits` | `get_type_curve_wells` and forecast outputs |
+| `put_type_curves` | `patch_type_curves` / `post_type_curves` |
+| `post_type_curves` with v1 `fits` | `post_type_curves`, then `put_type_curve_fits` |
+| v1 lookup-table rule fields | `riskFactorPeak*` and `normalization` |
+
+Each is kept until at least 2027-01-31.
 
 ## Contributing
 

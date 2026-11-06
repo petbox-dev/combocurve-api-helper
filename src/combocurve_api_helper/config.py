@@ -36,6 +36,9 @@ class EconModelEntry(TypedDict):
     methodBase: Optional[str]  # generated method-name stem; None when hasCrud and assignable are both False
     hasCrud: bool
     assignable: bool
+    # False when ComboCurve has no company route for this type (Emission and FluidModel answer 400;
+    # verified live 2026-09-30) or the entry has no route at all.
+    hasCompanyRoute: bool
 
 
 ECON_MODELS: list[EconModelEntry] = json.loads((PACKAGE_ROOT / 'assets' / 'econModels.json').read_text())

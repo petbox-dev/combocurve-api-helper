@@ -1,6 +1,6 @@
 """Unit tests for the v2/v1 export wrappers (exports.py) -- no live API.
 
-Monkeypatches auth + requests.post/get so we verify URL construction, the
+Monkeypatches auth + requests.request (the transport's one send call) so we verify URL construction, the
 per-kind -> URL mapping, and the raw-request delegation deterministically
 (the one new module with logic beyond a thin URL-build-and-dispatch wrapper).
 """
@@ -38,11 +38,14 @@ def test_post_export_hits_correct_v2_url(monkeypatch: MonkeyPatch, kind: str) ->
     api = make_offline_api()
     calls: list[tuple[str, Any]] = []
 
-    def fake_post(url: str, headers: Any = None, json: Any = None) -> FakeResponse:
+    def fake_request(
+        method: str, url: str, headers: Any = None, params: Any = None, json: Any = None, timeout: Any = None
+    ) -> FakeResponse:
+        assert method.upper() == 'POST'
         calls.append((url, json))
         return FakeResponse(200, [{'id': 'JOB'}])
 
-    monkeypatch.setattr(requests, 'post', fake_post)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     result = getattr(api, f'post_export_{KINDS[kind]}')({'scenarioId': 's'})
 
@@ -55,11 +58,14 @@ def test_get_export_by_job_id_hits_correct_v2_url(monkeypatch: MonkeyPatch, kind
     api = make_offline_api()
     calls: list[str] = []
 
-    def fake_get(url: str, headers: Any = None, params: Optional[Any] = None) -> FakeResponse:
+    def fake_request(
+        method: str, url: str, headers: Any = None, params: Optional[Any] = None, json: Any = None, timeout: Any = None
+    ) -> FakeResponse:
+        assert method.upper() == 'GET'
         calls.append(url)
         return FakeResponse(200, [{'status': 'complete'}])
 
-    monkeypatch.setattr(requests, 'get', fake_get)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     result = getattr(api, f'get_export_{KINDS[kind]}_by_job_id')('JOB123')
 
@@ -71,11 +77,14 @@ def test_post_export_v1_hits_v1_url(monkeypatch: MonkeyPatch) -> None:
     api = make_offline_api()
     calls: list[tuple[str, Any]] = []
 
-    def fake_post(url: str, headers: Any = None, json: Any = None) -> FakeResponse:
+    def fake_request(
+        method: str, url: str, headers: Any = None, params: Any = None, json: Any = None, timeout: Any = None
+    ) -> FakeResponse:
+        assert method.upper() == 'POST'
         calls.append((url, json))
         return FakeResponse(200, [{'id': 'X'}])
 
-    monkeypatch.setattr(requests, 'post', fake_post)
+    monkeypatch.setattr(requests, 'request', fake_request)
 
     result = api.post_export({'exportType': 'x'})
 
@@ -85,6 +94,6 @@ def test_post_export_v1_hits_v1_url(monkeypatch: MonkeyPatch) -> None:
 
 def test_export_raises_on_http_error(monkeypatch: MonkeyPatch) -> None:
     api = make_offline_api()
-    monkeypatch.setattr(requests, 'post', lambda *a, **k: FakeResponse(400, {}))
+    monkeypatch.setattr(requests, 'request', lambda *arguments, **keywords: FakeResponse(400, {}))
     with pytest.raises(requests.HTTPError):
         api.post_export_econ_monthly({})
