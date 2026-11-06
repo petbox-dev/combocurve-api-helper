@@ -22,7 +22,7 @@ build: clean ## Build the wheel and sdist into an empty dist/
 
 .PHONY: publish
 publish: test build ## Run the gate, build, then upload this version's wheel and sdist to PyPI
-	twine upload dist/*
+	twine upload -r pypi dist/*
 
 .PHONY: clean
 clean: ## Remove build artifacts
