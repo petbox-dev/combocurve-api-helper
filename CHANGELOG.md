@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`get_directional_surveys` works again.** It asked for 1000 surveys per page. The API allows at
+  most 100 and answered 400, so every call failed. The page size is now 100.
 - **Single-object requests use the transport.** Eight calls sent through `requests` directly:
   directional survey POST and PUT, v2 export POST and GET, v1 export POST, forecast wells POST,
   forecast PATCH and forecast run POST. They had no timeout and no retry. A stalled connection

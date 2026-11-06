@@ -2,7 +2,8 @@ from typing import Optional
 
 from .base import APIBase, Item, ItemList
 
-GET_LIMIT = 1000
+# The API maximum of `take` on this route is 100 (verified live 2026-11-05: 1000 answers 400).
+GET_LIMIT = 100
 
 
 class Directional(APIBase):

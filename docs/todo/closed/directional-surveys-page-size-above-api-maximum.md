@@ -1,5 +1,9 @@
 # get_directional_surveys sends take=1000; the API maximum is 100
 
+Closed: 2026-11-05 -- settled by: `GET_LIMIT = 100` in `directional.py` (2.7.1 on `2.x`; 3.0.0 on
+`feature/type-curves-v2`). Test: `tests/test_directional_page_size.py`.
+If this was wrong, you will see: `get_directional_surveys` answers 400 "out of the valid range".
+
 Severity: medium
 Opened: 2026-11-05
 

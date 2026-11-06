@@ -1,5 +1,12 @@
 # Direct requests.* calls bypass the request timeout and every retry
 
+Closed: 2026-11-05 -- settled by: all eight call sites send through `_request_with_retry` (2.7.1 `52095b8` on `2.x`; 3.0.0 `0748709` on `feature/type-curves-v2`), plus a 600 s deadline per
+call and a 120 s `Retry-After` cap (2.7.1 `755cb9e`). Test: `tests/test_single_object_requests_use_the_transport.py`.
+If this was wrong, you will see: a single-object call (directional surveys, exports, forecast PATCH,
+forecast wells, forecast run) that hangs without a timeout, or a 429 that raises at once.
+3.0.0 was not published when this was fixed, so the fix is in 3.0.0 itself; all eight sites went to
+2.7.1, not only the two export helpers.
+
 Severity: medium
 Opened: 2026-09-29
 
