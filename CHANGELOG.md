@@ -76,9 +76,12 @@ This release moves those methods to the v2 routes. 2.x keeps the v1 methods (bug
 
 ### Fixed
 
+- **`get_directional_surveys` works again.** It asked for 1000 surveys per page. The API allows at
+  most 100 and answered 400, so every call failed. The page size is now 100. Also in 2.7.1.
 - **Company per-type methods refuse a type with no company route.** `get_company_econ_models_by_type`,
   `get_company_econ_models_by_type_url` and the other company per-type methods raise `ValueError` for
-  Emission and FluidModel before any request. Before, they sent the request and got a 400.
+  Emission and FluidModel before any request. Before, they sent the request and got a 400. Also in
+  2.7.1 (the methods stay on 2.x).
 - **Single-object requests have a timeout and retries.** `post_directional_surveys`,
   `put_directional_survey_by_id`, the v2 export methods (`post_export_*`, `get_export_*_by_job_id`),
   `post_export`, `post_forecast_wells`, `patch_forecast_by_id` and `post_forecast_run` called

@@ -28,6 +28,7 @@ This repo is public: no confidential project, model, well or fund names in any d
 
 | Item | Closed | Settled by |
 |---|---|---|
+| [directional-surveys-page-size-above-api-maximum](closed/directional-surveys-page-size-above-api-maximum.md) | 2026-11-05 | `GET_LIMIT = 100` in `directional.py` (2.7.1 and 3.0.0) |
 | [request-retries-have-no-overall-deadline](closed/request-retries-have-no-overall-deadline.md) | 2026-11-05 | 600 s deadline per call across all retries; `Retry-After` capped at 120 s |
 | [direct-requests-calls-bypass-timeout-and-retry](closed/direct-requests-calls-bypass-timeout-and-retry.md) | 2026-11-05 | All eight single-object call sites send through `_request_with_retry` (3.0.0; 2.7.1 on `2.x`) |
 | [econ-model-csv-number-form-differs-from-cc-export](closed/econ-model-csv-number-form-differs-from-cc-export.md) | 2026-11-03 | Decided: every float-valued column writes `9.0` and reads as `float` (`float_columns`) |
