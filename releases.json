@@ -1,0 +1,284 @@
+{
+  "combocurve-api-helper": [
+    {
+      "version": "2.7.1",
+      "commit": "7cc1814d98f85235792235b147fc585469ad572a",
+      "date": "2026-11-05",
+      "target": "pypi",
+      "notes": "built from branch 2.x (origin/2.x at this commit); the published wheel's package equals this commit's src/ file by file"
+    },
+    {
+      "version": "2.7.0",
+      "commit": "cbb21ec4472fa8c3da1210f7f6a0c61f96978804",
+      "date": "2026-11-05",
+      "target": "pypi",
+      "notes": "the published wheel's package equals this commit's src/ file by file"
+    },
+    {
+      "version": "2.7.0",
+      "commit": "cbb21ec4472fa8c3da1210f7f6a0c61f96978804",
+      "date": "2026-11-05",
+      "target": "main",
+      "notes": ""
+    },
+    {
+      "version": "2.6.0",
+      "commit": "ff3402f6f2db6669ed946d5650acdac95df9e976",
+      "date": "2026-11-04",
+      "target": "pypi",
+      "notes": "backfilled from tag v2.6.0, made after the upload; the upload was built from an uncommitted tree, and this commit's src/ equals the published wheel file by file"
+    },
+    {
+      "version": "2.5.0",
+      "commit": "cdaddc22d04883290922b4afc5e8551f9f378914",
+      "date": "2026-10-27",
+      "target": "pypi",
+      "notes": "backfilled from tag v2.5.0; date is the PyPI upload"
+    },
+    {
+      "version": "2.5.0",
+      "commit": "cdaddc22d04883290922b4afc5e8551f9f378914",
+      "date": "2026-10-27",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "2.4.0",
+      "commit": "610fa184035376b3ce87d34e639c23ebf10f9570",
+      "date": "2026-09-30",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "2.4.0",
+      "commit": "610fa184035376b3ce87d34e639c23ebf10f9570",
+      "date": "2026-09-30",
+      "target": "pypi",
+      "notes": "backfilled from tag v2.4.0; date is the PyPI upload"
+    },
+    {
+      "version": "2.3.2",
+      "commit": "87e41820c7f840f43ebc6c053fcb9bf186229d1e",
+      "date": "2026-09-29",
+      "target": "pypi",
+      "notes": "backfilled from tag v2.3.2; date is the PyPI upload"
+    },
+    {
+      "version": "2.3.2",
+      "commit": "87e41820c7f840f43ebc6c053fcb9bf186229d1e",
+      "date": "2026-09-29",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "2.3.1",
+      "commit": "11a9ebb1082ba7ccaa0adfe2e588c378083af0af",
+      "date": "2026-09-17",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "2.3.1",
+      "commit": "11a9ebb1082ba7ccaa0adfe2e588c378083af0af",
+      "date": "2026-09-17",
+      "target": "pypi",
+      "notes": "backfilled from tag v2.3.1; date is the PyPI upload"
+    },
+    {
+      "version": "2.3.0",
+      "commit": "8b47ad241d929a4bb907a93d73102c6fb32f7589",
+      "date": "2026-09-08",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "2.3.0",
+      "commit": "8b47ad241d929a4bb907a93d73102c6fb32f7589",
+      "date": "2026-09-08",
+      "target": "pypi",
+      "notes": "backfilled from tag v2.3.0; date is the PyPI upload"
+    },
+    {
+      "version": "2.2.2",
+      "commit": "b39bc1452ead1e70df90ded946d626c50a287372",
+      "date": "2026-09-07",
+      "target": "pypi",
+      "notes": "backfilled from tag v2.2.2; date is the PyPI upload"
+    },
+    {
+      "version": "2.2.2",
+      "commit": "b39bc1452ead1e70df90ded946d626c50a287372",
+      "date": "2026-09-07",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "2.2.1",
+      "commit": "af3b72fdbe78ae3fc0d0382e83860be183c9c8c3",
+      "date": "2026-09-06",
+      "target": "pypi",
+      "notes": "backfilled from tag v2.2.1; date is the PyPI upload"
+    },
+    {
+      "version": "2.2.1",
+      "commit": "af3b72fdbe78ae3fc0d0382e83860be183c9c8c3",
+      "date": "2026-09-06",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "2.2.0",
+      "commit": "b45fb7dbb3053272be28bc19cf1c77d9514b69c3",
+      "date": "2026-09-04",
+      "target": "pypi",
+      "notes": "backfilled from tag v2.2.0; date is the PyPI upload"
+    },
+    {
+      "version": "2.2.0",
+      "commit": "b45fb7dbb3053272be28bc19cf1c77d9514b69c3",
+      "date": "2026-09-04",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "2.1.1",
+      "commit": "e235248557ca17c6ba3dc439354c10ba46352f24",
+      "date": "2026-08-06",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "2.1.0",
+      "commit": "57199951895fd60a301a87efb9f412b7263d43c2",
+      "date": "2026-08-05",
+      "target": "pypi",
+      "notes": "backfilled from tag v2.1.0; date is the PyPI upload"
+    },
+    {
+      "version": "2.1.0",
+      "commit": "57199951895fd60a301a87efb9f412b7263d43c2",
+      "date": "2026-08-05",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog (seen by a fetch: pushed from another machine)"
+    },
+    {
+      "version": "2.0.0",
+      "commit": "16765d67da5c23e73ad25fdd5cb04fa0c24b4507",
+      "date": "2026-07-23",
+      "target": "pypi",
+      "notes": "backfilled from tag v2.0.0; date is the PyPI upload"
+    },
+    {
+      "version": "1.4.0",
+      "commit": "7a76fd44a37ddc62523dda6f8cc332e11925ea80",
+      "date": "2026-07-23",
+      "target": "pypi",
+      "notes": "backfilled from tag v1.4.0; date is the PyPI upload"
+    },
+    {
+      "version": "2.0.0",
+      "commit": "16765d67da5c23e73ad25fdd5cb04fa0c24b4507",
+      "date": "2026-07-23",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "1.4.0",
+      "commit": "7a76fd44a37ddc62523dda6f8cc332e11925ea80",
+      "date": "2026-07-23",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "1.3.1",
+      "commit": "cd95da2d1fa569e2c3249bf65c199f9334f7b256",
+      "date": "2026-07-23",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "1.3.1",
+      "commit": "8138ae6655f7e3b369469fa840d2e39b71a62238",
+      "date": "2026-07-22",
+      "target": "pypi",
+      "notes": "backfilled from tag v1.3.1; date is the PyPI upload"
+    },
+    {
+      "version": "1.3.1",
+      "commit": "8138ae6655f7e3b369469fa840d2e39b71a62238",
+      "date": "2026-07-22",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "1.3.0",
+      "commit": "e691fdc2f9df5756215b11e5f39590fc9c5260b3",
+      "date": "2026-07-22",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "1.3.0",
+      "commit": "2140f2bd3dffe7d28b314d9255c1da49769f954d",
+      "date": "2026-07-22",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "1.3.0",
+      "commit": "0715d82c9602c0889da890f33704e86b6acfc24e",
+      "date": "2026-07-22",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "1.3.0",
+      "commit": "c16c1c34affdf6673a6c3a2a3aa6ffcbf29a2f3a",
+      "date": "2026-07-22",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "1.3.0",
+      "commit": "26152c125ef735faa3ea57144eb7c1487c98eb4a",
+      "date": "2026-07-21",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "1.3.0",
+      "commit": "26152c125ef735faa3ea57144eb7c1487c98eb4a",
+      "date": "2026-07-21",
+      "target": "pypi",
+      "notes": "backfilled from tag v1.3.0; date is the PyPI upload"
+    },
+    {
+      "version": "1.3.0",
+      "commit": "7015da45c3716a96c85fcfab302dcafcb68b4fa2",
+      "date": "2026-07-21",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog"
+    },
+    {
+      "version": "1.2.0",
+      "commit": "ab6a0cae16dee086053eb6329141e2df6494f379",
+      "date": "2025-09-12",
+      "target": "pypi",
+      "notes": "backfilled from tag v1.2.0; date is the PyPI upload"
+    },
+    {
+      "version": "1.1.2",
+      "commit": "042c729164368717fbbc1332e716862baba943be",
+      "date": "2024-08-14",
+      "target": "pypi",
+      "notes": "backfilled from tag v1.1.2; date is the PyPI upload"
+    },
+    {
+      "version": "1.0.5",
+      "commit": "e68230e9151c4cb993ff266868db0a8cc404cc54",
+      "date": "2023-12-05",
+      "target": "pypi",
+      "notes": "backfilled from tag v1.0.5; date is the PyPI upload"
+    }
+  ]
+}
