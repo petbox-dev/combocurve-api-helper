@@ -14,7 +14,8 @@ This repo is public: no confidential project, model, well or fund names in any d
 
 | Item | Opened | Severity | Summary |
 |---|---|---|---|
-| [direct-requests-calls-bypass-timeout-and-retry](open/direct-requests-calls-bypass-timeout-and-retry.md) | 2026-09-29 | low | 8 call sites (14 public methods) call `requests.*` directly: no timeout, no connection or status retry |
+| [direct-requests-calls-bypass-timeout-and-retry](open/direct-requests-calls-bypass-timeout-and-retry.md) | 2026-09-29 | medium | 8 call sites call `requests.*` directly: no timeout, no retry; fix in 3.0.0, backport exports to 2.7.1 |
+| [directional-surveys-page-size-above-api-maximum](open/directional-surveys-page-size-above-api-maximum.md) | 2026-11-05 | medium | `get_directional_surveys` sends take=1000; CC allows 1-100, so every call returns 400 |
 | [count-methods-and-list-methods-do-not-pair-everywhere](open/count-methods-and-list-methods-do-not-pair-everywhere.md) | 2026-09-30 | low | 4 list methods take no `filters` their counts accept; no company per-type counts; company `Emission`/`FluidModel` routes 400 |
 | [request-retries-have-no-overall-deadline](open/request-retries-have-no-overall-deadline.md) | 2026-09-30 | low | Up to 18 sends per GET, about 91 min worst case with gateway backoff; a 429 `Retry-After` is honoured up to 3600 s per retry |
 | [base-py-mixes-transport-policy-with-the-client-class](open/base-py-mixes-transport-policy-with-the-client-class.md) | 2026-09-30 | low | Move the retry/timeout policy out of `base.py` into `_transport.py` |
