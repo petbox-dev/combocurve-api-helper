@@ -214,6 +214,7 @@ class Forecasts(APIBase):
                 {
                     "status": "string",
                     "code": 123,
+                    "id": "5e272d38b78910dd2a1bd691",
                     "forecastId": "5e272d38b78910dd2a1bd691",
                     "name": "Example",
                     "errors": [
@@ -767,6 +768,7 @@ class Forecasts(APIBase):
         {
             "status": "string",
             "code": 123,
+            "id": "5e272d38b78910dd2a1bd691",
             "forecastId": "5e272d38b78910dd2a1bd691",
             "name": "Example",
             "errors": [

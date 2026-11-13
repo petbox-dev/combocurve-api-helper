@@ -14,15 +14,17 @@ This repo is public: no confidential project, model, well or fund names in any d
 
 | Item | Opened | Severity | Summary |
 |---|---|---|---|
+| [v2-type-curve-routes-have-no-postman-source](closed/v2-type-curve-routes-have-no-postman-source.md) | 2026-11-12 | v2 docstring links use the collection names; slug skip removed; route-path floor 170; examples generated (large ones point to the docs page) |
+| [no-test-checks-that-published-routes-are-wrapped](closed/no-test-checks-that-published-routes-are-wrapped.md) | 2026-11-12 | `tests/test_published_routes_are_wrapped.py`: call-based audit against the collection, with a reviewed `_UNWRAPPED` list |
 | [count-methods-and-list-methods-do-not-pair-everywhere](open/count-methods-and-list-methods-do-not-pair-everywhere.md) | 2026-09-30 | low | 4 list methods take no `filters` their counts accept; no company per-type counts |
 | [base-py-mixes-transport-policy-with-the-client-class](open/base-py-mixes-transport-policy-with-the-client-class.md) | 2026-09-30 | low | Move the retry/timeout policy out of `base.py` into `_transport.py` |
 | [docstring-freshness-check-tolerates-unsourced-markers](open/docstring-freshness-check-tolerates-unsourced-markers.md) | 2026-09-30 | low | `--check` exits 0 with unsourced markers; no `urlopen` timeout; collapsed arrays hide a length change |
 | [type-curve-v1-wrappers-outlive-the-v1-api](open/type-curve-v1-wrappers-outlive-the-v1-api.md) | 2026-11-05 | low | `type_curves_v1_compatibility.py` stays until at least 2027-01-31; the file lists the removal steps |
-| [v2-type-curve-routes-have-no-postman-source](open/v2-type-curve-routes-have-no-postman-source.md) | 2026-11-05 | low | The collection has no v2 type-curve operations; the route and slug tests skip them; the `-preview` docs path can move at GA |
 | [forecast-output-slope-is-now-a-sign](open/forecast-output-slope-is-now-a-sign.md) | 2026-11-05 | low | Forecast outputs `slope` is the sign since 2026-10 and `slopeValue` the value; no consumer in this package is checked |
 | [v1-type-curve-normalizations-are-not-written-to-v2](open/v1-type-curve-normalizations-are-not-written-to-v2.md) | 2026-11-05 | low | The write wrappers drop v1 `normalizations`; the migration of `linear`, `power_law_fit` and `eur_and_q_peak` is unseen |
-| [published-routes-without-a-method](open/published-routes-without-a-method.md) | 2026-11-05 | low | 79 published v1 operations have no method (50 new Aug-Oct 2026; scenario run, scenario model assignments and forecast wells are wrapped), plus 6 docs-only embedded-lookup-table operations |
-| [no-test-checks-that-published-routes-are-wrapped](open/no-test-checks-that-published-routes-are-wrapped.md) | 2026-11-05 | low | Make the call-based route audit a network-gated test (approved for after 3.0.0) |
+| [published-routes-without-a-method](open/published-routes-without-a-method.md) | 2026-11-05 | low | 79 published v1 operations have no method (50 new Aug-Oct 2026; scenario run, scenario model assignments and forecast wells are wrapped), embedded lookup tables wrapped in 3.1.0 |
+| [project-custom-columns-required-argument-typed-optional](open/project-custom-columns-required-argument-typed-optional.md) | 2026-11-06 | low | `custom_column` is required at run time but typed `Optional[str] = None`, so a type checker accepts a call that always raises |
+| [list-getters-hold-the-full-result-in-memory](open/list-getters-hold-the-full-result-in-memory.md) | 2026-11-06 | low | List getters read every page into one list (then sort); no public page iterator, so callers cannot cap memory without `_get_items_iterator` |
 
 ## Done
 

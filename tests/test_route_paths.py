@@ -52,6 +52,15 @@ _UNCHECKED_BY_DESIGN = (
     'get_custom_columns_monthly_production',
     'get_custom_columns_wells',
     'post_export',
+    # 2026-11-12, v2 type-curve links now resolve: the singular writes use `get_type_curve_by_id_url` /
+    # the lookup-table builder, and the v1 compatibility fits wrappers link to the v2 fits operation.
+    # `test_published_routes_are_wrapped.py` checks the routes these methods send.
+    'get_type_curve_daily_fits',
+    'get_type_curve_monthly_fits',
+    'get_type_curve_representative_fits',
+    'patch_type_curve',
+    'post_type_curve',
+    'post_type_curve_lookup_table',
 )
 
 # A 24-hex ObjectId stands in for every required path argument. Nothing is sent, so the
@@ -94,16 +103,19 @@ def _collection_paths() -> dict[str, str]:
     return paths
 
 
-def _builder_for(method_name: str) -> tuple[str, Callable[..., str]] | tuple[None, None]:
+def _builder_for(method_name: str, slug: str = '') -> tuple[str, Callable[..., str]] | tuple[None, None]:
     """Resolve a public method to the `*_url` builder that assembles its path.
 
     Read methods pair as `<method>_url`. Write verbs and HEAD counts have no builder of
     their own -- they reuse the read builder (`delete_company_wells` / `count_company_wells`
     -> `get_company_wells_url`), so the verb prefix is swapped for `get_` on the second attempt.
+    A `-batch` operation (the v2 type-curve writes) has its own `get_<rest>_batch_url`, tried first.
     """
     candidates = [f'{method_name}_url']
     verb, _, rest = method_name.partition('_')
     if verb in {'post', 'put', 'patch', 'delete', 'count'} and rest:
+        if slug.endswith('-batch'):
+            candidates.insert(0, f'get_{rest}_batch_url')
         candidates.append(f'get_{rest}_url')
 
     for candidate in candidates:
@@ -155,7 +167,7 @@ def test_url_builders_match_the_collection_route_paths() -> None:
         if slug_match is None:
             continue
 
-        builder_name, builder = _builder_for(name)
+        builder_name, builder = _builder_for(name, slug_match.group(1))
         expected = collection.get(slug_match.group(1))
         if expected is None:
             continue
@@ -181,9 +193,10 @@ def test_url_builders_match_the_collection_route_paths() -> None:
     assert not mismatches, 'url builders whose path disagrees with the collection:\n' + '\n'.join(sorted(mismatches))
     # Floor set just under the count at the time of writing (142 builders checked on
     # 2026-09-30, 30 of them count_* methods). 2026-11-05: v1 type-curve methods removed in 3.0.0
-    # (133 checked now). A convention drift that silently stops checking
+    # (133 checked). 2026-11-12: the v2 type-curve links resolve and the embedded lookup tables are
+    # added (178 checked). A convention drift that silently stops checking
     # most of the surface should fail loudly rather than pass vacuously.
-    assert checked >= 128, f'only {checked} builders were checked -- the slug/builder naming convention drifted'
+    assert checked >= 170, f'only {checked} builders were checked -- the slug/builder naming convention drifted'
     # A method whose route IS in the collection but whose builder the convention cannot find or
     # call is unchecked here; each one is named, so a new one fails instead of dropping out silently.
     assert sorted(unchecked) == sorted(_UNCHECKED_BY_DESIGN), f'unchecked routes changed: {sorted(unchecked)}'

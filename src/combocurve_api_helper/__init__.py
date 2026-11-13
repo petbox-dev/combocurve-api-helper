@@ -1,4 +1,4 @@
-__version__ = '3.0.0'
+__version__ = '3.1.0'
 
 from ._batch import BatchChunk as BatchChunk
 from ._batch import BatchWriteResult as BatchWriteResult
@@ -14,6 +14,7 @@ from .base import WriteResponse as WriteResponse
 from .company_models import CompanyModels
 from .directional import Directional
 from .econ_runs import EconRuns
+from .embedded_lookup_tables import EmbeddedLookupTables
 from .exports import Exports
 from .forecast_configurations import ForecastConfigurations
 from .forecast_parameters import FORECAST_PARAMETERS_COLUMNS as FORECAST_PARAMETERS_COLUMNS
@@ -57,6 +58,7 @@ class ComboCurveAPI(
     ForecastConfigurations,
     OwnershipQualifiers,
     Exports,
+    EmbeddedLookupTables,
 ):
     """
     This class is the primary interface for interacting with the Combo Curve

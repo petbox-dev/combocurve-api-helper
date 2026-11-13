@@ -178,6 +178,8 @@ loader on purpose: a hand-written filename that does not match makes the predica
 live tests silently un-runnable, which is what happened to `test_api.py` (it looked for
 `cc_api_config.json`) until 2.1.0. `test_api.py` is read-only;
 **`test_assignments_live.py` performs writes** (it creates and deletes a throwaway scenario qualifier).
+`test_embedded_lookup_tables_live.py` also performs writes on dev (it creates and deletes a throwaway
+`API Helper Fixture ELT *` embedded lookup table at project and company scope; needs `CC_DEV_PROJECT_ID`).
 The dev target ids are environment variables with **no defaults**, because a real id must not sit in
 this public repo: `CC_DEV_PROJECT_ID` (the one `test_api.py` test that needs it skips without it), and
 `CC_DEV_PROJECT_ID`, `CC_DEV_SCENARIO_ID`, `CC_DEV_DATES_MODEL_ID` (`test_assignments_live.py` skips
@@ -194,7 +196,8 @@ from `tests/`, so the working directory does not matter. A variable already set 
 
 **Single entrypoint via mixin composition.** `ComboCurveAPI` (`__init__.py`) is an empty class that
 multiply-inherits every endpoint group: `Root, Projects, Scenarios, Production, EconRuns, Wells, Models,
-CompanyModels, Forecasts, TypeCurvesV1Compatibility (over TypeCurves), Directional`. Each of those is a mixin in its own module that
+CompanyModels, Forecasts, TypeCurvesV1Compatibility (over TypeCurves), Directional, ForecastConfigurations,
+OwnershipQualifiers, Exports, EmbeddedLookupTables`. Each of those is a mixin in its own module that
 subclasses `APIBase`. Users only ever instantiate `ComboCurveAPI`.
 
 **`base.py` is the HTTP engine.** `APIBase` holds the auth object and all request plumbing. For each verb
@@ -294,7 +297,9 @@ shipped misspelled through 2.1.0 and 404'd with `{"code": 5, "message": "Method 
 were found by hand; the last two only fell out of the mechanical check. `tests/test_route_paths.py` now
 resolves each method's `docs.api.combocurve.com/api/<slug>` docstring link to its Postman collection item
 and asserts the paired `*_url` builder produces that item's path — run it (network-gated, like
-`test_docstring_slugs.py`) rather than eyeballing a new route literal.
+`test_docstring_slugs.py`) rather than eyeballing a new route literal. `tests/test_published_routes_are_wrapped.py`
+calls every public method on a fake transport and fails on a collection route that no method sends
+and that its reviewed `_UNWRAPPED` list does not name; remove a route from that list when you wrap it.
 
 **Resource nesting mirrors the REST hierarchy** and is threaded through method arguments:
 `projects` → `projects/{project_id}/scenarios` and `projects/{project_id}/forecasts` →
@@ -307,8 +312,8 @@ bases) keeps the deprecated v1 behavior until at least 2027-01-31; remove it by 
 and listing `TypeCurves` again. v2 traps verified live 2026-11-05: `regressionType` is rejected on a
 fit phase; `PUT /fits` deletes phases left out; a `linear` segment read back verbatim is stored with
 a different `qEnd` (`fits_for_put`); a `1_to_1` normalization read is refused on write
-(`normalization_for_put`); migrated lookup tables have new ids. The v2 reference is not in the
-Postman collection, so `test_route_paths.py` and `test_docstring_slugs.py` skip v2 links (todo).
+(`normalization_for_put`); migrated lookup tables have new ids. The v2 operations are in the Postman
+collection since 2026-11-12; their docstring links use the collection names (`get-v2-type-curves`, ...).
 
 **Bundled reference data** lives in `assets/`: `wellHeader.json` populates `APIBase.REFERENCE_WELLHEADER`
 and `WELLHEADER_COLUMNS` (lowercased-name → canonical-name map); `econModels.json` populates `ECON_MODELS`.

@@ -1,5 +1,6 @@
 import warnings
-from typing import Optional, cast
+from collections.abc import Sequence
+from typing import Optional, Union, cast
 
 from requests.structures import CaseInsensitiveDict
 
@@ -7,6 +8,7 @@ from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
 
 GET_LIMIT = 200
 GET_LIMIT_MODEL_ASSIGNMENTS = 500  # the documented maximum of `take` on the model-assignments route
+MAX_LOOKUP_TABLE_UNASSIGN_WELLS = 500  # the documented maximum body length of the lookup-table unassign route
 
 
 def _require_assignment_records(data: ItemList) -> None:
@@ -245,13 +247,20 @@ class Scenarios(APIBase):
 
     # Combos
 
-    def get_scenario_combos(self, project_id: str, scenario_id: str) -> ItemList:
+    def get_scenario_combos(
+        self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None
+    ) -> ItemList:
         """
-        Returns a list of combos for a specific project id and scenario id.
+        Returns the saved combos (combo groups) of a specific scenario. Each one carries
+        `id`, `savedName`, `updatedAt` and its `combos`.
+
+        `filters` take `savedName`, `updatedAt` (with the `[lt]`, `[le]`, `[gt]` and `[ge]`
+        operators) and `sort` (a field name, `-` before it for descending, e.g. `-updatedAt`).
+        The saved combos are returned in the order received, so `sort` decides the order.
 
         https://docs.api.combocurve.com/api/get-scenario-combos-read
         """
-        url = self.get_scenario_combos_url(project_id, scenario_id)
+        url = self.get_scenario_combos_url(project_id, scenario_id, filters)
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
 
@@ -286,18 +295,42 @@ class Scenarios(APIBase):
 
         return scenarios
 
-    def delete_scenario_combo(self, project_id: str, scenario_id: str, saved_name: str) -> CaseInsensitiveDict[str]:
+    def delete_scenario_combo(
+        self,
+        project_id: str,
+        scenario_id: str,
+        saved_name: str,
+        combo_ids: Optional[Sequence[str]] = None,
+    ) -> CaseInsensitiveDict[str]:
         """
-        Deletes scenario combos for a specific project id and scenario id.
+        Deletes a saved combo (combo group) of a specific scenario, or, with `combo_ids`, only
+        those combos from it. A saved combo cannot lose all its combos this way: to remove all of
+        them, delete the saved combo or replace its combos with `put_scenario_combos`.
+
+        `combo_ids` are the `id` values of the combos in `get_scenario_combos`, sent as a repeated
+        `comboIds` key (`?comboIds=a&comboIds=b`). Verified live 2026-11-12: a comma-joined value
+        answers 400 (`... is not a valid ObjectId`), an id of another saved combo answers 400, and
+        `comboName` (in the "Scenario Combos Overview" docs page) answers 400 `Unrecognized field`.
 
         https://docs.api.combocurve.com/api/delete-scenario-combos-delete
 
-        Returns the headers from the delete response where 'X-Delete-Count' is
-        the number of wells deleted.
+        Returns the headers from the delete response, where 'X-Delete-Count' is the number of
+        saved combos deleted (or, with `combo_ids`, the number of combos deleted).
         """
-        filters = self._require_any_filter({'savedName': saved_name}, 'saved_name')
+        filters: dict[str, Union[str, Sequence[str]]] = dict(
+            self._require_any_filter({'savedName': saved_name}, 'saved_name')
+        )
+        if combo_ids is not None:
+            # A bare str would be sent as one key per character. An empty sequence or an empty
+            # id (an unresolved lookup) names no combo, and a dropped filter would delete the
+            # whole saved combo.
+            if isinstance(combo_ids, str) or not combo_ids or not all(combo_ids):
+                raise ValueError(
+                    'combo_ids must be a non-empty sequence of non-empty combo ids; None deletes the group'
+                )
+            filters['comboIds'] = list(combo_ids)
 
-        url = self.get_scenario_combos_url(project_id, scenario_id, filters)
+        url = self.get_scenario_combos_url(project_id, scenario_id) + self._build_params_string(filters)
         scenarios = self._delete_responses(url, data=[])
 
         headers = scenarios[0].headers
@@ -734,11 +767,25 @@ class Scenarios(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_scenario_lookup_table_assignments(self, project_id: str, scenario_id: str) -> ItemList:
+    def get_scenario_lookup_table_assignments(
+        self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None
+    ) -> ItemList:
         """
-        Returns the lookup-table assignments for a specific scenario.
+        Returns the lookup-table assignments for a specific scenario: one entry per column,
+        qualifier and lookup table, with its `wellIds`.
+
+        `filters` take `column` (comma-separated, e.g. `forecast,capex`), `qualifierName` and
+        `incrementalIndex` (omitted or 0 reads each well's base row).
+
+        Without `qualifierName` the read returns only the column's **active** qualifier (the one
+        selected in the UI), not every qualifier. Verified live 2026-11-13 (dev, forecast column):
+        with the table assigned in three qualifiers, it returned `Default` while `Default` was
+        active and `Seller` after `Seller` was made active. Pass `qualifierName` to read a given
+        qualifier.
+
+        https://docs.api.combocurve.com/api/get-scenario-lookup-tables-assignments
         """
-        url = self.get_scenario_lookup_table_assignments_url(project_id, scenario_id)
+        url = self.get_scenario_lookup_table_assignments_url(project_id, scenario_id, filters)
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
 
@@ -746,32 +793,83 @@ class Scenarios(APIBase):
         self, project_id: str, scenario_id: str, data: ItemList
     ) -> list[WriteResponse]:
         """
-        Upserts the lookup-table assignments for a specific scenario.
+        Creates or updates lookup-table assignments for a specific scenario. Each entry of `data`
+        has `column`, `lookUpTableId`, `wellIds`, `qualifierName` and optionally
+        `incrementalIndex` (max 500 entries).
+
+        **Type curves in the forecast column use this route**: `column: 'forecast'` with the id
+        of a Type Curve V2 lookup table (`get_type_curve_lookup_tables`). Verified live
+        2026-11-12. `put_scenario_model_assignments` refuses a lookup-table id
+        (`ForecastNotFound`).
+
+        A forecast-column lookup-table assignment replaces the well's forecast model assignment in
+        that qualifier: `get_scenario_model_assignments` no longer lists it (live 2026-11-12).
+
+        https://docs.api.combocurve.com/api/put-scenario-lookup-tables-assignments
         """
         url = self.get_scenario_lookup_table_assignments_url(project_id, scenario_id)
         return cast('list[WriteResponse]', self._put_items(url, data))
 
     def get_scenario_lookup_table_assignment_by_id(
-        self, project_id: str, scenario_id: str, lookup_table_id: str
+        self,
+        project_id: str,
+        scenario_id: str,
+        lookup_table_id: str,
+        filters: Optional[dict[str, str]] = None,
     ) -> Item:
         """
-        Returns a specific scenario lookup-table assignment from its id.
+        Returns the first assignment of a specific lookup table in a scenario. `filters` take
+        `column`, `qualifierName` and `incrementalIndex`, as `get_scenario_lookup_table_assignments`.
+
+        The route answers a list. Without `qualifierName` it holds one qualifier per column (most
+        likely the active one; see `get_scenario_lookup_table_assignments`), and an empty list
+        raises `IndexError` here.
+
+        https://docs.api.combocurve.com/api/get-scenario-lookup-tables-assignments-by-id
         """
-        url = self.get_scenario_lookup_table_assignment_by_id_url(project_id, scenario_id, lookup_table_id)
+        url = self.get_scenario_lookup_table_assignment_by_id_url(project_id, scenario_id, lookup_table_id, filters)
         assignments = self._get_items(url)
         return assignments[0]
 
     def delete_scenario_lookup_table_assignment_by_id(
-        self, project_id: str, scenario_id: str, lookup_table_id: str
+        self,
+        project_id: str,
+        scenario_id: str,
+        lookup_table_id: str,
+        well_ids: Sequence[str],
+        incremental_index: Optional[int] = None,
     ) -> CaseInsensitiveDict[str]:
         """
-        Deletes a specific scenario lookup-table assignment from its id.
+        Unassigns `well_ids` (max 500) from a specific lookup table in a scenario. Clears each
+        well's base row, or its `incremental_index` row when given.
+
+        `well_ids` is required (3.1.0): the route takes the well ids as the request body, and
+        refuses a request without them (400, verified live 2026-11-12). Before 3.1.0 this method
+        sent no body and could not succeed.
+
+        **It clears only the column's active qualifier.** The route has no qualifier parameter;
+        `?qualifierName=` is ignored. Verified live 2026-11-13 (dev, forecast column): with the
+        table assigned in three qualifiers, one DELETE cleared `Default` while `Default` was active,
+        and only `Seller` after `Seller` was made active (`X-Delete-Count: 1` each time). For a
+        well assigned only in a non-active qualifier it answers 204 with `X-Delete-Count: 0` and
+        changes nothing (2026-11-12). Check `X-Delete-Count`.
+
+        https://docs.api.combocurve.com/api/delete-scenario-lookup-tables-assignments
 
         Returns the headers from the delete response.
         """
-        url = self.get_scenario_lookup_table_assignment_by_id_url(project_id, scenario_id, lookup_table_id)
-        assignments = self._delete_responses(url, data=[])
-        return assignments[0].headers
+        if isinstance(well_ids, str) or not well_ids or not all(well_ids):
+            raise ValueError('well_ids must be a non-empty sequence of non-empty well ids')
+        if len(well_ids) > MAX_LOOKUP_TABLE_UNASSIGN_WELLS:
+            raise ValueError(
+                f'well_ids holds {len(well_ids)} ids; the route takes at most '
+                f'{MAX_LOOKUP_TABLE_UNASSIGN_WELLS} per request'
+            )
+        filters = None if incremental_index is None else {'incrementalIndex': str(incremental_index)}
+        url = self.get_scenario_lookup_table_assignment_by_id_url(project_id, scenario_id, lookup_table_id, filters)
+        response = self._request_with_retry('delete', url, json_body=list(well_ids))
+        response.raise_for_status()
+        return response.headers
 
 
 post_put_scenarios_response = """

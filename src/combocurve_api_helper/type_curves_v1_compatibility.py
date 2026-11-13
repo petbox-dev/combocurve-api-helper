@@ -116,7 +116,7 @@ class TypeCurvesV1Compatibility(TypeCurves):
         Deprecated: the v1 daily fit rows, read from `get_type_curve_volumes(..., 'daily')` and
         given back with `null` for each series v2 leaves out.
 
-        https://docs.api.combocurve.com/api/type-curves-v2-preview/get-v2-type-curve-volumes
+        https://docs.api.combocurve.com/api/get-v2-type-curve-volumes
         """
         warn_deprecated(_deprecation_message('get_type_curve_daily_fits', "get_type_curve_volumes(..., 'daily')"))
         return volumes_to_v1(self.get_type_curve_volumes(project_id, type_curve_id, 'daily'))
@@ -125,7 +125,7 @@ class TypeCurvesV1Compatibility(TypeCurves):
         """
         Deprecated: the v1 monthly fit rows, read from `get_type_curve_volumes(..., 'monthly')`.
 
-        https://docs.api.combocurve.com/api/type-curves-v2-preview/get-v2-type-curve-volumes
+        https://docs.api.combocurve.com/api/get-v2-type-curve-volumes
         """
         warn_deprecated(_deprecation_message('get_type_curve_monthly_fits', "get_type_curve_volumes(..., 'monthly')"))
         return volumes_to_v1(self.get_type_curve_volumes(project_id, type_curve_id, 'monthly'))
@@ -148,7 +148,7 @@ class TypeCurvesV1Compatibility(TypeCurves):
         output exists for the phase. `valid` and `hasData` have no v2 source and are left out.
         See `type_curve_conversions.representative_well_from_v2` for the formulas.
 
-        https://docs.api.combocurve.com/api/type-curves-v2-preview/get-v2-type-curve-wells
+        https://docs.api.combocurve.com/api/get-v2-type-curve-wells
         """
         warn_deprecated(
             _deprecation_message('get_type_curve_representative_fits', 'get_type_curve_wells and forecast outputs')
@@ -188,7 +188,7 @@ class TypeCurvesV1Compatibility(TypeCurves):
         `put_type_curve_fits` (not atomic: a failed fits write leaves the type curve in place and
         reads as a failed result). v1 `normalizations` are not written.
 
-        https://docs.api.combocurve.com/api/type-curves-v2-preview/post-v2-type-curves-batch
+        https://docs.api.combocurve.com/api/post-v2-type-curves-batch
         """
         if not any(_has_v1_type_curve_fields(record) for record in data):
             return super().post_type_curves(project_id, data)
@@ -203,7 +203,7 @@ class TypeCurvesV1Compatibility(TypeCurves):
         merges where v1 replaced: a stored field the record leaves out stays); the rest are created.
         v1 `fits` are then written with `put_type_curve_fits`; v1 `normalizations` are not written.
 
-        https://docs.api.combocurve.com/api/type-curves-v2-preview/patch-v2-type-curves-batch
+        https://docs.api.combocurve.com/api/patch-v2-type-curves-batch
         """
         warn_deprecated(_deprecation_message('put_type_curves', 'patch_type_curves / post_type_curves'))
         return self._write_v1_type_curves(project_id, data, replace_by_name=True)
@@ -324,7 +324,7 @@ class TypeCurvesV1Compatibility(TypeCurves):
         """
         Creates one type-curve lookup table; v1 rule fields are translated (deprecated).
 
-        https://docs.api.combocurve.com/api/type-curves-v2-preview/post-v2-type-curve-lookup-table
+        https://docs.api.combocurve.com/api/post-v2-type-curve-lookup-table
         """
         table = self._lookup_tables_in_v2_form('post_type_curve_lookup_table', [data])[0]
         return super().post_type_curve_lookup_table(project_id, table)
@@ -333,7 +333,7 @@ class TypeCurvesV1Compatibility(TypeCurves):
         """
         Creates type-curve lookup tables; v1 rule fields are translated (deprecated).
 
-        https://docs.api.combocurve.com/api/type-curves-v2-preview/post-v2-type-curve-lookup-tables-batch
+        https://docs.api.combocurve.com/api/post-v2-type-curve-lookup-tables-batch
         """
         tables = self._lookup_tables_in_v2_form('post_type_curve_lookup_tables', data)
         return super().post_type_curve_lookup_tables(project_id, tables)
@@ -343,7 +343,7 @@ class TypeCurvesV1Compatibility(TypeCurves):
         Creates or replaces type-curve lookup tables by name; v1 rule fields are translated
         (deprecated).
 
-        https://docs.api.combocurve.com/api/type-curves-v2-preview/put-v2-type-curve-lookup-tables-batch
+        https://docs.api.combocurve.com/api/put-v2-type-curve-lookup-tables-batch
         """
         tables = self._lookup_tables_in_v2_form('put_type_curve_lookup_tables', data)
         return super().put_type_curve_lookup_tables(project_id, tables)
@@ -353,7 +353,7 @@ class TypeCurvesV1Compatibility(TypeCurves):
         Returns one type-curve lookup table. A v1 id falls back to the migrated table's id
         (deprecated).
 
-        https://docs.api.combocurve.com/api/type-curves-v2-preview/get-v2-type-curve-lookup-table-by-id
+        https://docs.api.combocurve.com/api/get-v2-type-curve-lookup-table-by-id
         """
         return self._with_v1_lookup_table_id(
             'get_type_curve_lookup_table_by_id with a v1 lookup-table id',
@@ -368,7 +368,7 @@ class TypeCurvesV1Compatibility(TypeCurves):
         Replaces one type-curve lookup table. v1 rule fields are translated and a v1 id falls back
         to the migrated table's id (both deprecated).
 
-        https://docs.api.combocurve.com/api/type-curves-v2-preview/put-v2-type-curve-lookup-table-by-id
+        https://docs.api.combocurve.com/api/put-v2-type-curve-lookup-table-by-id
         """
         table = self._lookup_tables_in_v2_form('put_type_curve_lookup_table_by_id', [data])[0]
         return self._with_v1_lookup_table_id(
@@ -390,7 +390,7 @@ class TypeCurvesV1Compatibility(TypeCurves):
         timestamp belongs; either way the retry cannot delete another live table except by an
         ObjectId collision.
 
-        https://docs.api.combocurve.com/api/type-curves-v2-preview/delete-v2-type-curve-lookup-table-by-id
+        https://docs.api.combocurve.com/api/delete-v2-type-curve-lookup-table-by-id
         """
         headers: CaseInsensitiveDict[str] | None = None
         not_found_error: requests.HTTPError | None = None

@@ -5,6 +5,49 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - Unreleased
+
+### Added
+
+- Embedded lookup tables (`EmbeddedLookupTables`), project and company routes:
+  `get_embedded_lookup_tables`, `count_embedded_lookup_tables`, `get_embedded_lookup_table_by_id`,
+  `post_embedded_lookup_tables`, `put_embedded_lookup_tables`, `delete_embedded_lookup_table_by_id`,
+  and the same six with a `company_` prefix (`get_company_embedded_lookup_tables`, ...). Types:
+  `capex`, `expenses`, `stream_properties`, `differentials`, `production_taxes`, `risking`,
+  `operations` (from the server's 400 message, 2026-11-12). Lists take 200 per page (the server
+  maximum) and are sorted like the other lists. The class docstring shows the `rows` / `rules` shape
+  and the `"lookup_by"` cell. `tests/test_embedded_lookup_tables_live.py` writes and deletes a
+  throwaway table at both scopes on the dev tenant (passed 2026-11-13).
+- `get_scenario_combos` takes `filters` (`savedName`, `updatedAt`, `sort`). The saved combos come back
+  in the order received, so `sort` (for example `-updatedAt`) decides the order.
+- `delete_scenario_combo` takes `combo_ids` to delete only those combos from a saved combo. They are
+  sent as a repeated `comboIds` key; a comma-joined value answers 400 (verified live 2026-11-12). It
+  refuses an empty sequence, an empty id or a bare string before any request.
+- `get_scenario_lookup_table_assignments` and `get_scenario_lookup_table_assignment_by_id` take
+  `filters` (`column`, `qualifierName`, `incrementalIndex`). Without `qualifierName` the reads return
+  only the column's active qualifier (verified live 2026-11-13).
+- `tests/test_published_routes_are_wrapped.py`: every route in the Postman collection is reached by a
+  method or is in a reviewed list of 97 unwrapped routes. Network-gated.
+- A test that fails with `requests.HTTPError` shows the response (status, method, url, first 2,000
+  characters of the body) in an "HTTP error response" report section (`tests/conftest.py`).
+
+### Changed
+
+- **`delete_scenario_lookup_table_assignment_by_id` requires `well_ids`** (max 500) and takes an
+  optional `incremental_index`. The route takes the well ids as the request body. Before 3.1.0 the
+  method sent no body, and the route refused every call (400), so no working call breaks. The route
+  has no qualifier parameter and clears only the column's active qualifier; for a well assigned
+  only in another qualifier it answers `X-Delete-Count: 0` and changes nothing (verified live
+  2026-11-13).
+- `put_scenario_lookup_table_assignments` documents the forecast column: a Type Curve V2 lookup table
+  is assigned there with `column: 'forecast'` (verified live 2026-11-12).
+  `put_scenario_model_assignments` refuses a lookup-table id (`ForecastNotFound`).
+- The `post_forecasts` example response shows the `id` that ComboCurve now returns.
+- The v2 type-curve docstrings link to the operation pages (`.../api/get-v2-type-curves`), not the
+  `type-curves-v2-preview/` pages, and carry generated examples (the fits, normalization and wells
+  examples are large; the docstring points to the docs page). The v2 operations are in the Postman
+  collection since 2026-11-12, so the slug and route-path tests now check them.
+
 ## [3.0.0] - 2026-11-05
 
 ComboCurve stopped the v1 type-curve and type-curve lookup-table routes on 2026-11-07 (one-way).
