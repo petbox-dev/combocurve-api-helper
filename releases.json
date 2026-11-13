@@ -1,6 +1,20 @@
 {
   "combocurve-api-helper": [
     {
+      "version": "3.1.0",
+      "commit": "7d53da616ad210c87c90b2a70b339d18476c9932",
+      "date": "2026-11-13",
+      "target": "main",
+      "notes": "pushed after the PyPI publish; src/ identical to the published commit 84ba41c (7d53da6 adds only the pytest pythonpath setting)"
+    },
+    {
+      "version": "3.1.0",
+      "commit": "84ba41ca484631b6a7a7f140c68bc61c9c4522e5",
+      "date": "2026-11-13",
+      "target": "pypi",
+      "notes": "built at HEAD 84ba41c (reflog; the sdist pyproject.toml predates 7d53da6); the published wheel's package equals this commit's src/ file by file, line endings aside (the wheel carries CRLF)"
+    },
+    {
       "version": "3.0.0",
       "commit": "c9945fb34497035d86e3823a87d9470f5f467216",
       "date": "2026-11-05",
