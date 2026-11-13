@@ -5,6 +5,14 @@ All notable changes to `combocurve-api-helper` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- The `get_scenario_lookup_table_assignments` docstring said `column` takes a comma-separated
+  list; a comma-joined value answers 400. It now lists the 15 columns the route takes and the
+  `QualifierNotFound` answer for a qualifier the column does not have (verified live 2026-11-13).
+
 ## [3.1.0]
 
 ### Added

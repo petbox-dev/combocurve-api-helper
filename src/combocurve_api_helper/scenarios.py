@@ -786,8 +786,13 @@ class Scenarios(APIBase):
         Returns the lookup-table assignments for a specific scenario: one entry per column,
         qualifier and lookup table, with its `wellIds`.
 
-        `filters` take `column` (comma-separated, e.g. `forecast,capex`), `qualifierName` and
-        `incrementalIndex` (omitted or 0 reads each well's base row).
+        `filters` take `column` (one column), `qualifierName` and `incrementalIndex` (omitted or 0
+        reads each well's base row). A comma-joined `column` (`forecast,capex`) answers 400; the
+        route takes `capex`, `dates`, `expenses`, `ownershipReversion`, `pricing`, `differentials`,
+        `productionTaxes`, `productionVsFit`, `reservesCategory`, `risking`, `operations`,
+        `streamProperties`, `forecast`, `schedule` and `pSeries`, and answers 400 for another
+        column. A `qualifierName` the scenario does not have in that column answers 400
+        (`QualifierNotFound`); `Default` is accepted in every column. Verified live 2026-11-13.
 
         Without `qualifierName` the read returns only the column's **active** qualifier (the one
         selected in the UI), not every qualifier. Verified live 2026-11-13 (dev, forecast column):
