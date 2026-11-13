@@ -99,6 +99,9 @@ addopts = "-ra -q"
 testpaths = [
     "tests",
 ]
+# Test the checkout, not an installed copy: a non-editable install in site-packages would otherwise
+# be imported first.
+pythonpath = ["src"]
 
 
 [tool.ruff]
