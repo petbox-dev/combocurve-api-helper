@@ -16,6 +16,13 @@
     },
     {
       "version": "3.0.0",
+      "commit": "cdae733354b18e67bb83bbd8e08ca4bd6932a160",
+      "date": "2026-11-05",
+      "target": "main",
+      "notes": "backfilled from origin/main reflog (update by push 2026-11-05T19:01:30-06:00); push not recorded at the time"
+    },
+    {
+      "version": "3.0.0",
       "commit": "c9945fb34497035d86e3823a87d9470f5f467216",
       "date": "2026-11-05",
       "target": "pypi",
