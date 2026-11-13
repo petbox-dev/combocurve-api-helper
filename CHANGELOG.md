@@ -15,7 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and the same six with a `company_` prefix (`get_company_embedded_lookup_tables`, ...). Types:
   `capex`, `expenses`, `stream_properties`, `differentials`, `production_taxes`, `risking`,
   `operations` (from the server's 400 message, 2026-11-12). Lists take 200 per page (the server
-  maximum) and are sorted like the other lists. The class docstring shows the `rows` / `rules` shape
+  maximum) and are sorted like the other lists. The POST and PUT refuse an empty list with
+  `ValueError` before any request. The class docstring shows the `rows` / `rules` shape
   and the `"lookup_by"` cell. `tests/test_embedded_lookup_tables_live.py` writes and deletes a
   throwaway table at both scopes on the dev tenant (passed 2026-11-13).
 - `get_scenario_combos` takes `filters` (`savedName`, `updatedAt`, `sort`). The saved combos come back
@@ -24,8 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sent as a repeated `comboIds` key; a comma-joined value answers 400 (verified live 2026-11-12). It
   refuses an empty sequence, an empty id or a bare string before any request.
 - `get_scenario_lookup_table_assignments` and `get_scenario_lookup_table_assignment_by_id` take
-  `filters` (`column`, `qualifierName`, `incrementalIndex`). Without `qualifierName` the reads return
-  only the column's active qualifier (verified live 2026-11-13).
+  `filters` (`column`, `qualifierName`, `incrementalIndex`). Without `qualifierName` the list read
+  returns only the column's active qualifier (verified live 2026-11-13); the by-id read most likely
+  does the same (not verified).
 - `tests/test_published_routes_are_wrapped.py`: every route in the Postman collection is reached by a
   method or is in a reviewed list of 97 unwrapped routes. Network-gated.
 - A test that fails with `requests.HTTPError` shows the response (status, method, url, first 2,000
@@ -35,13 +37,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`delete_scenario_lookup_table_assignment_by_id` requires `well_ids`** (max 500) and takes an
   optional `incremental_index`. The route takes the well ids as the request body. Before 3.1.0 the
-  method sent no body, and the route refused every call (400), so no working call breaks. The route
+  method sent no body, and the route refused every call (400), so no working call breaks; a call
+  without `well_ids` now raises `TypeError` instead of `HTTPError`. The route
   has no qualifier parameter and clears only the column's active qualifier; for a well assigned
   only in another qualifier it answers `X-Delete-Count: 0` and changes nothing (verified live
   2026-11-13).
+- `get_scenario_combos_url` takes `filters` with sequence values (`Mapping[str, Union[str,
+  Sequence[str]]]`); a sequence repeats its key. Existing `dict[str, str]` callers are unchanged.
+- `put_scenario_lookup_table_assignments` refuses an empty `data` and more than 500 records with
+  `ValueError` before any request. An empty list sent a PUT with no body; more than 500 went as one
+  request, above the route's documented maximum of 500.
 - `put_scenario_lookup_table_assignments` documents the forecast column: a Type Curve V2 lookup table
-  is assigned there with `column: 'forecast'` (verified live 2026-11-12).
-  `put_scenario_model_assignments` refuses a lookup-table id (`ForecastNotFound`).
+  is assigned there with `column: 'forecast'` (verified live 2026-11-12). The server refuses a
+  lookup-table id on `put_scenario_model_assignments` (`ForecastNotFound`).
 - The `post_forecasts` example response shows the `id` that ComboCurve now returns.
 - The v2 type-curve docstrings link to the operation pages (`.../api/get-v2-type-curves`), not the
   `type-curves-v2-preview/` pages, and carry generated examples (the fits, normalization and wells

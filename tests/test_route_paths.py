@@ -31,15 +31,11 @@ from __future__ import annotations
 import inspect
 import re
 import warnings
-from typing import Any, Callable, Optional
-
-import pytest
-import requests
+from typing import Callable, Optional
 
 from combocurve_api_helper import ComboCurveAPI
+from tests.postman_collection import PLACEHOLDER, collection_requests, normalized_segments
 
-# Mirrors scripts/generate_docstrings.py COLLECTION_URL (the collection is never vendored).
-_COLLECTION_URL = 'https://docs.api.combocurve.com/downloads/combocurve-api.postman_collection.json'
 _SLUG_RE = re.compile(r'https://docs\.api\.combocurve\.com/api/([a-z0-9-]+)')
 # Methods whose route is in the collection but that the naming convention cannot pair with a
 # callable builder (no `<verb>` -> `get_` builder of that name, or a by-type builder that asserts on
@@ -47,29 +43,27 @@ _SLUG_RE = re.compile(r'https://docs\.api\.combocurve\.com/api/([a-z0-9-]+)')
 _UNCHECKED_BY_DESIGN = (
     'count_econ_model_assignments_by_type_by_id',
     'count_econ_run_monthly_exports',
-    'delete_scenario_combo',
     'get_custom_columns_daily_production',
     'get_custom_columns_monthly_production',
     'get_custom_columns_wells',
     'post_export',
-    # 2026-11-12, v2 type-curve links now resolve: the singular writes use `get_type_curve_by_id_url` /
-    # the lookup-table builder, and the v1 compatibility fits wrappers link to the v2 fits operation.
-    # `test_published_routes_are_wrapped.py` checks the routes these methods send.
+    # 2026-11-12: the v1 compatibility fits wrappers link to the v2 fits/volumes/wells operations, which
+    # their native v2 methods (`get_type_curve_volumes`, ..., checked here) send. No path of their own.
     'get_type_curve_daily_fits',
     'get_type_curve_monthly_fits',
     'get_type_curve_representative_fits',
-    'patch_type_curve',
-    'post_type_curve',
-    'post_type_curve_lookup_table',
 )
 
-# A 24-hex ObjectId stands in for every required path argument. Nothing is sent, so the
-# value only has to be recognizable again in the built url.
-_PLACEHOLDER = '0' * 24
-
-# Path segments that are a caller-supplied id rather than a literal: the placeholder, and
-# the collection's own `:param` spelling.
-_ID_SEGMENT = re.compile(rf'^(?:{_PLACEHOLDER}|:.*)$')
+# Methods whose builder the naming convention cannot derive, paired by hand so their path is checked.
+# `test_published_routes_are_wrapped.py` cannot stand in for this check: its template `:p` matches any
+# one segment, so `PATCH .../type-curves/:p` is also reached by `patch_type_curves` sending
+# `.../type-curves/batch` (shown by mutation, 2026-11-13).
+_BUILDER_BY_METHOD = {
+    'delete_scenario_combo': 'get_scenario_combos_url',
+    'patch_type_curve': 'get_type_curve_by_id_url',
+    'post_type_curve': 'get_type_curves_url',
+    'post_type_curve_lookup_table': 'get_type_curve_lookup_tables_url',
+}
 
 # Builders whose path legitimately has no collection counterpart.
 _EXEMPT = {
@@ -81,29 +75,20 @@ _EXEMPT = {
 
 def _normalize(path_segments: list[str]) -> str:
     """Collapse id segments to `:p` so a built url and a collection template compare equal."""
-    return '/' + '/'.join(':p' if _ID_SEGMENT.match(str(s)) else str(s) for s in path_segments)
+    return '/' + '/'.join(normalized_segments(path_segments))
 
 
 def _collection_paths() -> dict[str, str]:
     """slug (collection item name) -> normalized path template."""
-    response = requests.get(_COLLECTION_URL, headers={'User-Agent': 'Mozilla/5.0'}, timeout=60)
-    response.raise_for_status()
     paths: dict[str, str] = {}
-
-    def walk(items: list[dict[str, Any]]) -> None:
-        for item in items:
-            if 'item' in item:
-                walk(item['item'])
-                continue
-            segments = ((item.get('request') or {}).get('url') or {}).get('path')
-            if segments:
-                paths[item.get('name') or ''] = _normalize(segments)
-
-    walk(response.json().get('item', []))
+    for name, request in collection_requests():
+        segments = (request.get('url') or {}).get('path')
+        if segments:
+            paths[name] = _normalize(segments)
     return paths
 
 
-def _builder_for(method_name: str, slug: str = '') -> tuple[str, Callable[..., str]] | tuple[None, None]:
+def _builder_for(method_name: str, slug: str) -> tuple[str, Callable[..., str]] | tuple[None, None]:
     """Resolve a public method to the `*_url` builder that assembles its path.
 
     Read methods pair as `<method>_url`. Write verbs and HEAD counts have no builder of
@@ -111,6 +96,10 @@ def _builder_for(method_name: str, slug: str = '') -> tuple[str, Callable[..., s
     -> `get_company_wells_url`), so the verb prefix is swapped for `get_` on the second attempt.
     A `-batch` operation (the v2 type-curve writes) has its own `get_<rest>_batch_url`, tried first.
     """
+    if method_name in _BUILDER_BY_METHOD:
+        builder_name = _BUILDER_BY_METHOD[method_name]
+        return builder_name, getattr(ComboCurveAPI, builder_name)
+
     candidates = [f'{method_name}_url']
     verb, _, rest = method_name.partition('_')
     if verb in {'post', 'put', 'patch', 'delete', 'count'} and rest:
@@ -142,7 +131,7 @@ def _built_path(builder: Callable[..., str]) -> str:
     # is all this checks, so the warning is noise here.
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', UserWarning)
-        url = builder(ComboCurveAPI.__new__(ComboCurveAPI), *([_PLACEHOLDER] * len(required)))
+        url = builder(ComboCurveAPI.__new__(ComboCurveAPI), *([PLACEHOLDER] * len(required)))
 
     base = ComboCurveAPI.API_BASE_URL.rsplit('/v1', 1)[0]
 
@@ -150,10 +139,7 @@ def _built_path(builder: Callable[..., str]) -> str:
 
 
 def test_url_builders_match_the_collection_route_paths() -> None:
-    try:
-        collection = _collection_paths()
-    except (requests.RequestException, ValueError) as exc:
-        pytest.skip(f'ComboCurve Postman collection unreachable: {exc}')
+    collection = _collection_paths()
 
     mismatches: list[str] = []
     unchecked: list[str] = []

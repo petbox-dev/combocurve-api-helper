@@ -10,8 +10,7 @@ import pytest
 import requests
 from pytest import MonkeyPatch
 
-from tests.http_fakes import FakeResponse, make_offline_api
-from tests.type_curves.transport import RecordingTransport
+from tests.http_fakes import FakeResponse, install_recording_transport, make_offline_api
 
 FIXTURES = Path(__file__).parent / 'fixtures'
 PROJECT_ID = '000000000000000000000001'
@@ -25,14 +24,8 @@ def load(name: str) -> Any:
     return json.loads((FIXTURES / name).read_text(encoding='utf8'))
 
 
-def install(monkeypatch: MonkeyPatch, *responses: FakeResponse) -> RecordingTransport:
-    transport = RecordingTransport(list(responses))
-    monkeypatch.setattr(requests, 'request', transport)
-    return transport
-
-
 def test_monthly_fits_wrapper_returns_the_v1_rows(monkeypatch: MonkeyPatch) -> None:
-    transport = install(monkeypatch, FakeResponse(200, load('paired_v2_monthly_volumes.json')))
+    transport = install_recording_transport(monkeypatch, FakeResponse(200, load('paired_v2_monthly_volumes.json')))
 
     with pytest.warns(DeprecationWarning, match=r'get_type_curve_monthly_fits.*2027-01-31'):
         rows = make_offline_api().get_type_curve_monthly_fits(PROJECT_ID, TYPE_CURVE_ID)
@@ -42,7 +35,7 @@ def test_monthly_fits_wrapper_returns_the_v1_rows(monkeypatch: MonkeyPatch) -> N
 
 
 def test_daily_fits_wrapper_asks_for_daily(monkeypatch: MonkeyPatch) -> None:
-    transport = install(monkeypatch, FakeResponse(200, []))
+    transport = install_recording_transport(monkeypatch, FakeResponse(200, []))
 
     with pytest.warns(DeprecationWarning, match='get_type_curve_daily_fits'):
         make_offline_api().get_type_curve_daily_fits(PROJECT_ID, TYPE_CURVE_ID)
@@ -70,7 +63,7 @@ def test_representative_wells_wrapper_joins_wells_and_outputs(monkeypatch: Monke
             'best': {'eur': 5000.0},
         }
     ]
-    transport = install(
+    transport = install_recording_transport(
         monkeypatch,
         FakeResponse(200, {'id': TYPE_CURVE_ID, 'forecast': FORECAST_ID, 'forecastSeries': 'best'}),
         FakeResponse(200, wells),
@@ -91,7 +84,9 @@ def test_representative_wells_wrapper_joins_wells_and_outputs(monkeypatch: Monke
 
 
 def test_post_without_v1_fields_is_the_native_batch_with_no_warning(monkeypatch: MonkeyPatch) -> None:
-    transport = install(monkeypatch, FakeResponse(207, {'successCount': 1, 'failedCount': 0, 'results': []}))
+    transport = install_recording_transport(
+        monkeypatch, FakeResponse(207, {'successCount': 1, 'failedCount': 0, 'results': []})
+    )
 
     with warnings.catch_warnings():
         warnings.simplefilter('error')
@@ -103,7 +98,7 @@ def test_post_without_v1_fields_is_the_native_batch_with_no_warning(monkeypatch:
 def test_post_with_v1_fits_creates_then_writes_fits(monkeypatch: MonkeyPatch) -> None:
     record = load('v1_type_curve_ratio_linear.json')
     del record['id'], record['createdAt'], record['updatedAt']
-    transport = install(
+    transport = install_recording_transport(
         monkeypatch,
         FakeResponse(
             207,
@@ -132,7 +127,7 @@ def test_post_with_v1_fits_creates_then_writes_fits(monkeypatch: MonkeyPatch) ->
 
 def test_a_failed_fits_write_becomes_a_failed_result(monkeypatch: MonkeyPatch) -> None:
     record = load('v1_type_curve_ratio_linear.json')
-    install(
+    install_recording_transport(
         monkeypatch,
         FakeResponse(
             207,
@@ -150,7 +145,7 @@ def test_a_failed_fits_write_becomes_a_failed_result(monkeypatch: MonkeyPatch) -
 
 
 def test_post_with_only_v1_normalizations_strips_them_and_warns(monkeypatch: MonkeyPatch) -> None:
-    transport = install(
+    transport = install_recording_transport(
         monkeypatch,
         FakeResponse(
             207,
@@ -167,7 +162,7 @@ def test_post_with_only_v1_normalizations_strips_them_and_warns(monkeypatch: Mon
 
 def test_a_record_with_no_returned_result_becomes_a_missing_result_error(monkeypatch: MonkeyPatch) -> None:
     record = load('v1_type_curve_ratio_linear.json')
-    transport = install(
+    transport = install_recording_transport(
         monkeypatch,
         FakeResponse(
             207,
@@ -198,7 +193,7 @@ def test_a_record_with_no_returned_result_becomes_a_missing_result_error(monkeyp
 
 def test_put_type_curves_patches_existing_names_and_posts_new_ones(monkeypatch: MonkeyPatch) -> None:
     existing = {'id': TYPE_CURVE_ID, 'name': 'Existing'}
-    transport = install(
+    transport = install_recording_transport(
         monkeypatch,
         FakeResponse(200, [existing]),
         FakeResponse(
@@ -230,7 +225,7 @@ def test_a_failed_patch_stage_still_writes_the_fits_of_created_records(monkeypat
     created_id = '000000000000000000000009'
     record = load('v1_type_curve_ratio_linear.json')
     record['name'] = 'New'
-    transport = install(
+    transport = install_recording_transport(
         monkeypatch,
         FakeResponse(200, [{'id': TYPE_CURVE_ID, 'name': 'Existing'}]),
         FakeResponse(
@@ -272,7 +267,7 @@ def test_a_connection_failure_in_the_create_stage_marks_the_results_as_maybe_app
 def test_a_patch_result_without_an_id_writes_fits_to_the_body_id(monkeypatch: MonkeyPatch) -> None:
     record = load('v1_type_curve_ratio_linear.json')
     record['name'] = 'Existing'
-    transport = install(
+    transport = install_recording_transport(
         monkeypatch,
         FakeResponse(200, [{'id': TYPE_CURVE_ID, 'name': 'Existing'}]),
         FakeResponse(207, {'successCount': 1, 'failedCount': 0, 'results': [{'status': 'OK', 'code': 204}]}),
@@ -287,7 +282,7 @@ def test_a_patch_result_without_an_id_writes_fits_to_the_body_id(monkeypatch: Mo
 
 
 def test_a_lookup_table_404_with_another_error_name_does_not_fall_back(monkeypatch: MonkeyPatch) -> None:
-    transport = install(monkeypatch, FakeResponse(404, {'name': 'ProjectNotFoundError'}))
+    transport = install_recording_transport(monkeypatch, FakeResponse(404, {'name': 'ProjectNotFoundError'}))
 
     with pytest.raises(requests.HTTPError):
         make_offline_api().get_type_curve_lookup_table_by_id(PROJECT_ID, V1_TABLE_ID)
@@ -296,7 +291,7 @@ def test_a_lookup_table_404_with_another_error_name_does_not_fall_back(monkeypat
 
 
 def test_delete_falls_back_when_the_server_answers_lookup_table_not_found(monkeypatch: MonkeyPatch) -> None:
-    transport = install(
+    transport = install_recording_transport(
         monkeypatch,
         FakeResponse(404, {'name': 'LookupTableNotFoundError'}),
         FakeResponse(204, None, headers={'X-Delete-Count': '1'}),
@@ -312,7 +307,7 @@ def test_delete_falls_back_when_the_server_answers_lookup_table_not_found(monkey
 def test_v1_lookup_table_fields_are_translated(monkeypatch: MonkeyPatch) -> None:
     table = load('v1_lookup_table_per_phase.json')
     table['rules'] = [rule for rule in table['rules'] if rule['filter'][0]['value'] != 'NM']
-    transport = install(monkeypatch, FakeResponse(201, {}))
+    transport = install_recording_transport(monkeypatch, FakeResponse(201, {}))
 
     with pytest.warns(DeprecationWarning, match='post_type_curve_lookup_table'):
         make_offline_api().post_type_curve_lookup_table(PROJECT_ID, table)
@@ -322,7 +317,7 @@ def test_v1_lookup_table_fields_are_translated(monkeypatch: MonkeyPatch) -> None
 
 
 def test_v1_lookup_table_id_falls_back_to_the_swapped_id(monkeypatch: MonkeyPatch) -> None:
-    transport = install(
+    transport = install_recording_transport(
         monkeypatch,
         FakeResponse(404, {'name': 'LookupTableNotFoundError'}),
         FakeResponse(200, {'id': 'bbbbbbbbbbbbaaaaaaaaaaaa'}),
@@ -336,7 +331,7 @@ def test_v1_lookup_table_id_falls_back_to_the_swapped_id(monkeypatch: MonkeyPatc
 
 
 def test_v1_lookup_table_id_fallback_on_delete_when_nothing_matched(monkeypatch: MonkeyPatch) -> None:
-    transport = install(
+    transport = install_recording_transport(
         monkeypatch,
         FakeResponse(204, None, headers={'X-Delete-Count': '0'}),
         FakeResponse(204, None, headers={'X-Delete-Count': '1'}),
@@ -350,7 +345,7 @@ def test_v1_lookup_table_id_fallback_on_delete_when_nothing_matched(monkeypatch:
 
 
 def test_a_missing_id_raises_after_one_fallback(monkeypatch: MonkeyPatch) -> None:
-    install(
+    install_recording_transport(
         monkeypatch,
         FakeResponse(404, {'name': 'LookupTableNotFoundError'}),
         FakeResponse(404, {'name': 'LookupTableNotFoundError'}),

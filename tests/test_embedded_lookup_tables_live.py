@@ -100,10 +100,15 @@ def test_embedded_lookup_table_round_trip(api: ComboCurveAPI, scope: str) -> Non
         assert str(stored['id']) == created_id, 'a PUT by name must replace the table, not create one'
         assert _rule_value(stored) == [2.25]
     finally:
-        if created_id:
+        # Delete every table of this run's name, not only `created_id`: a POST whose response was
+        # lost, or a PUT that created a second table, leaves one `created_id` does not name. The
+        # name is unique to this run (uuid suffix), so nothing else matches it.
+        delete_counts = []
+        for table in find_by_name():
             if project:
-                headers = api.delete_embedded_lookup_table_by_id(PROJECT_ID, created_id)
+                headers = api.delete_embedded_lookup_table_by_id(PROJECT_ID, str(table['id']))
             else:
-                headers = api.delete_company_embedded_lookup_table_by_id(created_id)
-            assert headers.get('X-Delete-Count') == '1'
+                headers = api.delete_company_embedded_lookup_table_by_id(str(table['id']))
+            delete_counts.append(headers.get('X-Delete-Count'))
         assert find_by_name() == []
+        assert delete_counts == ['1'] * len(delete_counts)

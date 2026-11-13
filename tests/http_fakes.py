@@ -1,5 +1,5 @@
-"""Shared offline test doubles for the HTTP transport: a fake response, a stub auth object, and a
-client built without credentials.
+"""Shared offline test doubles for the HTTP transport: a fake response, a recording transport, a stub
+auth object, and a client built without credentials.
 
 One copy, so a double cannot drift from production on its own. `FakeResponse` matches the parts of
 `requests.Response` the transport reads, including the error paths: `headers` is case-insensitive,
@@ -8,9 +8,11 @@ One copy, so a double cannot drift from production on its own. `FakeResponse` ma
 """
 
 from collections.abc import Mapping
+from dataclasses import dataclass, field
 from typing import Any, Optional
 
 import requests
+from pytest import MonkeyPatch
 from requests.structures import CaseInsensitiveDict
 
 from combocurve_api_helper import ComboCurveAPI
@@ -33,6 +35,10 @@ class FakeResponse:
         self._body_is_json = text is None
         self.text = str(body) if text is None else text
         self.headers: CaseInsensitiveDict[str] = CaseInsensitiveDict(headers or {})
+        # `requests.Response` carries both; code that reports an `HTTPError` reads them (the
+        # `tests/conftest.py` report hook). `request` is None, as on a hand-built `Response`.
+        self.url = ''
+        self.request: Optional[requests.PreparedRequest] = None
 
     @property
     def ok(self) -> bool:
@@ -61,6 +67,49 @@ class StubAuth:
         """No headers: the transport tests model HTTP responses, not the token request."""
         self.fetches += 1
         return {}
+
+
+@dataclass(frozen=True)
+class RecordedCall:
+    """One request the transport sent: the verb (upper case, as `requests` sends it), the url, the
+    `params` mapping, the JSON body and the timeout."""
+
+    method: str
+    url: str
+    params: Any
+    body: Any
+    timeout: Any
+
+
+@dataclass
+class RecordingTransport:
+    """Stands in for `requests.request`: answers the queued `responses` in order and keeps every call.
+    The signature is the keyword set `base._send_request` passes, so an unexpected keyword fails. One
+    request more than there are responses raises `IndexError`, so an extra request does not pass
+    unseen."""
+
+    responses: list[FakeResponse]
+    calls: list[RecordedCall] = field(default_factory=list)
+
+    def __call__(
+        self,
+        method: str,
+        url: str,
+        headers: Any = None,
+        params: Optional[Any] = None,
+        json: Any = None,
+        timeout: Any = None,
+    ) -> FakeResponse:
+        self.calls.append(RecordedCall(method.upper(), url, params, json, timeout))
+        return self.responses.pop(0)
+
+
+def install_recording_transport(monkeypatch: MonkeyPatch, *responses: FakeResponse) -> RecordingTransport:
+    """Patch `requests.request` with a `RecordingTransport` that answers `responses` in order; returns
+    it."""
+    transport = RecordingTransport(list(responses))
+    monkeypatch.setattr(requests, 'request', transport)
+    return transport
 
 
 def make_offline_api(auth: Optional[StubAuth] = None) -> ComboCurveAPI:

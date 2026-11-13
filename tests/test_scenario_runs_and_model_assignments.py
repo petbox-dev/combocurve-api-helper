@@ -5,14 +5,14 @@ These seven operations were published by ComboCurve between 2026-08 and 2026-10
 checked against the Postman collection by `test_route_paths.py` and `test_docstring_slugs.py`.
 """
 
-from typing import Any, Optional
+from typing import Optional
 
 import pytest
 import requests
 from pytest import MonkeyPatch
 
 from combocurve_api_helper.base import Item, ItemList
-from tests.http_fakes import FakeResponse, make_offline_api
+from tests.http_fakes import FakeResponse, install_recording_transport, make_offline_api
 
 PROJECT_ID = '000000000000000000000001'
 SCENARIO_ID = '000000000000000000000002'
@@ -20,24 +20,6 @@ FORECAST_ID = '000000000000000000000003'
 JOB_ID = '000000000000000000000004'
 WELL_ID = '000000000000000000000005'
 SCENARIO_URL = f'/v1/projects/{PROJECT_ID}/scenarios/{SCENARIO_ID}'
-
-
-class _Recorder:
-    """Stands in for `requests.request`; answers with `response` and keeps every call."""
-
-    def __init__(self, response: FakeResponse) -> None:
-        self.response = response
-        self.calls: list[dict[str, Any]] = []
-
-    def __call__(self, method: str, url: str, headers: Any = None, params: Any = None, **keywords: Any) -> FakeResponse:
-        self.calls.append({'method': method.upper(), 'url': url, 'params': params, 'json': keywords.get('json')})
-        return self.response
-
-
-def _install(monkeypatch: MonkeyPatch, response: FakeResponse) -> _Recorder:
-    recorder = _Recorder(response)
-    monkeypatch.setattr(requests, 'request', recorder)
-    return recorder
 
 
 # Scenario run
@@ -50,28 +32,28 @@ def test_scenario_run_urls() -> None:
 
 
 def test_post_scenario_run_sends_the_object_body_and_returns_the_job(monkeypatch: MonkeyPatch) -> None:
-    recorder = _install(monkeypatch, FakeResponse(202, {'jobId': JOB_ID}))
+    recorder = install_recording_transport(monkeypatch, FakeResponse(202, {'jobId': JOB_ID}))
     body: Item = {'runModels': 'economics_only', 'wellIds': [WELL_ID]}
 
     job = make_offline_api().post_scenario_run(PROJECT_ID, SCENARIO_ID, body)
 
     assert job == {'jobId': JOB_ID}
     assert len(recorder.calls) == 1
-    assert recorder.calls[0]['method'] == 'POST'
-    assert recorder.calls[0]['url'].endswith(f'{SCENARIO_URL}/run')
-    assert recorder.calls[0]['json'] == body
+    assert recorder.calls[0].method == 'POST'
+    assert recorder.calls[0].url.endswith(f'{SCENARIO_URL}/run')
+    assert recorder.calls[0].body == body
 
 
 def test_post_scenario_run_without_data_sends_an_empty_object(monkeypatch: MonkeyPatch) -> None:
-    recorder = _install(monkeypatch, FakeResponse(202, {'jobId': JOB_ID}))
+    recorder = install_recording_transport(monkeypatch, FakeResponse(202, {'jobId': JOB_ID}))
 
     make_offline_api().post_scenario_run(PROJECT_ID, SCENARIO_ID)
 
-    assert recorder.calls[0]['json'] == {}
+    assert recorder.calls[0].body == {}
 
 
 def test_post_scenario_run_raises_on_an_error_status(monkeypatch: MonkeyPatch) -> None:
-    _install(monkeypatch, FakeResponse(400, {'message': 'bad'}))
+    install_recording_transport(monkeypatch, FakeResponse(400, {'message': 'bad'}))
 
     with pytest.raises(requests.HTTPError):
         make_offline_api().post_scenario_run(PROJECT_ID, SCENARIO_ID, {'runMode': 'nonsense'})
@@ -79,13 +61,13 @@ def test_post_scenario_run_raises_on_an_error_status(monkeypatch: MonkeyPatch) -
 
 def test_get_scenario_run_by_job_id_returns_the_status_object(monkeypatch: MonkeyPatch) -> None:
     status: Item = {'jobId': JOB_ID, 'status': 'completed', 'result': {'econRunId': WELL_ID}}
-    recorder = _install(monkeypatch, FakeResponse(200, status))
+    recorder = install_recording_transport(monkeypatch, FakeResponse(200, status))
 
     result = make_offline_api().get_scenario_run_by_job_id(PROJECT_ID, SCENARIO_ID, JOB_ID)
 
     assert result == status
-    assert recorder.calls[0]['method'] == 'GET'
-    assert recorder.calls[0]['url'].endswith(f'{SCENARIO_URL}/run/{JOB_ID}')
+    assert recorder.calls[0].method == 'GET'
+    assert recorder.calls[0].url.endswith(f'{SCENARIO_URL}/run/{JOB_ID}')
 
 
 # Scenario model assignments
@@ -105,14 +87,14 @@ def test_get_scenario_model_assignments_takes_500_and_keeps_the_row_order(monkey
         {'wellId': 'b', 'incrementalIndex': 0, 'models': []},
         {'wellId': 'a', 'incrementalIndex': 0, 'models': []},
     ]
-    recorder = _install(monkeypatch, FakeResponse(200, rows))
+    recorder = install_recording_transport(monkeypatch, FakeResponse(200, rows))
 
     result = make_offline_api().get_scenario_model_assignments(PROJECT_ID, SCENARIO_ID, {'model': 'dates'})
 
     assert result == rows
-    assert recorder.calls[0]['method'] == 'GET'
-    assert recorder.calls[0]['url'].endswith(f'{SCENARIO_URL}/assignments/models?model=dates')
-    assert recorder.calls[0]['params'] == {'take': 500}
+    assert recorder.calls[0].method == 'GET'
+    assert recorder.calls[0].url.endswith(f'{SCENARIO_URL}/assignments/models?model=dates')
+    assert recorder.calls[0].params == {'take': 500}
 
 
 ASSIGNMENT_DATA: ItemList = [
@@ -132,7 +114,7 @@ def test_put_scenario_model_assignments_url_and_body(
     monkeypatch: MonkeyPatch, add_wells_to_forecast: Optional[bool], expected_suffix: str
 ) -> None:
     results: ItemList = [{'status': 'OK', 'code': 200, 'wellsUpdated': 1, 'wellsFailed': 0}]
-    recorder = _install(monkeypatch, FakeResponse(207, results))
+    recorder = install_recording_transport(monkeypatch, FakeResponse(207, results))
     api = make_offline_api()
 
     if add_wells_to_forecast is None:
@@ -144,26 +126,26 @@ def test_put_scenario_model_assignments_url_and_body(
 
     assert written == results
     assert len(recorder.calls) == 1
-    assert recorder.calls[0]['method'] == 'PUT'
-    assert recorder.calls[0]['url'].endswith(f'{SCENARIO_URL}{expected_suffix}')
-    assert recorder.calls[0]['json'] == ASSIGNMENT_DATA
+    assert recorder.calls[0].method == 'PUT'
+    assert recorder.calls[0].url.endswith(f'{SCENARIO_URL}{expected_suffix}')
+    assert recorder.calls[0].body == ASSIGNMENT_DATA
 
 
 def test_delete_scenario_model_assignments_sends_the_array_body(monkeypatch: MonkeyPatch) -> None:
-    recorder = _install(monkeypatch, FakeResponse(204, None, headers={'X-Delete-Count': '1'}))
+    recorder = install_recording_transport(monkeypatch, FakeResponse(204, None, headers={'X-Delete-Count': '1'}))
 
     headers = make_offline_api().delete_scenario_model_assignments(PROJECT_ID, SCENARIO_ID, ASSIGNMENT_DATA)
 
     assert headers['x-delete-count'] == '1'
     assert len(recorder.calls) == 1
-    assert recorder.calls[0]['method'] == 'DELETE'
-    assert recorder.calls[0]['url'].endswith(f'{SCENARIO_URL}/assignments/models')
-    assert recorder.calls[0]['json'] == ASSIGNMENT_DATA
+    assert recorder.calls[0].method == 'DELETE'
+    assert recorder.calls[0].url.endswith(f'{SCENARIO_URL}/assignments/models')
+    assert recorder.calls[0].body == ASSIGNMENT_DATA
 
 
 @pytest.mark.parametrize('method_name', ['put_scenario_model_assignments', 'delete_scenario_model_assignments'])
 def test_an_empty_assignment_list_is_refused_before_any_request(monkeypatch: MonkeyPatch, method_name: str) -> None:
-    recorder = _install(monkeypatch, FakeResponse(207, []))
+    recorder = install_recording_transport(monkeypatch, FakeResponse(207, []))
 
     with pytest.raises(ValueError, match='data must hold at least one assignment record'):
         getattr(make_offline_api(), method_name)(PROJECT_ID, SCENARIO_ID, [])
@@ -187,30 +169,30 @@ def test_get_forecast_wells_takes_the_module_limit_and_sorts_by_well_name(monkey
         {'id': 'b', 'wellName': 'Sample Well 2', 'createdAt': 'c', 'updatedAt': 'u'},
         {'id': 'a', 'wellName': 'Sample Well 1', 'createdAt': 'c', 'updatedAt': 'u'},
     ]
-    recorder = _install(monkeypatch, FakeResponse(200, rows))
+    recorder = install_recording_transport(monkeypatch, FakeResponse(200, rows))
 
     result = make_offline_api().get_forecast_wells(PROJECT_ID, FORECAST_ID, {'state': 'TX'})
 
     assert [well['wellName'] for well in result] == ['Sample Well 1', 'Sample Well 2']
-    assert recorder.calls[0]['method'] == 'GET'
-    assert recorder.calls[0]['url'].endswith(f'/forecasts/{FORECAST_ID}/wells?state=TX')
-    assert recorder.calls[0]['params'] == {'take': 200}
+    assert recorder.calls[0].method == 'GET'
+    assert recorder.calls[0].url.endswith(f'/forecasts/{FORECAST_ID}/wells?state=TX')
+    assert recorder.calls[0].params == {'take': 200}
 
 
 def test_count_forecast_wells_reads_the_head_count(monkeypatch: MonkeyPatch) -> None:
-    recorder = _install(monkeypatch, FakeResponse(200, None, headers={'X-Query-Count': '7'}))
+    recorder = install_recording_transport(monkeypatch, FakeResponse(200, None, headers={'X-Query-Count': '7'}))
 
     count = make_offline_api().count_forecast_wells(PROJECT_ID, FORECAST_ID, {'state': 'TX'})
 
     assert count == 7
-    assert recorder.calls[0]['method'] == 'HEAD'
-    assert recorder.calls[0]['url'].endswith(f'/forecasts/{FORECAST_ID}/wells?state=TX')
+    assert recorder.calls[0].method == 'HEAD'
+    assert recorder.calls[0].url.endswith(f'/forecasts/{FORECAST_ID}/wells?state=TX')
 
 
 def test_post_forecast_wells_still_posts_to_the_unfiltered_url(monkeypatch: MonkeyPatch) -> None:
-    recorder = _install(monkeypatch, FakeResponse(200, [{'id': 'x'}]))
+    recorder = install_recording_transport(monkeypatch, FakeResponse(200, [{'id': 'x'}]))
 
     make_offline_api().post_forecast_wells(PROJECT_ID, FORECAST_ID, [WELL_ID])
 
-    assert recorder.calls[0]['url'].endswith(f'/forecasts/{FORECAST_ID}/wells')
-    assert recorder.calls[0]['json'] == {'wellIds': [WELL_ID]}
+    assert recorder.calls[0].url.endswith(f'/forecasts/{FORECAST_ID}/wells')
+    assert recorder.calls[0].body == {'wellIds': [WELL_ID]}

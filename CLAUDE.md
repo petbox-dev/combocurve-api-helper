@@ -300,6 +300,10 @@ and asserts the paired `*_url` builder produces that item's path — run it (net
 `test_docstring_slugs.py`) rather than eyeballing a new route literal. `tests/test_published_routes_are_wrapped.py`
 calls every public method on a fake transport and fails on a collection route that no method sends
 and that its reviewed `_UNWRAPPED` list does not name; remove a route from that list when you wrap it.
+All three network tests read the collection through `tests/postman_collection.py`, which fetches it
+once per session and skips the caller when it is unusable; a new collection test uses it rather than
+its own `requests.get`. Offline transport doubles live in `tests/http_fakes.py`
+(`install_recording_transport`).
 
 **Resource nesting mirrors the REST hierarchy** and is threaded through method arguments:
 `projects` → `projects/{project_id}/scenarios` and `projects/{project_id}/forecasts` →

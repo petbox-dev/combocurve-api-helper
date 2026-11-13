@@ -24,7 +24,10 @@ that test. The embedded lookup tables are now in the Postman collection (12 oper
 | Well incrementals | 1 |
 | Directional-survey batch | 1 |
 
-## Wrapped (7)
+## Wrapped (19)
+
+7 of the 86 counted on 2026-11-05, and the 12 embedded-lookup-table operations, which were not in
+that count.
 
 | Area | Operations | Methods |
 |---|---|---|

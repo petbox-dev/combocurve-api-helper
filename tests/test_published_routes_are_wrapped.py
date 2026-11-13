@@ -11,31 +11,25 @@ That test cannot see a route with no method; this one can.
 
 Network-dependent, skipped when the collection can't be fetched -- same policy as
 `test_route_paths.py` / `test_docstring_slugs.py`.
-(docs/todo/open/no-test-checks-that-published-routes-are-wrapped.md)
+(docs/todo/closed/no-test-checks-that-published-routes-are-wrapped.md)
 """
 
 from __future__ import annotations
 
 import inspect
-import re
 import warnings
 from collections.abc import Iterator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit
 
-import pytest
 import requests
-from pytest import MonkeyPatch
 
 from combocurve_api_helper import ComboCurveAPI
 from tests.http_fakes import FakeResponse, make_offline_api
+from tests.postman_collection import PLACEHOLDER, collection_requests, normalized_segments
 
-# Mirrors scripts/generate_docstrings.py COLLECTION_URL (the collection is never vendored).
-_COLLECTION_URL = 'https://docs.api.combocurve.com/downloads/combocurve-api.postman_collection.json'
-
-# A 24-hex ObjectId stands in for every id argument, so it is recognizable again in a sent path.
-_PLACEHOLDER = '0' * 24
-_ID_SEGMENT = re.compile(rf'^(?:{_PLACEHOLDER}|:.*)$')
+if TYPE_CHECKING:
+    from pytest import MonkeyPatch
 
 # A method that polls would loop on the fake transport; this many requests from one call is enough
 # to record its routes.
@@ -43,16 +37,16 @@ _MAX_REQUESTS_PER_CALL = 5
 
 # Arguments that the annotation alone cannot fill: a value the method validates before it sends.
 _ARGUMENT_OVERRIDES: dict[str, dict[str, Any]] = {
-    'delete_company_wells': {'well_id': _PLACEHOLDER},
-    'delete_project_company_wells': {'well_id': _PLACEHOLDER},
-    'delete_project_wells': {'well_id': _PLACEHOLDER},
-    'delete_scenarios': {'scenario_id': _PLACEHOLDER},
-    'delete_type_curves': {'id': _PLACEHOLDER},
+    'delete_company_wells': {'well_id': PLACEHOLDER},
+    'delete_project_company_wells': {'well_id': PLACEHOLDER},
+    'delete_project_wells': {'well_id': PLACEHOLDER},
+    'delete_scenarios': {'scenario_id': PLACEHOLDER},
+    'delete_type_curves': {'id': PLACEHOLDER},
     'get_project_custom_columns': {'custom_column': 'wells'},
-    'count_root_forecast_daily_volumes': {'filters': {'project': _PLACEHOLDER}},
-    'count_root_forecast_monthly_volumes': {'filters': {'project': _PLACEHOLDER}},
-    'get_root_forecast_daily_volumes': {'filters': {'project': _PLACEHOLDER}},
-    'get_root_forecast_monthly_volumes': {'filters': {'project': _PLACEHOLDER}},
+    'count_root_forecast_daily_volumes': {'filters': {'project': PLACEHOLDER}},
+    'count_root_forecast_monthly_volumes': {'filters': {'project': PLACEHOLDER}},
+    'get_root_forecast_daily_volumes': {'filters': {'project': PLACEHOLDER}},
+    'get_root_forecast_monthly_volumes': {'filters': {'project': PLACEHOLDER}},
 }
 # A by-type method (`econ_model_type` argument) is called once per econ-model type, because it
 # is the only method for some routes (the company POST/PUT/HEAD of most types).
@@ -174,24 +168,26 @@ class _Recorder:
     """Stands in for `requests.request`: records (VERB, normalized path) and answers 200."""
 
     def __init__(self) -> None:
+        # Every (VERB, normalized path) sent so far, across all calls.
         self.operations: set[tuple[str, tuple[str, ...]]] = set()
+        # Requests sent since `begin_call`; caps a poll loop at `_MAX_REQUESTS_PER_CALL`.
+        self.requests_in_call = 0
+
+    def begin_call(self) -> None:
+        """Start counting the requests of one method call."""
         self.requests_in_call = 0
 
     def __call__(self, method: str, url: str, **keywords: Any) -> FakeResponse:
         self.requests_in_call += 1
         if self.requests_in_call > _MAX_REQUESTS_PER_CALL:
             raise _TooManyRequests
-        self.operations.add((method.upper(), _normalize(urlsplit(url).path.strip('/').split('/'))))
-        body: Any = [{'id': _PLACEHOLDER, 'status': 'completed', 'jobId': _PLACEHOLDER}]
+        self.operations.add((method.upper(), normalized_segments(urlsplit(url).path.strip('/').split('/'))))
+        body: Any = [{'id': PLACEHOLDER, 'status': 'completed', 'jobId': PLACEHOLDER}]
         return FakeResponse(200, body, headers={'X-Query-Count': '1', 'X-Delete-Count': '1'})
 
 
-def _normalize(path_segments: list[str]) -> tuple[str, ...]:
-    """Collapse id segments (the placeholder, or the collection's `:name`) to `:p`."""
-    return tuple(':p' if _ID_SEGMENT.match(str(segment)) else str(segment) for segment in path_segments)
-
-
 def _label(verb: str, segments: tuple[str, ...]) -> str:
+    """'VERB /seg/seg', the key form of `_UNWRAPPED`."""
     return f'{verb} /' + '/'.join(segments)
 
 
@@ -210,21 +206,11 @@ def _reaches(template: tuple[str, tuple[str, ...]], sent: set[tuple[str, tuple[s
 
 def _collection_operations() -> set[tuple[str, tuple[str, ...]]]:
     """Every collection operation as (VERB, normalized path segments)."""
-    response = requests.get(_COLLECTION_URL, headers={'User-Agent': 'Mozilla/5.0'}, timeout=60)
-    response.raise_for_status()
     operations: set[tuple[str, tuple[str, ...]]] = set()
-
-    def walk(items: list[dict[str, Any]]) -> None:
-        for item in items:
-            if 'item' in item:
-                walk(item['item'])
-                continue
-            request = item.get('request') or {}
-            segments = (request.get('url') or {}).get('path')
-            if segments:
-                operations.add((str(request.get('method', '')).upper(), _normalize(segments)))
-
-    walk(response.json().get('item', []))
+    for _, request in collection_requests():
+        segments = (request.get('url') or {}).get('path')
+        if segments:
+            operations.add((str(request.get('method', '')).upper(), normalized_segments(segments)))
     return operations
 
 
@@ -232,18 +218,18 @@ def _placeholder_for(parameter: inspect.Parameter) -> Any:
     """A value of the parameter's annotated type; ids and names are all the 24-hex placeholder."""
     annotation = str(parameter.annotation)
     if 'ItemList' in annotation or annotation.startswith(('list[dict', 'list[Item')):
-        return [{'id': _PLACEHOLDER}]
+        return [{'id': PLACEHOLDER}]
     if 'Item' in annotation or annotation.startswith(('dict', 'Mapping')):
-        return {'id': _PLACEHOLDER}
+        return {'id': PLACEHOLDER}
     if any(form in annotation for form in ('Sequence[str]', 'list[str]', 'Iterable[str]')):
-        return [_PLACEHOLDER]
+        return [PLACEHOLDER]
     if annotation.startswith('int'):
         return 1
     if annotation.startswith('float'):
         return 1.0
     if annotation.startswith('bool'):
         return False
-    return _PLACEHOLDER
+    return PLACEHOLDER
 
 
 def _call_every_public_method(api: ComboCurveAPI, recorder: _Recorder) -> list[str]:
@@ -269,7 +255,7 @@ def _call_every_public_method(api: ComboCurveAPI, recorder: _Recorder) -> list[s
         )
         requests_sent = 0
         for variant in variants:
-            recorder.requests_in_call = 0
+            recorder.begin_call()
             try:
                 result = getattr(api, name)(**variant)
                 if isinstance(result, Iterator):
@@ -280,17 +266,20 @@ def _call_every_public_method(api: ComboCurveAPI, recorder: _Recorder) -> list[s
                 # The response is a placeholder, so a method may fail after it sends; its routes
                 # are already recorded. A type with no such route raises before it sends.
                 pass
-            requests_sent += min(recorder.requests_in_call, _MAX_REQUESTS_PER_CALL)
+            requests_sent += recorder.requests_in_call
         if requests_sent == 0:
             silent.append(name)
     return silent
 
 
+def test_every_argument_override_names_a_public_method() -> None:
+    """A renamed or removed method would otherwise leave its override silently unused."""
+    public_methods = {name for name, _ in inspect.getmembers(ComboCurveAPI, inspect.isfunction)}
+    assert set(_ARGUMENT_OVERRIDES) <= public_methods, sorted(set(_ARGUMENT_OVERRIDES) - public_methods)
+
+
 def test_every_published_route_has_a_method_or_a_reviewed_entry(monkeypatch: MonkeyPatch) -> None:
-    try:
-        collection = _collection_operations()
-    except (requests.RequestException, ValueError) as exc:
-        pytest.skip(f'ComboCurve Postman collection unreachable: {exc}')
+    collection = _collection_operations()
 
     recorder = _Recorder()
     monkeypatch.setattr(requests, 'request', recorder)

@@ -1,7 +1,10 @@
+# v2 type-curve routes have no Postman source
+
 Closed: 2026-11-12 -- settled by: the collection has the 24 v2 operations; docstring links use the collection names, the slug skip is gone, the route-path floor is 170, examples are generated
 If this was wrong, you will see: `test_docstring_slugs.py` or `test_route_paths.py` fail on a `-v2-` slug, or a v2 docstring with no example where the collection has one.
 
-# v2 type-curve routes have no Postman source
+(Closed. The sections below record the state while the item was open; the Closed line above is the
+current state.)
 
 Severity: low
 Opened: 2026-11-05

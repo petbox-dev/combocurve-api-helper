@@ -31,7 +31,8 @@ A utility library mapped to ComboCurve's API.
   API <-> CSV column mapping for 11 econ-model types.
 - **Econ-model assignments** — assign / unassign models to wells per scenario
   qualifier, and read the scenario assignment grid.
-- **Lookup tables** — scenario, type-curve, and scenario-assignment CRUD.
+- **Lookup tables** — scenario, type-curve, and scenario-assignment CRUD, and embedded lookup
+  tables (the econ-model lookup tables, project and company).
 - **Econ runs** — trigger scenario economics and read results.
 - **Directional** — directional survey access.
 - **Counts** — a `count_*` method for every list route returns the number of

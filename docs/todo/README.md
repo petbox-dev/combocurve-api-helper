@@ -14,8 +14,7 @@ This repo is public: no confidential project, model, well or fund names in any d
 
 | Item | Opened | Severity | Summary |
 |---|---|---|---|
-| [v2-type-curve-routes-have-no-postman-source](closed/v2-type-curve-routes-have-no-postman-source.md) | 2026-11-12 | v2 docstring links use the collection names; slug skip removed; route-path floor 170; examples generated (large ones point to the docs page) |
-| [no-test-checks-that-published-routes-are-wrapped](closed/no-test-checks-that-published-routes-are-wrapped.md) | 2026-11-12 | `tests/test_published_routes_are_wrapped.py`: call-based audit against the collection, with a reviewed `_UNWRAPPED` list |
+| [econ-model-unassign-sends-an-empty-wells-filter](open/econ-model-unassign-sends-an-empty-wells-filter.md) | 2026-11-13 | medium | `wells=[]` sends `wells=`; server behavior unprobed (could widen the unassign); 3.1.0 guards `combo_ids` / `well_ids` but not this |
 | [count-methods-and-list-methods-do-not-pair-everywhere](open/count-methods-and-list-methods-do-not-pair-everywhere.md) | 2026-09-30 | low | 4 list methods take no `filters` their counts accept; no company per-type counts |
 | [base-py-mixes-transport-policy-with-the-client-class](open/base-py-mixes-transport-policy-with-the-client-class.md) | 2026-09-30 | low | Move the retry/timeout policy out of `base.py` into `_transport.py` |
 | [docstring-freshness-check-tolerates-unsourced-markers](open/docstring-freshness-check-tolerates-unsourced-markers.md) | 2026-09-30 | low | `--check` exits 0 with unsourced markers; no `urlopen` timeout; collapsed arrays hide a length change |
@@ -25,11 +24,18 @@ This repo is public: no confidential project, model, well or fund names in any d
 | [published-routes-without-a-method](open/published-routes-without-a-method.md) | 2026-11-05 | low | 79 published v1 operations have no method (50 new Aug-Oct 2026; scenario run, scenario model assignments and forecast wells are wrapped), embedded lookup tables wrapped in 3.1.0 |
 | [project-custom-columns-required-argument-typed-optional](open/project-custom-columns-required-argument-typed-optional.md) | 2026-11-06 | low | `custom_column` is required at run time but typed `Optional[str] = None`, so a type checker accepts a call that always raises |
 | [list-getters-hold-the-full-result-in-memory](open/list-getters-hold-the-full-result-in-memory.md) | 2026-11-06 | low | List getters read every page into one list (then sort); no public page iterator, so callers cannot cap memory without `_get_items_iterator` |
+| [model-assignment-writes-do-not-enforce-the-500-record-limit](open/model-assignment-writes-do-not-enforce-the-500-record-limit.md) | 2026-11-13 | low | Model-assignment PUT/DELETE send more than 500 records as one request; refuse, do not split |
+| [url-builders-cannot-take-a-repeated-filter](open/url-builders-cannot-take-a-repeated-filter.md) | 2026-11-13 | low | ~50 builders type `filters` as `dict[str, str]`; forecast `well` must repeat, so two sites bypass their builders |
+| [test-transport-doubles-are-copied-per-file](open/test-transport-doubles-are-copied-per-file.md) | 2026-11-13 | low | ~12 local `fake_request` doubles remain beside `http_fakes.RecordingTransport`; route audit discards every exception |
+| [type-curve-list-page-size-below-the-server-limit](open/type-curve-list-page-size-below-the-server-limit.md) | 2026-11-13 | low | `get_type_curves` pages at 200; a comment says the route takes 2,500 (unverified) |
+| [live-test-setup-is-copied-and-partly-stale](open/live-test-setup-is-copied-and-partly-stale.md) | 2026-11-13 | low | Dev path defined 3 times; function-scoped token fixture; stale qualifier-cleanup comment; no live combo/unassign test |
 
 ## Done
 
 | Item | Closed | Settled by |
 |---|---|---|
+| [v2-type-curve-routes-have-no-postman-source](closed/v2-type-curve-routes-have-no-postman-source.md) | 2026-11-12 | v2 docstring links use the collection names; slug skip removed; route-path floor 170; examples generated (large ones point to the docs page) |
+| [no-test-checks-that-published-routes-are-wrapped](closed/no-test-checks-that-published-routes-are-wrapped.md) | 2026-11-12 | `tests/test_published_routes_are_wrapped.py`: call-based audit against the collection, with a reviewed `_UNWRAPPED` list |
 | [directional-surveys-page-size-above-api-maximum](closed/directional-surveys-page-size-above-api-maximum.md) | 2026-11-05 | `GET_LIMIT = 100` in `directional.py` (2.7.1 and 3.0.0) |
 | [request-retries-have-no-overall-deadline](closed/request-retries-have-no-overall-deadline.md) | 2026-11-05 | 600 s deadline per call across all retries; `Retry-After` capped at 120 s |
 | [direct-requests-calls-bypass-timeout-and-retry](closed/direct-requests-calls-bypass-timeout-and-retry.md) | 2026-11-05 | All eight single-object call sites send through `_request_with_retry` (3.0.0; 2.7.1 on `2.x`) |

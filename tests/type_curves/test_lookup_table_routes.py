@@ -2,11 +2,9 @@
 
 from typing import TYPE_CHECKING, Any
 
-import requests
 from pytest import MonkeyPatch
 
-from tests.http_fakes import FakeResponse, make_offline_api
-from tests.type_curves.transport import RecordingTransport
+from tests.http_fakes import FakeResponse, install_recording_transport, make_offline_api
 
 if TYPE_CHECKING:
     from combocurve_api_helper.base import Item
@@ -18,14 +16,8 @@ ENVELOPE: dict[str, Any] = {'successCount': 1, 'failedCount': 0, 'results': [{'s
 TABLE: 'Item' = {'name': 'Sample Table', 'rules': [{'filter': [], 'riskFactorPeakOil': 1}]}
 
 
-def install(monkeypatch: MonkeyPatch, *responses: FakeResponse) -> RecordingTransport:
-    transport = RecordingTransport(list(responses))
-    monkeypatch.setattr(requests, 'request', transport)
-    return transport
-
-
 def test_list_count_and_get(monkeypatch: MonkeyPatch) -> None:
-    transport = install(
+    transport = install_recording_transport(
         monkeypatch,
         FakeResponse(200, [TABLE]),
         FakeResponse(200, None, headers={'X-Query-Count': '1'}),
@@ -45,7 +37,7 @@ def test_list_count_and_get(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_writes(monkeypatch: MonkeyPatch) -> None:
-    transport = install(
+    transport = install_recording_transport(
         monkeypatch,
         FakeResponse(201, TABLE),
         FakeResponse(207, ENVELOPE),
@@ -72,7 +64,7 @@ def test_writes(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_batch_writes_chunk_at_500(monkeypatch: MonkeyPatch) -> None:
-    transport = install(monkeypatch, FakeResponse(207, ENVELOPE), FakeResponse(207, ENVELOPE))
+    transport = install_recording_transport(monkeypatch, FakeResponse(207, ENVELOPE), FakeResponse(207, ENVELOPE))
 
     make_offline_api().put_type_curve_lookup_tables(PROJECT_ID, [TABLE] * 501)
 

@@ -7,6 +7,12 @@ from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
 GET_LIMIT = 200  # the maximum of `take` on both embedded-lookup-table routes (verified live 2026-11-12)
 
 
+def _require_tables(data: ItemList) -> None:
+    """An empty list would reach the transport's no-body branch, so refuse it before any request."""
+    if not data:
+        raise ValueError('data must hold at least one embedded lookup table')
+
+
 class EmbeddedLookupTables(APIBase):
     """
     Embedded lookup tables: the lookup tables that an econ model (capex, expenses, stream
@@ -221,6 +227,7 @@ class EmbeddedLookupTables(APIBase):
             "successCount": 123
         }
         """
+        _require_tables(data)
         url = self.get_embedded_lookup_tables_url(project_id)
         return cast('list[WriteResponse]', self._post_items(url, data))
 
@@ -275,6 +282,7 @@ class EmbeddedLookupTables(APIBase):
             "successCount": 123
         }
         """
+        _require_tables(data)
         url = self.get_embedded_lookup_tables_url(project_id)
         return cast('list[WriteResponse]', self._put_items(url, data))
 
@@ -282,8 +290,8 @@ class EmbeddedLookupTables(APIBase):
         self, project_id: str, embedded_lookup_table_id: str
     ) -> CaseInsensitiveDict[str]:
         """
-        Deletes a specific project embedded lookup table from its id. ComboCurve also removes the
-        links to it from the econ models.
+        Deletes a specific project embedded lookup table from its id. Per the API documentation,
+        ComboCurve also removes the links to it from the econ models (not verified here).
 
         https://docs.api.combocurve.com/api/delete-embedded-lookup-table-by-id
 
@@ -410,6 +418,7 @@ class EmbeddedLookupTables(APIBase):
             "successCount": 123
         }
         """
+        _require_tables(data)
         url = self.get_company_embedded_lookup_tables_url()
         return cast('list[WriteResponse]', self._post_items(url, data))
 
@@ -464,13 +473,14 @@ class EmbeddedLookupTables(APIBase):
             "successCount": 123
         }
         """
+        _require_tables(data)
         url = self.get_company_embedded_lookup_tables_url()
         return cast('list[WriteResponse]', self._put_items(url, data))
 
     def delete_company_embedded_lookup_table_by_id(self, embedded_lookup_table_id: str) -> CaseInsensitiveDict[str]:
         """
-        Deletes a specific company embedded lookup table from its id. ComboCurve also removes the
-        links to it from the econ models.
+        Deletes a specific company embedded lookup table from its id. Per the API documentation,
+        ComboCurve also removes the links to it from the econ models (not verified here).
 
         https://docs.api.combocurve.com/api/delete-company-embedded-lookup-table-by-id
 

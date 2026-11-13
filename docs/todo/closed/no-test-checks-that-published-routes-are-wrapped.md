@@ -1,7 +1,7 @@
+# No test checks that published routes are wrapped
+
 Closed: 2026-11-12 -- settled by: `tests/test_published_routes_are_wrapped.py` (call-based audit with a reviewed `_UNWRAPPED` list)
 If this was wrong, you will see: a route that ComboCurve adds to the Postman collection with no method, and the test still passes.
-
-# No test checks that published routes are wrapped
 
 Severity: low
 Opened: 2026-11-05

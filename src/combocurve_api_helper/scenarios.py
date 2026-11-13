@@ -1,5 +1,5 @@
 import warnings
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Optional, Union, cast
 
 from requests.structures import CaseInsensitiveDict
@@ -9,12 +9,26 @@ from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
 GET_LIMIT = 200
 GET_LIMIT_MODEL_ASSIGNMENTS = 500  # the documented maximum of `take` on the model-assignments route
 MAX_LOOKUP_TABLE_UNASSIGN_WELLS = 500  # the documented maximum body length of the lookup-table unassign route
+MAX_LOOKUP_TABLE_ASSIGNMENT_RECORDS = 500  # the documented maximum body length of the lookup-table assignment PUT
 
 
 def _require_assignment_records(data: ItemList) -> None:
     """An empty list would reach the transport's no-body branch, so refuse it before any request."""
     if not data:
         raise ValueError('data must hold at least one assignment record')
+
+
+def _require_id_sequence(ids: Sequence[str], argument: str) -> list[str]:
+    """Return `ids` as a list, or raise when it names no id: a bare `str` (it would be sent one
+    character per id), an empty sequence, or an empty id (an unresolved lookup). The list is taken
+    FIRST, so a one-shot iterable cannot pass the check and then arrive empty, which would widen a
+    delete to the whole group."""
+    if isinstance(ids, str):
+        raise ValueError(f'{argument} must be a sequence of ids, not a str')
+    id_list = list(ids)
+    if not id_list or not all(id_list):
+        raise ValueError(f'{argument} must be a non-empty sequence of non-empty ids')
+    return id_list
 
 
 class Scenarios(APIBase):
@@ -42,11 +56,14 @@ class Scenarios(APIBase):
         return f'{base_url}/{scenario_id}'
 
     def get_scenario_combos_url(
-        self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None
+        self,
+        project_id: str,
+        scenario_id: str,
+        filters: Optional[Mapping[str, Union[str, Sequence[str]]]] = None,
     ) -> str:
         """
-        Returns the API url for combos for a specific project id, scenario id,
-        and econ run id.
+        Returns the API url for the saved combos of a specific scenario. A sequence value in
+        `filters` repeats its key (`delete_scenario_combo` `comboIds`).
         """
         base_url = self.get_scenario_by_id_url(project_id, scenario_id)
         url = f'{base_url}/combos'
@@ -321,16 +338,11 @@ class Scenarios(APIBase):
             self._require_any_filter({'savedName': saved_name}, 'saved_name')
         )
         if combo_ids is not None:
-            # A bare str would be sent as one key per character. An empty sequence or an empty
-            # id (an unresolved lookup) names no combo, and a dropped filter would delete the
-            # whole saved combo.
-            if isinstance(combo_ids, str) or not combo_ids or not all(combo_ids):
-                raise ValueError(
-                    'combo_ids must be a non-empty sequence of non-empty combo ids; None deletes the group'
-                )
-            filters['comboIds'] = list(combo_ids)
+            # An empty `comboIds` is dropped from the query, and the call would then delete the
+            # whole saved combo. `combo_ids=None` is the way to ask for that.
+            filters['comboIds'] = _require_id_sequence(combo_ids, 'combo_ids')
 
-        url = self.get_scenario_combos_url(project_id, scenario_id) + self._build_params_string(filters)
+        url = self.get_scenario_combos_url(project_id, scenario_id, filters)
         scenarios = self._delete_responses(url, data=[])
 
         headers = scenarios[0].headers
@@ -795,7 +807,10 @@ class Scenarios(APIBase):
         """
         Creates or updates lookup-table assignments for a specific scenario. Each entry of `data`
         has `column`, `lookUpTableId`, `wellIds`, `qualifierName` and optionally
-        `incrementalIndex` (max 500 entries).
+        `incrementalIndex`. The route documents at most 500 entries per request, and this method sends
+        one request: a longer or an empty `data` raises `ValueError` before anything is sent. It is
+        not split into batches, because a failed later batch would leave the earlier ones applied
+        with no sign of it in the result.
 
         **Type curves in the forecast column use this route**: `column: 'forecast'` with the id
         of a Type Curve V2 lookup table (`get_type_curve_lookup_tables`). Verified live
@@ -807,6 +822,12 @@ class Scenarios(APIBase):
 
         https://docs.api.combocurve.com/api/put-scenario-lookup-tables-assignments
         """
+        _require_assignment_records(data)
+        if len(data) > MAX_LOOKUP_TABLE_ASSIGNMENT_RECORDS:
+            raise ValueError(
+                f'data holds {len(data)} records; the route takes at most '
+                f'{MAX_LOOKUP_TABLE_ASSIGNMENT_RECORDS} per request'
+            )
         url = self.get_scenario_lookup_table_assignments_url(project_id, scenario_id)
         return cast('list[WriteResponse]', self._put_items(url, data))
 
@@ -858,16 +879,17 @@ class Scenarios(APIBase):
 
         Returns the headers from the delete response.
         """
-        if isinstance(well_ids, str) or not well_ids or not all(well_ids):
-            raise ValueError('well_ids must be a non-empty sequence of non-empty well ids')
-        if len(well_ids) > MAX_LOOKUP_TABLE_UNASSIGN_WELLS:
+        well_id_list = _require_id_sequence(well_ids, 'well_ids')
+        if len(well_id_list) > MAX_LOOKUP_TABLE_UNASSIGN_WELLS:
             raise ValueError(
-                f'well_ids holds {len(well_ids)} ids; the route takes at most '
+                f'well_ids holds {len(well_id_list)} ids; the route takes at most '
                 f'{MAX_LOOKUP_TABLE_UNASSIGN_WELLS} per request'
             )
         filters = None if incremental_index is None else {'incrementalIndex': str(incremental_index)}
         url = self.get_scenario_lookup_table_assignment_by_id_url(project_id, scenario_id, lookup_table_id, filters)
-        response = self._request_with_retry('delete', url, json_body=list(well_ids))
+        # One request, not `_delete_responses`: its body is an `ItemList` it would chunk, and this
+        # route's body is a list of id strings capped above.
+        response = self._request_with_retry('delete', url, json_body=well_id_list)
         response.raise_for_status()
         return response.headers
 
