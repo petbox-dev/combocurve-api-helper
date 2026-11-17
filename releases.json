@@ -1,6 +1,13 @@
 {
   "combocurve-api-helper": [
     {
+      "version": "3.2.0",
+      "commit": "80b6afaaaebe9d0664a0f59ada91902d11b8ca7c",
+      "date": "2026-11-17",
+      "target": "main",
+      "notes": "tag v3.2.0; includes 2040f42 and 35b45af, which reached main after 3.1.0 with no ledger entry"
+    },
+    {
       "version": "3.1.0",
       "commit": "7d53da616ad210c87c90b2a70b339d18476c9932",
       "date": "2026-11-13",
