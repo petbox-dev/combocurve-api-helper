@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-11-17
+
+### Changed
+
+- The OAuth token is kept on disk, in `~/.combocurve/token-cache/` (one file per credential, named by
+  the first 32 hex digits of a SHA-256 of the token URI, client id and secret). The file holds the
+  bearer token in plain text with its write and refresh times, not the secret; on POSIX it is mode
+  0600. A new script run reuses the token until it is due for refresh (60 s before expiry) instead of
+  requesting one at startup, which spent one of the 10 token requests per client per 15 minutes. A
+  client reads the file again before it fetches, so it takes a token another process fetched. A file
+  that cannot be read, or whose times are not plausible (written more than 5 s in the future, or a
+  refresh time before the write or more than 24 hours after it), is ignored; one that cannot be written gives a
+  `RuntimeWarning`. If ComboCurve refuses a token still on disk, delete the file. New keyword
+  arguments on `OAuthClientAuth`: `cache_token_on_disk` (default `True`) and `token_cache_directory`.
+  The service-account (v1) token is signed locally and is not written to disk.
+
 ### Fixed
 
 - The `get_scenario_lookup_table_assignments` docstring said `column` takes a comma-separated

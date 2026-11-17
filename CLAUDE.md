@@ -148,7 +148,14 @@ and takes only the path and query from `Link`. Never follow a `Link` url as give
 `ServiceAccountAuth`); there is no dependency on `combocurve-api-v1` since 2.5.0. Both cache the
 token and replace it 60 s before expiry (or at half its lifetime, if shorter). **Do not fetch an OAuth
 token per request**: the token endpoint allows 10 requests per `clientId` per 15 minutes. The expiry
-is wall-clock time so that a pickled client keeps a valid token in another process. A refused token
+is wall-clock time so that a pickled client keeps a valid token in another process. `OAuthClientAuth`
+also keeps its token on disk (`config.TOKEN_CACHE_DIRECTORY`, `~/.combocurve/token-cache/`, one file
+per token URI + client id + secret; `cache_token_on_disk=False` turns it off), so a new script run
+reuses it, and it reads the file again before each fetch. The file stores `written_at` and
+`refresh_at`; a file written more than 5 s in the future, or with a refresh before its write or
+more than 24 h after it, is refused, because the file is rewritten only after a fetch and a bad `refresh_at` would otherwise keep
+a dead token in use on every run. `tests/conftest.py` points that directory
+at a fresh temp directory for every test (autouse); a test must not touch the real one. A refused token
 raises `ComboCurveAuthError`, which is deliberately not a `requests.RequestException` so that
 `_send_request` does not send it again.
 

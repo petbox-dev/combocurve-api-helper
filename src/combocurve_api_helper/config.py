@@ -9,6 +9,9 @@ PACKAGE_ROOT = Path(__file__).parent.resolve()
 
 COMBOCURVE_DIRECTORY = USER_HOME / '.combocurve'
 
+# Where `OAuthClientAuth` keeps its bearer tokens between runs, one file per credential.
+TOKEN_CACHE_DIRECTORY = COMBOCURVE_DIRECTORY / 'token-cache'
+
 # The files of an unzipped ComboCurve credential download (the "native" layout). OAuth (v2)
 # downloads hold `api-credentials.json`; legacy (v1) downloads hold `api-service-account-key.json`.
 # The ZIP puts them in a `combocurve/` folder, so a directory is searched at its top and in that folder.

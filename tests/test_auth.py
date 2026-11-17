@@ -183,8 +183,10 @@ class TestOAuthClientAuth:
         assert 'sample-client-secret' not in repr(auth.OAuthClientAuth(credentials, API_KEY))
 
     def test_pickled_auth_keeps_its_token(self, monkeypatch: MonkeyPatch) -> None:
+        # Without the disk cache, so the copy can only have the token if the pickle carried it.
         endpoint = FakeTokenEndpoint(token_response())
-        client_auth = oauth_auth(endpoint, monkeypatch)
+        monkeypatch.setattr(requests, 'post', endpoint)
+        client_auth = auth.OAuthClientAuth(oauth_credentials(), API_KEY, cache_token_on_disk=False)
         client_auth.get_auth_headers()
         copy = pickle.loads(pickle.dumps(client_auth))
         assert copy.get_auth_headers()['Authorization'] == 'Bearer token-1'
@@ -199,6 +201,160 @@ class TestOAuthClientAuth:
         shipped = auth.OAuthClientCredentials.from_mapping(OAUTH_CREDENTIALS)
         documented = auth.OAuthClientCredentials.from_mapping(OAUTH_CREDENTIALS_AS_DOCUMENTED)
         assert shipped == documented
+
+
+def oauth_credentials(**overrides: str) -> auth.OAuthClientCredentials:
+    return auth.OAuthClientCredentials.from_mapping({**OAUTH_CREDENTIALS, **overrides})
+
+
+def cache_files() -> list[Path]:
+    return sorted(Path(config.TOKEN_CACHE_DIRECTORY).glob('*.json'))
+
+
+def bearer(client_auth: auth.OAuthClientAuth) -> str:
+    return client_auth.get_auth_headers()['Authorization']
+
+
+class TestOAuthTokenDiskCache:
+    """The OAuth token is kept on disk, so a new script run reuses it instead of spending one of the
+    10 token requests per client per 15 minutes. `tests/conftest.py` points the cache at a fresh
+    directory for every test."""
+
+    def test_new_instance_reuses_the_token_on_disk(self, monkeypatch: MonkeyPatch) -> None:
+        endpoint = FakeTokenEndpoint(token_response('token-1'), token_response('token-2'))
+        oauth_auth(endpoint, monkeypatch).get_auth_headers()
+        assert bearer(auth.OAuthClientAuth(oauth_credentials(), API_KEY)) == 'Bearer token-1'
+        assert len(endpoint.calls) == 1
+
+    def test_token_on_disk_is_replaced_once_it_is_due(self, monkeypatch: MonkeyPatch) -> None:
+        now = [1_000_000.0]
+        monkeypatch.setattr(time, 'time', lambda: now[0])
+        endpoint = FakeTokenEndpoint(token_response('token-1'), token_response('token-2'))
+        oauth_auth(endpoint, monkeypatch).get_auth_headers()
+
+        now[0] += 3600 - 60 - 1
+        assert bearer(auth.OAuthClientAuth(oauth_credentials(), API_KEY)) == 'Bearer token-1'
+        now[0] += 1
+        assert bearer(auth.OAuthClientAuth(oauth_credentials(), API_KEY)) == 'Bearer token-2'
+        assert bearer(auth.OAuthClientAuth(oauth_credentials(), API_KEY)) == 'Bearer token-2'
+        assert len(endpoint.calls) == 2
+
+    def test_instance_rereads_the_disk_before_fetching(self, monkeypatch: MonkeyPatch) -> None:
+        """Another process may have refreshed the token; a long-running client takes that one."""
+        now = [1_000_000.0]
+        monkeypatch.setattr(time, 'time', lambda: now[0])
+        endpoint = FakeTokenEndpoint(token_response('token-1'), token_response('token-2'))
+        long_running = oauth_auth(endpoint, monkeypatch)
+        long_running.get_auth_headers()
+        now[0] += 3600
+        auth.OAuthClientAuth(oauth_credentials(), API_KEY).get_auth_headers()
+        assert bearer(long_running) == 'Bearer token-2'
+        assert len(endpoint.calls) == 2
+
+    def test_each_credential_has_its_own_token(self, monkeypatch: MonkeyPatch) -> None:
+        endpoint = FakeTokenEndpoint(token_response('token-1'), token_response('token-2'), token_response('token-3'))
+        oauth_auth(endpoint, monkeypatch).get_auth_headers()
+        other_client = auth.OAuthClientAuth(oauth_credentials(client_id='other-client-id'), API_KEY)
+        assert bearer(other_client) == 'Bearer token-2'
+        rotated_secret = auth.OAuthClientAuth(oauth_credentials(client_secret='rotated-secret'), API_KEY)
+        assert bearer(rotated_secret) == 'Bearer token-3'
+        assert len(cache_files()) == 3
+
+    def test_cache_file_holds_no_client_secret(self, monkeypatch: MonkeyPatch) -> None:
+        oauth_auth(FakeTokenEndpoint(token_response()), monkeypatch).get_auth_headers()
+        [cache_file] = cache_files()
+        assert 'sample-client-secret' not in cache_file.name
+        assert 'sample-client-secret' not in cache_file.read_text()
+
+    @pytest.mark.parametrize(
+        'content',
+        [
+            'not json',
+            '[]',
+            '[' * 100_000,
+            '{"access_token": 1, "written_at": 1000000, "refresh_at": 1003000}',
+            '{"access_token": "", "written_at": 1000000, "refresh_at": 1003000}',
+            '{"access_token": "t", "written_at": 1000000, "refresh_at": "later"}',
+            '{"access_token": "t", "refresh_at": 1003000}',
+            '{"access_token": "t", "written_at": true, "refresh_at": 1003000}',
+            '{"access_token": "t", "written_at": 1000000, "refresh_at": Infinity}',
+            '{"access_token": "t", "written_at": 1000000, "refresh_at": NaN}',
+            '{"access_token": "t", "written_at": 1000000, "refresh_at": 1' + '0' * 400 + '}',
+            # Refresh time far beyond any token lifetime: damaged, or written under a wrong clock.
+            '{"access_token": "t", "written_at": 1000000, "refresh_at": 1000000000000}',
+            # Written in the future: the clock ran ahead then and has been corrected since.
+            '{"access_token": "t", "written_at": 1500000, "refresh_at": 1503000}',
+            # Just past the 5 s tolerance for another host's clock.
+            '{"access_token": "t", "written_at": 1000106, "refresh_at": 1003000}',
+            # Refresh time before the write.
+            '{"access_token": "t", "written_at": 1000000, "refresh_at": 999000}',
+        ],
+    )
+    def test_unreadable_cache_file_is_replaced(self, content: str, monkeypatch: MonkeyPatch) -> None:
+        monkeypatch.setattr(time, 'time', lambda: 1_000_100.0)
+        endpoint = FakeTokenEndpoint(token_response('token-1'), token_response('token-2'))
+        oauth_auth(endpoint, monkeypatch).get_auth_headers()
+        [cache_file] = cache_files()
+        cache_file.write_text(content)
+        assert bearer(auth.OAuthClientAuth(oauth_credentials(), API_KEY)) == 'Bearer token-2'
+        assert json.loads(cache_file.read_text())['access_token'] == 'token-2'
+
+    def test_cache_write_failure_warns_and_does_not_fail_the_request(
+        self, tmp_path: Path, monkeypatch: MonkeyPatch
+    ) -> None:
+        blocking_file = tmp_path / 'not-a-directory'
+        blocking_file.write_text('')
+        monkeypatch.setattr(config, 'TOKEN_CACHE_DIRECTORY', blocking_file / 'token-cache')
+        client_auth = oauth_auth(FakeTokenEndpoint(token_response('token-1')), monkeypatch)
+        with pytest.warns(RuntimeWarning, match='token cache'):
+            assert bearer(client_auth) == 'Bearer token-1'
+
+    def test_plausible_cache_file_is_used(self, monkeypatch: MonkeyPatch) -> None:
+        """The control for `test_unreadable_cache_file_is_replaced`: the same file with sound times is used."""
+        monkeypatch.setattr(time, 'time', lambda: 1_000_100.0)
+        endpoint = FakeTokenEndpoint(token_response('token-1'), token_response('token-2'))
+        oauth_auth(endpoint, monkeypatch).get_auth_headers()
+        [cache_file] = cache_files()
+        cache_file.write_text('{"access_token": "t", "written_at": 1000000, "refresh_at": 1003000}')
+        assert bearer(auth.OAuthClientAuth(oauth_credentials(), API_KEY)) == 'Bearer t'
+        # Written by a host whose clock is 4 s ahead: inside the tolerance.
+        cache_file.write_text('{"access_token": "u", "written_at": 1000104, "refresh_at": 1003000}')
+        assert bearer(auth.OAuthClientAuth(oauth_credentials(), API_KEY)) == 'Bearer u'
+        assert len(endpoint.calls) == 1
+
+    def test_pickled_auth_holds_no_os_specific_path(self, monkeypatch: MonkeyPatch) -> None:
+        client_auth = oauth_auth(FakeTokenEndpoint(token_response()), monkeypatch)
+        assert b'pathlib' not in pickle.dumps(client_auth)
+
+    def test_client_pickled_before_the_disk_cache_still_works(self, monkeypatch: MonkeyPatch) -> None:
+        """A client pickled by 3.1.0 has no `_token_cache_file`; unpickled here it keeps to memory."""
+        endpoint = FakeTokenEndpoint(token_response('token-1'), token_response('token-2'))
+        client_auth = oauth_auth(endpoint, monkeypatch)
+        del client_auth._token_cache_file
+        assert bearer(client_auth) == 'Bearer token-1'
+
+    def test_disk_cache_can_be_turned_off(self, monkeypatch: MonkeyPatch) -> None:
+        monkeypatch.setattr(requests, 'post', FakeTokenEndpoint(token_response()))
+        auth.OAuthClientAuth(oauth_credentials(), API_KEY, cache_token_on_disk=False).get_auth_headers()
+        assert cache_files() == []
+
+    def test_explicit_cache_directory(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+        monkeypatch.setattr(requests, 'post', FakeTokenEndpoint(token_response()))
+        directory = tmp_path / 'elsewhere'
+        auth.OAuthClientAuth(oauth_credentials(), API_KEY, token_cache_directory=directory).get_auth_headers()
+        assert len(list(directory.glob('*.json'))) == 1
+        assert cache_files() == []
+
+    @pytest.mark.skipif(os.name == 'nt', reason='POSIX file modes')
+    def test_cache_file_is_private_to_the_user(self, monkeypatch: MonkeyPatch) -> None:
+        oauth_auth(FakeTokenEndpoint(token_response()), monkeypatch).get_auth_headers()
+        [cache_file] = cache_files()
+        assert cache_file.stat().st_mode & 0o077 == 0
+
+    def test_service_account_token_is_not_written_to_disk(self, service_account_credentials: dict[str, str]) -> None:
+        account = auth.ServiceAccount.from_mapping(service_account_credentials)
+        auth.ServiceAccountAuth(account, API_KEY).get_auth_headers()
+        assert cache_files() == []
 
 
 class TestServiceAccountAuth:

@@ -14,6 +14,8 @@ It also adds the response of a failing `requests.HTTPError` to the test report: 
 from `raise_for_status` names only the status and the url, and the body (the ComboCurve error name)
 is the evidence a live failure needs. A 404 seen once on 2026-11-13 could not be diagnosed for lack
 of it.
+
+Every test gets its own OAuth token cache directory (`_isolated_token_cache`).
 """
 
 from collections.abc import Generator
@@ -48,6 +50,15 @@ def pytest_runtest_makereport(
             )
         )
     return report
+
+
+@pytest.fixture(autouse=True)
+def _isolated_token_cache(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Point the OAuth token disk cache at a fresh directory, so no test reads or writes the user's
+    `~/.combocurve/token-cache` or sees a token another test cached."""
+    from combocurve_api_helper import config
+
+    monkeypatch.setattr(config, 'TOKEN_CACHE_DIRECTORY', tmp_path_factory.mktemp('token-cache'))
 
 
 try:

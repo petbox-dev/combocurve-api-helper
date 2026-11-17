@@ -6,6 +6,7 @@ no OAuth operation.)
 * OAuth (v2, current): `api-credentials.json` holds a `clientId` and `clientSecret`. A bearer token
   comes from a POST to the token endpoint and lives `expires_in` seconds (3600). Every API request
   also carries `x-backend-version: v2`; without it the request reaches the legacy backend and fails.
+  The token is kept on disk (`~/.combocurve/token-cache`), so a new run reuses it until it is due.
 * Service account (v1, legacy; ComboCurve no longer issues it): a GCP service-account key signs an
   RS256 JWT locally.
 
@@ -15,9 +16,14 @@ token refresh never runs on two threads at once.
 
 from __future__ import annotations
 
+import contextlib
 import datetime
+import hashlib
 import json
+import os
+import tempfile
 import time
+import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -45,6 +51,12 @@ SERVICE_ACCOUNT_TOKEN_SECONDS = 3600
 # per 15 minutes, and a lifetime under the margin would otherwise fetch a token for every request.
 _REFRESH_MARGIN_SECONDS = 60.0
 _TOKEN_REQUEST_TIMEOUT_SECONDS = (30.0, 60.0)
+# The longest refresh time after its write that a token file on disk may carry. ComboCurve tokens
+# live 3600 s; a larger gap means the file is damaged or was written under a wrong clock.
+_MAX_STORED_TOKEN_SECONDS = 24 * 3600.0
+# How far ahead of this machine's clock a file's write time may be: hosts that share a home directory
+# disagree by a few seconds, and refusing their files would spend the token quota on every run.
+_CLOCK_TOLERANCE_SECONDS = 5.0
 
 
 class ComboCurveAuthError(RuntimeError):
@@ -131,15 +143,28 @@ class _CachedBearerTokenAuth(ABC):
 
     def _current_token(self) -> str:
         if self._token is None or time.time() >= self._token_refresh_at:
-            token, lifetime_seconds = self._new_token()
-            margin_seconds = min(_REFRESH_MARGIN_SECONDS, lifetime_seconds / 2.0)
-            self._token = token
-            self._token_refresh_at = time.time() + lifetime_seconds - margin_seconds
+            stored = self._read_stored_token()
+            if stored is not None and time.time() < stored[1]:
+                self._token, self._token_refresh_at = stored
+            else:
+                token, lifetime_seconds = self._new_token()
+                margin_seconds = min(_REFRESH_MARGIN_SECONDS, lifetime_seconds / 2.0)
+                self._token = token
+                self._token_refresh_at = time.time() + lifetime_seconds - margin_seconds
+                self._store_token(self._token, self._token_refresh_at)
         return self._token
 
     def _backend_headers(self) -> dict[str, str]:
         """Headers beyond the token and API key that this credential type requires."""
         return {}
+
+    def _read_stored_token(self) -> tuple[str, float] | None:
+        """A token kept outside this object (another run's), with its refresh time; None if there is none."""
+        return None
+
+    def _store_token(self, token: str, refresh_at: float) -> None:
+        """Keep `token` outside this object for later runs. The default keeps nothing."""
+        return
 
     @abstractmethod
     def _new_token(self) -> tuple[str, float]:
@@ -147,14 +172,105 @@ class _CachedBearerTokenAuth(ABC):
 
 
 class OAuthClientAuth(_CachedBearerTokenAuth):
-    """OAuth 2.0 client-credentials auth (v2 credentials)."""
+    """OAuth 2.0 client-credentials auth (v2 credentials).
 
-    def __init__(self, credentials: OAuthClientCredentials, api_key: str) -> None:
+    The token is also kept on disk, in `token_cache_directory` (default `~/.combocurve/token-cache`),
+    so the next run of a script reuses it until it is due for refresh instead of spending one of the
+    10 token requests per client per 15 minutes. One file per credential, named by the first 32 hex
+    digits of a SHA-256 of the token URI, client id and client secret (a new secret starts a new
+    file). The file holds the bearer token in plain text with its write and refresh times, not the
+    secret; on POSIX it is readable by the owner only (mode 0600). A token found on disk is checked
+    again before each fetch, so a token another process fetched is used. Two processes that both
+    find no valid token fetch one each. A file that cannot be read, or whose times are not
+    plausible, is ignored; one that cannot be written gives a `RuntimeWarning`, and the request
+    goes on. `cache_token_on_disk=False` keeps the token in memory only. If ComboCurve refuses a
+    token that is still on disk (revoked on the server), delete the file, or the directory, to make
+    the next run fetch a new one.
+    """
+
+    # A `str`, not a `Path`, so a pickled client unpickles on another OS (a `WindowsPath` does not on
+    # POSIX). The class-level default also serves a client pickled before 3.2.0, which has no such
+    # attribute: unpickled here, it keeps its token in memory only.
+    _token_cache_file: str | None = None
+
+    def __init__(
+        self,
+        credentials: OAuthClientCredentials,
+        api_key: str,
+        *,
+        cache_token_on_disk: bool = True,
+        token_cache_directory: str | Path | None = None,
+    ) -> None:
         super().__init__(api_key)
         self._credentials = credentials
+        if cache_token_on_disk:
+            directory = Path(config.TOKEN_CACHE_DIRECTORY if token_cache_directory is None else token_cache_directory)
+            identity = '\n'.join((credentials.token_uri, credentials.client_id, credentials.client_secret))
+            self._token_cache_file = str(directory / f'{hashlib.sha256(identity.encode()).hexdigest()[:32]}.json')
 
     def _backend_headers(self) -> dict[str, str]:
         return {'x-backend-version': 'v2'}
+
+    def _read_stored_token(self) -> tuple[str, float] | None:
+        """The token on disk, or None when there is none or it is not trustworthy.
+
+        A file is refused when its times are not finite numbers, when it was written in the future
+        (the clock ran ahead then and was corrected since), or when its refresh time is more than
+        `_MAX_STORED_TOKEN_SECONDS` after it was written. Without those checks a bad `refresh_at`
+        would keep a dead token in use on every run, since the file is rewritten only after a fetch.
+        """
+        if self._token_cache_file is None:
+            return None
+        try:
+            document = json.loads(Path(self._token_cache_file).read_text(encoding='utf-8'))
+        except (OSError, ValueError, RecursionError):
+            return None
+        if not isinstance(document, dict):
+            return None
+        token = document.get('access_token')
+        if not isinstance(token, str) or not token:
+            return None
+        written_at = document.get('written_at')
+        refresh_at = document.get('refresh_at')
+        if not isinstance(written_at, (int, float)) or not isinstance(refresh_at, (int, float)):
+            return None
+        try:
+            written_at, refresh_at = float(written_at), float(refresh_at)
+        except OverflowError:  # an integer too large for a float
+            return None
+        # NaN fails every comparison and an infinity exceeds the gap, so both are refused here too.
+        if (
+            written_at > time.time() + _CLOCK_TOLERANCE_SECONDS
+            or not 0.0 <= refresh_at - written_at <= _MAX_STORED_TOKEN_SECONDS
+        ):
+            return None
+        return token, refresh_at
+
+    def _store_token(self, token: str, refresh_at: float) -> None:
+        """Write the file whole under a temporary name, then rename it, so a reader never sees half a file."""
+        if self._token_cache_file is None:
+            return
+        written_at = time.time()
+        cache_path = Path(self._token_cache_file)
+        directory = cache_path.parent
+        temporary_path: str | None = None
+        try:
+            directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            file_descriptor, temporary_path = tempfile.mkstemp(dir=directory, suffix='.tmp')
+            with os.fdopen(file_descriptor, 'w', encoding='utf-8') as temporary_file:
+                json.dump({'access_token': token, 'written_at': written_at, 'refresh_at': refresh_at}, temporary_file)
+            os.replace(temporary_path, cache_path)
+            temporary_path = None
+        except OSError as error:
+            warnings.warn(
+                f'could not write the ComboCurve token cache {cache_path}: {error}',
+                RuntimeWarning,
+                stacklevel=2,
+            )
+        finally:
+            if temporary_path is not None:
+                with contextlib.suppress(OSError):
+                    os.remove(temporary_path)
 
     def _new_token(self) -> tuple[str, float]:
         """POST the client credentials to the token endpoint.
