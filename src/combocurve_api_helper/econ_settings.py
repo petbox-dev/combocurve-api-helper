@@ -1,8 +1,8 @@
-from typing import Optional, cast
+from typing import Optional, Union, cast
 
 from requests.structures import CaseInsensitiveDict
 
-from .base import APIBase, Item, ItemList, WriteResponse
+from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
 
 GET_LIMIT = 200  # the maximum of `take` on the econ-settings and econ-report-settings GET routes
 
@@ -69,9 +69,9 @@ class EconSettings(APIBase):
     ###########
 
     def _get_documents(self, resource: str, filters: Optional[dict[str, str]] = None) -> ItemList:
-        """Returns the documents of the company collection `resource`, in the order the API returns them."""
+        """Returns the documents of the company collection `resource`, with the shared list ordering."""
         url = self._company_url(resource, filters)
-        return self._get_items(url, params={'take': GET_LIMIT})
+        return self._keysort(self._get_items(url, params={'take': GET_LIMIT}), LIST_SORT_ORDER)
 
     def _count_documents(self, resource: str, filters: Optional[dict[str, str]] = None) -> int:
         """Returns the number of documents matching `filters`, from the `X-Query-Count` header of a HEAD."""
@@ -81,20 +81,26 @@ class EconSettings(APIBase):
         """Returns one document of the company collection `resource`, from its id."""
         return self._get_items(self._company_document_url(resource, document_id))[0]
 
-    def _post_documents(self, resource: str, data: ItemList) -> list[WriteResponse]:
+    def _document_records(self, data: Union[Item, ItemList]) -> ItemList:
+        """Normalize one document or a list of documents to the array shape the routes require."""
+        records = [data] if isinstance(data, dict) else data
+        self._require_records(records, 'document')
+        return records
+
+    def _post_documents(self, resource: str, data: Union[Item, ItemList]) -> list[WriteResponse]:
         """Creates documents in the company collection `resource`."""
-        self._require_records(data, 'document')
-        return cast('list[WriteResponse]', self._post_items(self._company_url(resource), data))
+        records = self._document_records(data)
+        return cast('list[WriteResponse]', self._post_items(self._company_url(resource), records))
 
-    def _put_documents(self, resource: str, data: ItemList) -> list[WriteResponse]:
+    def _put_documents(self, resource: str, data: Union[Item, ItemList]) -> list[WriteResponse]:
         """Upserts documents of the company collection `resource`, by `name`."""
-        self._require_records(data, 'document')
-        return cast('list[WriteResponse]', self._put_items(self._company_url(resource), data))
+        records = self._document_records(data)
+        return cast('list[WriteResponse]', self._put_items(self._company_url(resource), records))
 
-    def _patch_documents(self, resource: str, data: ItemList) -> list[WriteResponse]:
+    def _patch_documents(self, resource: str, data: Union[Item, ItemList]) -> list[WriteResponse]:
         """Partially updates documents of the company collection `resource`, by `name`."""
-        self._require_records(data, 'document')
-        return cast('list[WriteResponse]', self._patch_items(self._company_url(resource), data))
+        records = self._document_records(data)
+        return cast('list[WriteResponse]', self._patch_items(self._company_url(resource), records))
 
     def _delete_document(self, resource: str, document_id: str) -> CaseInsensitiveDict[str]:
         """Deletes one document of the company collection `resource`, from its id."""
@@ -112,6 +118,30 @@ class EconSettings(APIBase):
         `take` and `cursor`.
 
         https://docs.api.combocurve.com/api/get-econ-settings
+
+        Example response:
+        [
+            {
+                "categories": [
+                    {
+                        "category": "string",
+                        "columns": [
+                            {
+                                "key": "string",
+                                "selected": [
+                                    "aggregate"
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "createdAt": "2020-01-01",
+                "createdBy": "string",
+                "id": "5e272d38b78910dd2a1bd691",
+                "name": "Example",
+                "updatedAt": "2020-01-01"
+            }
+        ]
         """
         return self._get_documents(ECON_SETTINGS, filters)
 
@@ -129,36 +159,199 @@ class EconSettings(APIBase):
         Returns one company econ setting from its id.
 
         https://docs.api.combocurve.com/api/get-econ-settings-by-id
+
+        Example response:
+        {
+            "categories": [
+                {
+                    "category": "string",
+                    "columns": [
+                        {
+                            "key": "string",
+                            "selected": [
+                                "oneLiner"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "createdAt": "2020-01-01",
+            "createdBy": "string",
+            "id": "5e272d38b78910dd2a1bd691",
+            "name": "Example",
+            "updatedAt": "2020-01-01"
+        }
         """
         return self._get_document_by_id(ECON_SETTINGS, econ_setting_id)
 
-    def post_econ_settings(self, data: ItemList) -> list[WriteResponse]:
+    def post_econ_settings(self, data: Union[Item, ItemList]) -> list[WriteResponse]:
         """
         Creates company econ settings. `data` is one setting or a list of them. The names must be unique
         in the company: a name that already exists, or one repeated in `data`, is a per-record collision
         error. The response is always 207 Multi-Status.
 
         https://docs.api.combocurve.com/api/post-econ-settings
+
+        Example data:
+        [
+            {
+                "name": "Example",
+                "categories": [
+                    {
+                        "category": "string",
+                        "columns": [
+                            {
+                                "key": "string",
+                                "selected": [
+                                    "monthly"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+
+        Example response:
+        {
+            "generalErrors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string"
+                }
+            ],
+            "results": [
+                {
+                    "status": "string",
+                    "code": 123,
+                    "id": "5e272d38b78910dd2a1bd691",
+                    "errors": [
+                        {
+                            "name": "Example",
+                            "message": "string",
+                            "location": "string"
+                        }
+                    ]
+                }
+            ],
+            "failedCount": 123,
+            "successCount": 123
+        }
         """
         return self._post_documents(ECON_SETTINGS, data)
 
-    def put_econ_settings(self, data: ItemList) -> list[WriteResponse]:
+    def put_econ_settings(self, data: Union[Item, ItemList]) -> list[WriteResponse]:
         """
         Upserts company econ settings by `name`. A setting with a matching name is replaced in full (an
         absent `categories` clears the selection); otherwise a new setting is created. A name that matches
         more than one existing setting, or that repeats within `data`, is a per-record collision error.
 
         https://docs.api.combocurve.com/api/put-econ-settings
+
+        Example data:
+        [
+            {
+                "name": "Example",
+                "categories": [
+                    {
+                        "category": "string",
+                        "columns": [
+                            {
+                                "key": "string",
+                                "selected": [
+                                    "monthly"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+
+        Example response:
+        {
+            "generalErrors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string"
+                }
+            ],
+            "results": [
+                {
+                    "status": "string",
+                    "code": 123,
+                    "id": "5e272d38b78910dd2a1bd691",
+                    "errors": [
+                        {
+                            "name": "Example",
+                            "message": "string",
+                            "location": "string"
+                        }
+                    ]
+                }
+            ],
+            "failedCount": 123,
+            "successCount": 123
+        }
         """
         return self._put_documents(ECON_SETTINGS, data)
 
-    def patch_econ_settings(self, data: ItemList) -> list[WriteResponse]:
+    def patch_econ_settings(self, data: Union[Item, ItemList]) -> list[WriteResponse]:
         """
         Partially updates company econ settings by `name`. It never inserts: a name that matches no setting
         is a per-record 404. Omitting `categories` leaves the stored selection unchanged; a provided
         `categories` replaces the whole selection.
 
         https://docs.api.combocurve.com/api/patch-econ-settings
+
+        Example data:
+        [
+            {
+                "name": "Example",
+                "categories": [
+                    {
+                        "category": "string",
+                        "columns": [
+                            {
+                                "key": "string",
+                                "selected": [
+                                    "monthly"
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+
+        Example response:
+        {
+            "generalErrors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string"
+                }
+            ],
+            "results": [
+                {
+                    "status": "string",
+                    "code": 123,
+                    "id": "5e272d38b78910dd2a1bd691",
+                    "errors": [
+                        {
+                            "name": "Example",
+                            "message": "string",
+                            "location": "string"
+                        }
+                    ]
+                }
+            ],
+            "failedCount": 123,
+            "successCount": 123
+        }
         """
         return self._patch_documents(ECON_SETTINGS, data)
 
@@ -181,6 +374,22 @@ class EconSettings(APIBase):
         `take` and `cursor`.
 
         https://docs.api.combocurve.com/api/get-econ-report-settings
+
+        Example response:
+        [
+            {
+                "allWellsAgg": true,
+                "createdAt": "2020-01-01",
+                "createdBy": "string",
+                "headers": [
+                    "string"
+                ],
+                "id": "5e272d38b78910dd2a1bd691",
+                "name": "Example",
+                "rollUpEachLevel": true,
+                "updatedAt": "2020-01-01"
+            }
+        ]
         """
         return self._get_documents(ECON_REPORT_SETTINGS, filters)
 
@@ -198,10 +407,24 @@ class EconSettings(APIBase):
         Returns one company econ report setting from its id.
 
         https://docs.api.combocurve.com/api/get-econ-report-settings-by-id
+
+        Example response:
+        {
+            "allWellsAgg": true,
+            "createdAt": "2020-01-01",
+            "createdBy": "string",
+            "headers": [
+                "string"
+            ],
+            "id": "5e272d38b78910dd2a1bd691",
+            "name": "Example",
+            "rollUpEachLevel": true,
+            "updatedAt": "2020-01-01"
+        }
         """
         return self._get_document_by_id(ECON_REPORT_SETTINGS, econ_report_setting_id)
 
-    def post_econ_report_settings(self, data: ItemList) -> list[WriteResponse]:
+    def post_econ_report_settings(self, data: Union[Item, ItemList]) -> list[WriteResponse]:
         """
         Creates company econ report settings. `data` is one setting or a list of them; the response is
         always 207 Multi-Status. Names must be unique on external writes. `headers` is ordered, holds at
@@ -209,10 +432,49 @@ class EconSettings(APIBase):
         empty list; omitted aggregation booleans are not stored and take their read defaults.
 
         https://docs.api.combocurve.com/api/post-econ-report-settings
+
+        Example data:
+        [
+            {
+                "name": "Example",
+                "headers": [
+                    "string"
+                ],
+                "allWellsAgg": true,
+                "rollUpEachLevel": true
+            }
+        ]
+
+        Example response:
+        {
+            "generalErrors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string"
+                }
+            ],
+            "results": [
+                {
+                    "status": "string",
+                    "code": 123,
+                    "id": "5e272d38b78910dd2a1bd691",
+                    "errors": [
+                        {
+                            "name": "Example",
+                            "message": "string",
+                            "location": "string"
+                        }
+                    ]
+                }
+            ],
+            "failedCount": 123,
+            "successCount": 123
+        }
         """
         return self._post_documents(ECON_REPORT_SETTINGS, data)
 
-    def put_econ_report_settings(self, data: ItemList) -> list[WriteResponse]:
+    def put_econ_report_settings(self, data: Union[Item, ItemList]) -> list[WriteResponse]:
         """
         Upserts company econ report settings by `name`. A single match is replaced in full, no match is
         inserted, and multiple matches are a per-record collision error. Duplicate names in one request
@@ -220,16 +482,94 @@ class EconSettings(APIBase):
         so their read defaults apply.
 
         https://docs.api.combocurve.com/api/put-econ-report-settings
+
+        Example data:
+        [
+            {
+                "name": "Example",
+                "headers": [
+                    "string"
+                ],
+                "allWellsAgg": true,
+                "rollUpEachLevel": true
+            }
+        ]
+
+        Example response:
+        {
+            "generalErrors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string"
+                }
+            ],
+            "results": [
+                {
+                    "status": "string",
+                    "code": 123,
+                    "id": "5e272d38b78910dd2a1bd691",
+                    "errors": [
+                        {
+                            "name": "Example",
+                            "message": "string",
+                            "location": "string"
+                        }
+                    ]
+                }
+            ],
+            "failedCount": 123,
+            "successCount": 123
+        }
         """
         return self._put_documents(ECON_REPORT_SETTINGS, data)
 
-    def patch_econ_report_settings(self, data: ItemList) -> list[WriteResponse]:
+    def patch_econ_report_settings(self, data: Union[Item, ItemList]) -> list[WriteResponse]:
         """
         Partially updates company econ report settings by `name`. It never inserts: a name with no match
         is a per-record 404. Omitted `headers`, `allWellsAgg` and `rollUpEachLevel` are unchanged; a
         provided `headers` replaces the whole ordered list.
 
         https://docs.api.combocurve.com/api/patch-econ-report-settings
+
+        Example data:
+        [
+            {
+                "name": "Example",
+                "headers": [
+                    "string"
+                ],
+                "allWellsAgg": true,
+                "rollUpEachLevel": true
+            }
+        ]
+
+        Example response:
+        {
+            "generalErrors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string"
+                }
+            ],
+            "results": [
+                {
+                    "status": "string",
+                    "code": 123,
+                    "id": "5e272d38b78910dd2a1bd691",
+                    "errors": [
+                        {
+                            "name": "Example",
+                            "message": "string",
+                            "location": "string"
+                        }
+                    ]
+                }
+            ],
+            "failedCount": 123,
+            "successCount": 123
+        }
         """
         return self._patch_documents(ECON_REPORT_SETTINGS, data)
 

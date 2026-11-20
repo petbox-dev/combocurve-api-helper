@@ -299,6 +299,43 @@ class Root(APIBase):
         together with `forecast`; `well` alone, or `project` with `well`, is refused locally.
 
         https://docs.api.combocurve.com/api/get-root-forecast-daily-volumes
+
+        Example response:
+        [
+            {
+                "project": "string",
+                "forecast": "string",
+                "forecastType": "deterministic",
+                "well": "string",
+                "resolution": "monthly",
+                "phases": [
+                    {
+                        "phase": "customNumber5",
+                        "series": [
+                            {
+                                "eur": 123.45,
+                                "series": "best",
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
+                                "volumes": [
+                                    123.45
+                                ]
+                            }
+                        ],
+                        "forecastOutputId": "5e272d38b78910dd2a1bd691",
+                        "ratio": {
+                            "eur": 123.45,
+                            "basePhase": "oil",
+                            "startDate": "2020-01-01",
+                            "endDate": "2020-01-01",
+                            "volumes": [
+                                123.45
+                            ]
+                        }
+                    }
+                ]
+            }
+        ]
         """
         daily_volumes: ItemList = []
         for batch_filters in self._filter_value_batches(_require_volume_scope(filters), 'well'):
@@ -345,6 +382,43 @@ class Root(APIBase):
         together with `forecast`; `well` alone, or `project` with `well`, is refused locally.
 
         https://docs.api.combocurve.com/api/get-root-forecast-monthly-volumes
+
+        Example response:
+        [
+            {
+                "project": "string",
+                "forecast": "string",
+                "forecastType": "deterministic",
+                "well": "string",
+                "resolution": "monthly",
+                "phases": [
+                    {
+                        "phase": "customNumber5",
+                        "series": [
+                            {
+                                "eur": 123.45,
+                                "series": "best",
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
+                                "volumes": [
+                                    123.45
+                                ]
+                            }
+                        ],
+                        "forecastOutputId": "5e272d38b78910dd2a1bd691",
+                        "ratio": {
+                            "eur": 123.45,
+                            "basePhase": "oil",
+                            "startDate": "2020-01-01",
+                            "endDate": "2020-01-01",
+                            "volumes": [
+                                123.45
+                            ]
+                        }
+                    }
+                ]
+            }
+        ]
         """
         monthly_volumes: ItemList = []
         for batch_filters in self._filter_value_batches(_require_volume_scope(filters), 'well'):

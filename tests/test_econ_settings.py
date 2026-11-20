@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 
 from combocurve_api_helper import ComboCurveAPI
-from combocurve_api_helper.econ_settings import EconSettings
+from combocurve_api_helper.econ_settings import ECON_REPORT_SETTINGS, ECON_SETTINGS, EconSettings
 
 BASE = ComboCurveAPI.API_BASE_URL
 
@@ -101,6 +101,20 @@ def test_each_method_sends_to_its_own_resource(monkeypatch: pytest.MonkeyPatch) 
     ]
 
 
+@pytest.mark.parametrize('resource', [ECON_SETTINGS, ECON_REPORT_SETTINGS])
+def test_lists_use_the_shared_record_order(monkeypatch: pytest.MonkeyPatch, resource: str) -> None:
+    api = EconSettings.__new__(EconSettings)
+    monkeypatch.setattr(
+        api,
+        '_get_items',
+        lambda url, params=None: [{'name': 'Zulu', 'id': 'z'}, {'name': 'Alpha', 'id': 'a'}],
+    )
+
+    call = api.get_econ_settings if resource == ECON_SETTINGS else api.get_econ_report_settings
+
+    assert [item['name'] for item in call()] == ['Alpha', 'Zulu']
+
+
 def test_by_id_delete_sends_no_body_and_returns_headers(monkeypatch: pytest.MonkeyPatch) -> None:
     api, calls = _api_with_recorded_calls(monkeypatch)
     headers: Any = api.delete_econ_setting_by_id('s1')
@@ -124,3 +138,23 @@ def test_empty_write_is_refused_before_sending(monkeypatch: pytest.MonkeyPatch, 
     with pytest.raises(ValueError, match='at least one document'):
         write(api)
     assert calls == []
+
+
+@pytest.mark.parametrize(
+    'write',
+    [
+        lambda api, record: api.post_econ_settings(record),
+        lambda api, record: api.put_econ_settings(record),
+        lambda api, record: api.patch_econ_settings(record),
+        lambda api, record: api.post_econ_report_settings(record),
+        lambda api, record: api.put_econ_report_settings(record),
+        lambda api, record: api.patch_econ_report_settings(record),
+    ],
+)
+def test_single_document_is_sent_as_a_one_record_list(monkeypatch: pytest.MonkeyPatch, write: Any) -> None:
+    api, calls = _api_with_recorded_calls(monkeypatch)
+    record = {'name': 'single'}
+
+    write(api, record)
+
+    assert calls[0][2] == [record]

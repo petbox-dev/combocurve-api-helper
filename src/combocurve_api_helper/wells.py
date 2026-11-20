@@ -278,6 +278,94 @@ class Wells(APIBase):
         identifies a well and carries the `projectCustomHeader` values to set; it does not create wells.
 
         https://docs.api.combocurve.com/api/patch-project-company-wells
+
+        Example data:
+        [
+            {
+                "dataSource": "string",
+                "chosenID": "string",
+                "id": "5e272d38b78910dd2a1bd691",
+                "projectCustomHeader": "string",
+                "projectCustomHeader1": "string",
+                "projectCustomHeader2": "string",
+                "projectCustomHeader3": "string",
+                "projectCustomHeader4": "string",
+                "projectCustomHeader5": "string",
+                "projectCustomHeader6": "string",
+                "projectCustomHeader7": "string",
+                "projectCustomHeader8": "string",
+                "projectCustomHeader9": "string",
+                "projectCustomHeader10": "string",
+                "projectCustomHeader11": "string",
+                "projectCustomHeader12": "string",
+                "projectCustomHeader13": "string",
+                "projectCustomHeader14": "string",
+                "projectCustomHeader15": "string",
+                "projectCustomHeader16": "string",
+                "projectCustomHeader17": "string",
+                "projectCustomHeader18": "string",
+                "projectCustomHeader19": "string",
+                "projectCustomHeader20": "string",
+                "projectCustomHeader21": "string",
+                "projectCustomHeader22": "string",
+                "projectCustomHeader23": "string",
+                "projectCustomHeader24": "string",
+                "projectCustomHeader25": "string",
+                "projectCustomHeader26": "string",
+                "projectCustomHeader27": "string",
+                "projectCustomHeader28": "string",
+                "projectCustomHeader29": "string",
+                "projectCustomHeader30": "string",
+                "projectCustomHeader31": "string",
+                "projectCustomHeader32": "string",
+                "projectCustomHeader33": "string",
+                "projectCustomHeader34": "string",
+                "projectCustomHeader35": "string",
+                "projectCustomHeader36": "string",
+                "projectCustomHeader37": "string",
+                "projectCustomHeader38": "string",
+                "projectCustomHeader39": "string",
+                "projectCustomHeader40": "string",
+                "projectCustomHeader41": "string",
+                "projectCustomHeader42": "string",
+                "projectCustomHeader43": "string",
+                "projectCustomHeader44": "string",
+                "projectCustomHeader45": "string",
+                "projectCustomHeader46": "string",
+                "projectCustomHeader47": "string",
+                "projectCustomHeader48": "string",
+                "projectCustomHeader49": "string"
+            }
+        ]
+
+        Example response:
+        {
+            "generalErrors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string"
+                }
+            ],
+            "results": [
+                {
+                    "status": "string",
+                    "code": 123,
+                    "id": "5e272d38b78910dd2a1bd691",
+                    "chosenID": "string",
+                    "dataSource": "string",
+                    "errors": [
+                        {
+                            "name": "Example",
+                            "message": "string",
+                            "location": "string"
+                        }
+                    ]
+                }
+            ],
+            "failedCount": 123,
+            "successCount": 123
+        }
         """
         url = self.get_project_company_wells_url(project_id)
         wells = cast('list[WriteResponse]', self._patch_items(url, data, POST_PATCH_PUT_LIMIT))

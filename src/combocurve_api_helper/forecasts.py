@@ -1319,6 +1319,59 @@ class Forecasts(APIBase):
         and raises `ValueError` before sending for empty `data`.
 
         https://docs.api.combocurve.com/api/put-forecast-daily-volumes
+
+        Example data:
+        [
+            {
+                "well": "Ec4Cf4E655eFC13Bc89CA87b",
+                "phases": [
+                    {
+                        "phase": "customNumber1",
+                        "series": [
+                            {
+                                "series": "best",
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
+                                "volumes": [
+                                    123.45
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+
+        Example response:
+        {
+            "results": [
+                {
+                    "status": "string",
+                    "code": 123,
+                    "id": "5e272d38b78910dd2a1bd691",
+                    "errors": [
+                        {
+                            "name": "Example",
+                            "message": "string",
+                            "details": {
+                                "location": "string"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "generalErrors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "details": {
+                        "location": "string"
+                    }
+                }
+            ],
+            "successCount": 123,
+            "failedCount": 123
+        }
         """
         self._require_records(data, 'well record')
         url = self.get_forecast_daily_volumes_url(project_id, forecast_id)
@@ -1335,6 +1388,59 @@ class Forecasts(APIBase):
         empty `data`.
 
         https://docs.api.combocurve.com/api/put-forecast-monthly-volumes
+
+        Example data:
+        [
+            {
+                "well": "Ec4Cf4E655eFC13Bc89CA87b",
+                "phases": [
+                    {
+                        "phase": "customNumber1",
+                        "series": [
+                            {
+                                "series": "best",
+                                "startDate": "2020-01-01",
+                                "endDate": "2020-01-01",
+                                "volumes": [
+                                    123.45
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+
+        Example response:
+        {
+            "results": [
+                {
+                    "status": "string",
+                    "code": 123,
+                    "id": "5e272d38b78910dd2a1bd691",
+                    "errors": [
+                        {
+                            "name": "Example",
+                            "message": "string",
+                            "details": {
+                                "location": "string"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "generalErrors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "details": {
+                        "location": "string"
+                    }
+                }
+            ],
+            "successCount": 123,
+            "failedCount": 123
+        }
         """
         self._require_records(data, 'well record')
         url = self.get_forecast_monthly_volumes_url(project_id, forecast_id)

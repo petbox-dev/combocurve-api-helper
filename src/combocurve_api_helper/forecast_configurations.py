@@ -124,6 +124,33 @@ class ForecastConfigurations(APIBase):
         per-record 404; the response reports each record.
 
         https://docs.api.combocurve.com/api/delete-forecast-configurations
+
+        Example response:
+        {
+            "generalErrors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string"
+                }
+            ],
+            "results": [
+                {
+                    "status": "string",
+                    "code": 123,
+                    "id": "5e272d38b78910dd2a1bd691",
+                    "errors": [
+                        {
+                            "name": "Example",
+                            "message": "string",
+                            "location": "string"
+                        }
+                    ]
+                }
+            ],
+            "failedCount": 123,
+            "successCount": 123
+        }
         """
         url = self.get_forecast_configurations_url({'id': self._require_id_sequence(ids, 'ids')})
         return cast('list[WriteResponse]', self._delete_items(url, data=[]))

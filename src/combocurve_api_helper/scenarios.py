@@ -453,6 +453,19 @@ class Scenarios(APIBase):
         routes target each well's base row. Only incremental 1 is evaluated by ComboCurve.
 
         https://docs.api.combocurve.com/api/get-scenario-well-incrementals
+
+        Example response:
+        [
+            {
+                "wellId": "5e272d38b78910dd2a1bd691",
+                "incrementalIndexes": [
+                    123
+                ],
+                "ambiguousIncrementalIndexes": [
+                    123
+                ]
+            }
+        ]
         """
         url = self.get_scenario_well_incrementals_url(project_id, scenario_id, filters)
         return self._get_items(url)
@@ -472,6 +485,48 @@ class Scenarios(APIBase):
         `data`; it does not split the request, because the limit is not per record.
 
         https://docs.api.combocurve.com/api/put-scenario-econ-model-assignments
+
+        Example data:
+        [
+            {
+                "econModelId": "5e272d38b78910dd2a1bd691",
+                "model": "pricing",
+                "qualifierName": "string",
+                "incrementalIndex": 123,
+                "wellIds": [
+                    "string"
+                ],
+                "allWells": true
+            }
+        ]
+
+        Example response:
+        {
+            "generalErrors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string"
+                }
+            ],
+            "results": [
+                {
+                    "status": "string",
+                    "code": 123,
+                    "wellsUpdated": 123,
+                    "wellsFailed": 123,
+                    "errors": [
+                        {
+                            "name": "Example",
+                            "message": "string",
+                            "location": "string"
+                        }
+                    ]
+                }
+            ],
+            "failedCount": 123,
+            "successCount": 123
+        }
         """
         self._require_records(data, 'assignment record')
         if len(data) > MAX_ECON_MODEL_ASSIGNMENT_RECORDS:
@@ -498,6 +553,20 @@ class Scenarios(APIBase):
         https://docs.api.combocurve.com/api/delete-scenario-econ-model-assignments
 
         Returns the headers from the delete response.
+
+        Example data:
+        [
+            {
+                "model": "risking",
+                "qualifierName": "string",
+                "incrementalIndex": 123,
+                "wellIds": [
+                    "string"
+                ],
+                "allWells": true,
+                "econModelId": "5e272d38b78910dd2a1bd691"
+            }
+        ]
         """
         self._require_records(data, 'assignment record')
         if len(data) > MAX_ECON_MODEL_ASSIGNMENT_RECORDS:
