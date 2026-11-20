@@ -272,6 +272,18 @@ class Wells(APIBase):
 
         return wells
 
+    def patch_project_company_wells(self, project_id: str, data: ItemList) -> list[WriteResponse]:
+        """
+        Updates the custom project headers of existing wells in a project. Each entry of `data`
+        identifies a well and carries the `projectCustomHeader` values to set; it does not create wells.
+
+        https://docs.api.combocurve.com/api/patch-project-company-wells
+        """
+        url = self.get_project_company_wells_url(project_id)
+        wells = cast('list[WriteResponse]', self._patch_items(url, data, POST_PATCH_PUT_LIMIT))
+
+        return wells
+
     def delete_project_company_wells(
         self,
         project_id: str,

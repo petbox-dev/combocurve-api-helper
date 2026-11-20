@@ -304,9 +304,13 @@ shipped misspelled through 2.1.0 and 404'd with `{"code": 5, "message": "Method 
 were found by hand; the last two only fell out of the mechanical check. `tests/test_route_paths.py` now
 resolves each method's `docs.api.combocurve.com/api/<slug>` docstring link to its Postman collection item
 and asserts the paired `*_url` builder produces that item's path — run it (network-gated, like
-`test_docstring_slugs.py`) rather than eyeballing a new route literal. `tests/test_published_routes_are_wrapped.py`
-calls every public method on a fake transport and fails on a collection route that no method sends
-and that its reviewed `_UNWRAPPED` list does not name; remove a route from that list when you wrap it.
+`test_docstring_slugs.py`) rather than eyeballing a new route literal.
+
+**Route coverage lives in `tests/route_manifest.json`**: one entry per collection operation (502), with its
+`status` (`wrapped` by a named method, `gap`, `retired`, `not-via-method`). Regenerate it with
+`python scripts/generate_route_coverage.py` after any method or collection change; `--check` exits 1 when it is
+stale. `tests/test_published_routes_are_wrapped.py` fails when the manifest is stale or a status disagrees with
+what the methods send. To wrap a gap, add the method, regenerate, and the route turns `wrapped`.
 All three network tests read the collection through `tests/postman_collection.py`, which fetches it
 once per session and skips the caller when it is unusable; a new collection test uses it rather than
 its own `requests.get`. Offline transport doubles live in `tests/http_fakes.py`

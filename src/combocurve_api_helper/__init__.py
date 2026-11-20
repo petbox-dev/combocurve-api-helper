@@ -14,6 +14,7 @@ from .base import WriteResponse as WriteResponse
 from .company_models import CompanyModels
 from .directional import Directional
 from .econ_runs import EconRuns
+from .econ_settings import EconSettings
 from .embedded_lookup_tables import EmbeddedLookupTables
 from .exports import Exports
 from .forecast_configurations import ForecastConfigurations
@@ -59,6 +60,7 @@ class ComboCurveAPI(
     OwnershipQualifiers,
     Exports,
     EmbeddedLookupTables,
+    EconSettings,
 ):
     """
     This class is the primary interface for interacting with the Combo Curve

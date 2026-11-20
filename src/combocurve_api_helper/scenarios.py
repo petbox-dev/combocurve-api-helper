@@ -4,31 +4,14 @@ from typing import Optional, Union, cast
 
 from requests.structures import CaseInsensitiveDict
 
-from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
+from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WellFilters, WriteResponse
 
 GET_LIMIT = 200
 GET_LIMIT_MODEL_ASSIGNMENTS = 500  # the documented maximum of `take` on the model-assignments route
 MAX_LOOKUP_TABLE_UNASSIGN_WELLS = 500  # the documented maximum body length of the lookup-table unassign route
 MAX_LOOKUP_TABLE_ASSIGNMENT_RECORDS = 500  # the documented maximum body length of the lookup-table assignment PUT
-
-
-def _require_assignment_records(data: ItemList) -> None:
-    """An empty list would reach the transport's no-body branch, so refuse it before any request."""
-    if not data:
-        raise ValueError('data must hold at least one assignment record')
-
-
-def _require_id_sequence(ids: Sequence[str], argument: str) -> list[str]:
-    """Return `ids` as a list, or raise when it names no id: a bare `str` (it would be sent one
-    character per id), an empty sequence, or an empty id (an unresolved lookup). The list is taken
-    FIRST, so a one-shot iterable cannot pass the check and then arrive empty, which would widen a
-    delete to the whole group."""
-    if isinstance(ids, str):
-        raise ValueError(f'{argument} must be a sequence of ids, not a str')
-    id_list = list(ids)
-    if not id_list or not all(id_list):
-        raise ValueError(f'{argument} must be a non-empty sequence of non-empty ids')
-    return id_list
+# The documented maximum body length of the econ-model assignment PUT and DELETE.
+MAX_ECON_MODEL_ASSIGNMENT_RECORDS = 500
 
 
 class Scenarios(APIBase):
@@ -136,6 +119,21 @@ class Scenarios(APIBase):
         url += self._build_params_string(filters)
         return url
 
+    def get_scenario_well_incrementals_url(
+        self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None
+    ) -> str:
+        """
+        Returns the API url for the incrementals in a scenario: one item per well that has at least one.
+        Route: /v1/projects/{projectId}/scenarios/{scenarioId}/well-assignments/incrementals
+        """
+        base_url = self.get_scenario_wells_url(project_id, scenario_id)
+        url = f'{base_url}/incrementals'
+        if filters is None:
+            return url
+
+        url += self._build_params_string(filters)
+        return url
+
     def get_scenario_run_url(self, project_id: str, scenario_id: str) -> str:
         """
         Returns the API url to run a specific scenario.
@@ -153,7 +151,7 @@ class Scenarios(APIBase):
         return f'{base_url}/{job_id}'
 
     def get_scenario_model_assignments_url(
-        self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None
+        self, project_id: str, scenario_id: str, filters: Optional[WellFilters] = None
     ) -> str:
         """
         Returns the API url for the scenario's model assignments (per-well assignments of
@@ -340,7 +338,7 @@ class Scenarios(APIBase):
         if combo_ids is not None:
             # An empty `comboIds` is dropped from the query, and the call would then delete the
             # whole saved combo. `combo_ids=None` is the way to ask for that.
-            filters['comboIds'] = _require_id_sequence(combo_ids, 'combo_ids')
+            filters['comboIds'] = self._require_id_sequence(combo_ids, 'combo_ids')
 
         url = self.get_scenario_combos_url(project_id, scenario_id, filters)
         scenarios = self._delete_responses(url, data=[])
@@ -441,6 +439,74 @@ class Scenarios(APIBase):
         """
         url = self.get_scenario_econ_model_assignments_url(project_id, scenario_id)
         return self._get_items(url)
+
+    def get_scenario_well_incrementals(
+        self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None
+    ) -> ItemList:
+        """
+        Returns the incrementals in a scenario: one item per well that has at least one, with the
+        incremental indexes it has. Wells without incrementals are left out. `filters` take `wellId`,
+        `incrementalIndex`, `take`, `skip` and `cursor`.
+
+        Use an index as `incrementalIndex` on `get_scenario_econ_model_assignments` /
+        `put_scenario_econ_model_assignments` records to target that incremental; without it those
+        routes target each well's base row. Only incremental 1 is evaluated by ComboCurve.
+
+        https://docs.api.combocurve.com/api/get-scenario-well-incrementals
+        """
+        url = self.get_scenario_well_incrementals_url(project_id, scenario_id, filters)
+        return self._get_items(url)
+
+    def put_scenario_econ_model_assignments(
+        self, project_id: str, scenario_id: str, data: ItemList
+    ) -> list[WriteResponse]:
+        """
+        Assigns econ models to wells in a scenario. Each entry of `data` has `econModelId`, `model`
+        (the econ column), `qualifierName`, and `wellIds` or `allWells`; `incrementalIndex` targets an
+        incremental instead of the base row. Each record returns its own result; wells a record could
+        not write are listed in its `errors` and the rest are written. A facility or a proposed well in
+        `wellIds` is not written (`NonWellEntityNotAssignable`).
+
+        The route takes at most 500 records per request and 325,000 scenario-well-assignments in total.
+        This method sends one request and raises `ValueError` before sending for an empty or longer
+        `data`; it does not split the request, because the limit is not per record.
+
+        https://docs.api.combocurve.com/api/put-scenario-econ-model-assignments
+        """
+        self._require_records(data, 'assignment record')
+        if len(data) > MAX_ECON_MODEL_ASSIGNMENT_RECORDS:
+            raise ValueError(
+                f'data holds {len(data)} records; the route takes at most '
+                f'{MAX_ECON_MODEL_ASSIGNMENT_RECORDS} per request'
+            )
+        url = self.get_scenario_econ_model_assignments_url(project_id, scenario_id)
+        return cast('list[WriteResponse]', self._put_items(url, data))
+
+    def delete_scenario_econ_model_assignments(
+        self, project_id: str, scenario_id: str, data: ItemList
+    ) -> CaseInsensitiveDict[str]:
+        """
+        Clears econ-model assignments in a scenario. Each entry of `data` has `model`, `qualifierName`,
+        `wellIds` or `allWells`, and optionally `econModelId` (then only slots holding that econ model are
+        cleared) and `incrementalIndex`. The delete is all-or-nothing: if any record or well is invalid,
+        nothing is cleared.
+
+        The route takes at most 500 records per request, so this method sends one request and raises
+        `ValueError` before sending for an empty or longer `data`. A second request could leave the first
+        one applied, which the all-or-nothing rule forbids.
+
+        https://docs.api.combocurve.com/api/delete-scenario-econ-model-assignments
+
+        Returns the headers from the delete response.
+        """
+        self._require_records(data, 'assignment record')
+        if len(data) > MAX_ECON_MODEL_ASSIGNMENT_RECORDS:
+            raise ValueError(
+                f'data holds {len(data)} records; the route takes at most '
+                f'{MAX_ECON_MODEL_ASSIGNMENT_RECORDS} per request'
+            )
+        url = self.get_scenario_econ_model_assignments_url(project_id, scenario_id)
+        return self._delete_headers(url, data)
 
     def post_scenario_wells(self, project_id: str, scenario_id: str, data: ItemList) -> list[WriteResponse]:
         """
@@ -555,15 +621,17 @@ class Scenarios(APIBase):
     # Scenario model assignments
 
     def get_scenario_model_assignments(
-        self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None
+        self, project_id: str, scenario_id: str, filters: Optional[WellFilters] = None
     ) -> ItemList:
         """
         Returns the scenario's model assignments: one row per well and incremental index, each
         listing its models and, per model, the qualifier name -> model id assignments.
 
-        `filters` take `model`, `qualifierName`, `wellId` (up to 100 values), `incrementalIndex`.
-        The rows are returned in the order received. `incrementalIndex` can be absent from a row
-        (seen live 2026-11-05; Postman shows it).
+        `filters` take `model`, `qualifierName`, `wellId`, `incrementalIndex`. `wellId` may be a list
+        of well ids, sent as repeated `wellId` keys. The API accepts at most 100 per request, so a
+        longer list is split into requests of 100 wells and the rows are combined in request order
+        (the rows are not re-sorted). The rows are returned in the order received. `incrementalIndex`
+        can be absent from a row (seen live 2026-11-05; Postman shows it).
 
         https://docs.api.combocurve.com/api/get-scenario-model-assignments
 
@@ -587,9 +655,13 @@ class Scenarios(APIBase):
             }
         ]
         """
-        url = self.get_scenario_model_assignments_url(project_id, scenario_id, filters)
-        params = {'take': GET_LIMIT_MODEL_ASSIGNMENTS}
-        return self._get_items(url, params=params)
+        assignments: ItemList = []
+        for batch_filters in self._filter_value_batches(filters, 'wellId'):
+            url = self.get_scenario_model_assignments_url(project_id, scenario_id, batch_filters)
+            params = {'take': GET_LIMIT_MODEL_ASSIGNMENTS}
+            assignments.extend(self._get_items(url, params=params))
+
+        return assignments
 
     def put_scenario_model_assignments(
         self, project_id: str, scenario_id: str, data: ItemList, add_wells_to_forecast: bool = False
@@ -647,7 +719,7 @@ class Scenarios(APIBase):
             "successCount": 123
         }
         """
-        _require_assignment_records(data)
+        self._require_records(data, 'assignment record')
         filters: Optional[dict[str, str]] = {'addWellsToForecast': 'true'} if add_wells_to_forecast else None
         url = self.get_scenario_model_assignments_url(project_id, scenario_id, filters)
         assignments = cast('list[WriteResponse]', self._put_items(url, data))
@@ -665,11 +737,9 @@ class Scenarios(APIBase):
 
         Returns the headers from the delete response.
         """
-        _require_assignment_records(data)
+        self._require_records(data, 'assignment record')
         url = self.get_scenario_model_assignments_url(project_id, scenario_id)
-        responses = self._delete_responses(url, data)
-
-        return responses[0].headers
+        return self._delete_headers(url, data)
 
     # Scenario lookup-tables (project-scoped: /scenarios/lookup-tables)
 
@@ -827,7 +897,7 @@ class Scenarios(APIBase):
 
         https://docs.api.combocurve.com/api/put-scenario-lookup-tables-assignments
         """
-        _require_assignment_records(data)
+        self._require_records(data, 'assignment record')
         if len(data) > MAX_LOOKUP_TABLE_ASSIGNMENT_RECORDS:
             raise ValueError(
                 f'data holds {len(data)} records; the route takes at most '
@@ -884,7 +954,7 @@ class Scenarios(APIBase):
 
         Returns the headers from the delete response.
         """
-        well_id_list = _require_id_sequence(well_ids, 'well_ids')
+        well_id_list = self._require_id_sequence(well_ids, 'well_ids')
         if len(well_id_list) > MAX_LOOKUP_TABLE_UNASSIGN_WELLS:
             raise ValueError(
                 f'well_ids holds {len(well_id_list)} ids; the route takes at most '

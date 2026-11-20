@@ -1,0 +1,3969 @@
+{
+  "collection": "https://docs.api.combocurve.com/downloads/combocurve-api.postman_collection.json",
+  "counts": {
+    "wrapped": 426,
+    "gap": 58,
+    "retired": 17,
+    "not-via-method": 1
+  },
+  "routes": [
+    {
+      "verb": "GET",
+      "path": "/v1/custom-columns/:p",
+      "name": "get-custom-columns",
+      "area": "custom-columns",
+      "status": "wrapped",
+      "method": "get_custom_columns"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/daily-productions",
+      "name": "delete-daily-productions",
+      "area": "daily-productions",
+      "status": "wrapped",
+      "method": "delete_company_daily_productions"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/daily-productions",
+      "name": "get-daily-productions",
+      "area": "daily-productions",
+      "status": "wrapped",
+      "method": "get_company_daily_productions"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/daily-productions",
+      "name": "head-daily-productions",
+      "area": "daily-productions",
+      "status": "wrapped",
+      "method": "count_company_daily_productions"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/daily-productions",
+      "name": "patch-daily-productions",
+      "area": "daily-productions",
+      "status": "wrapped",
+      "method": "patch_company_daily_productions"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/daily-productions",
+      "name": "post-daily-productions",
+      "area": "daily-productions",
+      "status": "wrapped",
+      "method": "post_company_daily_productions"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/daily-productions",
+      "name": "put-daily-productions",
+      "area": "daily-productions",
+      "status": "wrapped",
+      "method": "put_company_daily_productions"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/directional-surveys",
+      "name": "get-directional-surveys",
+      "area": "directional-surveys",
+      "status": "wrapped",
+      "method": "get_directional_surveys"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/directional-surveys",
+      "name": "head-directional-surveys",
+      "area": "directional-surveys",
+      "status": "wrapped",
+      "method": "count_directional_surveys"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/directional-surveys",
+      "name": "post-directional-surveys",
+      "area": "directional-surveys",
+      "status": "wrapped",
+      "method": "post_directional_surveys"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/directional-surveys/:p",
+      "name": "delete-directional-surveys-by-id",
+      "area": "directional-surveys",
+      "status": "wrapped",
+      "method": "delete_directional_survey_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/directional-surveys/:p",
+      "name": "get-directional-surveys-by-id",
+      "area": "directional-surveys",
+      "status": "wrapped",
+      "method": "get_directional_survey_by_id"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/directional-surveys/:p",
+      "name": "put-directional-surveys",
+      "area": "directional-surveys",
+      "status": "wrapped",
+      "method": "put_directional_survey_by_id"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/directional-surveys/batch",
+      "name": "post-directional-surveys-batch",
+      "area": "directional-surveys",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models",
+      "name": "get-company-econ-models",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_models"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-models",
+      "name": "head-company-econ-models",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_company_econ_models"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/:p",
+      "name": "get-company-econ-model-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_actual_forecast_models"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/actual-forecast",
+      "name": "get-company-actual-forecast",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_actual_forecast_models"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-models/actual-forecast",
+      "name": "head-company-actual-forecast",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_company_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-models/actual-forecast",
+      "name": "post-company-actual-forecast",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_company_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-models/actual-forecast",
+      "name": "put-company-actual-forecast",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_company_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-models/actual-forecast/:p",
+      "name": "delete-company-actual-forecast-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/actual-forecast/:p",
+      "name": "get-company-actual-forecast-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_actual_forecast_model_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/capex",
+      "name": "get-company-capex",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_capex_models"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-models/capex",
+      "name": "head-company-capex",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_company_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-models/capex",
+      "name": "post-company-capex",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_company_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-models/capex",
+      "name": "put-company-capex",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_company_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-models/capex/:p",
+      "name": "delete-company-capex-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/capex/:p",
+      "name": "get-company-capex-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_capex_model_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/date-settings",
+      "name": "get-company-date-settings",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_date_settings_models"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-models/date-settings",
+      "name": "head-company-date-settings",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_company_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-models/date-settings",
+      "name": "post-company-date-settings",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_company_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-models/date-settings",
+      "name": "put-company-date-settings",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_company_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-models/date-settings/:p",
+      "name": "delete-company-date-settings-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/date-settings/:p",
+      "name": "get-company-date-settings-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_date_settings_model_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/depreciation",
+      "name": "get-company-depreciation",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_depreciation_models"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-models/depreciation",
+      "name": "head-company-depreciation",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_company_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-models/depreciation",
+      "name": "post-company-depreciation",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_company_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-models/depreciation",
+      "name": "put-company-depreciation",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_company_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-models/depreciation/:p",
+      "name": "delete-company-depreciation-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/depreciation/:p",
+      "name": "get-company-depreciation-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_depreciation_model_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/differentials",
+      "name": "get-company-differentials",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_differential_models"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-models/differentials",
+      "name": "head-company-differentials",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_company_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-models/differentials",
+      "name": "post-company-differentials",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_company_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-models/differentials",
+      "name": "put-company-differentials",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_company_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-models/differentials/:p",
+      "name": "delete-company-differential-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/differentials/:p",
+      "name": "get-company-differential-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_differentials_model_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/escalations",
+      "name": "get-company-escalations",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-models/escalations",
+      "name": "head-company-escalations",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_company_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-models/escalations",
+      "name": "post-company-escalations",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_company_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-models/escalations",
+      "name": "put-company-escalations",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_company_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-models/escalations/:p",
+      "name": "delete-company-escalation-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/escalations/:p",
+      "name": "get-company-escalation-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/expenses",
+      "name": "get-company-expenses",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-models/expenses",
+      "name": "head-company-expenses",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_company_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-models/expenses",
+      "name": "post-company-expenses",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_company_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-models/expenses",
+      "name": "put-company-expenses",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_company_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-models/expenses/:p",
+      "name": "delete-company-expenses-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/expenses/:p",
+      "name": "get-company-expenses-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/general-options",
+      "name": "get-company-general-options",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-models/general-options",
+      "name": "head-company-general-options",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_company_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-models/general-options",
+      "name": "post-company-general-options",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_company_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-models/general-options",
+      "name": "put-company-general-options",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_company_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-models/general-options/:p",
+      "name": "delete-company-general-options-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/general-options/:p",
+      "name": "get-company-general-options-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/operations",
+      "name": "get-company-operations",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-models/operations",
+      "name": "head-company-operations",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_company_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-models/operations",
+      "name": "post-company-operations",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_company_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-models/operations",
+      "name": "put-company-operations",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_company_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-models/operations/:p",
+      "name": "delete-company-operations-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/operations/:p",
+      "name": "get-company-operations-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/ownership-reversions",
+      "name": "get-company-ownership-reversions",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-models/ownership-reversions",
+      "name": "head-company-ownership-reversions",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_company_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-models/ownership-reversions",
+      "name": "post-company-ownership-reversions",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_company_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-models/ownership-reversions",
+      "name": "put-company-ownership-reversions",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_company_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-models/ownership-reversions/:p",
+      "name": "delete-company-ownership-reversion-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/ownership-reversions/:p",
+      "name": "get-company-ownership-reversion-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/pricing",
+      "name": "get-company-pricing",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-models/pricing",
+      "name": "head-company-pricing",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_company_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-models/pricing",
+      "name": "post-company-pricing",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_company_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-models/pricing",
+      "name": "put-company-pricing",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_company_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-models/pricing/:p",
+      "name": "delete-company-pricing-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/pricing/:p",
+      "name": "get-company-pricing-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/production-taxes",
+      "name": "get-company-production-taxes",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-models/production-taxes",
+      "name": "head-company-production-taxes",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_company_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-models/production-taxes",
+      "name": "post-company-production-taxes",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_company_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-models/production-taxes",
+      "name": "put-company-production-taxes",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_company_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-models/production-taxes/:p",
+      "name": "delete-company-production-taxes-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/production-taxes/:p",
+      "name": "get-company-production-taxes-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/reserves-categories",
+      "name": "get-company-reserves-categories",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-models/reserves-categories",
+      "name": "head-company-reserves-categories",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_company_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-models/reserves-categories",
+      "name": "post-company-reserves-categories",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_company_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-models/reserves-categories",
+      "name": "put-company-reserves-categories",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_company_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-models/reserves-categories/:p",
+      "name": "delete-company-reserves-category-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/reserves-categories/:p",
+      "name": "get-company-reserves-category-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/riskings",
+      "name": "get-company-riskings",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-models/riskings",
+      "name": "head-company-riskings",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_company_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-models/riskings",
+      "name": "post-company-riskings",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_company_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-models/riskings",
+      "name": "put-company-riskings",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_company_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-models/riskings/:p",
+      "name": "delete-company-riskings-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/riskings/:p",
+      "name": "get-company-risking-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/stream-properties",
+      "name": "get-company-stream-properties",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-models/stream-properties",
+      "name": "head-company-stream-properties",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_company_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-models/stream-properties",
+      "name": "post-company-stream-properties",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_company_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-models/stream-properties",
+      "name": "put-company-stream-properties",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_company_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-models/stream-properties/:p",
+      "name": "delete-company-stream-properties-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-models/stream-properties/:p",
+      "name": "get-company-stream-properties-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_company_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-report-settings",
+      "name": "get-econ-report-settings",
+      "area": "econ-report-settings",
+      "status": "wrapped",
+      "method": "get_econ_report_settings"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-report-settings",
+      "name": "head-econ-report-settings",
+      "area": "econ-report-settings",
+      "status": "wrapped",
+      "method": "count_econ_report_settings"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/econ-report-settings",
+      "name": "patch-econ-report-settings",
+      "area": "econ-report-settings",
+      "status": "wrapped",
+      "method": "patch_econ_report_settings"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-report-settings",
+      "name": "post-econ-report-settings",
+      "area": "econ-report-settings",
+      "status": "wrapped",
+      "method": "post_econ_report_settings"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-report-settings",
+      "name": "put-econ-report-settings",
+      "area": "econ-report-settings",
+      "status": "wrapped",
+      "method": "put_econ_report_settings"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-report-settings/:p",
+      "name": "delete-econ-report-settings-by-id",
+      "area": "econ-report-settings",
+      "status": "wrapped",
+      "method": "delete_econ_report_setting_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-report-settings/:p",
+      "name": "get-econ-report-settings-by-id",
+      "area": "econ-report-settings",
+      "status": "wrapped",
+      "method": "get_econ_report_setting_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-runs",
+      "name": "get-root-econ-runs",
+      "area": "econ-runs",
+      "status": "wrapped",
+      "method": "get_root_econ_runs"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-runs",
+      "name": "head-root-econ-runs",
+      "area": "econ-runs",
+      "status": "wrapped",
+      "method": "count_root_econ_runs"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-runs/:p",
+      "name": "get-root-econ-run-by-id",
+      "area": "econ-runs",
+      "status": "wrapped",
+      "method": "get_root_econ_run_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-settings",
+      "name": "get-econ-settings",
+      "area": "econ-settings",
+      "status": "wrapped",
+      "method": "get_econ_settings"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/econ-settings",
+      "name": "head-econ-settings",
+      "area": "econ-settings",
+      "status": "wrapped",
+      "method": "count_econ_settings"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/econ-settings",
+      "name": "patch-econ-settings",
+      "area": "econ-settings",
+      "status": "wrapped",
+      "method": "patch_econ_settings"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/econ-settings",
+      "name": "post-econ-settings",
+      "area": "econ-settings",
+      "status": "wrapped",
+      "method": "post_econ_settings"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/econ-settings",
+      "name": "put-econ-settings",
+      "area": "econ-settings",
+      "status": "wrapped",
+      "method": "put_econ_settings"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/econ-settings/:p",
+      "name": "delete-econ-settings-by-id",
+      "area": "econ-settings",
+      "status": "wrapped",
+      "method": "delete_econ_setting_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/econ-settings/:p",
+      "name": "get-econ-settings-by-id",
+      "area": "econ-settings",
+      "status": "wrapped",
+      "method": "get_econ_setting_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/embedded-lookup-tables",
+      "name": "get-company-embedded-lookup-tables",
+      "area": "embedded-lookup-tables",
+      "status": "wrapped",
+      "method": "get_company_embedded_lookup_tables"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/embedded-lookup-tables",
+      "name": "head-company-embedded-lookup-tables",
+      "area": "embedded-lookup-tables",
+      "status": "wrapped",
+      "method": "count_company_embedded_lookup_tables"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/embedded-lookup-tables",
+      "name": "post-company-embedded-lookup-tables",
+      "area": "embedded-lookup-tables",
+      "status": "wrapped",
+      "method": "post_company_embedded_lookup_tables"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/embedded-lookup-tables",
+      "name": "put-company-embedded-lookup-tables",
+      "area": "embedded-lookup-tables",
+      "status": "wrapped",
+      "method": "put_company_embedded_lookup_tables"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/embedded-lookup-tables/:p",
+      "name": "delete-company-embedded-lookup-table-by-id",
+      "area": "embedded-lookup-tables",
+      "status": "wrapped",
+      "method": "delete_company_embedded_lookup_table_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/embedded-lookup-tables/:p",
+      "name": "get-company-embedded-lookup-table-by-id",
+      "area": "embedded-lookup-tables",
+      "status": "wrapped",
+      "method": "get_company_embedded_lookup_table_by_id"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/exports",
+      "name": "post-exports",
+      "area": "exports",
+      "status": "wrapped",
+      "method": "post_export"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/forecast-configurations",
+      "name": "delete-forecast-configurations",
+      "area": "forecast-configurations",
+      "status": "wrapped",
+      "method": "delete_forecast_configurations"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/forecast-configurations",
+      "name": "get-forecast-configurations",
+      "area": "forecast-configurations",
+      "status": "wrapped",
+      "method": "get_forecast_configurations"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/forecast-configurations",
+      "name": "head-forecast-configurations",
+      "area": "forecast-configurations",
+      "status": "wrapped",
+      "method": "count_forecast_configurations"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/forecast-configurations",
+      "name": "patch-forecast-configurations",
+      "area": "forecast-configurations",
+      "status": "wrapped",
+      "method": "patch_forecast_configurations"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/forecast-configurations",
+      "name": "post-forecast-configurations",
+      "area": "forecast-configurations",
+      "status": "wrapped",
+      "method": "post_forecast_configurations"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/forecast-configurations",
+      "name": "put-forecast-configurations",
+      "area": "forecast-configurations",
+      "status": "wrapped",
+      "method": "put_forecast_configurations"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/forecast-configurations/:p",
+      "name": "delete-forecast-configuration-by-id",
+      "area": "forecast-configurations",
+      "status": "wrapped",
+      "method": "delete_forecast_configuration_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/forecast-configurations/:p",
+      "name": "get-forecast-configuration-by-id",
+      "area": "forecast-configurations",
+      "status": "wrapped",
+      "method": "get_forecast_configuration_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/forecast-daily-volumes",
+      "name": "get-root-forecast-daily-volumes",
+      "area": "forecast-daily-volumes",
+      "status": "wrapped",
+      "method": "get_root_forecast_daily_volumes"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/forecast-daily-volumes",
+      "name": "head-root-forecast-daily-volumes",
+      "area": "forecast-daily-volumes",
+      "status": "wrapped",
+      "method": "count_root_forecast_daily_volumes"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/forecast-monthly-volumes",
+      "name": "get-root-forecast-monthly-volumes",
+      "area": "forecast-monthly-volumes",
+      "status": "wrapped",
+      "method": "get_root_forecast_monthly_volumes"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/forecast-monthly-volumes",
+      "name": "head-root-forecast-monthly-volumes",
+      "area": "forecast-monthly-volumes",
+      "status": "wrapped",
+      "method": "count_root_forecast_monthly_volumes"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/formations",
+      "name": "get-formations",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/formations",
+      "name": "head-formations",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/formations",
+      "name": "patch-formations",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/formations",
+      "name": "put-formations",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/formations/:p",
+      "name": "delete-formation-by-id",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/formations/:p",
+      "name": "get-formation-by-id",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/formations/:p/points",
+      "name": "get-formation-points",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/formations/head",
+      "name": "get-head-formations",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/formations/jobs/:p",
+      "name": "get-formations-job",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/monthly-productions",
+      "name": "delete-monthly-productions",
+      "area": "monthly-productions",
+      "status": "wrapped",
+      "method": "delete_company_monthly_productions"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/monthly-productions",
+      "name": "get-monthly-productions",
+      "area": "monthly-productions",
+      "status": "wrapped",
+      "method": "get_company_monthly_productions"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/monthly-productions",
+      "name": "head-monthly-productions",
+      "area": "monthly-productions",
+      "status": "wrapped",
+      "method": "count_company_monthly_productions"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/monthly-productions",
+      "name": "patch-monthly-productions",
+      "area": "monthly-productions",
+      "status": "wrapped",
+      "method": "patch_company_monthly_productions"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/monthly-productions",
+      "name": "post-monthly-productions",
+      "area": "monthly-productions",
+      "status": "wrapped",
+      "method": "post_company_monthly_productions"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/monthly-productions",
+      "name": "put-monthly-productions",
+      "area": "monthly-productions",
+      "status": "wrapped",
+      "method": "put_company_monthly_productions"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/oauth/token",
+      "name": "Exchange client credentials for a bearer token",
+      "area": "oauth",
+      "status": "not-via-method",
+      "note": "auth.py posts to it directly (OAuthClientAuth), not through a public method"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/ownership-qualifiers",
+      "name": "get-ownership-qualifiers",
+      "area": "ownership-qualifiers",
+      "status": "wrapped",
+      "method": "get_ownership_qualifiers"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/ownership-qualifiers",
+      "name": "head-ownership-qualifiers",
+      "area": "ownership-qualifiers",
+      "status": "wrapped",
+      "method": "count_ownership_qualifiers"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/ownership-qualifiers",
+      "name": "post-ownership-qualifiers",
+      "area": "ownership-qualifiers",
+      "status": "wrapped",
+      "method": "post_ownership_qualifiers"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/ownership-qualifiers",
+      "name": "put-ownership-qualifiers",
+      "area": "ownership-qualifiers",
+      "status": "wrapped",
+      "method": "put_ownership_qualifiers"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/ownership-qualifiers/:p",
+      "name": "get-ownership-qualifiers-by-id",
+      "area": "ownership-qualifiers",
+      "status": "wrapped",
+      "method": "get_ownership_qualifier_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/production-comment-types",
+      "name": "get-production-comment-types",
+      "area": "production-comment-types",
+      "status": "gap"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/production-comment-types",
+      "name": "patch-production-comment-types",
+      "area": "production-comment-types",
+      "status": "gap"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/production-comments",
+      "name": "delete-production-comments",
+      "area": "production-comments",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/production-comments",
+      "name": "get-production-comments",
+      "area": "production-comments",
+      "status": "gap"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/production-comments",
+      "name": "head-production-comments",
+      "area": "production-comments",
+      "status": "gap"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/production-comments",
+      "name": "patch-production-comments",
+      "area": "production-comments",
+      "status": "gap"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/production-comments",
+      "name": "post-production-comments",
+      "area": "production-comments",
+      "status": "gap"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/production-comments",
+      "name": "put-production-comments",
+      "area": "production-comments",
+      "status": "gap"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/production-comments/:p",
+      "name": "delete-production-comment-by-id",
+      "area": "production-comments",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/production-comments/:p",
+      "name": "get-production-comment-by-id",
+      "area": "production-comments",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects",
+      "name": "get-projects",
+      "area": "projects",
+      "status": "wrapped",
+      "method": "get_projects"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects",
+      "name": "head-projects",
+      "area": "projects",
+      "status": "wrapped",
+      "method": "count_projects"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects",
+      "name": "post-projects",
+      "area": "projects",
+      "status": "wrapped",
+      "method": "post_projects"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p",
+      "name": "delete-project-by-id",
+      "area": "projects",
+      "status": "wrapped",
+      "method": "delete_project_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p",
+      "name": "get-project-by-id",
+      "area": "projects",
+      "status": "wrapped",
+      "method": "get_project_by_id"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/company-wells",
+      "name": "delete-project-company-wells",
+      "area": "company-wells",
+      "status": "wrapped",
+      "method": "delete_project_company_wells"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/company-wells",
+      "name": "get-project-company-wells",
+      "area": "company-wells",
+      "status": "wrapped",
+      "method": "get_project_company_wells"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/company-wells",
+      "name": "head-project-company-wells",
+      "area": "company-wells",
+      "status": "wrapped",
+      "method": "count_project_company_wells"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/projects/:p/company-wells",
+      "name": "patch-project-company-wells",
+      "area": "company-wells",
+      "status": "wrapped",
+      "method": "patch_project_company_wells"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/company-wells",
+      "name": "post-project-company-wells",
+      "area": "company-wells",
+      "status": "wrapped",
+      "method": "post_project_company_wells"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/company-wells/:p",
+      "name": "get-project-company-well-by-id",
+      "area": "company-wells",
+      "status": "wrapped",
+      "method": "get_project_company_well_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/custom-columns/:p",
+      "name": "get-project-custom-columns",
+      "area": "custom-columns",
+      "status": "wrapped",
+      "method": "get_project_custom_columns"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/daily-productions",
+      "name": "delete-project-daily-productions",
+      "area": "daily-productions",
+      "status": "wrapped",
+      "method": "delete_project_daily_productions"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/daily-productions",
+      "name": "get-projects-daily-productions",
+      "area": "daily-productions",
+      "status": "wrapped",
+      "method": "get_project_daily_productions"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/daily-productions",
+      "name": "head-projects-daily-productions",
+      "area": "daily-productions",
+      "status": "wrapped",
+      "method": "count_project_daily_productions"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/projects/:p/daily-productions",
+      "name": "patch-projects-daily-productions",
+      "area": "daily-productions",
+      "status": "wrapped",
+      "method": "patch_project_daily_productions"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/daily-productions",
+      "name": "post-projects-daily-productions",
+      "area": "daily-productions",
+      "status": "wrapped",
+      "method": "post_project_daily_productions"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/daily-productions",
+      "name": "put-projects-daily-productions",
+      "area": "daily-productions",
+      "status": "wrapped",
+      "method": "put_project_daily_productions"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models",
+      "name": "get-econ-models",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_models"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models",
+      "name": "head-econ-models",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_econ_models"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/:p",
+      "name": "get-econ-model-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_actual_forecast_models"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/:p/:p/assignments",
+      "name": "delete-econ-model-assignment-delete",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_actual_forecast_assignments_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/:p/:p/assignments",
+      "name": "get-econ-models-assignments-read",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_actual_forecast_assignments_by_id"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/:p/:p/assignments",
+      "name": "head-econ-models-assignments-count",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_actual_forecast_assignments_by_id"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/:p/:p/assignments",
+      "name": "post-econ-model-assignment-upsert",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_actual_forecast_assignments_by_id"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/:p/:p/assignments",
+      "name": "put-econ-model-assignment-upsert",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_actual_forecast_assignments_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/actual-forecast",
+      "name": "get-actual-forecast",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_actual_forecast_models"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/actual-forecast",
+      "name": "head-actual-forecast",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_actual_forecast_models"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/actual-forecast",
+      "name": "post-actual-forecast",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_actual_forecast_models"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/actual-forecast",
+      "name": "put-actual-forecast",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_actual_forecast_models"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/actual-forecast/:p",
+      "name": "delete-actual-forecast-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_actual_forecast_model_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/actual-forecast/:p",
+      "name": "get-actual-forecast-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_actual_forecast_model_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/capex",
+      "name": "get-capex",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_capex_models"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/capex",
+      "name": "head-capex",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_capex_models"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/capex",
+      "name": "post-capex",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_capex_models"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/capex",
+      "name": "put-capex",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_capex_models"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/capex/:p",
+      "name": "delete-capex-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_capex_model_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/capex/:p",
+      "name": "get-capex-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_capex_model_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/date-settings",
+      "name": "get-date-settings",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_date_settings_models"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/date-settings",
+      "name": "head-date-settings",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_date_settings_models"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/date-settings",
+      "name": "post-date-settings",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_date_settings_models"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/date-settings",
+      "name": "put-date-settings",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_date_settings_models"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/date-settings/:p",
+      "name": "delete-date-settings-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_date_settings_model_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/date-settings/:p",
+      "name": "get-date-settings-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_date_settings_model_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/depreciation",
+      "name": "get-depreciation",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_depreciation_models"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/depreciation",
+      "name": "head-depreciation",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_depreciation_models"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/depreciation",
+      "name": "post-depreciation",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_depreciation_models"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/depreciation",
+      "name": "put-depreciation",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_depreciation_models"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/depreciation/:p",
+      "name": "delete-depreciation-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_depreciation_model_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/depreciation/:p",
+      "name": "get-depreciation-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_depreciation_model_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/differentials",
+      "name": "get-differentials",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_differentials_models"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/differentials",
+      "name": "head-differentials",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_differentials_models"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/differentials",
+      "name": "post-differentials",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_differentials_models"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/differentials",
+      "name": "put-differentials",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_differentials_models"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/differentials/:p",
+      "name": "delete-differential-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_differentials_model_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/differentials/:p",
+      "name": "get-differential-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_differentials_model_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/emissions",
+      "name": "get-emissions",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/emissions",
+      "name": "head-emissions",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/emissions",
+      "name": "post-emissions",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/emissions",
+      "name": "put-emissions",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/emissions/:p",
+      "name": "delete-emission-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/emissions/:p",
+      "name": "get-emission-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/escalations",
+      "name": "get-escalations",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/escalations",
+      "name": "head-escalations",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/escalations",
+      "name": "post-escalations",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/escalations",
+      "name": "put-escalations",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/escalations/:p",
+      "name": "delete-escalation-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/escalations/:p",
+      "name": "get-escalation-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/expenses",
+      "name": "get-expenses",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/expenses",
+      "name": "head-expenses",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/expenses",
+      "name": "post-expenses",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/expenses",
+      "name": "put-expenses",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/expenses/:p",
+      "name": "delete-expenses-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/expenses/:p",
+      "name": "get-expenses-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/fluid-models",
+      "name": "get-fluid-models",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/fluid-models",
+      "name": "head-fluid-models",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/fluid-models",
+      "name": "post-fluid-models",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/fluid-models",
+      "name": "put-fluid-models",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/fluid-models/:p",
+      "name": "delete-fluid-model-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/fluid-models/:p",
+      "name": "get-fluid-model-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/general-options",
+      "name": "get-general-options",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/general-options",
+      "name": "head-general-options",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/general-options",
+      "name": "post-general-options",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/general-options",
+      "name": "put-general-options",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/general-options/:p",
+      "name": "delete-general-options-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/general-options/:p",
+      "name": "get-general-options-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/operations",
+      "name": "get-operations",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/operations",
+      "name": "head-operations",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/operations",
+      "name": "post-operations",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/operations",
+      "name": "put-operations",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/operations/:p",
+      "name": "delete-operations-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/operations/:p",
+      "name": "get-operations-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/ownership-reversions",
+      "name": "get-ownership-reversions",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/ownership-reversions",
+      "name": "head-ownership-reversions",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/ownership-reversions",
+      "name": "post-ownership-reversions",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/ownership-reversions",
+      "name": "put-ownership-reversions",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/ownership-reversions/:p",
+      "name": "delete-ownership-reversion-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/ownership-reversions/:p",
+      "name": "get-ownership-reversion-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/pricing",
+      "name": "get-pricing",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/pricing",
+      "name": "head-pricing",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/pricing",
+      "name": "post-pricing",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/pricing",
+      "name": "put-pricing",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/pricing/:p",
+      "name": "delete-pricing-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/pricing/:p",
+      "name": "get-pricing-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/production-taxes",
+      "name": "get-production-taxes",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/production-taxes",
+      "name": "head-production-taxes",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/production-taxes",
+      "name": "post-production-taxes",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/production-taxes",
+      "name": "put-production-taxes",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/production-taxes/:p",
+      "name": "delete-production-taxes-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/production-taxes/:p",
+      "name": "get-production-taxes-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/reserves-categories",
+      "name": "get-reserves-categories",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/reserves-categories",
+      "name": "head-reserves-categories",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/reserves-categories",
+      "name": "post-reserves-categories",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/reserves-categories",
+      "name": "put-reserves-categories",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/reserves-categories/:p",
+      "name": "delete-reserves-category-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/reserves-categories/:p",
+      "name": "get-reserves-category-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/riskings",
+      "name": "get-riskings",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/riskings",
+      "name": "head-riskings",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/riskings",
+      "name": "post-riskings",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/riskings",
+      "name": "put-riskings",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/riskings/:p",
+      "name": "delete-riskings-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/riskings/:p",
+      "name": "get-risking-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/stream-properties",
+      "name": "get-stream-properties",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_models_by_type"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/econ-models/stream-properties",
+      "name": "head-stream-properties",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "count_econ_models_by_type"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/econ-models/stream-properties",
+      "name": "post-stream-properties",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "post_econ_models_by_type"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/econ-models/stream-properties",
+      "name": "put-stream-properties",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "put_econ_models_by_type"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/econ-models/stream-properties/:p",
+      "name": "delete-stream-properties-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "delete_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/stream-properties/:p",
+      "name": "get-stream-properties-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_model_by_type_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/embedded-lookup-tables",
+      "name": "get-embedded-lookup-tables",
+      "area": "embedded-lookup-tables",
+      "status": "wrapped",
+      "method": "get_embedded_lookup_tables"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/embedded-lookup-tables",
+      "name": "head-embedded-lookup-tables",
+      "area": "embedded-lookup-tables",
+      "status": "wrapped",
+      "method": "count_embedded_lookup_tables"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/embedded-lookup-tables",
+      "name": "post-embedded-lookup-tables",
+      "area": "embedded-lookup-tables",
+      "status": "wrapped",
+      "method": "post_embedded_lookup_tables"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/embedded-lookup-tables",
+      "name": "put-embedded-lookup-tables",
+      "area": "embedded-lookup-tables",
+      "status": "wrapped",
+      "method": "put_embedded_lookup_tables"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/embedded-lookup-tables/:p",
+      "name": "delete-embedded-lookup-table-by-id",
+      "area": "embedded-lookup-tables",
+      "status": "wrapped",
+      "method": "delete_embedded_lookup_table_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/embedded-lookup-tables/:p",
+      "name": "get-embedded-lookup-table-by-id",
+      "area": "embedded-lookup-tables",
+      "status": "wrapped",
+      "method": "get_embedded_lookup_table_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/forecasts",
+      "name": "get-forecasts",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "get_forecasts"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/forecasts",
+      "name": "head-forecasts",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "count_forecasts"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/forecasts",
+      "name": "post-forecasts",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "post_forecasts"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/forecasts/:p",
+      "name": "delete-forecast-by-id",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "delete_forecast_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/forecasts/:p",
+      "name": "get-forecast-by-id",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "get_forecast_by_id"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/projects/:p/forecasts/:p",
+      "name": "patch-forecast",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "patch_forecast_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/forecasts/:p/aries",
+      "name": "get-aries-forecast",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "get_forecast_aries"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/forecasts/:p/aries",
+      "name": "head-aries-forecast",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "count_forecast_aries"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/forecasts/:p/daily-volumes",
+      "name": "get-forecast-daily-volumes",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "get_forecast_daily_volumes"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/forecasts/:p/daily-volumes",
+      "name": "head-forecast-daily-volumes",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "count_forecast_daily_volumes"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/forecasts/:p/daily-volumes",
+      "name": "put-forecast-daily-volumes",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "put_forecast_daily_volumes"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/forecasts/:p/monthly-volumes",
+      "name": "get-forecast-monthly-volumes",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "get_forecast_monthly_volumes"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/forecasts/:p/monthly-volumes",
+      "name": "head-forecast-monthly-volumes",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "count_forecast_monthly_volumes"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/forecasts/:p/monthly-volumes",
+      "name": "put-forecast-monthly-volumes",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "put_forecast_monthly_volumes"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/forecasts/:p/outputs",
+      "name": "get-forecast-outputs",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "get_forecast_outputs"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/forecasts/:p/outputs",
+      "name": "head-forecast-outputs",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "count_forecast_outputs"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/forecasts/:p/outputs/:p",
+      "name": "get-forecast-output-by-id",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "get_forecast_output_by_id"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/forecasts/:p/parameters",
+      "name": "put-version-two-projects-forecast-segment-parameters",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "put_forecast_parameters"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/forecasts/:p/parameters/:p/:p/:p",
+      "name": "delete-projects-forecast-segment-parameters",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "delete_forecast_segment_parameters"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/forecasts/:p/parameters/:p/:p/:p",
+      "name": "post-projects-forecast-segment-parameters",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "post_forecast_segment_parameters"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/forecasts/:p/parameters/:p/:p/:p",
+      "name": "put-projects-forecast-segment-parameters",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "put_forecast_segment_parameters"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/forecasts/:p/run",
+      "name": "post-forecast-run",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "post_forecast_run"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/forecasts/:p/run/:p",
+      "name": "get-forecast-run-status",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "get_forecast_run_by_job_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/forecasts/:p/wells",
+      "name": "get-forecast-wells",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "get_forecast_wells"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/forecasts/:p/wells",
+      "name": "head-forecast-wells",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "count_forecast_wells"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/forecasts/:p/wells",
+      "name": "post-wells-to-forecast",
+      "area": "forecasts",
+      "status": "wrapped",
+      "method": "post_forecast_wells"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/formations",
+      "name": "get-project-formations",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/formations",
+      "name": "head-project-formations",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/projects/:p/formations",
+      "name": "patch-project-formations",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/formations",
+      "name": "put-project-formations",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/formations/:p",
+      "name": "delete-project-formation-by-id",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/formations/:p",
+      "name": "get-project-formation-by-id",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/formations/:p/points",
+      "name": "get-project-formation-points",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/formations/head",
+      "name": "get-head-project-formations",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/formations/jobs/:p",
+      "name": "get-project-formations-job",
+      "area": "formations",
+      "status": "gap"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/monthly-productions",
+      "name": "delete-project-monthly-productions",
+      "area": "monthly-productions",
+      "status": "wrapped",
+      "method": "delete_project_monthly_productions"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/monthly-productions",
+      "name": "get-projects-monthly-productions",
+      "area": "monthly-productions",
+      "status": "wrapped",
+      "method": "get_project_monthly_productions"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/monthly-productions",
+      "name": "head-projects-monthly-productions",
+      "area": "monthly-productions",
+      "status": "wrapped",
+      "method": "count_project_monthly_productions"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/projects/:p/monthly-productions",
+      "name": "patch-projects-monthly-productions",
+      "area": "monthly-productions",
+      "status": "wrapped",
+      "method": "patch_project_monthly_productions"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/monthly-productions",
+      "name": "post-projects-monthly-productions",
+      "area": "monthly-productions",
+      "status": "wrapped",
+      "method": "post_project_monthly_productions"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/monthly-productions",
+      "name": "put-projects-monthly-productions",
+      "area": "monthly-productions",
+      "status": "wrapped",
+      "method": "put_project_monthly_productions"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/production-comments",
+      "name": "delete-project-production-comments",
+      "area": "production-comments",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/production-comments",
+      "name": "get-project-production-comments",
+      "area": "production-comments",
+      "status": "gap"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/production-comments",
+      "name": "head-project-production-comments",
+      "area": "production-comments",
+      "status": "gap"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/projects/:p/production-comments",
+      "name": "patch-project-production-comments",
+      "area": "production-comments",
+      "status": "gap"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/production-comments",
+      "name": "post-project-production-comments",
+      "area": "production-comments",
+      "status": "gap"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/production-comments",
+      "name": "put-project-production-comments",
+      "area": "production-comments",
+      "status": "gap"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/production-comments/:p",
+      "name": "delete-project-production-comment-by-id",
+      "area": "production-comments",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/production-comments/:p",
+      "name": "get-project-production-comment-by-id",
+      "area": "production-comments",
+      "status": "gap"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/scenarios",
+      "name": "delete-project-scenarios",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "delete_scenarios"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios",
+      "name": "get-scenarios",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_scenarios"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/scenarios",
+      "name": "head-scenarios",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "count_scenarios"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/scenarios",
+      "name": "post-project-scenarios",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "post_scenarios"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/scenarios",
+      "name": "put-project-scenarios",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "put_scenarios"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p",
+      "name": "get-scenario-by-id",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_scenario_by_id"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/scenarios/:p/assignments/econ-models",
+      "name": "delete-scenario-econ-model-assignments",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "delete_scenario_econ_model_assignments"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p/assignments/econ-models",
+      "name": "get-scenario-econ-model-assignments",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_scenario_econ_model_assignments"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/scenarios/:p/assignments/econ-models",
+      "name": "put-scenario-econ-model-assignments",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "put_scenario_econ_model_assignments"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p/assignments/lookup-tables",
+      "name": "get-scenario-lookup-tables-assignments",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_scenario_lookup_table_assignments"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/scenarios/:p/assignments/lookup-tables",
+      "name": "put-scenario-lookup-tables-assignments",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "put_scenario_lookup_table_assignments"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/scenarios/:p/assignments/lookup-tables/:p",
+      "name": "delete-scenario-lookup-tables-assignments",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "delete_scenario_lookup_table_assignment_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p/assignments/lookup-tables/:p",
+      "name": "get-scenario-lookup-tables-assignments-by-id",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_scenario_lookup_table_assignment_by_id"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/scenarios/:p/assignments/models",
+      "name": "delete-scenario-model-assignments",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "delete_scenario_model_assignments"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p/assignments/models",
+      "name": "get-scenario-model-assignments",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_scenario_model_assignments"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/scenarios/:p/assignments/models",
+      "name": "put-scenario-model-assignments",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "put_scenario_model_assignments"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/scenarios/:p/combos",
+      "name": "delete-scenario-combos-delete",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "delete_scenario_combo"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p/combos",
+      "name": "get-scenario-combos-read",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_scenario_combos"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/scenarios/:p/combos",
+      "name": "head-scenario-combos-count",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "count_scenario_combos"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/scenarios/:p/combos",
+      "name": "post-scenario-combos-upsert",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "post_scenario_combos"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/scenarios/:p/combos",
+      "name": "put-scenario-combos-upsert",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "put_scenario_combos"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p/econ-runs",
+      "name": "get-econ-runs",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_econ_runs"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/scenarios/:p/econ-runs",
+      "name": "head-econ-runs",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "count_econ_runs"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p/econ-runs/:p",
+      "name": "get-econ-run-by-id",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_econ_run_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p/econ-runs/:p/monthly-econ-results",
+      "name": "get-monthly-econ-result-by-id",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_econ_run_monthly_econ_result_by_id"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/scenarios/:p/econ-runs/:p/monthly-exports",
+      "name": "head-monthly-exports",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "count_econ_run_monthly_exports"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/scenarios/:p/econ-runs/:p/monthly-exports",
+      "name": "post-monthly-exports",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "post_econ_run_monthly_export"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p/econ-runs/:p/monthly-exports/:p",
+      "name": "get-monthly-export-by-id",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_econ_run_monthly_export"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p/econ-runs/:p/one-liners",
+      "name": "get-one-liners",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_econ_run_onelines"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/scenarios/:p/econ-runs/:p/one-liners",
+      "name": "head-one-liners",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "count_econ_run_onelines"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p/econ-runs/:p/one-liners/:p",
+      "name": "get-one-liner-by-id",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_econ_run_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p/econ-runs/:p/one-liners/combo-names",
+      "name": "get-one-liners-combo-names",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_econ_run_by_id"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/scenarios/:p/qualifiers",
+      "name": "delete-qualifiers-delete",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "delete_scenario_qualifiers"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p/qualifiers",
+      "name": "get-qualifiers-read",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_scenario_qualifiers"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/scenarios/:p/qualifiers",
+      "name": "post-qualifiers-upsert",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "post_scenario_qualifiers"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/scenarios/:p/qualifiers",
+      "name": "put-qualifiers-upsert",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "put_scenario_qualifiers"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/scenarios/:p/run",
+      "name": "post-scenario-run",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "post_scenario_run"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p/run/:p",
+      "name": "get-scenario-run-status",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_scenario_run_by_job_id"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/scenarios/:p/well-assignments",
+      "name": "delete-scenario-wells-delete",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "delete_scenario_wells"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p/well-assignments",
+      "name": "get-scenario-wells-read",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_scenario_wells"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/scenarios/:p/well-assignments",
+      "name": "post-scenario-wells-upsert",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "post_scenario_wells"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/scenarios/:p/well-assignments",
+      "name": "put-scenario-wells-upsert",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "put_scenario_wells"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/:p/well-assignments/incrementals",
+      "name": "get-scenario-well-incrementals",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_scenario_well_incrementals"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/lookup-tables",
+      "name": "get-scenario-lookup-tables",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_scenario_lookup_tables"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/scenarios/lookup-tables",
+      "name": "head-scenario-lookup-tables",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "count_scenario_lookup_tables"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/scenarios/lookup-tables",
+      "name": "post-scenario-lookup-tables",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "post_scenario_lookup_tables"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/scenarios/lookup-tables",
+      "name": "put-scenario-lookup-tables",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "put_scenario_lookup_tables"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/scenarios/lookup-tables/:p",
+      "name": "delete-scenario-lookup-table-by-id",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "delete_scenario_lookup_table_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/scenarios/lookup-tables/:p",
+      "name": "get-scenario-lookup-table-by-id",
+      "area": "scenarios",
+      "status": "wrapped",
+      "method": "get_scenario_lookup_table_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/shapefiles",
+      "name": "get-project-shapefiles",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/shapefiles",
+      "name": "head-project-shapefiles",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/shapefiles",
+      "name": "post-project-shapefiles",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/shapefiles/:p",
+      "name": "delete-project-shapefile-by-id",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/shapefiles/:p",
+      "name": "get-project-shapefile-by-id",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/shapefiles/:p/features",
+      "name": "get-project-shapefile-features",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/shapefiles/head",
+      "name": "get-head-project-shapefiles",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/shapefiles/jobs/:p",
+      "name": "get-project-shapefiles-job",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/shapefiles/uploads",
+      "name": "post-project-shapefiles-upload",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/shapefiles/uploads/:p",
+      "name": "post-project-shapefiles-upload-import",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/type-curves",
+      "name": "delete-type-curves",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/type-curves",
+      "name": "get-type-curves",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/type-curves",
+      "name": "head-type-curves",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/type-curves",
+      "name": "post-type-curves",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/type-curves",
+      "name": "put-type-curves",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/type-curves/:p",
+      "name": "get-type-curve-by-id",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/type-curves/:p/fits/daily",
+      "name": "get-type-curve-daily-fits",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/type-curves/:p/fits/monthly",
+      "name": "get-type-curve-monthly-fits",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/type-curves/:p/representative-wells",
+      "name": "get-type-curve-representative-wells",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/type-curves/head",
+      "name": "get-head-type-curve",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/type-curves/lookup-tables",
+      "name": "get-type-curve-lookup-tables",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/type-curves/lookup-tables",
+      "name": "head-type-curve-lookup-tables",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/type-curves/lookup-tables",
+      "name": "post-type-curve-lookup-tables",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/type-curves/lookup-tables",
+      "name": "put-type-curve-lookup-tables",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/type-curves/lookup-tables/:p",
+      "name": "delete-type-curve-lookup-table-by-id",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/type-curves/lookup-tables/:p",
+      "name": "get-type-curve-lookup-table-by-id",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/type-curves/lookup-tables/head",
+      "name": "get-head-type-curve-lookup-tables",
+      "area": "type-curves",
+      "status": "retired",
+      "note": "ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/wells",
+      "name": "delete-project-wells",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "delete_project_wells"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/wells",
+      "name": "get-project-wells",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "get_project_wells"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/projects/:p/wells",
+      "name": "head-project-wells",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "count_project_wells"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/projects/:p/wells",
+      "name": "patch-project-wells",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "patch_project_wells"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/projects/:p/wells",
+      "name": "post-projects-wells",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "post_project_wells"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/wells",
+      "name": "put-projects-wells",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "put_project_wells"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/projects/:p/wells/:p",
+      "name": "delete-project-well-by-id",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "delete_project_well_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/wells/:p",
+      "name": "get-project-well-by-id",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "get_project_well_by_id"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/projects/:p/wells/:p",
+      "name": "patch-project-well-by-id",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "patch_project_well_by_id"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/projects/:p/wells/:p",
+      "name": "put-projects-wells-by-id",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "put_project_well_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/shapefiles",
+      "name": "get-shapefiles",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/shapefiles",
+      "name": "head-shapefiles",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/shapefiles",
+      "name": "patch-shapefiles",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/shapefiles",
+      "name": "post-shapefiles",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/shapefiles/:p",
+      "name": "delete-shapefile-by-id",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/shapefiles/:p",
+      "name": "get-shapefile-by-id",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/shapefiles/:p/features",
+      "name": "get-shapefile-features",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/shapefiles/head",
+      "name": "get-head-shapefiles",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/shapefiles/jobs/:p",
+      "name": "get-shapefiles-job",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/shapefiles/uploads",
+      "name": "post-shapefiles-upload",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/shapefiles/uploads/:p",
+      "name": "post-shapefiles-upload-import",
+      "area": "shapefiles",
+      "status": "gap"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/tags",
+      "name": "get-tags",
+      "area": "tags",
+      "status": "wrapped",
+      "method": "get_tags"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/tags",
+      "name": "head-tags",
+      "area": "tags",
+      "status": "wrapped",
+      "method": "count_tags"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/users/roles",
+      "name": "get-users-roles",
+      "area": "users",
+      "status": "wrapped",
+      "method": "get_users_roles"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/well-comments",
+      "name": "get-well-comments",
+      "area": "well-comments",
+      "status": "wrapped",
+      "method": "get_well_comments"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/well-comments",
+      "name": "head-well-comments",
+      "area": "well-comments",
+      "status": "wrapped",
+      "method": "count_well_comments"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/wells",
+      "name": "delete-wells",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "delete_company_wells"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/wells",
+      "name": "get-wells",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "get_company_wells"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v1/wells",
+      "name": "head-wells",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "count_company_wells"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/wells",
+      "name": "patch-wells",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "patch_company_wells"
+    },
+    {
+      "verb": "POST",
+      "path": "/v1/wells",
+      "name": "post-wells",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "post_company_wells"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/wells",
+      "name": "put-wells",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "put_company_wells"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/wells-identifiers",
+      "name": "patch-wells-identifiers",
+      "area": "wells-identifiers",
+      "status": "wrapped",
+      "method": "patch_well_identifiers"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v1/wells/:p",
+      "name": "delete-well-by-id",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "delete_company_well_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/wells/:p",
+      "name": "get-well-by-id",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "get_company_well_by_id"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v1/wells/:p",
+      "name": "patch-well-by-id",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "patch_company_well_by_id"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v1/wells/:p",
+      "name": "put-well-by-id",
+      "area": "wells",
+      "status": "wrapped",
+      "method": "put_company_well_by_id"
+    },
+    {
+      "verb": "POST",
+      "path": "/v2/exports/econ-monthly",
+      "name": "Trigger an economic monthly export job",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "post_export_econ_monthly"
+    },
+    {
+      "verb": "GET",
+      "path": "/v2/exports/econ-monthly/:p",
+      "name": "Get economic monthly export job status",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "get_export_econ_monthly_by_job_id"
+    },
+    {
+      "verb": "POST",
+      "path": "/v2/exports/econ-one-liners",
+      "name": "Trigger an economic one-liners export job",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "post_export_econ_one_liners"
+    },
+    {
+      "verb": "GET",
+      "path": "/v2/exports/econ-one-liners/:p",
+      "name": "Get economic one-liners export job status",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "get_export_econ_one_liners_by_job_id"
+    },
+    {
+      "verb": "POST",
+      "path": "/v2/exports/forecast-parameters",
+      "name": "Trigger a forecast parameters export job",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "post_export_forecast_parameters"
+    },
+    {
+      "verb": "GET",
+      "path": "/v2/exports/forecast-parameters/:p",
+      "name": "Get forecast parameters export job status",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "get_export_forecast_parameters_by_job_id"
+    },
+    {
+      "verb": "POST",
+      "path": "/v2/exports/forecast-volumes",
+      "name": "Trigger a forecast volumes export job",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "post_export_forecast_volumes"
+    },
+    {
+      "verb": "GET",
+      "path": "/v2/exports/forecast-volumes/:p",
+      "name": "Get forecast volumes export job status",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "get_export_forecast_volumes_by_job_id"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v2/projects/:p/type-curves",
+      "name": "delete-v2-type-curves",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "delete_type_curves"
+    },
+    {
+      "verb": "GET",
+      "path": "/v2/projects/:p/type-curves",
+      "name": "get-v2-type-curves",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "get_type_curves"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v2/projects/:p/type-curves",
+      "name": "head-v2-type-curves",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "count_type_curves"
+    },
+    {
+      "verb": "POST",
+      "path": "/v2/projects/:p/type-curves",
+      "name": "post-v2-type-curve",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "post_type_curve"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v2/projects/:p/type-curves/:p",
+      "name": "delete-v2-type-curve",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "delete_type_curve_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v2/projects/:p/type-curves/:p",
+      "name": "get-v2-type-curve-by-id",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "get_type_curve_by_id"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v2/projects/:p/type-curves/:p",
+      "name": "patch-v2-type-curve",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "patch_type_curve"
+    },
+    {
+      "verb": "GET",
+      "path": "/v2/projects/:p/type-curves/:p/fits",
+      "name": "get-v2-type-curve-fits",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "get_type_curve_fits"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v2/projects/:p/type-curves/:p/fits",
+      "name": "put-v2-type-curve-fits",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "put_type_curve_fits"
+    },
+    {
+      "verb": "GET",
+      "path": "/v2/projects/:p/type-curves/:p/normalization",
+      "name": "get-v2-type-curve-normalization",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "get_type_curve_normalization"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v2/projects/:p/type-curves/:p/normalization",
+      "name": "put-v2-type-curve-normalization",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "put_type_curve_normalization"
+    },
+    {
+      "verb": "GET",
+      "path": "/v2/projects/:p/type-curves/:p/volumes",
+      "name": "get-v2-type-curve-volumes",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "get_type_curve_daily_fits"
+    },
+    {
+      "verb": "GET",
+      "path": "/v2/projects/:p/type-curves/:p/wells",
+      "name": "get-v2-type-curve-wells",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "get_type_curve_representative_fits"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v2/projects/:p/type-curves/:p/wells",
+      "name": "head-v2-type-curve-wells",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "count_type_curve_wells"
+    },
+    {
+      "verb": "PATCH",
+      "path": "/v2/projects/:p/type-curves/batch",
+      "name": "patch-v2-type-curves-batch",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "patch_type_curves"
+    },
+    {
+      "verb": "POST",
+      "path": "/v2/projects/:p/type-curves/batch",
+      "name": "post-v2-type-curves-batch",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "post_type_curves"
+    },
+    {
+      "verb": "GET",
+      "path": "/v2/projects/:p/type-curves/lookup-tables",
+      "name": "get-v2-type-curve-lookup-tables",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "get_type_curve_lookup_tables"
+    },
+    {
+      "verb": "HEAD",
+      "path": "/v2/projects/:p/type-curves/lookup-tables",
+      "name": "head-v2-type-curve-lookup-tables",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "count_type_curve_lookup_tables"
+    },
+    {
+      "verb": "POST",
+      "path": "/v2/projects/:p/type-curves/lookup-tables",
+      "name": "post-v2-type-curve-lookup-table",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "post_type_curve_lookup_table"
+    },
+    {
+      "verb": "DELETE",
+      "path": "/v2/projects/:p/type-curves/lookup-tables/:p",
+      "name": "delete-v2-type-curve-lookup-table-by-id",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "delete_type_curve_lookup_table_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v2/projects/:p/type-curves/lookup-tables/:p",
+      "name": "get-v2-type-curve-lookup-table-by-id",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "get_type_curve_lookup_table_by_id"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v2/projects/:p/type-curves/lookup-tables/:p",
+      "name": "put-v2-type-curve-lookup-table-by-id",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "put_type_curve_lookup_table_by_id"
+    },
+    {
+      "verb": "POST",
+      "path": "/v2/projects/:p/type-curves/lookup-tables/batch",
+      "name": "post-v2-type-curve-lookup-tables-batch",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "post_type_curve_lookup_tables"
+    },
+    {
+      "verb": "PUT",
+      "path": "/v2/projects/:p/type-curves/lookup-tables/batch",
+      "name": "put-v2-type-curve-lookup-tables-batch",
+      "area": "v2",
+      "status": "wrapped",
+      "method": "put_type_curve_lookup_tables"
+    }
+  ]
+}

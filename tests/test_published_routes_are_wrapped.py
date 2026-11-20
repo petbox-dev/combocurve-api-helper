@@ -1,301 +1,82 @@
-"""Every route in the ComboCurve Postman collection has a method, or a reviewed entry in `_UNWRAPPED`.
+"""Every route in the ComboCurve Postman collection is in `tests/route_manifest.json`, and its status is true.
 
-Call-based: each public method of `ComboCurveAPI` is called once on a fake transport with
-placeholder arguments, and every (verb, path) it sends is recorded. A collection operation that no
-call reaches must be listed in `_UNWRAPPED`, so a route that ComboCurve publishes fails this test
-until someone wraps it or records the decision. An `_UNWRAPPED` entry that a method now reaches
-fails too, so the list cannot go stale.
+The manifest holds one entry per collection operation (see `tests/route_manifest.py`). This test fails when:
 
-This complements `test_route_paths.py`, which checks the path a docstring-linked method builds.
-That test cannot see a route with no method; this one can.
+- the collection has an operation the manifest does not list, or the manifest lists one the collection
+  no longer has (run `python scripts/generate_route_coverage.py`);
+- a `wrapped` route is not sent by the public method the manifest names, or a method sends a route the
+  manifest does not call `wrapped` (the manifest's `status` must match the code);
+- a public method sends nothing (give it an `ARGUMENT_OVERRIDES` entry);
+- a status or a `method` name is not one the manifest may hold.
 
-Network-dependent, skipped when the collection can't be fetched -- same policy as
-`test_route_paths.py` / `test_docstring_slugs.py`.
-(docs/todo/closed/no-test-checks-that-published-routes-are-wrapped.md)
+A `gap` route passes: it is a published operation the helper does not send yet, and the manifest lists it.
+
+Network-dependent, skipped when the collection can't be fetched -- same policy as `test_route_paths.py` /
+`test_docstring_slugs.py`.
 """
 
 from __future__ import annotations
 
 import inspect
-import warnings
-from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any
-from urllib.parse import urlsplit
-
-import requests
 
 from combocurve_api_helper import ComboCurveAPI
-from tests.http_fakes import FakeResponse, make_offline_api
-from tests.postman_collection import PLACEHOLDER, collection_requests, normalized_segments
-
-if TYPE_CHECKING:
-    from pytest import MonkeyPatch
-
-# A method that polls would loop on the fake transport; this many requests from one call is enough
-# to record its routes.
-_MAX_REQUESTS_PER_CALL = 5
-
-# Arguments that the annotation alone cannot fill: a value the method validates before it sends.
-_ARGUMENT_OVERRIDES: dict[str, dict[str, Any]] = {
-    'delete_company_wells': {'well_id': PLACEHOLDER},
-    'delete_project_company_wells': {'well_id': PLACEHOLDER},
-    'delete_project_wells': {'well_id': PLACEHOLDER},
-    'delete_scenarios': {'scenario_id': PLACEHOLDER},
-    'delete_type_curves': {'id': PLACEHOLDER},
-    'get_project_custom_columns': {'custom_column': 'wells'},
-    'count_root_forecast_daily_volumes': {'filters': {'project': PLACEHOLDER}},
-    'count_root_forecast_monthly_volumes': {'filters': {'project': PLACEHOLDER}},
-    'get_root_forecast_daily_volumes': {'filters': {'project': PLACEHOLDER}},
-    'get_root_forecast_monthly_volumes': {'filters': {'project': PLACEHOLDER}},
-}
-# A by-type method (`econ_model_type` argument) is called once per econ-model type, because it
-# is the only method for some routes (the company POST/PUT/HEAD of most types).
-_ECON_MODEL_TYPES = sorted({str(entry['econModelType']) for entry in ComboCurveAPI.ECON_MODELS})
-
-# Public methods that send no request: pure helpers.
-_SENDS_NOTHING_BY_DESIGN = ('extract_id', 'index_of')
-
-# Collection operations with no method, reviewed 2026-11-12 (97: the 79 of
-# docs/todo/open/published-routes-without-a-method.md, the 17 retired v1 type-curve routes, and the
-# OAuth token route). Key: 'VERB /path' with `:p` for each path parameter. Value: the area.
-# ComboCurve retired the v1 type-curve routes on 2026-11-07; the compatibility wrappers call v2.
-_UNWRAPPED: dict[str, str] = {
-    'POST /v1/directional-surveys/batch': 'Directional-survey batch',
-    'DELETE /v1/econ-report-settings/:p': 'Econ report settings',
-    'GET /v1/econ-report-settings': 'Econ report settings',
-    'GET /v1/econ-report-settings/:p': 'Econ report settings',
-    'HEAD /v1/econ-report-settings': 'Econ report settings',
-    'PATCH /v1/econ-report-settings': 'Econ report settings',
-    'POST /v1/econ-report-settings': 'Econ report settings',
-    'PUT /v1/econ-report-settings': 'Econ report settings',
-    'DELETE /v1/econ-settings/:p': 'Econ settings',
-    'GET /v1/econ-settings': 'Econ settings',
-    'GET /v1/econ-settings/:p': 'Econ settings',
-    'HEAD /v1/econ-settings': 'Econ settings',
-    'PATCH /v1/econ-settings': 'Econ settings',
-    'POST /v1/econ-settings': 'Econ settings',
-    'PUT /v1/econ-settings': 'Econ settings',
-    'PUT /v1/projects/:p/forecasts/:p/daily-volumes': 'Forecast volumes PUT',
-    'PUT /v1/projects/:p/forecasts/:p/monthly-volumes': 'Forecast volumes PUT',
-    'DELETE /v1/forecast-configurations': 'Forecast-configurations DELETE',
-    'DELETE /v1/formations/:p': 'Formations',
-    'DELETE /v1/projects/:p/formations/:p': 'Formations',
-    'GET /v1/formations': 'Formations',
-    'GET /v1/formations/:p': 'Formations',
-    'GET /v1/formations/:p/points': 'Formations',
-    'GET /v1/formations/head': 'Formations',
-    'GET /v1/formations/jobs/:p': 'Formations',
-    'GET /v1/projects/:p/formations': 'Formations',
-    'GET /v1/projects/:p/formations/:p': 'Formations',
-    'GET /v1/projects/:p/formations/:p/points': 'Formations',
-    'GET /v1/projects/:p/formations/head': 'Formations',
-    'GET /v1/projects/:p/formations/jobs/:p': 'Formations',
-    'HEAD /v1/formations': 'Formations',
-    'HEAD /v1/projects/:p/formations': 'Formations',
-    'PATCH /v1/formations': 'Formations',
-    'PATCH /v1/projects/:p/formations': 'Formations',
-    'PUT /v1/formations': 'Formations',
-    'PUT /v1/projects/:p/formations': 'Formations',
-    'POST /v1/oauth/token': 'OAuth token (auth.py posts to it directly, not through a method)',
-    'GET /v1/production-comment-types': 'Production comment types',
-    'PATCH /v1/production-comment-types': 'Production comment types',
-    'DELETE /v1/production-comments': 'Production comments',
-    'DELETE /v1/production-comments/:p': 'Production comments',
-    'DELETE /v1/projects/:p/production-comments': 'Production comments',
-    'DELETE /v1/projects/:p/production-comments/:p': 'Production comments',
-    'GET /v1/production-comments': 'Production comments',
-    'GET /v1/production-comments/:p': 'Production comments',
-    'GET /v1/projects/:p/production-comments': 'Production comments',
-    'GET /v1/projects/:p/production-comments/:p': 'Production comments',
-    'HEAD /v1/production-comments': 'Production comments',
-    'HEAD /v1/projects/:p/production-comments': 'Production comments',
-    'PATCH /v1/production-comments': 'Production comments',
-    'PATCH /v1/projects/:p/production-comments': 'Production comments',
-    'POST /v1/production-comments': 'Production comments',
-    'POST /v1/projects/:p/production-comments': 'Production comments',
-    'PUT /v1/production-comments': 'Production comments',
-    'PUT /v1/projects/:p/production-comments': 'Production comments',
-    'PATCH /v1/projects/:p/company-wells': 'Project company-wells PATCH',
-    'DELETE /v1/projects/:p/scenarios/:p/assignments/econ-models': 'Scenario econ-model assignment PUT and DELETE',
-    'PUT /v1/projects/:p/scenarios/:p/assignments/econ-models': 'Scenario econ-model assignment PUT and DELETE',
-    'DELETE /v1/projects/:p/shapefiles/:p': 'Shapefiles',
-    'DELETE /v1/shapefiles/:p': 'Shapefiles',
-    'GET /v1/projects/:p/shapefiles': 'Shapefiles',
-    'GET /v1/projects/:p/shapefiles/:p': 'Shapefiles',
-    'GET /v1/projects/:p/shapefiles/:p/features': 'Shapefiles',
-    'GET /v1/projects/:p/shapefiles/head': 'Shapefiles',
-    'GET /v1/projects/:p/shapefiles/jobs/:p': 'Shapefiles',
-    'GET /v1/shapefiles': 'Shapefiles',
-    'GET /v1/shapefiles/:p': 'Shapefiles',
-    'GET /v1/shapefiles/:p/features': 'Shapefiles',
-    'GET /v1/shapefiles/head': 'Shapefiles',
-    'GET /v1/shapefiles/jobs/:p': 'Shapefiles',
-    'HEAD /v1/projects/:p/shapefiles': 'Shapefiles',
-    'HEAD /v1/shapefiles': 'Shapefiles',
-    'PATCH /v1/shapefiles': 'Shapefiles',
-    'POST /v1/projects/:p/shapefiles': 'Shapefiles',
-    'POST /v1/projects/:p/shapefiles/uploads': 'Shapefiles',
-    'POST /v1/projects/:p/shapefiles/uploads/:p': 'Shapefiles',
-    'POST /v1/shapefiles': 'Shapefiles',
-    'POST /v1/shapefiles/uploads': 'Shapefiles',
-    'POST /v1/shapefiles/uploads/:p': 'Shapefiles',
-    'GET /v1/projects/:p/scenarios/:p/well-assignments/incrementals': 'Well incrementals',
-    'DELETE /v1/projects/:p/type-curves': 'v1 type curves (retired)',
-    'DELETE /v1/projects/:p/type-curves/lookup-tables/:p': 'v1 type curves (retired)',
-    'GET /v1/projects/:p/type-curves': 'v1 type curves (retired)',
-    'GET /v1/projects/:p/type-curves/:p': 'v1 type curves (retired)',
-    'GET /v1/projects/:p/type-curves/:p/fits/daily': 'v1 type curves (retired)',
-    'GET /v1/projects/:p/type-curves/:p/fits/monthly': 'v1 type curves (retired)',
-    'GET /v1/projects/:p/type-curves/:p/representative-wells': 'v1 type curves (retired)',
-    'GET /v1/projects/:p/type-curves/head': 'v1 type curves (retired)',
-    'GET /v1/projects/:p/type-curves/lookup-tables': 'v1 type curves (retired)',
-    'GET /v1/projects/:p/type-curves/lookup-tables/:p': 'v1 type curves (retired)',
-    'GET /v1/projects/:p/type-curves/lookup-tables/head': 'v1 type curves (retired)',
-    'HEAD /v1/projects/:p/type-curves': 'v1 type curves (retired)',
-    'HEAD /v1/projects/:p/type-curves/lookup-tables': 'v1 type curves (retired)',
-    'POST /v1/projects/:p/type-curves': 'v1 type curves (retired)',
-    'POST /v1/projects/:p/type-curves/lookup-tables': 'v1 type curves (retired)',
-    'PUT /v1/projects/:p/type-curves': 'v1 type curves (retired)',
-    'PUT /v1/projects/:p/type-curves/lookup-tables': 'v1 type curves (retired)',
-}
+from tests.postman_collection import collection_requests, normalized_segments
+from tests.route_manifest import (
+    SENDS_NOTHING_BY_DESIGN,
+    STATUSES,
+    load_manifest,
+    sent_by_method,
+    template_reached_by,
+)
 
 
-class _TooManyRequests(Exception):
-    """Stops a method that keeps sending (a poll loop) once its routes are recorded."""
-
-
-class _Recorder:
-    """Stands in for `requests.request`: records (VERB, normalized path) and answers 200."""
-
-    def __init__(self) -> None:
-        # Every (VERB, normalized path) sent so far, across all calls.
-        self.operations: set[tuple[str, tuple[str, ...]]] = set()
-        # Requests sent since `begin_call`; caps a poll loop at `_MAX_REQUESTS_PER_CALL`.
-        self.requests_in_call = 0
-
-    def begin_call(self) -> None:
-        """Start counting the requests of one method call."""
-        self.requests_in_call = 0
-
-    def __call__(self, method: str, url: str, **keywords: Any) -> FakeResponse:
-        self.requests_in_call += 1
-        if self.requests_in_call > _MAX_REQUESTS_PER_CALL:
-            raise _TooManyRequests
-        self.operations.add((method.upper(), normalized_segments(urlsplit(url).path.strip('/').split('/'))))
-        body: Any = [{'id': PLACEHOLDER, 'status': 'completed', 'jobId': PLACEHOLDER}]
-        return FakeResponse(200, body, headers={'X-Query-Count': '1', 'X-Delete-Count': '1'})
-
-
-def _label(verb: str, segments: tuple[str, ...]) -> str:
-    """'VERB /seg/seg', the key form of `_UNWRAPPED`."""
-    return f'{verb} /' + '/'.join(segments)
-
-
-def _reaches(template: tuple[str, tuple[str, ...]], sent: set[tuple[str, tuple[str, ...]]]) -> bool:
-    """True when a sent request matches the template. A template `:p` matches any one segment,
-    because the collection also writes literal-valued parameters (`:econName`, `:collection`)
-    that way; a literal template segment must be sent as written."""
-    verb, template_segments = template
-    return any(
-        sent_verb == verb
-        and len(sent_segments) == len(template_segments)
-        and all(expected in (':p', actual) for expected, actual in zip(template_segments, sent_segments))
-        for sent_verb, sent_segments in sent
-    )
-
-
-def _collection_operations() -> set[tuple[str, tuple[str, ...]]]:
-    """Every collection operation as (VERB, normalized path segments)."""
-    operations: set[tuple[str, tuple[str, ...]]] = set()
+def _collection_keys() -> set[tuple[str, str]]:
+    """(VERB, '/path') for every collection operation, in the manifest's form."""
+    keys: set[tuple[str, str]] = set()
     for _, request in collection_requests():
         segments = (request.get('url') or {}).get('path')
         if segments:
-            operations.add((str(request.get('method', '')).upper(), normalized_segments(segments)))
-    return operations
+            keys.add((str(request.get('method', '')).upper(), '/' + '/'.join(normalized_segments(segments))))
+    return keys
 
 
-def _placeholder_for(parameter: inspect.Parameter) -> Any:
-    """A value of the parameter's annotated type; ids and names are all the 24-hex placeholder."""
-    annotation = str(parameter.annotation)
-    if 'ItemList' in annotation or annotation.startswith(('list[dict', 'list[Item')):
-        return [{'id': PLACEHOLDER}]
-    if 'Item' in annotation or annotation.startswith(('dict', 'Mapping')):
-        return {'id': PLACEHOLDER}
-    if any(form in annotation for form in ('Sequence[str]', 'list[str]', 'Iterable[str]')):
-        return [PLACEHOLDER]
-    if annotation.startswith('int'):
-        return 1
-    if annotation.startswith('float'):
-        return 1.0
-    if annotation.startswith('bool'):
-        return False
-    return PLACEHOLDER
+def test_manifest_lists_every_collection_operation_and_no_other() -> None:
+    manifest_keys = {route.key for route in load_manifest()}
+    collection_keys = _collection_keys()
+    missing = sorted(collection_keys - manifest_keys)
+    stale = sorted(manifest_keys - collection_keys)
+    assert not missing, (
+        'collection operations missing from tests/route_manifest.json (run the generator):\n'
+        + '\n'.join(f'{verb} {path}' for verb, path in missing)
+    )
+    assert not stale, 'manifest routes the collection no longer has (run the generator):\n' + '\n'.join(
+        f'{verb} {path}' for verb, path in stale
+    )
 
 
-def _call_every_public_method(api: ComboCurveAPI, recorder: _Recorder) -> list[str]:
-    """Call each public method (a by-type method once per type); return the names that sent nothing."""
-    silent: list[str] = []
-    for name, function in inspect.getmembers(ComboCurveAPI, inspect.isfunction):
-        if name.startswith('_') or name.endswith('_url'):
+def test_manifest_statuses_match_what_the_methods_send() -> None:
+    sent, silent = sent_by_method()
+    assert sorted(silent) == sorted(SENDS_NOTHING_BY_DESIGN), (
+        f'public methods that sent no request (give them ARGUMENT_OVERRIDES): {sorted(silent)}'
+    )
+    public_methods = {
+        name for name, _ in inspect.getmembers(ComboCurveAPI, inspect.isfunction) if not name.startswith('_')
+    }
+
+    problems: list[str] = []
+    for route in load_manifest():
+        if route.status not in STATUSES:
+            problems.append(f'{route.verb} {route.path}: unknown status {route.status!r}')
             continue
-        parameters = list(inspect.signature(function).parameters.values())
-        if parameters and parameters[0].name == 'self':
-            parameters = parameters[1:]
-        arguments = {
-            parameter.name: _placeholder_for(parameter)
-            for parameter in parameters
-            if parameter.default is inspect.Parameter.empty
-            and parameter.kind in (inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.KEYWORD_ONLY)
-        }
-        arguments.update(_ARGUMENT_OVERRIDES.get(name, {}))
-        variants = (
-            [{**arguments, 'econ_model_type': econ_model_type} for econ_model_type in _ECON_MODEL_TYPES]
-            if 'econ_model_type' in arguments
-            else [arguments]
-        )
-        requests_sent = 0
-        for variant in variants:
-            recorder.begin_call()
-            try:
-                result = getattr(api, name)(**variant)
-                if isinstance(result, Iterator):
-                    # A generator method sends only when it is consumed.
-                    for _ in result:
-                        pass
-            except Exception:
-                # The response is a placeholder, so a method may fail after it sends; its routes
-                # are already recorded. A type with no such route raises before it sends.
-                pass
-            requests_sent += recorder.requests_in_call
-        if requests_sent == 0:
-            silent.append(name)
-    return silent
-
-
-def test_every_argument_override_names_a_public_method() -> None:
-    """A renamed or removed method would otherwise leave its override silently unused."""
-    public_methods = {name for name, _ in inspect.getmembers(ComboCurveAPI, inspect.isfunction)}
-    assert set(_ARGUMENT_OVERRIDES) <= public_methods, sorted(set(_ARGUMENT_OVERRIDES) - public_methods)
-
-
-def test_every_published_route_has_a_method_or_a_reviewed_entry(monkeypatch: MonkeyPatch) -> None:
-    collection = _collection_operations()
-
-    recorder = _Recorder()
-    monkeypatch.setattr(requests, 'request', recorder)
-    monkeypatch.setattr('time.sleep', lambda seconds: None)
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        silent = _call_every_public_method(make_offline_api(), recorder)
-
-    assert sorted(silent) == sorted(_SENDS_NOTHING_BY_DESIGN), (
-        f'public methods that sent no request (give them _ARGUMENT_OVERRIDES): {sorted(silent)}'
-    )
-    unwrapped = {_label(*template) for template in collection if not _reaches(template, recorder.operations)}
-    new_routes = sorted(unwrapped - set(_UNWRAPPED))
-    now_wrapped = sorted(set(_UNWRAPPED) - unwrapped)
-    assert not new_routes, (
-        'collection routes that no method sends: wrap each one, or add it to _UNWRAPPED with its area:\n'
-        + '\n'.join(new_routes)
-    )
-    assert not now_wrapped, 'routes in _UNWRAPPED that a method now sends (remove them):\n' + '\n'.join(now_wrapped)
+        reached_by_any = any(template_reached_by(route.template(), operations) for operations in sent.values())
+        if route.status == 'wrapped':
+            if route.method not in public_methods:
+                problems.append(f'{route.verb} {route.path}: method {route.method!r} does not exist')
+            elif not template_reached_by(route.template(), sent[route.method or '']):
+                problems.append(f'{route.verb} {route.path}: {route.method} does not send it')
+        elif reached_by_any:
+            reaching = sorted(
+                name for name, operations in sent.items() if template_reached_by(route.template(), operations)
+            )
+            problems.append(f'{route.verb} {route.path}: status {route.status!r} but sent by {reaching}; regenerate')
+    assert not problems, 'tests/route_manifest.json disagrees with the methods:\n' + '\n'.join(problems)

@@ -1,7 +1,7 @@
 import warnings
 from typing import Optional, cast
 
-from .base import APIBase, Item, ItemList, WriteResponse
+from .base import APIBase, Item, ItemList, WellFilters, WriteResponse
 
 GET_LIMIT = 200
 
@@ -28,13 +28,23 @@ def _custom_column_argument(custom_column: Optional[str], collection: Optional[s
 _VOLUME_SCOPE_FILTERS = ('project', 'forecast', 'well')
 
 
-def _require_volume_scope(filters: Optional[dict[str, str]]) -> dict[str, str]:
-    """Return `filters` unchanged, or raise if it does not scope the volume query."""
+def _require_volume_scope(filters: Optional[WellFilters]) -> WellFilters:
+    """Return `filters` unchanged, or raise if it does not scope the volume query.
+
+    A `well` filter also needs `forecast`: verified live 2026-11-20 on dev, the API returns 400 for `well`
+    alone and for `project` with `well`, and accepts `well` with `forecast`.
+    """
     if not filters or not any(filters.get(key) for key in _VOLUME_SCOPE_FILTERS):
         raise ValueError(
             'filters must include at least one of '
             + ', '.join(_VOLUME_SCOPE_FILTERS)
             + '; the API rejects an unscoped forecast-volumes request'
+        )
+
+    if filters.get('well') and not filters.get('forecast'):
+        raise ValueError(
+            "a 'well' filter on the root volume routes must come with 'forecast'; the API rejects "
+            "'well' alone and 'well' with 'project'"
         )
 
     return filters
@@ -94,7 +104,7 @@ class Root(APIBase):
         """
         return f'{self.API_BASE_URL}/econ-runs/{econrun_id}'
 
-    def get_root_forecast_daily_volumes_url(self, filters: Optional[dict[str, str]] = None) -> str:
+    def get_root_forecast_daily_volumes_url(self, filters: Optional[WellFilters] = None) -> str:
         """
         Returns the API url for daily volumes.
         """
@@ -109,7 +119,7 @@ class Root(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_root_forecast_monthly_volumes_url(self, filters: Optional[dict[str, str]] = None) -> str:
+    def get_root_forecast_monthly_volumes_url(self, filters: Optional[WellFilters] = None) -> str:
         """
         Returns the API url for monthly volumes.
         """
@@ -267,36 +277,60 @@ class Root(APIBase):
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)[0]
 
-    def get_root_forecast_daily_volumes(self, filters: Optional[dict[str, str]] = None) -> ItemList:
+    def get_root_forecast_daily_volumes(self, filters: Optional[WellFilters] = None) -> ItemList:
         """
         Returns a list of daily volumes.
 
+        Scope: any number of forecasts, with `project`, `forecast` or `well` filters. Rows from several
+        forecasts can come back in one response, and each row's `forecast` field says which forecast
+        it belongs to. To read one forecast by its path (no `forecast` filter needed), use
+        `Forecasts.get_forecast_daily_volumes(project_id, forecast_id)`, which is scoped to that forecast.
+
         `filters` is REQUIRED here, unlike the other root list methods, and must carry
         at least one of `project`, `forecast` or `well` -- the API rejects anything else
         with a ValidationError, so it is refused locally rather than sent, as
         `get_econ_run_monthly_econ_result_by_id` does for its own required `columns`
         filter. Accepted keys
         are `project`, `forecast`, `well`, `startDate`, `endDate`, `skip` and `take`.
+
+        `filters['well']` may be a list of well ids, sent as repeated `well` keys. The API accepts
+        at most 100 per request, so a longer list is split into requests of 100 wells and the volumes
+        are combined into one list. Verified live 2026-11-20 on dev: a `well` filter is accepted only
+        together with `forecast`; `well` alone, or `project` with `well`, is refused locally.
 
         https://docs.api.combocurve.com/api/get-root-forecast-daily-volumes
         """
-        url = self.get_root_forecast_daily_volumes_url(_require_volume_scope(filters))
-        params = {'take': GET_LIMIT}
-        return self._get_items(url, params)
+        daily_volumes: ItemList = []
+        for batch_filters in self._filter_value_batches(_require_volume_scope(filters), 'well'):
+            url = self.get_root_forecast_daily_volumes_url(batch_filters)
+            params = {'take': GET_LIMIT}
+            daily_volumes.extend(self._get_items(url, params))
 
-    def count_root_forecast_daily_volumes(self, filters: Optional[dict[str, str]] = None) -> int:
+        return daily_volumes
+
+    def count_root_forecast_daily_volumes(self, filters: Optional[WellFilters] = None) -> int:
         """
         Returns the number of forecast daily-volume documents matching `filters`, from the
         `X-Query-Count` header of a HEAD request (no documents are fetched). `filters` must
-        scope the query, as for `get_root_forecast_daily_volumes`.
+        scope the query, as for `get_root_forecast_daily_volumes`. A `well` list longer than 100
+        is counted in batches of 100 and the counts are summed. For the count of one forecast by its
+        path, use `Forecasts.count_forecast_daily_volumes`.
 
         https://docs.api.combocurve.com/api/head-root-forecast-daily-volumes
         """
-        return self._count_items(self.get_root_forecast_daily_volumes_url(_require_volume_scope(filters)))
+        return sum(
+            self._count_items(self.get_root_forecast_daily_volumes_url(batch_filters))
+            for batch_filters in self._filter_value_batches(_require_volume_scope(filters), 'well')
+        )
 
-    def get_root_forecast_monthly_volumes(self, filters: Optional[dict[str, str]] = None) -> ItemList:
+    def get_root_forecast_monthly_volumes(self, filters: Optional[WellFilters] = None) -> ItemList:
         """
         Returns a list of monthly volumes.
+
+        Scope: any number of forecasts, with `project`, `forecast` or `well` filters. Rows from several
+        forecasts can come back in one response, and each row's `forecast` field says which forecast
+        it belongs to. To read one forecast by its path (no `forecast` filter needed), use
+        `Forecasts.get_forecast_monthly_volumes(project_id, forecast_id)`, which is scoped to that forecast.
 
         `filters` is REQUIRED here, unlike the other root list methods, and must carry
         at least one of `project`, `forecast` or `well` -- the API rejects anything else
@@ -305,21 +339,35 @@ class Root(APIBase):
         filter. Accepted keys
         are `project`, `forecast`, `well`, `startDate`, `endDate`, `skip` and `take`.
 
+        `filters['well']` may be a list of well ids, sent as repeated `well` keys. The API accepts
+        at most 100 per request, so a longer list is split into requests of 100 wells and the volumes
+        are combined into one list. Verified live 2026-11-20 on dev: a `well` filter is accepted only
+        together with `forecast`; `well` alone, or `project` with `well`, is refused locally.
+
         https://docs.api.combocurve.com/api/get-root-forecast-monthly-volumes
         """
-        url = self.get_root_forecast_monthly_volumes_url(_require_volume_scope(filters))
-        params = {'take': GET_LIMIT}
-        return self._get_items(url, params)
+        monthly_volumes: ItemList = []
+        for batch_filters in self._filter_value_batches(_require_volume_scope(filters), 'well'):
+            url = self.get_root_forecast_monthly_volumes_url(batch_filters)
+            params = {'take': GET_LIMIT}
+            monthly_volumes.extend(self._get_items(url, params))
 
-    def count_root_forecast_monthly_volumes(self, filters: Optional[dict[str, str]] = None) -> int:
+        return monthly_volumes
+
+    def count_root_forecast_monthly_volumes(self, filters: Optional[WellFilters] = None) -> int:
         """
         Returns the number of forecast monthly-volume documents matching `filters`, from the
         `X-Query-Count` header of a HEAD request (no documents are fetched). `filters` must
-        scope the query, as for `get_root_forecast_monthly_volumes`.
+        scope the query, as for `get_root_forecast_monthly_volumes`. A `well` list longer than 100
+        is counted in batches of 100 and the counts are summed. For the count of one forecast by its
+        path, use `Forecasts.count_forecast_monthly_volumes`.
 
         https://docs.api.combocurve.com/api/head-root-forecast-monthly-volumes
         """
-        return self._count_items(self.get_root_forecast_monthly_volumes_url(_require_volume_scope(filters)))
+        return sum(
+            self._count_items(self.get_root_forecast_monthly_volumes_url(batch_filters))
+            for batch_filters in self._filter_value_batches(_require_volume_scope(filters), 'well')
+        )
 
     def get_users_roles(self) -> ItemList:
         """

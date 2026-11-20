@@ -1,6 +1,7 @@
+from collections.abc import Sequence
 from typing import Optional, cast
 
-from .base import APIBase, Item, ItemList, WriteResponse
+from .base import APIBase, Item, ItemList, WellFilters, WriteResponse
 
 GET_LIMIT = 200
 
@@ -10,7 +11,7 @@ class ForecastConfigurations(APIBase):
     # URLs
     ######
 
-    def get_forecast_configurations_url(self, filters: Optional[dict[str, str]] = None) -> str:
+    def get_forecast_configurations_url(self, filters: Optional[WellFilters] = None) -> str:
         """
         Returns the API url for forecast configurations.
         """
@@ -115,3 +116,14 @@ class ForecastConfigurations(APIBase):
         """
         url = self.get_forecast_configuration_by_id_url(forecast_configuration_id)
         return self._delete_items(url, data=[])
+
+    def delete_forecast_configurations(self, ids: Sequence[str]) -> list[WriteResponse]:
+        """
+        Deletes forecast configurations by id in one request: each id is sent as a repeated `id` query
+        parameter. A configuration owned by another user is a per-record 403, and an unknown id is a
+        per-record 404; the response reports each record.
+
+        https://docs.api.combocurve.com/api/delete-forecast-configurations
+        """
+        url = self.get_forecast_configurations_url({'id': self._require_id_sequence(ids, 'ids')})
+        return cast('list[WriteResponse]', self._delete_items(url, data=[]))

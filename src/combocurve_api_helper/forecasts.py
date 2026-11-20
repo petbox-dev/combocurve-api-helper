@@ -6,7 +6,7 @@ from typing import Callable, Optional, cast
 from more_itertools import chunked
 
 from ._batch import BatchChunk, BatchWriteResult
-from .base import LIST_SORT_ORDER, WELL_LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
+from .base import LIST_SORT_ORDER, WELL_LIST_SORT_ORDER, APIBase, Item, ItemList, WellFilters, WriteResponse
 
 GET_LIMIT = 200
 GET_LIMIT_OUTPUTS_ARIES = 1000
@@ -67,9 +67,7 @@ class Forecasts(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_forecast_outputs_url(
-        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
-    ) -> str:
+    def get_forecast_outputs_url(self, project_id: str, forecast_id: str, filters: Optional[WellFilters] = None) -> str:
         """
         Returns the API url for a specific forecast outputs from its forecast id.
         """
@@ -89,7 +87,7 @@ class Forecasts(APIBase):
         return f'{base_url}/{output_id}'
 
     def get_forecast_daily_volumes_url(
-        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
+        self, project_id: str, forecast_id: str, filters: Optional[WellFilters] = None
     ) -> str:
         """
         Returns the API url for daily volumes for a specific project id and forecast id.
@@ -103,7 +101,7 @@ class Forecasts(APIBase):
         return url
 
     def get_forecast_monthly_volumes_url(
-        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
+        self, project_id: str, forecast_id: str, filters: Optional[WellFilters] = None
     ) -> str:
         """
         Returns the API url for monthly volumes for a specific project id and forecast id.
@@ -837,10 +835,14 @@ class Forecasts(APIBase):
         return self._count_items(self.get_forecast_aries_url(project_id, forecast_id, filters))
 
     def get_forecast_outputs(
-        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
+        self, project_id: str, forecast_id: str, filters: Optional[WellFilters] = None
     ) -> ItemList:
         """
         Returns a list of outputs for a specific project id and forecast id.
+
+        `filters['well']` may be a list of well ids, sent as repeated `well` keys. The API accepts
+        at most 100 per request, so a longer list is split into requests of 100 wells and the outputs
+        are combined into one list. A comma-joined string is rejected by the API (400).
 
         https://docs.api.combocurve.com/api/get-forecast-outputs
 
@@ -982,20 +984,26 @@ class Forecasts(APIBase):
             }
         ]
         """
-        url = self.get_forecast_outputs_url(project_id, forecast_id, filters)
-        params = {'take': GET_LIMIT_OUTPUTS_ARIES}
-        return self._get_items(url, params)
+        outputs: ItemList = []
+        for batch_filters in self._filter_value_batches(filters, 'well'):
+            url = self.get_forecast_outputs_url(project_id, forecast_id, batch_filters)
+            params = {'take': GET_LIMIT_OUTPUTS_ARIES}
+            outputs.extend(self._get_items(url, params))
 
-    def count_forecast_outputs(
-        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
-    ) -> int:
+        return outputs
+
+    def count_forecast_outputs(self, project_id: str, forecast_id: str, filters: Optional[WellFilters] = None) -> int:
         """
         Returns the number of forecast outputs matching `filters`, from the
-        `X-Query-Count` header of a HEAD request (no documents are fetched).
+        `X-Query-Count` header of a HEAD request (no documents are fetched). A `well` list
+        longer than 100 is counted in batches of 100 and the counts are summed.
 
         https://docs.api.combocurve.com/api/head-forecast-outputs
         """
-        return self._count_items(self.get_forecast_outputs_url(project_id, forecast_id, filters))
+        return sum(
+            self._count_items(self.get_forecast_outputs_url(project_id, forecast_id, batch_filters))
+            for batch_filters in self._filter_value_batches(filters, 'well')
+        )
 
     def get_forecast_output_by_id(self, project_id: str, forecast_id: str, output_id: str) -> Item:
         """
@@ -1146,10 +1154,18 @@ class Forecasts(APIBase):
         return outputs[0]
 
     def get_forecast_daily_volumes(
-        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
+        self, project_id: str, forecast_id: str, filters: Optional[WellFilters] = None
     ) -> ItemList:
         """
         Returns a list of daily volumes for a specific project id and forecast id.
+
+        Scope: this one forecast, named in the path. It cannot read several forecasts in one call, or
+        filter by `project` alone. For those, use `Root.get_root_forecast_daily_volumes` (the flat
+        `/forecast-daily-volumes` route), where each row's `forecast` field names its forecast.
+
+        `filters['well']` may be a list of well ids, sent as repeated `well` keys. The API accepts
+        at most 100 per request, so a longer list is split into requests of 100 wells and the volumes
+        are combined into one list, sorted by well.
 
         https://docs.api.combocurve.com/api/get-forecast-daily-volumes
 
@@ -1190,28 +1206,43 @@ class Forecasts(APIBase):
             }
         ]
         """
-        url = self.get_forecast_daily_volumes_url(project_id, forecast_id, filters)
-        params = {'take': GET_LIMIT}
-        daily_volumes = self._get_items(url, params)
+        daily_volumes: ItemList = []
+        for batch_filters in self._filter_value_batches(filters, 'well'):
+            url = self.get_forecast_daily_volumes_url(project_id, forecast_id, batch_filters)
+            params = {'take': GET_LIMIT}
+            daily_volumes.extend(self._get_items(url, params))
 
         return self._keysort(daily_volumes, _VOLUME_SORT_ORDER)
 
     def count_forecast_daily_volumes(
-        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
+        self, project_id: str, forecast_id: str, filters: Optional[WellFilters] = None
     ) -> int:
         """
         Returns the number of forecast daily-volume documents matching `filters`, from the
-        `X-Query-Count` header of a HEAD request (no documents are fetched).
+        `X-Query-Count` header of a HEAD request (no documents are fetched). A `well` list
+        longer than 100 is counted in batches of 100 and the counts are summed. For a count across
+        several forecasts, or filtered by `project` alone, use `Root.count_root_forecast_daily_volumes`.
 
         https://docs.api.combocurve.com/api/head-forecast-daily-volumes
         """
-        return self._count_items(self.get_forecast_daily_volumes_url(project_id, forecast_id, filters))
+        return sum(
+            self._count_items(self.get_forecast_daily_volumes_url(project_id, forecast_id, batch_filters))
+            for batch_filters in self._filter_value_batches(filters, 'well')
+        )
 
     def get_forecast_monthly_volumes(
-        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
+        self, project_id: str, forecast_id: str, filters: Optional[WellFilters] = None
     ) -> ItemList:
         """
         Returns a list of monthly volumes for a specific project id and forecast id.
+
+        Scope: this one forecast, named in the path. It cannot read several forecasts in one call, or
+        filter by `project` alone. For those, use `Root.get_root_forecast_monthly_volumes` (the flat
+        `/forecast-monthly-volumes` route), where each row's `forecast` field names its forecast.
+
+        `filters['well']` may be a list of well ids, sent as repeated `well` keys. The API accepts
+        at most 100 per request, so a longer list is split into requests of 100 wells and the volumes
+        are combined into one list, sorted by well.
 
         https://docs.api.combocurve.com/api/get-forecast-monthly-volumes
 
@@ -1252,22 +1283,62 @@ class Forecasts(APIBase):
             }
         ]
         """
-        url = self.get_forecast_monthly_volumes_url(project_id, forecast_id, filters)
-        params = {'take': GET_LIMIT}
-        monthly_volumes = self._get_items(url, params)
+        monthly_volumes: ItemList = []
+        for batch_filters in self._filter_value_batches(filters, 'well'):
+            url = self.get_forecast_monthly_volumes_url(project_id, forecast_id, batch_filters)
+            params = {'take': GET_LIMIT}
+            monthly_volumes.extend(self._get_items(url, params))
 
         return self._keysort(monthly_volumes, _VOLUME_SORT_ORDER)
 
     def count_forecast_monthly_volumes(
-        self, project_id: str, forecast_id: str, filters: Optional[dict[str, str]] = None
+        self, project_id: str, forecast_id: str, filters: Optional[WellFilters] = None
     ) -> int:
         """
         Returns the number of forecast monthly-volume documents matching `filters`, from the
-        `X-Query-Count` header of a HEAD request (no documents are fetched).
+        `X-Query-Count` header of a HEAD request (no documents are fetched). A `well` list
+        longer than 100 is counted in batches of 100 and the counts are summed. For a count across
+        several forecasts, or filtered by `project` alone, use `Root.count_root_forecast_monthly_volumes`.
 
         https://docs.api.combocurve.com/api/head-forecast-monthly-volumes
         """
-        return self._count_items(self.get_forecast_monthly_volumes_url(project_id, forecast_id, filters))
+        return sum(
+            self._count_items(self.get_forecast_monthly_volumes_url(project_id, forecast_id, batch_filters))
+            for batch_filters in self._filter_value_batches(filters, 'well')
+        )
+
+    def put_forecast_daily_volumes(self, project_id: str, forecast_id: str, data: ItemList) -> list[WriteResponse]:
+        """
+        Replaces or creates daily volumes in a forecast. `data` is one well record or a list of them; each
+        record has `well` and `phases`, and each phase has `phase` and `series` (`series`, `startDate`,
+        `endDate`, `volumes`). Each phase given replaces its stored series; dates are not merged with
+        stored ones. A well record is atomic: if any of its phases conflicts, none of its phases is written.
+
+        The route limits a phase to 20,000 daily-equivalent volume values and a request to 100,000. This
+        method does not check those limits; ComboCurve refuses an over-limit request. It sends one request
+        and raises `ValueError` before sending for empty `data`.
+
+        https://docs.api.combocurve.com/api/put-forecast-daily-volumes
+        """
+        self._require_records(data, 'well record')
+        url = self.get_forecast_daily_volumes_url(project_id, forecast_id)
+        return cast('list[WriteResponse]', self._put_items(url, data))
+
+    def put_forecast_monthly_volumes(self, project_id: str, forecast_id: str, data: ItemList) -> list[WriteResponse]:
+        """
+        Replaces or creates monthly volumes in a forecast. The shape of `data` is that of
+        `put_forecast_daily_volumes`. Monthly values are converted to daily rates before storage, and a
+        repeated request is idempotent.
+
+        The limits are those of `put_forecast_daily_volumes`, counted after calendar-aware daily expansion.
+        This method does not check them. It sends one request and raises `ValueError` before sending for
+        empty `data`.
+
+        https://docs.api.combocurve.com/api/put-forecast-monthly-volumes
+        """
+        self._require_records(data, 'well record')
+        url = self.get_forecast_monthly_volumes_url(project_id, forecast_id)
+        return cast('list[WriteResponse]', self._put_items(url, data))
 
     def post_forecast_segment_parameters(
         self, project_id: str, forecast_id: str, well_id: str, phase: str, series: str, data: ItemList

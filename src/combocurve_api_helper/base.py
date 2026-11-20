@@ -15,6 +15,7 @@ import requests
 import urllib3.exceptions
 from more_itertools import chunked
 from requests import Response
+from requests.structures import CaseInsensitiveDict
 from typing_extensions import Self, TypeAlias, TypedDict
 
 from . import config
@@ -41,6 +42,14 @@ JsonValue: TypeAlias = Union[str, int, float, bool, Sequence['JsonValue'], Mappi
 # model classes.
 Item: TypeAlias = dict[str, JsonValue]
 ItemList: TypeAlias = list[Item]
+
+# A query filter whose value may be one id or a list of ids, sent as repeated keys. Spelled with
+# `Union` and not `TypeAlias` on purpose: it is a runtime-evaluated annotation on Python 3.9.
+WellFilters = Mapping[str, Union[str, Sequence[str]]]
+
+# The most repeated `well` (or `wellId`) values one request takes on the production, forecast-output and
+# scenario model-assignment routes. Verified live 2026-11-20 on dev: 100 accepted, 101 refused with a 400.
+WELL_FILTER_LIMIT = 100
 
 # The comparison orders `_keysort` is called with. Single-sourced here because the
 # same mapping was previously spelled out at a dozen call sites across six modules
@@ -927,6 +936,38 @@ class APIBase:
 
         return items
 
+    def _delete_headers(self, url: str, data: Optional[ItemList] = None) -> CaseInsensitiveDict[str]:
+        """
+        DELETE `url`, with `data` as the body when given, and return the headers of its one response.
+        A delete by id sends no body.
+        """
+        responses = self._delete_responses(url, [] if data is None else data)
+        return responses[0].headers
+
+    @staticmethod
+    def _require_records(data: ItemList, noun: str) -> None:
+        """
+        Refuse empty `data` before any request. An empty list would reach the transport's no-body
+        branch, so the route would receive a request with no records.
+        """
+        if not data:
+            raise ValueError(f'data must hold at least one {noun}')
+
+    @staticmethod
+    def _require_id_sequence(ids: Sequence[str], argument: str) -> list[str]:
+        """
+        Return `ids` as a list, or raise when it names no id: a bare `str` (it would be sent one
+        character per id), an empty sequence, or an empty id (an unresolved lookup). The list is taken
+        FIRST, so a one-shot iterable cannot pass the check and then arrive empty, which would widen a
+        delete to the whole group.
+        """
+        if isinstance(ids, str):
+            raise ValueError(f'{argument} must be a sequence of ids, not a str')
+        id_list = list(ids)
+        if not id_list or not all(id_list):
+            raise ValueError(f'{argument} must be a non-empty sequence of non-empty ids')
+        return id_list
+
     @staticmethod
     def _require_any_filter(filters: Mapping[str, Optional[str]], parameters: str) -> dict[str, str]:
         """Return the non-empty entries of `filters`, or raise if none survive.
@@ -982,6 +1023,31 @@ class APIBase:
         pairs = [(key, value) for key, value in (filters or {}).items() if value is not None]
 
         return '?' + urlencode(pairs, doseq=True, safe=',', quote_via=quote) if pairs else ''
+
+    @staticmethod
+    def _filter_value_batches(
+        filters: Optional[WellFilters], key: str, limit: int = WELL_FILTER_LIMIT
+    ) -> list[Optional[WellFilters]]:
+        """Split a repeated-key filter list longer than `limit` into filters of at most `limit` values each.
+
+        `None`, a single string, and a list at or under the limit pass through as one batch. A longer list is
+        de-duplicated first, so a repeated id does not return its rows twice, then cut with `more_itertools.chunked`
+        (the same chunker the batched writes use). The batches cover disjoint values, so their rows concatenate and
+        their counts add.
+        """
+        if filters is None:
+            return [None]
+
+        values = filters.get(key)
+        if values is None or isinstance(values, str) or len(values) <= limit:
+            return [filters]
+
+        batches: list[Optional[WellFilters]] = []
+        for batch_values in chunked(dict.fromkeys(values), limit):
+            batch: dict[str, Union[str, Sequence[str]]] = {**filters, key: list(batch_values)}
+            batches.append(batch)
+
+        return batches
 
     @staticmethod
     def _keysort(items: ItemList, order: Mapping[str, int], reverse: bool = False) -> ItemList:

@@ -5,7 +5,7 @@ from typing import Callable, Optional, cast
 from requests.structures import CaseInsensitiveDict
 
 from ._batch import BatchChunk, BatchWriteResult
-from .base import APIBase, ItemList, WriteResponse
+from .base import APIBase, ItemList, WellFilters, WriteResponse
 
 GET_LIMIT = 20_000
 POST_LIMIT = 20_000
@@ -62,9 +62,12 @@ class Production(APIBase):
     # URLs
     ######
 
-    def get_company_monthly_productions_url(self, filters: Optional[dict[str, str]] = None) -> str:
+    def get_company_monthly_productions_url(self, filters: Optional[WellFilters] = None) -> str:
         """
         Returns the API url for company monthly production.
+
+        Builds one url. A `well` list longer than `WELL_FILTER_LIMIT` is not split here, and the
+        API refuses it; `get_company_monthly_productions` splits it into batches.
         """
         url = f'{self.API_BASE_URL}/monthly-productions'
         if filters is None:
@@ -73,9 +76,12 @@ class Production(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_company_daily_productions_url(self, filters: Optional[dict[str, str]] = None) -> str:
+    def get_company_daily_productions_url(self, filters: Optional[WellFilters] = None) -> str:
         """
         Returns the API url for company daily production.
+
+        Builds one url. A `well` list longer than `WELL_FILTER_LIMIT` is not split here, and the
+        API refuses it; `get_company_daily_productions` splits it into batches.
         """
         url = f'{self.API_BASE_URL}/daily-productions'
         if filters is None:
@@ -84,9 +90,12 @@ class Production(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_project_monthly_productions_url(self, project_id: str, filters: Optional[dict[str, str]] = None) -> str:
+    def get_project_monthly_productions_url(self, project_id: str, filters: Optional[WellFilters] = None) -> str:
         """
         Returns the API url for a specific project's monthly production.
+
+        Builds one url. A `well` list longer than `WELL_FILTER_LIMIT` is not split here, and the
+        API refuses it; `get_project_monthly_productions` splits it into batches.
         """
         url = f'{self.API_BASE_URL}/projects/{project_id}/monthly-productions'
         if filters is None:
@@ -95,9 +104,12 @@ class Production(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_project_daily_productions_url(self, project_id: str, filters: Optional[dict[str, str]] = None) -> str:
+    def get_project_daily_productions_url(self, project_id: str, filters: Optional[WellFilters] = None) -> str:
         """
         Returns the API url for a specific project's daily production.
+
+        Builds one url. A `well` list longer than `WELL_FILTER_LIMIT` is not split here, and the
+        API refuses it; `get_project_daily_productions` splits it into batches.
         """
         url = f'{self.API_BASE_URL}/projects/{project_id}/daily-productions'
         if filters is None:
@@ -110,26 +122,37 @@ class Production(APIBase):
     # API calls
     ###########
 
-    def get_company_monthly_productions(self, filters: Optional[dict[str, str]] = None) -> ItemList:
+    def get_company_monthly_productions(self, filters: Optional[WellFilters] = None) -> ItemList:
         """
         Returns a list of company monthly production items.
 
+        `filters['well']` may be a list of well ids, sent as repeated `well` keys. The API
+        accepts at most 100 per request, so a longer list is split into requests of 100 wells
+        and the rows are combined into one result, sorted by well then date. A comma-joined
+        string is rejected by the API (400, not a valid ObjectId).
+
         https://docs.api.combocurve.com/api/get-monthly-productions
         """
-        url = self.get_company_monthly_productions_url(filters)
-        params = {'take': GET_LIMIT}
-        monthly_production = self._get_items(url, params)
+        monthly_production: ItemList = []
+        for batch_filters in self._filter_value_batches(filters, 'well'):
+            url = self.get_company_monthly_productions_url(batch_filters)
+            params = {'take': GET_LIMIT}
+            monthly_production.extend(self._get_items(url, params))
 
         return self._keysort(monthly_production, _PRODUCTION_SORT_ORDER)
 
-    def count_company_monthly_productions(self, filters: Optional[dict[str, str]] = None) -> int:
+    def count_company_monthly_productions(self, filters: Optional[WellFilters] = None) -> int:
         """
         Returns the number of company monthly productions matching `filters`, from the
-        `X-Query-Count` header of a HEAD request (no documents are fetched).
+        `X-Query-Count` header of a HEAD request (no documents are fetched). A `well` list
+        longer than 100 is counted in batches of 100 and the counts are summed.
 
         https://docs.api.combocurve.com/api/head-monthly-productions
         """
-        return self._count_items(self.get_company_monthly_productions_url(filters))
+        return sum(
+            self._count_items(self.get_company_monthly_productions_url(batch_filters))
+            for batch_filters in self._filter_value_batches(filters, 'well')
+        )
 
     def post_company_monthly_productions(self, data: ItemList) -> list[WriteResponse]:
         """
@@ -182,30 +205,39 @@ class Production(APIBase):
         of production records deleted.
         """
         url = self.get_company_monthly_productions_url(_delete_filters(well_id, start_date, end_date))
-        responses = self._delete_responses(url, data=[])
+        return self._delete_headers(url)
 
-        return responses[0].headers
-
-    def get_company_daily_productions(self, filters: Optional[dict[str, str]] = None) -> ItemList:
+    def get_company_daily_productions(self, filters: Optional[WellFilters] = None) -> ItemList:
         """
-        Returns a list of company monthly production items.
+        Returns a list of company daily production items.
+
+        `filters['well']` may be a list of well ids, sent as repeated `well` keys. The API
+        accepts at most 100 per request, so a longer list is split into requests of 100 wells
+        and the rows are combined into one result, sorted by well then date. A comma-joined
+        string is rejected by the API (400, not a valid ObjectId).
 
         https://docs.api.combocurve.com/api/get-daily-productions
         """
-        url = self.get_company_daily_productions_url(filters)
-        params = {'take': GET_LIMIT}
-        dailiy_production = self._get_items(url, params)
+        daily_production: ItemList = []
+        for batch_filters in self._filter_value_batches(filters, 'well'):
+            url = self.get_company_daily_productions_url(batch_filters)
+            params = {'take': GET_LIMIT}
+            daily_production.extend(self._get_items(url, params))
 
-        return self._keysort(dailiy_production, _PRODUCTION_SORT_ORDER)
+        return self._keysort(daily_production, _PRODUCTION_SORT_ORDER)
 
-    def count_company_daily_productions(self, filters: Optional[dict[str, str]] = None) -> int:
+    def count_company_daily_productions(self, filters: Optional[WellFilters] = None) -> int:
         """
         Returns the number of company daily productions matching `filters`, from the
-        `X-Query-Count` header of a HEAD request (no documents are fetched).
+        `X-Query-Count` header of a HEAD request (no documents are fetched). A `well` list
+        longer than 100 is counted in batches of 100 and the counts are summed.
 
         https://docs.api.combocurve.com/api/head-daily-productions
         """
-        return self._count_items(self.get_company_daily_productions_url(filters))
+        return sum(
+            self._count_items(self.get_company_daily_productions_url(batch_filters))
+            for batch_filters in self._filter_value_batches(filters, 'well')
+        )
 
     def post_company_daily_productions(self, data: ItemList) -> list[WriteResponse]:
         """
@@ -258,13 +290,17 @@ class Production(APIBase):
         of production records deleted.
         """
         url = self.get_company_daily_productions_url(_delete_filters(well_id, start_date, end_date))
-        responses = self._delete_responses(url, data=[])
+        return self._delete_headers(url)
 
-        return responses[0].headers
-
-    def get_project_monthly_productions(self, project_id: str, filters: Optional[dict[str, str]] = None) -> ItemList:
+    def get_project_monthly_productions(self, project_id: str, filters: Optional[WellFilters] = None) -> ItemList:
         """
         Returns a list of monthly production items for a specific project id.
+
+        `filters['well']` may be a list of well ids, sent as repeated `well` keys. The API
+        accepts at most 100 per request, so a longer list is split into requests of 100 wells
+        and the rows are combined into one result, sorted by well then date. A comma-joined
+        string is rejected by the API (400, not a valid ObjectId). The repeated-key list form
+        was verified live 2026-11-20 on dev, on a project with project-scoped rows.
 
         Note: verified live 2026-09-07, this endpoint returned zero rows for every filter
         on a project whose wells were all company-scoped -- the production lived on the
@@ -274,20 +310,26 @@ class Production(APIBase):
 
         https://docs.api.combocurve.com/api/get-projects-monthly-productions
         """
-        url = self.get_project_monthly_productions_url(project_id, filters)
-        params = {'take': GET_LIMIT}
-        monthly_production = self._get_items(url, params)
+        monthly_production: ItemList = []
+        for batch_filters in self._filter_value_batches(filters, 'well'):
+            url = self.get_project_monthly_productions_url(project_id, batch_filters)
+            params = {'take': GET_LIMIT}
+            monthly_production.extend(self._get_items(url, params))
 
         return self._keysort(monthly_production, _PRODUCTION_SORT_ORDER)
 
-    def count_project_monthly_productions(self, project_id: str, filters: Optional[dict[str, str]] = None) -> int:
+    def count_project_monthly_productions(self, project_id: str, filters: Optional[WellFilters] = None) -> int:
         """
         Returns the number of monthly productions in a project matching `filters`, from the
-        `X-Query-Count` header of a HEAD request (no documents are fetched).
+        `X-Query-Count` header of a HEAD request (no documents are fetched). A `well` list
+        longer than 100 is counted in batches of 100 and the counts are summed.
 
         https://docs.api.combocurve.com/api/head-projects-monthly-productions
         """
-        return self._count_items(self.get_project_monthly_productions_url(project_id, filters))
+        return sum(
+            self._count_items(self.get_project_monthly_productions_url(project_id, batch_filters))
+            for batch_filters in self._filter_value_batches(filters, 'well')
+        )
 
     def post_project_monthly_productions(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
@@ -367,13 +409,16 @@ class Production(APIBase):
         of production records deleted.
         """
         url = self.get_project_monthly_productions_url(project_id, _delete_filters(well_id, start_date, end_date))
-        responses = self._delete_responses(url, data=[])
+        return self._delete_headers(url)
 
-        return responses[0].headers
-
-    def get_project_daily_productions(self, project_id: str, filters: Optional[dict[str, str]] = None) -> ItemList:
+    def get_project_daily_productions(self, project_id: str, filters: Optional[WellFilters] = None) -> ItemList:
         """
         Returns a list of daily production items for a specific project id.
+
+        `filters['well']` may be a list of well ids, sent as repeated `well` keys. The API
+        accepts at most 100 per request, so a longer list is split into requests of 100 wells
+        and the rows are combined into one result, sorted by well then date. A comma-joined
+        string is rejected by the API (400, not a valid ObjectId).
 
         Note: verified live 2026-09-07, this endpoint returned zero rows for every filter
         on a project whose wells were all company-scoped -- the production lived on the
@@ -383,20 +428,26 @@ class Production(APIBase):
 
         https://docs.api.combocurve.com/api/get-projects-daily-productions
         """
-        url = self.get_project_daily_productions_url(project_id, filters)
-        params = {'take': GET_LIMIT}
-        daily_production = self._get_items(url, params)
+        daily_production: ItemList = []
+        for batch_filters in self._filter_value_batches(filters, 'well'):
+            url = self.get_project_daily_productions_url(project_id, batch_filters)
+            params = {'take': GET_LIMIT}
+            daily_production.extend(self._get_items(url, params))
 
         return self._keysort(daily_production, _PRODUCTION_SORT_ORDER)
 
-    def count_project_daily_productions(self, project_id: str, filters: Optional[dict[str, str]] = None) -> int:
+    def count_project_daily_productions(self, project_id: str, filters: Optional[WellFilters] = None) -> int:
         """
         Returns the number of daily productions in a project matching `filters`, from the
-        `X-Query-Count` header of a HEAD request (no documents are fetched).
+        `X-Query-Count` header of a HEAD request (no documents are fetched). A `well` list
+        longer than 100 is counted in batches of 100 and the counts are summed.
 
         https://docs.api.combocurve.com/api/head-projects-daily-productions
         """
-        return self._count_items(self.get_project_daily_productions_url(project_id, filters))
+        return sum(
+            self._count_items(self.get_project_daily_productions_url(project_id, batch_filters))
+            for batch_filters in self._filter_value_batches(filters, 'well')
+        )
 
     def post_project_daily_productions(self, project_id: str, data: ItemList) -> list[WriteResponse]:
         """
@@ -450,9 +501,7 @@ class Production(APIBase):
         of production records deleted.
         """
         url = self.get_project_daily_productions_url(project_id, _delete_filters(well_id, start_date, end_date))
-        responses = self._delete_responses(url, data=[])
-
-        return responses[0].headers
+        return self._delete_headers(url)
 
 
 monthly_production_response = """

@@ -7,12 +7,6 @@ from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
 GET_LIMIT = 200  # the maximum of `take` on both embedded-lookup-table routes (verified live 2026-11-12)
 
 
-def _require_tables(data: ItemList) -> None:
-    """An empty list would reach the transport's no-body branch, so refuse it before any request."""
-    if not data:
-        raise ValueError('data must hold at least one embedded lookup table')
-
-
 class EmbeddedLookupTables(APIBase):
     """
     Embedded lookup tables: the lookup tables that an econ model (capex, expenses, stream
@@ -227,7 +221,7 @@ class EmbeddedLookupTables(APIBase):
             "successCount": 123
         }
         """
-        _require_tables(data)
+        self._require_records(data, 'embedded lookup table')
         url = self.get_embedded_lookup_tables_url(project_id)
         return cast('list[WriteResponse]', self._post_items(url, data))
 
@@ -282,7 +276,7 @@ class EmbeddedLookupTables(APIBase):
             "successCount": 123
         }
         """
-        _require_tables(data)
+        self._require_records(data, 'embedded lookup table')
         url = self.get_embedded_lookup_tables_url(project_id)
         return cast('list[WriteResponse]', self._put_items(url, data))
 
@@ -298,8 +292,7 @@ class EmbeddedLookupTables(APIBase):
         Returns the headers from the delete response.
         """
         url = self.get_embedded_lookup_table_by_id_url(project_id, embedded_lookup_table_id)
-        responses = self._delete_responses(url, data=[])
-        return responses[0].headers
+        return self._delete_headers(url)
 
     # Company embedded lookup tables
 
@@ -418,7 +411,7 @@ class EmbeddedLookupTables(APIBase):
             "successCount": 123
         }
         """
-        _require_tables(data)
+        self._require_records(data, 'embedded lookup table')
         url = self.get_company_embedded_lookup_tables_url()
         return cast('list[WriteResponse]', self._post_items(url, data))
 
@@ -473,7 +466,7 @@ class EmbeddedLookupTables(APIBase):
             "successCount": 123
         }
         """
-        _require_tables(data)
+        self._require_records(data, 'embedded lookup table')
         url = self.get_company_embedded_lookup_tables_url()
         return cast('list[WriteResponse]', self._put_items(url, data))
 
@@ -487,5 +480,4 @@ class EmbeddedLookupTables(APIBase):
         Returns the headers from the delete response.
         """
         url = self.get_company_embedded_lookup_table_by_id_url(embedded_lookup_table_id)
-        responses = self._delete_responses(url, data=[])
-        return responses[0].headers
+        return self._delete_headers(url)

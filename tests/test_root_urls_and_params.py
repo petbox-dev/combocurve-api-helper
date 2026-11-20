@@ -92,7 +92,7 @@ def test_unscoped_volume_request_is_refused(
     assert calls == []
 
 
-@pytest.mark.parametrize('scope', ['project', 'forecast', 'well'])
+@pytest.mark.parametrize('scope', ['project', 'forecast'])
 def test_any_one_scope_filter_is_accepted(monkeypatch: MonkeyPatch, scope: str) -> None:
     api = make_offline_api()
     calls = _capture_requests(monkeypatch)
@@ -100,6 +100,27 @@ def test_any_one_scope_filter_is_accepted(monkeypatch: MonkeyPatch, scope: str) 
     api.get_root_forecast_monthly_volumes({scope: 'X'})
 
     assert calls[0] == (f'{V1}/forecast-monthly-volumes?{scope}=X', {'take': 200})
+
+
+def test_well_with_forecast_is_accepted(monkeypatch: MonkeyPatch) -> None:
+    api = make_offline_api()
+    calls = _capture_requests(monkeypatch)
+
+    api.get_root_forecast_monthly_volumes({'forecast': 'F', 'well': 'W'})
+
+    assert calls[0][0] == f'{V1}/forecast-monthly-volumes?forecast=F&well=W'
+
+
+@pytest.mark.parametrize('filters', [{'well': 'W'}, {'project': 'P', 'well': 'W'}])
+def test_well_without_forecast_is_refused_before_sending(monkeypatch: MonkeyPatch, filters: dict[str, str]) -> None:
+    """The API 400s a `well` filter with no `forecast`, so it never leaves the process."""
+    api = make_offline_api()
+    calls = _capture_requests(monkeypatch)
+
+    with pytest.raises(ValueError, match="must come with 'forecast'"):
+        api.get_root_forecast_monthly_volumes(filters)
+
+    assert calls == []
 
 
 #########################
