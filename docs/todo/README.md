@@ -14,6 +14,7 @@ This repo is public: no confidential project, model, well or fund names in any d
 
 | Item | Opened | Severity | Summary |
 |---|---|---|---|
+| [project-scoped-root-volumes-repeat-and-drop-rows](open/project-scoped-root-volumes-repeat-and-drop-rows.md) | 2026-11-20 | high | Project-scoped root volume listing repeats 348 and drops 348 `(forecast, well)` pairs on dev; the count still matches; cause unidentified |
 | [econ-model-unassign-sends-an-empty-wells-filter](open/econ-model-unassign-sends-an-empty-wells-filter.md) | 2026-11-13 | medium | `wells=[]` sends `wells=`; server behavior unprobed (could widen the unassign); 3.1.0 guards `combo_ids` / `well_ids` but not this |
 | [count-methods-and-list-methods-do-not-pair-everywhere](open/count-methods-and-list-methods-do-not-pair-everywhere.md) | 2026-09-30 | low | 4 list methods take no `filters` their counts accept; no company per-type counts |
 | [base-py-mixes-transport-policy-with-the-client-class](open/base-py-mixes-transport-policy-with-the-client-class.md) | 2026-09-30 | low | Move the retry/timeout policy out of `base.py` into `_transport.py` |
