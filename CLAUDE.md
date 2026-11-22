@@ -433,6 +433,9 @@ every other column as exact text. A new mapper column holding a float quantity g
 Releases (pushes to `main` and PyPI publishes) are recorded in `releases.json`; read it before a version
 bump, and add an entry after each push or publish succeeds (skill `code-fix:release-ledger`).
 
+A release updates every changelog of what it releases. Changelogs: `CHANGELOG.md` (the only one; move its
+`[Unreleased]` entries under the new version's heading).
+
 ## Generated content (do not hand-edit)
 
 Three build-time generators keep source in sync with external sources; each has a freshness test that

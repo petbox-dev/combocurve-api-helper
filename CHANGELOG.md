@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-11-22
+
 ### Added
 
 - Every operation in the ComboCurve Postman collection now has a method (484 of 502; the other 18 are the
