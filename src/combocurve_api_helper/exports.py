@@ -38,23 +38,13 @@ class Exports(APIBase):
         Submits a v2 async export of `kind` (single-object body) and returns the
         job carrying its job id; poll `_get_v2_export` for status/results.
         """
-        url = self.get_v2_export_url(kind)
-
-        response = self._request_with_retry('post', url, json_body=data)
-        response.raise_for_status()
-
-        return self._extract_json(response)[0]
+        return self._send_for_item('post', self.get_v2_export_url(kind), data)
 
     def _get_v2_export(self, kind: str, job_id: str) -> Item:
         """
         Returns the status/result of a v2 async export job of `kind` from its job id.
         """
-        url = self.get_v2_export_by_job_id_url(kind, job_id)
-
-        response = self._request_with_retry('get', url)
-        response.raise_for_status()
-
-        return self._extract_json(response)[0]
+        return self._send_for_item('get', self.get_v2_export_by_job_id_url(kind, job_id))
 
     def post_export_forecast_parameters(self, data: Item) -> Item:
         """
@@ -130,9 +120,4 @@ class Exports(APIBase):
             ]
         }
         """
-        url = self.get_exports_url()
-
-        response = self._request_with_retry('post', url, json_body=data)
-        response.raise_for_status()
-
-        return self._extract_json(response)[0]
+        return self._send_for_item('post', self.get_exports_url(), data)

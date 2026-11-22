@@ -5,7 +5,7 @@ from typing import Callable, Optional, cast
 from requests.structures import CaseInsensitiveDict
 
 from ._batch import BatchChunk, BatchWriteResult
-from .base import APIBase, ItemList, WellFilters, WriteResponse
+from .base import APIBase, ItemList, QueryFilters, WriteResponse
 
 GET_LIMIT = 20_000
 POST_LIMIT = 20_000
@@ -62,7 +62,7 @@ class Production(APIBase):
     # URLs
     ######
 
-    def get_company_monthly_productions_url(self, filters: Optional[WellFilters] = None) -> str:
+    def get_company_monthly_productions_url(self, filters: Optional[QueryFilters] = None) -> str:
         """
         Returns the API url for company monthly production.
 
@@ -76,7 +76,7 @@ class Production(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_company_daily_productions_url(self, filters: Optional[WellFilters] = None) -> str:
+    def get_company_daily_productions_url(self, filters: Optional[QueryFilters] = None) -> str:
         """
         Returns the API url for company daily production.
 
@@ -90,7 +90,7 @@ class Production(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_project_monthly_productions_url(self, project_id: str, filters: Optional[WellFilters] = None) -> str:
+    def get_project_monthly_productions_url(self, project_id: str, filters: Optional[QueryFilters] = None) -> str:
         """
         Returns the API url for a specific project's monthly production.
 
@@ -104,7 +104,7 @@ class Production(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_project_daily_productions_url(self, project_id: str, filters: Optional[WellFilters] = None) -> str:
+    def get_project_daily_productions_url(self, project_id: str, filters: Optional[QueryFilters] = None) -> str:
         """
         Returns the API url for a specific project's daily production.
 
@@ -122,7 +122,7 @@ class Production(APIBase):
     # API calls
     ###########
 
-    def get_company_monthly_productions(self, filters: Optional[WellFilters] = None) -> ItemList:
+    def get_company_monthly_productions(self, filters: Optional[QueryFilters] = None) -> ItemList:
         """
         Returns a list of company monthly production items.
 
@@ -133,15 +133,12 @@ class Production(APIBase):
 
         https://docs.api.combocurve.com/api/get-monthly-productions
         """
-        monthly_production: ItemList = []
-        for batch_filters in self._filter_value_batches(filters, 'well'):
-            url = self.get_company_monthly_productions_url(batch_filters)
-            params = {'take': GET_LIMIT}
-            monthly_production.extend(self._get_items(url, params))
-
+        monthly_production = self._get_items_in_value_batches(
+            self.get_company_monthly_productions_url, filters, 'well', {'take': GET_LIMIT}
+        )
         return self._keysort(monthly_production, _PRODUCTION_SORT_ORDER)
 
-    def count_company_monthly_productions(self, filters: Optional[WellFilters] = None) -> int:
+    def count_company_monthly_productions(self, filters: Optional[QueryFilters] = None) -> int:
         """
         Returns the number of company monthly productions matching `filters`, from the
         `X-Query-Count` header of a HEAD request (no documents are fetched). A `well` list
@@ -149,10 +146,7 @@ class Production(APIBase):
 
         https://docs.api.combocurve.com/api/head-monthly-productions
         """
-        return sum(
-            self._count_items(self.get_company_monthly_productions_url(batch_filters))
-            for batch_filters in self._filter_value_batches(filters, 'well')
-        )
+        return self._count_items_in_value_batches(self.get_company_monthly_productions_url, filters, 'well')
 
     def post_company_monthly_productions(self, data: ItemList) -> list[WriteResponse]:
         """
@@ -207,7 +201,7 @@ class Production(APIBase):
         url = self.get_company_monthly_productions_url(_delete_filters(well_id, start_date, end_date))
         return self._delete_headers(url)
 
-    def get_company_daily_productions(self, filters: Optional[WellFilters] = None) -> ItemList:
+    def get_company_daily_productions(self, filters: Optional[QueryFilters] = None) -> ItemList:
         """
         Returns a list of company daily production items.
 
@@ -218,15 +212,12 @@ class Production(APIBase):
 
         https://docs.api.combocurve.com/api/get-daily-productions
         """
-        daily_production: ItemList = []
-        for batch_filters in self._filter_value_batches(filters, 'well'):
-            url = self.get_company_daily_productions_url(batch_filters)
-            params = {'take': GET_LIMIT}
-            daily_production.extend(self._get_items(url, params))
-
+        daily_production = self._get_items_in_value_batches(
+            self.get_company_daily_productions_url, filters, 'well', {'take': GET_LIMIT}
+        )
         return self._keysort(daily_production, _PRODUCTION_SORT_ORDER)
 
-    def count_company_daily_productions(self, filters: Optional[WellFilters] = None) -> int:
+    def count_company_daily_productions(self, filters: Optional[QueryFilters] = None) -> int:
         """
         Returns the number of company daily productions matching `filters`, from the
         `X-Query-Count` header of a HEAD request (no documents are fetched). A `well` list
@@ -234,10 +225,7 @@ class Production(APIBase):
 
         https://docs.api.combocurve.com/api/head-daily-productions
         """
-        return sum(
-            self._count_items(self.get_company_daily_productions_url(batch_filters))
-            for batch_filters in self._filter_value_batches(filters, 'well')
-        )
+        return self._count_items_in_value_batches(self.get_company_daily_productions_url, filters, 'well')
 
     def post_company_daily_productions(self, data: ItemList) -> list[WriteResponse]:
         """
@@ -292,7 +280,7 @@ class Production(APIBase):
         url = self.get_company_daily_productions_url(_delete_filters(well_id, start_date, end_date))
         return self._delete_headers(url)
 
-    def get_project_monthly_productions(self, project_id: str, filters: Optional[WellFilters] = None) -> ItemList:
+    def get_project_monthly_productions(self, project_id: str, filters: Optional[QueryFilters] = None) -> ItemList:
         """
         Returns a list of monthly production items for a specific project id.
 
@@ -310,15 +298,15 @@ class Production(APIBase):
 
         https://docs.api.combocurve.com/api/get-projects-monthly-productions
         """
-        monthly_production: ItemList = []
-        for batch_filters in self._filter_value_batches(filters, 'well'):
-            url = self.get_project_monthly_productions_url(project_id, batch_filters)
-            params = {'take': GET_LIMIT}
-            monthly_production.extend(self._get_items(url, params))
-
+        monthly_production = self._get_items_in_value_batches(
+            lambda batch_filters: self.get_project_monthly_productions_url(project_id, batch_filters),
+            filters,
+            'well',
+            {'take': GET_LIMIT},
+        )
         return self._keysort(monthly_production, _PRODUCTION_SORT_ORDER)
 
-    def count_project_monthly_productions(self, project_id: str, filters: Optional[WellFilters] = None) -> int:
+    def count_project_monthly_productions(self, project_id: str, filters: Optional[QueryFilters] = None) -> int:
         """
         Returns the number of monthly productions in a project matching `filters`, from the
         `X-Query-Count` header of a HEAD request (no documents are fetched). A `well` list
@@ -326,9 +314,8 @@ class Production(APIBase):
 
         https://docs.api.combocurve.com/api/head-projects-monthly-productions
         """
-        return sum(
-            self._count_items(self.get_project_monthly_productions_url(project_id, batch_filters))
-            for batch_filters in self._filter_value_batches(filters, 'well')
+        return self._count_items_in_value_batches(
+            lambda batch_filters: self.get_project_monthly_productions_url(project_id, batch_filters), filters, 'well'
         )
 
     def post_project_monthly_productions(self, project_id: str, data: ItemList) -> list[WriteResponse]:
@@ -411,7 +398,7 @@ class Production(APIBase):
         url = self.get_project_monthly_productions_url(project_id, _delete_filters(well_id, start_date, end_date))
         return self._delete_headers(url)
 
-    def get_project_daily_productions(self, project_id: str, filters: Optional[WellFilters] = None) -> ItemList:
+    def get_project_daily_productions(self, project_id: str, filters: Optional[QueryFilters] = None) -> ItemList:
         """
         Returns a list of daily production items for a specific project id.
 
@@ -428,15 +415,15 @@ class Production(APIBase):
 
         https://docs.api.combocurve.com/api/get-projects-daily-productions
         """
-        daily_production: ItemList = []
-        for batch_filters in self._filter_value_batches(filters, 'well'):
-            url = self.get_project_daily_productions_url(project_id, batch_filters)
-            params = {'take': GET_LIMIT}
-            daily_production.extend(self._get_items(url, params))
-
+        daily_production = self._get_items_in_value_batches(
+            lambda batch_filters: self.get_project_daily_productions_url(project_id, batch_filters),
+            filters,
+            'well',
+            {'take': GET_LIMIT},
+        )
         return self._keysort(daily_production, _PRODUCTION_SORT_ORDER)
 
-    def count_project_daily_productions(self, project_id: str, filters: Optional[WellFilters] = None) -> int:
+    def count_project_daily_productions(self, project_id: str, filters: Optional[QueryFilters] = None) -> int:
         """
         Returns the number of daily productions in a project matching `filters`, from the
         `X-Query-Count` header of a HEAD request (no documents are fetched). A `well` list
@@ -444,9 +431,8 @@ class Production(APIBase):
 
         https://docs.api.combocurve.com/api/head-projects-daily-productions
         """
-        return sum(
-            self._count_items(self.get_project_daily_productions_url(project_id, batch_filters))
-            for batch_filters in self._filter_value_batches(filters, 'well')
+        return self._count_items_in_value_batches(
+            lambda batch_filters: self.get_project_daily_productions_url(project_id, batch_filters), filters, 'well'
         )
 
     def post_project_daily_productions(self, project_id: str, data: ItemList) -> list[WriteResponse]:

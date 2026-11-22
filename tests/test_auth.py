@@ -20,7 +20,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from pytest import MonkeyPatch
 
 from combocurve_api_helper import ComboCurveAPI, auth, base, config
-from tests.http_fakes import FakeResponse, make_offline_api
+from tests.http_fakes import FakeResponse, install_recording_transport, make_offline_api
 
 API_KEY = 'sample-api-key'
 # The shape of the `api-credentials.json` ComboCurve ships (verified 2026-10-27): snake_case ids.
@@ -59,7 +59,11 @@ def service_account_credentials(rsa_private_key: rsa.RSAPrivateKey) -> dict[str,
 
 
 class FakeTokenEndpoint:
-    """Replaces `requests.post` for the token request; records each call and returns `responses` in turn."""
+    """Replaces `requests.post` for the token request; records each call and returns `responses` in turn.
+
+    Kept local rather than on `tests/http_fakes.py`: the token fetch calls `requests.post` (not the
+    transport's `requests.request`) with form keywords the recording transport does not take, and the last
+    response repeats so that a test can count fetches without queueing one response per fetch."""
 
     def __init__(self, *responses: FakeResponse) -> None:
         self.responses = list(responses)
@@ -581,19 +585,16 @@ class TestNextPageUrl:
         assert next_page_url == 'https://api.combocurve.com/v1/projects?take=200&cursor=abc'
 
     def test_page_loop_requests_every_page_on_the_api_host(self, monkeypatch: MonkeyPatch) -> None:
-        requested_urls: list[str] = []
         internal_link = '<https://external-api-000000000000.us-central1.run.app/v1/projects?cursor=abc>;rel="next"'
-        pages = [FakeResponse(200, [{'id': 'a'}], headers={'Link': internal_link}), FakeResponse(200, [{'id': 'b'}])]
-
-        def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
-            requested_urls.append(url)
-            return pages.pop(0)
-
-        monkeypatch.setattr(requests, 'request', fake_request)
+        transport = install_recording_transport(
+            monkeypatch,
+            FakeResponse(200, [{'id': 'a'}], headers={'Link': internal_link}),
+            FakeResponse(200, [{'id': 'b'}]),
+        )
         api = make_offline_api()
         items = api._get_items('https://api.combocurve.com/v1/projects', params={'take': 200})
         assert [item['id'] for item in items] == ['a', 'b']
-        assert requested_urls == [
+        assert [call.url for call in transport.calls] == [
             'https://api.combocurve.com/v1/projects',
             'https://api.combocurve.com/v1/projects?cursor=abc',
         ]

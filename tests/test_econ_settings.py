@@ -9,46 +9,32 @@ import pytest
 
 from combocurve_api_helper import ComboCurveAPI
 from combocurve_api_helper.econ_settings import ECON_REPORT_SETTINGS, ECON_SETTINGS, EconSettings
+from tests.http_fakes import (
+    FakeResponse,
+    RecordedCall,
+    RecordingTransport,
+    install_recording_transport,
+    install_responding_transport,
+    make_offline_api,
+)
 
 BASE = ComboCurveAPI.API_BASE_URL
 
 
-class _StubResponse:
-    def __init__(self, headers: dict[str, str]) -> None:
-        self.headers = headers
+def _answer_by_verb(call: RecordedCall) -> FakeResponse:
+    """A list for a GET, a count for a HEAD, a delete count for a DELETE, a 207 body for a write."""
+    if call.method == 'GET':
+        return FakeResponse(200, [{'id': 'd1'}])
+    if call.method == 'HEAD':
+        return FakeResponse(200, headers={'X-Query-Count': '3'})
+    if call.method == 'DELETE':
+        return FakeResponse(200, [], headers={'X-Delete-Count': '1'})
+    return FakeResponse(207, {'results': []})
 
 
-def _api_with_recorded_calls(monkeypatch: pytest.MonkeyPatch) -> tuple[EconSettings, list[tuple[str, str, Any]]]:
-    """An EconSettings whose transport methods record (verb, url, body) instead of sending."""
-    api = EconSettings.__new__(EconSettings)
-    calls: list[tuple[str, str, Any]] = []
-
-    def record_get(url: str, params: Any = None) -> list[Any]:
-        calls.append(('get', url, params))
-        return [{'id': 'd1'}]
-
-    def record_count(url: str) -> int:
-        calls.append(('head', url, None))
-        return 3
-
-    def record_write(verb: str) -> Any:
-        def write(url: str, data: Any, chunksize: Any = None) -> list[Any]:
-            calls.append((verb, url, data))
-            return [{'results': []}]
-
-        return write
-
-    def record_delete(url: str, data: Any, chunksize: Any = None) -> list[_StubResponse]:
-        calls.append(('delete', url, data))
-        return [_StubResponse({'X-Delete-Count': '1'})]
-
-    monkeypatch.setattr(api, '_get_items', record_get)
-    monkeypatch.setattr(api, '_count_items', record_count)
-    monkeypatch.setattr(api, '_post_items', record_write('post'))
-    monkeypatch.setattr(api, '_put_items', record_write('put'))
-    monkeypatch.setattr(api, '_patch_items', record_write('patch'))
-    monkeypatch.setattr(api, '_delete_responses', record_delete)
-    return api, calls
+def _api_with_recorded_calls(monkeypatch: pytest.MonkeyPatch) -> tuple[ComboCurveAPI, RecordingTransport]:
+    """An offline client whose every request is recorded and answered by `_answer_by_verb`."""
+    return make_offline_api(), install_responding_transport(monkeypatch, _answer_by_verb)
 
 
 def test_urls_for_both_resources() -> None:
@@ -61,7 +47,7 @@ def test_urls_for_both_resources() -> None:
 
 
 def test_each_method_sends_to_its_own_resource(monkeypatch: pytest.MonkeyPatch) -> None:
-    api, calls = _api_with_recorded_calls(monkeypatch)
+    api, transport = _api_with_recorded_calls(monkeypatch)
     body: Any = [{'name': 'x'}]
 
     api.get_econ_settings()
@@ -80,34 +66,33 @@ def test_each_method_sends_to_its_own_resource(monkeypatch: pytest.MonkeyPatch) 
     api.patch_econ_report_settings(body)
     api.delete_econ_report_setting_by_id('r1')
 
-    urls = [(verb, url) for verb, url, _ in calls]
     settings = f'{BASE}/econ-settings'
     reports = f'{BASE}/econ-report-settings'
-    assert urls == [
-        ('get', settings),
-        ('head', f'{settings}?name=x'),
-        ('get', f'{settings}/s1'),
-        ('post', settings),
-        ('put', settings),
-        ('patch', settings),
-        ('delete', f'{settings}/s1'),
-        ('get', reports),
-        ('head', reports),
-        ('get', f'{reports}/r1'),
-        ('post', reports),
-        ('put', reports),
-        ('patch', reports),
-        ('delete', f'{reports}/r1'),
+    assert transport.methods_and_urls == [
+        ('GET', settings),
+        ('HEAD', f'{settings}?name=x'),
+        ('GET', f'{settings}/s1'),
+        ('POST', settings),
+        ('PUT', settings),
+        ('PATCH', settings),
+        ('DELETE', f'{settings}/s1'),
+        ('GET', reports),
+        ('HEAD', reports),
+        ('GET', f'{reports}/r1'),
+        ('POST', reports),
+        ('PUT', reports),
+        ('PATCH', reports),
+        ('DELETE', f'{reports}/r1'),
     ]
+    # Each write sends the whole body in one request.
+    assert [call.body for call in transport.calls if call.method in ('POST', 'PUT', 'PATCH')] == [body] * 6
 
 
 @pytest.mark.parametrize('resource', [ECON_SETTINGS, ECON_REPORT_SETTINGS])
 def test_lists_use_the_shared_record_order(monkeypatch: pytest.MonkeyPatch, resource: str) -> None:
-    api = EconSettings.__new__(EconSettings)
-    monkeypatch.setattr(
-        api,
-        '_get_items',
-        lambda url, params=None: [{'name': 'Zulu', 'id': 'z'}, {'name': 'Alpha', 'id': 'a'}],
+    api = make_offline_api()
+    install_recording_transport(
+        monkeypatch, FakeResponse(200, [{'name': 'Zulu', 'id': 'z'}, {'name': 'Alpha', 'id': 'a'}])
     )
 
     call = api.get_econ_settings if resource == ECON_SETTINGS else api.get_econ_report_settings
@@ -116,10 +101,12 @@ def test_lists_use_the_shared_record_order(monkeypatch: pytest.MonkeyPatch, reso
 
 
 def test_by_id_delete_sends_no_body_and_returns_headers(monkeypatch: pytest.MonkeyPatch) -> None:
-    api, calls = _api_with_recorded_calls(monkeypatch)
+    api, transport = _api_with_recorded_calls(monkeypatch)
     headers: Any = api.delete_econ_setting_by_id('s1')
     assert headers == {'X-Delete-Count': '1'}
-    assert calls == [('delete', f'{BASE}/econ-settings/s1', [])]
+    assert [(call.method, call.url, call.body) for call in transport.calls] == [
+        ('DELETE', f'{BASE}/econ-settings/s1', None)
+    ]
 
 
 @pytest.mark.parametrize(
@@ -134,10 +121,10 @@ def test_by_id_delete_sends_no_body_and_returns_headers(monkeypatch: pytest.Monk
     ],
 )
 def test_empty_write_is_refused_before_sending(monkeypatch: pytest.MonkeyPatch, write: Any) -> None:
-    api, calls = _api_with_recorded_calls(monkeypatch)
+    api, transport = _api_with_recorded_calls(monkeypatch)
     with pytest.raises(ValueError, match='at least one document'):
         write(api)
-    assert calls == []
+    assert transport.calls == []
 
 
 @pytest.mark.parametrize(
@@ -152,9 +139,9 @@ def test_empty_write_is_refused_before_sending(monkeypatch: pytest.MonkeyPatch, 
     ],
 )
 def test_single_document_is_sent_as_a_one_record_list(monkeypatch: pytest.MonkeyPatch, write: Any) -> None:
-    api, calls = _api_with_recorded_calls(monkeypatch)
+    api, transport = _api_with_recorded_calls(monkeypatch)
     record = {'name': 'single'}
 
     write(api, record)
 
-    assert calls[0][2] == [record]
+    assert [call.body for call in transport.calls] == [[record]]

@@ -182,11 +182,7 @@ class Wells(APIBase):
         )
 
         url = self.get_company_wells_url(filters)
-        wells = self._delete_responses(url, data=[])
-
-        headers = wells[0].headers
-
-        return headers
+        return self._delete_headers(url)
 
     def get_company_well_by_id(self, well_id: str) -> Item:
         """
@@ -232,11 +228,7 @@ class Wells(APIBase):
         the number of wells deleted.
         """
         url = self.get_company_well_by_id_url(well_id)
-        wells = self._delete_responses(url, data=[])
-
-        headers = wells[0].headers
-
-        return headers
+        return self._delete_headers(url)
 
     # Project Company Wells
 
@@ -276,6 +268,11 @@ class Wells(APIBase):
         """
         Updates the custom project headers of existing wells in a project. Each entry of `data`
         identifies a well and carries the `projectCustomHeader` values to set; it does not create wells.
+
+        `data` is sent in requests of at most 1,000 records (`POST_PATCH_PUT_LIMIT`), and the list holds
+        one 207 envelope per request. The requests are independent: if a later one fails, the earlier ones
+        stay applied. A record the server cannot apply is reported in its envelope's `results`, not raised.
+        An empty `data` raises `ValueError` before anything is sent.
 
         https://docs.api.combocurve.com/api/patch-project-company-wells
 
@@ -367,6 +364,7 @@ class Wells(APIBase):
             "successCount": 123
         }
         """
+        self._require_records(data, 'well record')
         url = self.get_project_company_wells_url(project_id)
         wells = cast('list[WriteResponse]', self._patch_items(url, data, POST_PATCH_PUT_LIMIT))
 
@@ -393,11 +391,7 @@ class Wells(APIBase):
         )
 
         url = self.get_project_company_wells_url(project_id, filters)
-        wells = self._delete_responses(url, data=[])
-
-        headers = wells[0].headers
-
-        return headers
+        return self._delete_headers(url)
 
     def get_project_company_well_by_id(self, project_id: str, well_id: str) -> Item:
         """
@@ -488,11 +482,7 @@ class Wells(APIBase):
         )
 
         url = self.get_project_wells_url(project_id, filters)
-        wells = self._delete_responses(url, data=[])
-
-        headers = wells[0].headers
-
-        return headers
+        return self._delete_headers(url)
 
     def get_project_well_by_id(self, project_id: str, well_id: str) -> Item:
         """
@@ -538,11 +528,7 @@ class Wells(APIBase):
         the number of wells deleted.
         """
         url = self.get_project_well_by_id_url(project_id, well_id)
-        wells = self._delete_responses(url, data=[])
-
-        headers = wells[0].headers
-
-        return headers
+        return self._delete_headers(url)
 
     def get_well_comments(self, filters: Optional[dict[str, str]] = None) -> ItemList:
         """

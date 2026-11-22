@@ -9,16 +9,16 @@ against the API.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
-from requests.structures import CaseInsensitiveDict
 
-from combocurve_api_helper.production import Production, _delete_filters
+from combocurve_api_helper.production import _delete_filters
+from tests.http_fakes import FakeResponse, RecordingTransport, install_responding_transport, make_offline_api
 
 if TYPE_CHECKING:
-    from combocurve_api_helper.base import ItemList
+    from combocurve_api_helper import ComboCurveAPI
 
 PROJECT_ID = '000000000000000000000001'
 WELL_ID = '000000000000000000000002'
@@ -33,42 +33,19 @@ DELETE_METHODS: list[tuple[str, tuple[str, ...], str]] = [
 ]
 
 
-class _StubResponse:
-    """Stands in for the single `requests.Response` a delete returns.
-
-    `headers` is a real `CaseInsensitiveDict`, not a plain dict: the delete methods are
-    annotated `-> CaseInsensitiveDict[str]` and tell callers to read `X-Delete-Count`,
-    so a plain dict would let a case-sensitive lookup pass here and fail against the
-    real response. Built per instance rather than as a shared class attribute.
-    """
-
-    def __init__(self, delete_count: str = '1') -> None:
-        self.headers: CaseInsensitiveDict[str] = CaseInsensitiveDict({'X-Delete-Count': delete_count})
-
-
-class _RecordingProduction(Production):
-    """A `Production` that records the delete url instead of issuing a request.
-
-    Deliberately does not call `APIBase.__init__`; these tests exercise url
-    construction and the filter guard, neither of which needs auth.
-    """
-
-    def __init__(self) -> None:
-        self.deleted_urls: list[str] = []
-        self.deleted_bodies: list[Any] = []
-
-    # `data` is concrete; the return stays `list[Any]` because `_StubResponse` is not a
-    # `requests.Response` and a narrower type would not satisfy the base signature.
-    def _delete_responses(self, url: str, data: ItemList, chunksize: int | None = None) -> list[Any]:
-        self.deleted_urls.append(url)
-        self.deleted_bodies.append(data)
-
-        return [_StubResponse()]
+@pytest.fixture
+def transport(monkeypatch: pytest.MonkeyPatch) -> RecordingTransport:
+    """Records every request and answers each with `X-Delete-Count: 1`. `FakeResponse.headers` is a
+    `CaseInsensitiveDict`, as on the real response, so a case-sensitive lookup cannot pass here and
+    fail against the API."""
+    return install_responding_transport(
+        monkeypatch, lambda call: FakeResponse(200, [], headers={'X-Delete-Count': '1'})
+    )
 
 
 @pytest.fixture
-def api() -> _RecordingProduction:
-    return _RecordingProduction()
+def api(transport: RecordingTransport) -> ComboCurveAPI:
+    return make_offline_api()
 
 
 def _query(url: str) -> dict[str, list[str]]:
@@ -77,27 +54,34 @@ def _query(url: str) -> dict[str, list[str]]:
 
 @pytest.mark.parametrize(('method', 'args', 'path'), DELETE_METHODS)
 def test_filters_go_in_the_query_string_not_the_body(
-    api: _RecordingProduction, method: str, args: tuple[str, ...], path: str
+    api: ComboCurveAPI, transport: RecordingTransport, method: str, args: tuple[str, ...], path: str
 ) -> None:
     headers = getattr(api, method)(*args, well_id=WELL_ID, start_date='2020-01-01', end_date='2020-12-31')
 
     # The PATH matters as much as the query: a method wired to the wrong builder would
     # delete daily records while the caller believed they deleted monthly ones.
-    assert urlsplit(api.deleted_urls[0]).path == path
-    assert _query(api.deleted_urls[0]) == {
+    (call,) = transport.calls
+    assert call.method == 'DELETE'
+    assert urlsplit(call.url).path == path
+    assert _query(call.url) == {
         'well': [WELL_ID],
         'startDate': ['2020-01-01'],
         'endDate': ['2020-12-31'],
     }
-    # The body must stay empty: the endpoint rejects a payload outright.
-    assert api.deleted_bodies == [[]]
+    # No body is sent: the endpoint rejects a payload outright.
+    assert call.body is None
     assert headers['X-Delete-Count'] == '1'
 
 
 @pytest.mark.parametrize(('method', 'args', 'path'), DELETE_METHODS)
 @pytest.mark.parametrize('missing_well', ['', None])
 def test_delete_without_a_well_is_refused(
-    api: _RecordingProduction, method: str, args: tuple[str, ...], path: str, missing_well: str | None
+    api: ComboCurveAPI,
+    transport: RecordingTransport,
+    method: str,
+    args: tuple[str, ...],
+    path: str,
+    missing_well: str | None,
 ) -> None:
     """`well` is `required: true` in the spec, so a date-only delete never leaves the process.
 
@@ -107,7 +91,7 @@ def test_delete_without_a_well_is_refused(
     with pytest.raises(ValueError, match='well_id is required'):
         getattr(api, method)(*args, well_id=missing_well, start_date='2020-01-01')
 
-    assert api.deleted_urls == []
+    assert transport.calls == []
 
 
 def test_dates_are_optional_but_the_well_is_not() -> None:
@@ -120,7 +104,7 @@ def test_dates_are_optional_but_the_well_is_not() -> None:
     assert _delete_filters(WELL_ID, '', '2020-12-31') == {'well': WELL_ID, 'endDate': '2020-12-31'}
 
 
-def test_the_old_positional_data_call_never_reaches_the_api(api: _RecordingProduction) -> None:
+def test_the_old_positional_data_call_never_reaches_the_api(api: ComboCurveAPI, transport: RecordingTransport) -> None:
     """The 2.1.0 shape was `delete_*(data: ItemList)`; that list must not become a filter.
 
     It is truthy, so a falsy-only guard would let it stringify into `?well=[{...}]` and
@@ -129,10 +113,10 @@ def test_the_old_positional_data_call_never_reaches_the_api(api: _RecordingProdu
     with pytest.raises(ValueError, match='must be a well id string'):
         api.delete_company_daily_productions([{'well': WELL_ID, 'date': '2020-01-01'}])  # type: ignore[arg-type]
 
-    assert api.deleted_urls == []
+    assert transport.calls == []
 
 
-def test_delete_count_is_read_case_insensitively(api: _RecordingProduction) -> None:
+def test_delete_count_is_read_case_insensitively(api: ComboCurveAPI, transport: RecordingTransport) -> None:
     """Callers are told to read `X-Delete-Count`; an HTTP/2 server may send it lowercased."""
     headers = api.delete_project_monthly_productions(PROJECT_ID, well_id=WELL_ID)
 

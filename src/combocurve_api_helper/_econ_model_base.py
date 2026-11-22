@@ -3,7 +3,7 @@ from typing import Optional, Union, cast
 
 from requests import Response
 
-from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
+from .base import LIST_SORT_ORDER, WELL_FILTER_LIMIT, APIBase, Item, ItemList, QueryFilters, WriteResponse
 
 GET_LIMIT = 200
 
@@ -81,12 +81,17 @@ class _EconModelMethodsBase(APIBase):
         return url
 
     def get_econ_model_assignments_by_type_by_id_url(
-        self, project_id: str, econ_model_type: str, model_id: str, filters: Optional[dict[str, str]] = None
+        self,
+        project_id: str,
+        econ_model_type: str,
+        model_id: str,
+        filters: Optional[QueryFilters] = None,
     ) -> str:
         """
         Returns the API url for assignments of a sepcific econ model for a
         specific project id and model type. Allows `econModelType` passed as a
         parameter rather than calling a different function for each model type.
+        A sequence value in `filters` repeats its key (the DELETE `wells`).
         """
 
         def _get_route_for_assignment(econ_model_type: str) -> Union[str, None]:
@@ -209,14 +214,32 @@ class _EconModelMethodsBase(APIBase):
         return self._delete_responses(url, data=[])
 
     def get_econ_model_assignments_by_type_by_id(
-        self, project_id: str, econ_model_type: str, model_id: str
+        self, project_id: str, econ_model_type: str, model_id: str, filters: Optional[dict[str, str]] = None
     ) -> Union[ItemList, None]:
         """
-        Returns a specific econ model assignment from its type and id. Allows
-        `econModelType` passed as a parameter rather than calling a different
-        function for each model type.
+        Returns the assignments of one econ model, from its type and id, or `None` when it has none.
+        Allows `econModelType` passed as a parameter rather than calling a different function for
+        each model type.
+
+        `filters` take the query keys the route documents: `wells` and `scenarios` (the same keys as
+        `count_econ_model_assignments_by_type_by_id`, so a filtered count has a matching list), plus
+        `sort`, `skip` and `take`. A `take` in `filters` sets the page size; without it the API's
+        default page size is used. The rows are returned in the order received.
+
+        https://docs.api.combocurve.com/api/get-econ-models-assignments-read
+
+        Example response:
+        [
+            {
+                "qualifierName": "string",
+                "scenario": "string",
+                "wells": [
+                    "string"
+                ]
+            }
+        ]
         """
-        url = self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id)
+        url = self.get_econ_model_assignments_by_type_by_id_url(project_id, econ_model_type, model_id, filters)
         assignments = self._get_items(url)
 
         if len(assignments) == 0:
@@ -269,17 +292,40 @@ class _EconModelMethodsBase(APIBase):
         removed. Confirmed against the official ComboCurve Postman
         collection.
 
-        `wells` accepts either a comma-separated string or a sequence of
-        well-id strings -- POST/PUT assignment bodies carry `wells` as a
-        list, so callers that reuse that value here (e.g. JSON-driven
-        callers not protected by mypy) are normalized rather than silently
-        producing a Python list-repr query param that matches nothing."""
-        filters: dict[str, str] = {'scenarioId': scenario_id}
+        `wells` accepts either a sequence of well-id strings or a string of
+        one id or several joined with `,` (kept for backward compatibility).
+        Both are sent as one repeated `wells` key per id (`wells=a&wells=b`):
+        the route refuses a comma-joined value with 400 `RequestStructureError`
+        (`` `a,b` is not a valid ObjectId ``), and deletes both wells with the
+        repeated keys (`X-Delete-Count: 2`); verified live 2026-11-21 (dev).
+        The comma-joined form this method sent before was refused for two wells.
+
+        A `wells` that names no well is refused with `ValueError` before
+        anything is sent: an empty sequence, a sequence holding an empty id, an
+        empty string, or a string with an empty element between commas (`','`,
+        `'a,'`). Each would send a blank well id; the route answers a blank
+        `wells=` with 400 `RequestStructureError` (`` `` is not a valid
+        ObjectId ``) and deletes nothing (verified live 2026-11-21, dev). Leave
+        `wells` as `None` to send no well filter. The whitespace around each
+        id is stripped.
+
+        At most 100 well ids per call: the route answers 101 with 400
+        `RequestStructureError` (`` `[object Object]` is not a valid
+        ObjectId ``) and 500 with 431 (verified live 2026-11-21, dev). A
+        longer `wells` raises `ValueError` before anything is sent; it is not
+        split, so a call never leaves part of the list unassigned. Call once
+        per 100 ids. The per-type `delete_<type>_assignments_by_id` wrappers
+        call this method, so the same limit applies to them.
+
+        https://docs.api.combocurve.com/api/delete-econ-model-assignment-delete"""
+        filters: dict[str, Union[str, Sequence[str]]] = {'scenarioId': scenario_id}
         if qualifier_name is not None:
             filters['qualifierName'] = qualifier_name
 
         if wells is not None:
-            filters['wells'] = wells if isinstance(wells, str) else ','.join(wells)
+            well_ids = self._split_ids(wells, 'wells')
+            self._require_at_most(len(well_ids), WELL_FILTER_LIMIT, 'wells', 'well ids')
+            filters['wells'] = well_ids
 
         if all_wells is not None:
             filters['allWells'] = str(all_wells).lower()

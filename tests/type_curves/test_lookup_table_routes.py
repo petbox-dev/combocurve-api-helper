@@ -4,14 +4,14 @@ from typing import TYPE_CHECKING, Any
 
 from pytest import MonkeyPatch
 
-from tests.http_fakes import FakeResponse, install_recording_transport, make_offline_api
+from tests.http_fakes import V2, FakeResponse, install_recording_transport, make_offline_api
 
 if TYPE_CHECKING:
     from combocurve_api_helper.base import Item
 
 PROJECT_ID = '000000000000000000000001'
 TABLE_ID = '000000000000000000000003'
-BASE = f'https://api.combocurve.com/v2/projects/{PROJECT_ID}/type-curves/lookup-tables'
+BASE = f'{V2}/projects/{PROJECT_ID}/type-curves/lookup-tables'
 ENVELOPE: dict[str, Any] = {'successCount': 1, 'failedCount': 0, 'results': [{'status': 'OK', 'code': 200}]}
 TABLE: 'Item' = {'name': 'Sample Table', 'rules': [{'filter': [], 'riskFactorPeakOil': 1}]}
 

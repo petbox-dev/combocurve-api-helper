@@ -1,5 +1,8 @@
 # Type-curve list page size is below the server limit
 
+Closed: 2026-11-21 -- settled by: `get_type_curves` reads 2,500 per page (`TYPE_CURVE_LIST_GET_LIMIT`; production probe 2026-11-21: `take=2500` answers 200, `take=2501` answers 400); the v1-compatibility forecast-outputs read uses `GET_LIMIT_OUTPUTS_ARIES` (1,000) like `forecasts.get_forecast_outputs`
+If this was wrong, you will see: a 400 "Must be between 1 and 2500" from `get_type_curves`, or a forecast-outputs read at 1,000 answering 400
+
 Severity: low
 Opened: 2026-11-13
 

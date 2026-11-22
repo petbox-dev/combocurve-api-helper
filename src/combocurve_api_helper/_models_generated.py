@@ -71,8 +71,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
                                       filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "ActualOrForecast", model_id, filters)
 
-    def get_actual_forecast_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "ActualOrForecast", model_id)
+    def get_actual_forecast_assignments_by_id(self, project_id: str, model_id: str,
+                                  filters: dict[str, str] | None = None) -> ItemList | None:
+        """Returns the assignments of one ActualOrForecast model, or `None` when it has none.
+
+        `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
+        `get_econ_model_assignments_by_type_by_id`, which documents the route.
+        """
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "ActualOrForecast", model_id, filters)
 
     def count_actual_forecast_assignments_by_id(self, project_id: str, model_id: str,
                                         filters: dict[str, str] | None = None) -> int:
@@ -124,8 +130,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
                                       filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "Capex", model_id, filters)
 
-    def get_capex_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "Capex", model_id)
+    def get_capex_assignments_by_id(self, project_id: str, model_id: str,
+                                  filters: dict[str, str] | None = None) -> ItemList | None:
+        """Returns the assignments of one Capex model, or `None` when it has none.
+
+        `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
+        `get_econ_model_assignments_by_type_by_id`, which documents the route.
+        """
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "Capex", model_id, filters)
 
     def count_capex_assignments_by_id(self, project_id: str, model_id: str,
                                         filters: dict[str, str] | None = None) -> int:
@@ -177,8 +189,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
                                       filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "Dates", model_id, filters)
 
-    def get_date_settings_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "Dates", model_id)
+    def get_date_settings_assignments_by_id(self, project_id: str, model_id: str,
+                                  filters: dict[str, str] | None = None) -> ItemList | None:
+        """Returns the assignments of one Dates model, or `None` when it has none.
+
+        `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
+        `get_econ_model_assignments_by_type_by_id`, which documents the route.
+        """
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "Dates", model_id, filters)
 
     def count_date_settings_assignments_by_id(self, project_id: str, model_id: str,
                                         filters: dict[str, str] | None = None) -> int:
@@ -230,8 +248,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
                                       filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "Depreciation", model_id, filters)
 
-    def get_depreciation_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "Depreciation", model_id)
+    def get_depreciation_assignments_by_id(self, project_id: str, model_id: str,
+                                  filters: dict[str, str] | None = None) -> ItemList | None:
+        """Returns the assignments of one Depreciation model, or `None` when it has none.
+
+        `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
+        `get_econ_model_assignments_by_type_by_id`, which documents the route.
+        """
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "Depreciation", model_id, filters)
 
     def count_depreciation_assignments_by_id(self, project_id: str, model_id: str,
                                         filters: dict[str, str] | None = None) -> int:
@@ -283,8 +307,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
                                       filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "Differentials", model_id, filters)
 
-    def get_differentials_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "Differentials", model_id)
+    def get_differentials_assignments_by_id(self, project_id: str, model_id: str,
+                                  filters: dict[str, str] | None = None) -> ItemList | None:
+        """Returns the assignments of one Differentials model, or `None` when it has none.
+
+        `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
+        `get_econ_model_assignments_by_type_by_id`, which documents the route.
+        """
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "Differentials", model_id, filters)
 
     def count_differentials_assignments_by_id(self, project_id: str, model_id: str,
                                         filters: dict[str, str] | None = None) -> int:
@@ -336,8 +366,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
                                       filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "Emission", model_id, filters)
 
-    def get_emissions_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "Emission", model_id)
+    def get_emissions_assignments_by_id(self, project_id: str, model_id: str,
+                                  filters: dict[str, str] | None = None) -> ItemList | None:
+        """Returns the assignments of one Emission model, or `None` when it has none.
+
+        `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
+        `get_econ_model_assignments_by_type_by_id`, which documents the route.
+        """
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "Emission", model_id, filters)
 
     def count_emissions_assignments_by_id(self, project_id: str, model_id: str,
                                         filters: dict[str, str] | None = None) -> int:
@@ -389,8 +425,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
                                       filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "Escalation", model_id, filters)
 
-    def get_escalations_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "Escalation", model_id)
+    def get_escalations_assignments_by_id(self, project_id: str, model_id: str,
+                                  filters: dict[str, str] | None = None) -> ItemList | None:
+        """Returns the assignments of one Escalation model, or `None` when it has none.
+
+        `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
+        `get_econ_model_assignments_by_type_by_id`, which documents the route.
+        """
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "Escalation", model_id, filters)
 
     def count_escalations_assignments_by_id(self, project_id: str, model_id: str,
                                         filters: dict[str, str] | None = None) -> int:
@@ -442,8 +484,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
                                       filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "Expenses", model_id, filters)
 
-    def get_expenses_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "Expenses", model_id)
+    def get_expenses_assignments_by_id(self, project_id: str, model_id: str,
+                                  filters: dict[str, str] | None = None) -> ItemList | None:
+        """Returns the assignments of one Expenses model, or `None` when it has none.
+
+        `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
+        `get_econ_model_assignments_by_type_by_id`, which documents the route.
+        """
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "Expenses", model_id, filters)
 
     def count_expenses_assignments_by_id(self, project_id: str, model_id: str,
                                         filters: dict[str, str] | None = None) -> int:
@@ -495,8 +543,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
                                       filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "FluidModel", model_id, filters)
 
-    def get_fluid_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "FluidModel", model_id)
+    def get_fluid_assignments_by_id(self, project_id: str, model_id: str,
+                                  filters: dict[str, str] | None = None) -> ItemList | None:
+        """Returns the assignments of one FluidModel model, or `None` when it has none.
+
+        `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
+        `get_econ_model_assignments_by_type_by_id`, which documents the route.
+        """
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "FluidModel", model_id, filters)
 
     def count_fluid_assignments_by_id(self, project_id: str, model_id: str,
                                         filters: dict[str, str] | None = None) -> int:
@@ -548,8 +602,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
                                       filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "Operations", model_id, filters)
 
-    def get_operations_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "Operations", model_id)
+    def get_operations_assignments_by_id(self, project_id: str, model_id: str,
+                                  filters: dict[str, str] | None = None) -> ItemList | None:
+        """Returns the assignments of one Operations model, or `None` when it has none.
+
+        `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
+        `get_econ_model_assignments_by_type_by_id`, which documents the route.
+        """
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "Operations", model_id, filters)
 
     def count_operations_assignments_by_id(self, project_id: str, model_id: str,
                                         filters: dict[str, str] | None = None) -> int:
@@ -601,8 +661,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
                                       filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "OwnershipReversion", model_id, filters)
 
-    def get_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "OwnershipReversion", model_id)
+    def get_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str,
+                                  filters: dict[str, str] | None = None) -> ItemList | None:
+        """Returns the assignments of one OwnershipReversion model, or `None` when it has none.
+
+        `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
+        `get_econ_model_assignments_by_type_by_id`, which documents the route.
+        """
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "OwnershipReversion", model_id, filters)
 
     def count_ownership_reversions_assignments_by_id(self, project_id: str, model_id: str,
                                         filters: dict[str, str] | None = None) -> int:
@@ -654,8 +720,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
                                       filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "Pricing", model_id, filters)
 
-    def get_pricing_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "Pricing", model_id)
+    def get_pricing_assignments_by_id(self, project_id: str, model_id: str,
+                                  filters: dict[str, str] | None = None) -> ItemList | None:
+        """Returns the assignments of one Pricing model, or `None` when it has none.
+
+        `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
+        `get_econ_model_assignments_by_type_by_id`, which documents the route.
+        """
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "Pricing", model_id, filters)
 
     def count_pricing_assignments_by_id(self, project_id: str, model_id: str,
                                         filters: dict[str, str] | None = None) -> int:
@@ -707,8 +779,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
                                       filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "ProductionTaxes", model_id, filters)
 
-    def get_production_taxes_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "ProductionTaxes", model_id)
+    def get_production_taxes_assignments_by_id(self, project_id: str, model_id: str,
+                                  filters: dict[str, str] | None = None) -> ItemList | None:
+        """Returns the assignments of one ProductionTaxes model, or `None` when it has none.
+
+        `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
+        `get_econ_model_assignments_by_type_by_id`, which documents the route.
+        """
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "ProductionTaxes", model_id, filters)
 
     def count_production_taxes_assignments_by_id(self, project_id: str, model_id: str,
                                         filters: dict[str, str] | None = None) -> int:
@@ -760,8 +838,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
                                       filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "ReservesCategory", model_id, filters)
 
-    def get_reserves_categories_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "ReservesCategory", model_id)
+    def get_reserves_categories_assignments_by_id(self, project_id: str, model_id: str,
+                                  filters: dict[str, str] | None = None) -> ItemList | None:
+        """Returns the assignments of one ReservesCategory model, or `None` when it has none.
+
+        `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
+        `get_econ_model_assignments_by_type_by_id`, which documents the route.
+        """
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "ReservesCategory", model_id, filters)
 
     def count_reserves_categories_assignments_by_id(self, project_id: str, model_id: str,
                                         filters: dict[str, str] | None = None) -> int:
@@ -813,8 +897,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
                                       filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "Risking", model_id, filters)
 
-    def get_riskings_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "Risking", model_id)
+    def get_riskings_assignments_by_id(self, project_id: str, model_id: str,
+                                  filters: dict[str, str] | None = None) -> ItemList | None:
+        """Returns the assignments of one Risking model, or `None` when it has none.
+
+        `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
+        `get_econ_model_assignments_by_type_by_id`, which documents the route.
+        """
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "Risking", model_id, filters)
 
     def count_riskings_assignments_by_id(self, project_id: str, model_id: str,
                                         filters: dict[str, str] | None = None) -> int:
@@ -866,8 +956,14 @@ class _GeneratedModelMethods(_EconModelMethodsBase):
                                       filters: dict[str, str] | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "StreamProperties", model_id, filters)
 
-    def get_stream_properties_assignments_by_id(self, project_id: str, model_id: str) -> ItemList | None:
-        return self.get_econ_model_assignments_by_type_by_id(project_id, "StreamProperties", model_id)
+    def get_stream_properties_assignments_by_id(self, project_id: str, model_id: str,
+                                  filters: dict[str, str] | None = None) -> ItemList | None:
+        """Returns the assignments of one StreamProperties model, or `None` when it has none.
+
+        `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
+        `get_econ_model_assignments_by_type_by_id`, which documents the route.
+        """
+        return self.get_econ_model_assignments_by_type_by_id(project_id, "StreamProperties", model_id, filters)
 
     def count_stream_properties_assignments_by_id(self, project_id: str, model_id: str,
                                         filters: dict[str, str] | None = None) -> int:

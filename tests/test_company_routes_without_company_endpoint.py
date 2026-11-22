@@ -2,16 +2,11 @@
 `/v1/econ-models/emissions` and `/fluid-models` answer 400 (verified live 2026-09-30). The shared company
 url builder refuses those types before any request, and the hand-written methods for them are gone."""
 
-from typing import Any
-
 import pytest
-import requests
 from pytest import MonkeyPatch
 
 from combocurve_api_helper import ComboCurveAPI
-from tests.http_fakes import make_offline_api
-
-V1 = 'https://api.combocurve.com/v1'
+from tests.http_fakes import V1, install_recording_transport, make_offline_api
 
 REMOVED_METHOD_NAMES = [
     'get_company_emissions_models_url',
@@ -52,9 +47,8 @@ def test_removed_company_methods_are_gone(method_name: str) -> None:
 
 
 def test_company_list_by_type_raises_before_any_request(monkeypatch: MonkeyPatch) -> None:
-    def fail_if_called(*args: Any, **kwargs: Any) -> None:
-        pytest.fail('a request was sent for a type with no company route')
-
-    monkeypatch.setattr(requests, 'request', fail_if_called)
+    # No queued response: a request would raise `IndexError`, which `pytest.raises(ValueError)` does not catch.
+    transport = install_recording_transport(monkeypatch)
     with pytest.raises(ValueError, match='FluidModel'):
         make_offline_api().get_company_econ_models_by_type('FluidModel')
+    assert transport.calls == []

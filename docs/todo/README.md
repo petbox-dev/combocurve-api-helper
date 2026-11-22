@@ -14,27 +14,32 @@ This repo is public: no confidential project, model, well or fund names in any d
 
 | Item | Opened | Severity | Summary |
 |---|---|---|---|
-| [project-scoped-root-volumes-repeat-and-drop-rows](open/project-scoped-root-volumes-repeat-and-drop-rows.md) | 2026-11-20 | high | Project-scoped root volume listing repeats 348 and drops 348 `(forecast, well)` pairs on dev; the count still matches; cause unidentified |
-| [econ-model-unassign-sends-an-empty-wells-filter](open/econ-model-unassign-sends-an-empty-wells-filter.md) | 2026-11-13 | medium | `wells=[]` sends `wells=`; server behavior unprobed (could widen the unassign); 3.1.0 guards `combo_ids` / `well_ids` but not this |
-| [count-methods-and-list-methods-do-not-pair-everywhere](open/count-methods-and-list-methods-do-not-pair-everywhere.md) | 2026-09-30 | low | 4 list methods take no `filters` their counts accept; no company per-type counts |
-| [base-py-mixes-transport-policy-with-the-client-class](open/base-py-mixes-transport-policy-with-the-client-class.md) | 2026-09-30 | low | Move the retry/timeout policy out of `base.py` into `_transport.py` |
-| [docstring-freshness-check-tolerates-unsourced-markers](open/docstring-freshness-check-tolerates-unsourced-markers.md) | 2026-09-30 | low | `--check` exits 0 with unsourced markers; no `urlopen` timeout; collapsed arrays hide a length change |
+| [project-scoped-root-volumes-repeat-and-drop-rows](open/project-scoped-root-volumes-repeat-and-drop-rows.md) | 2026-11-20 | medium | Server defect: project-scoped root volume listing returns wrong rows above 200 rows; the helper now reads per forecast (verified on dev); open until ComboCurve fixes the route (support report drafted, not sent) |
+| [decisions-pending-from-the-route-and-todo-pass](open/decisions-pending-from-the-route-and-todo-pass.md) | 2026-11-21 | medium | Recommendations carried out; still yours: send the two drafted ComboCurve requests, time the `_get_items_iterator` deprecation |
 | [type-curve-v1-wrappers-outlive-the-v1-api](open/type-curve-v1-wrappers-outlive-the-v1-api.md) | 2026-11-05 | low | `type_curves_v1_compatibility.py` stays until at least 2027-01-31; the file lists the removal steps |
-| [forecast-output-slope-is-now-a-sign](open/forecast-output-slope-is-now-a-sign.md) | 2026-11-05 | low | Forecast outputs `slope` is the sign since 2026-10 and `slopeValue` the value; no consumer in this package is checked |
-| [v1-type-curve-normalizations-are-not-written-to-v2](open/v1-type-curve-normalizations-are-not-written-to-v2.md) | 2026-11-05 | low | The write wrappers drop v1 `normalizations`; the migration of `linear`, `power_law_fit` and `eur_and_q_peak` is unseen |
-| [published-routes-without-a-method](open/published-routes-without-a-method.md) | 2026-11-05 | low | 58 published operations have no method (shapefiles 21, formations 18, production comments 16, others 3); `tests/route_manifest.json` lists them |
-| [project-custom-columns-required-argument-typed-optional](open/project-custom-columns-required-argument-typed-optional.md) | 2026-11-06 | low | `custom_column` is required at run time but typed `Optional[str] = None`, so a type checker accepts a call that always raises |
-| [list-getters-hold-the-full-result-in-memory](open/list-getters-hold-the-full-result-in-memory.md) | 2026-11-06 | low | List getters read every page into one list (then sort); no public page iterator, so callers cannot cap memory without `_get_items_iterator` |
-| [model-assignment-writes-do-not-enforce-the-500-record-limit](open/model-assignment-writes-do-not-enforce-the-500-record-limit.md) | 2026-11-13 | low | Model-assignment PUT/DELETE send more than 500 records as one request; refuse, do not split |
-| [url-builders-cannot-take-a-repeated-filter](open/url-builders-cannot-take-a-repeated-filter.md) | 2026-11-13 | low | ~50 builders type `filters` as `dict[str, str]`; forecast `well` must repeat, so two sites bypass their builders |
-| [test-transport-doubles-are-copied-per-file](open/test-transport-doubles-are-copied-per-file.md) | 2026-11-13 | low | ~12 local `fake_request` doubles remain beside `http_fakes.RecordingTransport`; route audit discards every exception |
-| [type-curve-list-page-size-below-the-server-limit](open/type-curve-list-page-size-below-the-server-limit.md) | 2026-11-13 | low | `get_type_curves` pages at 200; a comment says the route takes 2,500 (unverified) |
-| [live-test-setup-is-copied-and-partly-stale](open/live-test-setup-is-copied-and-partly-stale.md) | 2026-11-13 | low | Dev path defined 3 times; function-scoped token fixture; stale qualifier-cleanup comment; no live combo/unassign test |
+| [production-comment-routes-are-unverified-live](open/production-comment-routes-are-unverified-live.md) | 2026-11-21 | low | Comment routes answer `ProductionCommentsDisabledError` on dev and prod; page size 200 is a guess |
+| [forecast-segment-parameter-slope-on-write-is-unverified](open/forecast-segment-parameter-slope-on-write-is-unverified.md) | 2026-11-21 | low | Reads carry the sign in `slope`; the write side is unchecked |
+| [shapefile-paths-not-verified-live](open/shapefile-paths-not-verified-live.md) | 2026-11-21 | low | Company upload, `projectIds` PATCH, shared-layer unlink and failed-job shape not exercised live |
+| [export-jobs-have-no-wait-method](open/export-jobs-have-no-wait-method.md) | 2026-11-21 | low | v2 export job statuses unverified, so no `wait_for_export_*` on `_wait_for_job` |
 
 ## Done
 
 | Item | Closed | Settled by |
 |---|---|---|
+| [v1-type-curve-normalizations-are-not-written-to-v2](closed/v1-type-curve-normalizations-are-not-written-to-v2.md) | 2026-11-21 | Won't do: no v1/v2 pair can be read anymore; 12 of 526 production curves affected |
+| [list-getters-hold-the-full-result-in-memory](closed/list-getters-hold-the-full-result-in-memory.md) | 2026-11-21 | Public `iter_pages`; `_get_items_iterator` delegates to it |
+| [docstring-freshness-check-tolerates-unsourced-markers](closed/docstring-freshness-check-tolerates-unsourced-markers.md) | 2026-11-21 | Unsourced markers fail `--check`; fetch timeout; malformed shapes exit 2; collapsed-array length gap accepted |
+| [live-test-setup-is-copied-and-partly-stale](closed/live-test-setup-is-copied-and-partly-stale.md) | 2026-11-21 | Shared live setup; new live tests passed on dev |
+| [type-curve-list-page-size-below-the-server-limit](closed/type-curve-list-page-size-below-the-server-limit.md) | 2026-11-21 | Type-curve list at 2,500 per page (live-verified); compatibility outputs at 1,000 |
+| [url-builders-cannot-take-a-repeated-filter](closed/url-builders-cannot-take-a-repeated-filter.md) | 2026-11-21 | `QueryFilters` on repeated-key builders; both bypass sites call their builders |
+| [econ-model-unassign-sends-an-empty-wells-filter](closed/econ-model-unassign-sends-an-empty-wells-filter.md) | 2026-11-21 | Blank wells refused locally; `wells` sent as repeated keys (a comma-joined value was a live 400) |
+| [model-assignment-writes-do-not-enforce-the-500-record-limit](closed/model-assignment-writes-do-not-enforce-the-500-record-limit.md) | 2026-11-21 | 500-record and 25,000-`wellIds` caps enforced locally (`_require_at_most`, `_count_well_ids`) |
+| [count-methods-and-list-methods-do-not-pair-everywhere](closed/count-methods-and-list-methods-do-not-pair-everywhere.md) | 2026-11-21 | `filters` added to the list methods whose GET documents the HEAD keys |
+| [base-py-mixes-transport-policy-with-the-client-class](closed/base-py-mixes-transport-policy-with-the-client-class.md) | 2026-11-21 | Transport moved to `_transport.py`; `base.py` re-exports the moved names |
+| [project-custom-columns-required-argument-typed-optional](closed/project-custom-columns-required-argument-typed-optional.md) | 2026-11-21 | Overloads make the argument required to type checkers |
+| [forecast-output-slope-is-now-a-sign](closed/forecast-output-slope-is-now-a-sign.md) | 2026-11-21 | Reads verified live (3,695 outputs); docstrings state the split; write side opened separately |
+| [published-routes-without-a-method](closed/published-routes-without-a-method.md) | 2026-11-21 | All 502 operations accounted for (484 wrapped, 0 gap) |
+| [test-transport-doubles-are-copied-per-file](closed/test-transport-doubles-are-copied-per-file.md) | 2026-11-21 | Tests on the shared doubles; route audit checks exceptions against a reviewed list |
 | [v2-type-curve-routes-have-no-postman-source](closed/v2-type-curve-routes-have-no-postman-source.md) | 2026-11-12 | v2 docstring links use the collection names; slug skip removed; route-path floor 170; examples generated (large ones point to the docs page) |
 | [no-test-checks-that-published-routes-are-wrapped](closed/no-test-checks-that-published-routes-are-wrapped.md) | 2026-11-12 | `tests/test_published_routes_are_wrapped.py`: call-based audit against the collection, with a reviewed `_UNWRAPPED` list |
 | [directional-surveys-page-size-above-api-maximum](closed/directional-surveys-page-size-above-api-maximum.md) | 2026-11-05 | `GET_LIMIT = 100` in `directional.py` (2.7.1 and 3.0.0) |

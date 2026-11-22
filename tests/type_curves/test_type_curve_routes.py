@@ -6,24 +6,25 @@ import pytest
 import requests
 from pytest import MonkeyPatch
 
-from tests.http_fakes import FakeResponse, install_recording_transport, make_offline_api
+from tests.http_fakes import V2, FakeResponse, install_recording_transport, make_offline_api
 
 if TYPE_CHECKING:
     from combocurve_api_helper.base import Item
 
 PROJECT_ID = '000000000000000000000001'
 TYPE_CURVE_ID = '000000000000000000000002'
-BASE = f'https://api.combocurve.com/v2/projects/{PROJECT_ID}/type-curves'
+BASE = f'{V2}/projects/{PROJECT_ID}/type-curves'
 ENVELOPE: dict[str, Any] = {'successCount': 1, 'failedCount': 0, 'results': [{'status': 'Created', 'code': 201}]}
 
 
-def test_list_uses_v2_and_take_200(monkeypatch: MonkeyPatch) -> None:
+def test_list_uses_v2_and_the_2500_page_size(monkeypatch: MonkeyPatch) -> None:
+    """The list route accepts `take` up to 2,500 (2,501 is a 400, live 2026-11-21)."""
     transport = install_recording_transport(monkeypatch, FakeResponse(200, [{'id': TYPE_CURVE_ID, 'name': 'Sample'}]))
 
     rows = make_offline_api().get_type_curves(PROJECT_ID, {'name': 'Sample'})
 
     call = transport.calls[0]
-    assert (call.method, call.url, call.params) == ('GET', f'{BASE}?name=Sample', {'take': 200})
+    assert (call.method, call.url, call.params) == ('GET', f'{BASE}?name=Sample', {'take': 2500})
     assert rows[0]['id'] == TYPE_CURVE_ID
 
 

@@ -1,4 +1,4 @@
-"""Unit tests for the connection-failure policy of `base._send_request`, and for the gateway-status
+"""Unit tests for the connection-failure policy of `_transport._send_request`, and for the gateway-status
 retry of `APIBase._request_with_retry` -- no live API.
 
 Every request carries a timeout. A request that never reached the server is sent again, whatever its
@@ -8,7 +8,7 @@ not, because the server may have applied it.
 
 import pickle
 import time
-from typing import Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import pytest
 import requests
@@ -16,16 +16,17 @@ import urllib3.exceptions
 from pytest import MonkeyPatch
 
 from combocurve_api_helper._batch import _RateLimitState
-from combocurve_api_helper.base import (
+from combocurve_api_helper._transport import (
     _CALL_DEADLINE_SECONDS,
     _MAX_CONNECTION_RETRIES,
     _MAX_RETRY_AFTER_SECONDS,
     _REQUEST_TIMEOUT_SECONDS,
-    Item,
 )
-from tests.http_fakes import FakeResponse, StubAuth, make_offline_api
+from tests.http_fakes import V1, FakeResponse, StubAuth, make_offline_api
 
-V1 = 'https://api.combocurve.com/v1'
+if TYPE_CHECKING:
+    from combocurve_api_helper.base import Item
+
 URL = f'{V1}/projects'
 
 
@@ -51,7 +52,12 @@ class _FakeClock:
 
 
 class _Script:
-    """A fake `requests.request` that raises or returns the scripted outcomes in order."""
+    """A fake `requests.request` that raises or returns the scripted outcomes in order.
+
+    Kept local rather than on `tests/http_fakes.RecordingTransport`: its job differs. An outcome may be
+    an exception to raise (connection failures, timeouts), and with a `_FakeClock` each send advances the
+    clock and ends in a `ReadTimeout` when it outlasts the read timeout it was given, which is what the
+    deadline tests need. Nothing else in the suite needs either."""
 
     def __init__(
         self, outcomes: list[Any], clock: Optional['_FakeClock'] = None, seconds_per_call: float = 0.0
@@ -432,7 +438,7 @@ def test_a_get_in_the_same_situation_is_retried_with_the_shrunk_timeout(
 
 
 def test_a_send_after_the_deadline_is_refused_without_sending(monkeypatch: MonkeyPatch) -> None:
-    from combocurve_api_helper.base import _send_request
+    from combocurve_api_helper._transport import _send_request
 
     script = _install(monkeypatch, [FakeResponse(200, {})])
     with pytest.raises(requests.Timeout, match='call deadline of 600 s passed before the request was sent'):
@@ -442,7 +448,7 @@ def test_a_send_after_the_deadline_is_refused_without_sending(monkeypatch: Monke
 
 
 def test_the_token_fetch_counts_against_the_deadline(monkeypatch: MonkeyPatch, clock: _FakeClock) -> None:
-    from combocurve_api_helper.base import _send_request
+    from combocurve_api_helper._transport import _send_request
 
     script = _install(monkeypatch, [FakeResponse(200, {})])
 
@@ -491,7 +497,7 @@ def test_a_batch_chunk_refused_by_the_deadline_after_a_shared_pause_reports_the_
 
 
 def test_a_token_fetch_that_fails_to_connect_is_retried(monkeypatch: MonkeyPatch, sleeps: list[float]) -> None:
-    from combocurve_api_helper.base import _send_request
+    from combocurve_api_helper._transport import _send_request
 
     script = _install(monkeypatch, [FakeResponse(200, {})])
     fetches: list[int] = []
@@ -511,7 +517,7 @@ def test_a_token_fetch_that_fails_to_connect_is_retried(monkeypatch: MonkeyPatch
 def test_a_token_fetch_that_fails_to_connect_is_retried_under_a_deadline(
     monkeypatch: MonkeyPatch, clock: _FakeClock
 ) -> None:
-    from combocurve_api_helper.base import _send_request
+    from combocurve_api_helper._transport import _send_request
 
     script = _install(monkeypatch, [FakeResponse(200, {})])
     fetches: list[int] = []
@@ -527,7 +533,7 @@ def test_a_token_fetch_that_fails_to_connect_is_retried_under_a_deadline(
 
 
 def test_a_deadline_refusal_is_not_retried(monkeypatch: MonkeyPatch, sleeps: list[float]) -> None:
-    from combocurve_api_helper.base import _send_request
+    from combocurve_api_helper._transport import _send_request
 
     script = _install(monkeypatch, [FakeResponse(200, {})])
     fetches: list[int] = []

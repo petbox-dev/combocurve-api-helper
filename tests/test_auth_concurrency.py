@@ -14,11 +14,10 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
-import requests
 from pytest import MonkeyPatch
 
 from combocurve_api_helper import ComboCurveAPI, base, config
-from tests.http_fakes import FakeResponse, StubAuth, make_offline_api
+from tests.http_fakes import FakeResponse, StubAuth, install_recording_transport, make_offline_api
 
 
 def test_every_constructor_sets_the_lock_the_header_fetch_needs(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
@@ -59,12 +58,14 @@ def test_auth_headers_are_fetched_serially_under_threads(monkeypatch: MonkeyPatc
         return {}
 
     monkeypatch.setattr(api.auth, 'get_auth_headers', counting_get_auth_headers)
-    monkeypatch.setattr(requests, 'request', lambda *args, **kwargs: FakeResponse(200))
+    transport = install_recording_transport(monkeypatch, *[FakeResponse(200)] * 8)
 
     with ThreadPoolExecutor(max_workers=8) as executor:
         futures = [executor.submit(api._request_with_retry, 'get', 'https://example/resource') for _ in range(8)]
         for future in futures:
             future.result()
+
+    assert len(transport.calls) == 8
 
     # With the lock the header fetch is serialised; without it up to 8 threads overlap.
     assert peak == 1

@@ -2,7 +2,7 @@ from typing import Optional, Union, cast
 
 from requests.structures import CaseInsensitiveDict
 
-from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
+from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, QueryFilters, WriteResponse
 
 GET_LIMIT = 200  # the maximum of `take` on the econ-settings and econ-report-settings GET routes
 
@@ -23,7 +23,7 @@ class EconSettings(APIBase):
     # URLs
     ######
 
-    def _company_url(self, resource: str, filters: Optional[dict[str, str]] = None) -> str:
+    def _company_url(self, resource: str, filters: Optional[QueryFilters] = None) -> str:
         """
         Returns the company collection url of `resource`, with `filters` as its query string.
         """
@@ -40,7 +40,7 @@ class EconSettings(APIBase):
         """
         return f'{self.API_BASE_URL}/{resource}/{document_id}'
 
-    def get_econ_settings_url(self, filters: Optional[dict[str, str]] = None) -> str:
+    def get_econ_settings_url(self, filters: Optional[QueryFilters] = None) -> str:
         """
         Returns the API url of the company econ settings.
         """
@@ -52,7 +52,7 @@ class EconSettings(APIBase):
         """
         return self._company_document_url(ECON_SETTINGS, econ_setting_id)
 
-    def get_econ_report_settings_url(self, filters: Optional[dict[str, str]] = None) -> str:
+    def get_econ_report_settings_url(self, filters: Optional[QueryFilters] = None) -> str:
         """
         Returns the API url of the company econ report settings.
         """
@@ -68,12 +68,12 @@ class EconSettings(APIBase):
     # Shared helpers
     ###########
 
-    def _get_documents(self, resource: str, filters: Optional[dict[str, str]] = None) -> ItemList:
+    def _get_documents(self, resource: str, filters: Optional[QueryFilters] = None) -> ItemList:
         """Returns the documents of the company collection `resource`, with the shared list ordering."""
         url = self._company_url(resource, filters)
         return self._keysort(self._get_items(url, params={'take': GET_LIMIT}), LIST_SORT_ORDER)
 
-    def _count_documents(self, resource: str, filters: Optional[dict[str, str]] = None) -> int:
+    def _count_documents(self, resource: str, filters: Optional[QueryFilters] = None) -> int:
         """Returns the number of documents matching `filters`, from the `X-Query-Count` header of a HEAD."""
         return self._count_items(self._company_url(resource, filters))
 
@@ -81,25 +81,19 @@ class EconSettings(APIBase):
         """Returns one document of the company collection `resource`, from its id."""
         return self._get_items(self._company_document_url(resource, document_id))[0]
 
-    def _document_records(self, data: Union[Item, ItemList]) -> ItemList:
-        """Normalize one document or a list of documents to the array shape the routes require."""
-        records = [data] if isinstance(data, dict) else data
-        self._require_records(records, 'document')
-        return records
-
     def _post_documents(self, resource: str, data: Union[Item, ItemList]) -> list[WriteResponse]:
         """Creates documents in the company collection `resource`."""
-        records = self._document_records(data)
+        records = self._records_from(data, 'document')
         return cast('list[WriteResponse]', self._post_items(self._company_url(resource), records))
 
     def _put_documents(self, resource: str, data: Union[Item, ItemList]) -> list[WriteResponse]:
         """Upserts documents of the company collection `resource`, by `name`."""
-        records = self._document_records(data)
+        records = self._records_from(data, 'document')
         return cast('list[WriteResponse]', self._put_items(self._company_url(resource), records))
 
     def _patch_documents(self, resource: str, data: Union[Item, ItemList]) -> list[WriteResponse]:
         """Partially updates documents of the company collection `resource`, by `name`."""
-        records = self._document_records(data)
+        records = self._records_from(data, 'document')
         return cast('list[WriteResponse]', self._patch_items(self._company_url(resource), records))
 
     def _delete_document(self, resource: str, document_id: str) -> CaseInsensitiveDict[str]:
@@ -112,10 +106,10 @@ class EconSettings(APIBase):
 
     # Econ settings
 
-    def get_econ_settings(self, filters: Optional[dict[str, str]] = None) -> ItemList:
+    def get_econ_settings(self, filters: Optional[QueryFilters] = None) -> ItemList:
         """
         Returns the company econ settings. `filters` take `name`, `createdAt`, `updatedAt`, `skip`,
-        `take` and `cursor`.
+        `take` and `cursor`. `skip` and `take` may be given as `int` or `str`.
 
         https://docs.api.combocurve.com/api/get-econ-settings
 
@@ -145,7 +139,7 @@ class EconSettings(APIBase):
         """
         return self._get_documents(ECON_SETTINGS, filters)
 
-    def count_econ_settings(self, filters: Optional[dict[str, str]] = None) -> int:
+    def count_econ_settings(self, filters: Optional[QueryFilters] = None) -> int:
         """
         Returns the number of company econ settings matching `filters`, from the `X-Query-Count` header
         of a HEAD request (no documents are fetched).
@@ -189,6 +183,9 @@ class EconSettings(APIBase):
         Creates company econ settings. `data` is one setting or a list of them. The names must be unique
         in the company: a name that already exists, or one repeated in `data`, is a per-record collision
         error. The response is always 207 Multi-Status.
+
+        Sends `data` in one request; the API states no record cap. One document (a dict) is sent as a
+        one-item list. An empty `data` raises `ValueError` before anything is sent.
 
         https://docs.api.combocurve.com/api/post-econ-settings
 
@@ -247,6 +244,9 @@ class EconSettings(APIBase):
         absent `categories` clears the selection); otherwise a new setting is created. A name that matches
         more than one existing setting, or that repeats within `data`, is a per-record collision error.
 
+        Sends `data` in one request; the API states no record cap. One document (a dict) is sent as a
+        one-item list. An empty `data` raises `ValueError` before anything is sent.
+
         https://docs.api.combocurve.com/api/put-econ-settings
 
         Example data:
@@ -303,6 +303,9 @@ class EconSettings(APIBase):
         Partially updates company econ settings by `name`. It never inserts: a name that matches no setting
         is a per-record 404. Omitting `categories` leaves the stored selection unchanged; a provided
         `categories` replaces the whole selection.
+
+        Sends `data` in one request; the API states no record cap. One document (a dict) is sent as a
+        one-item list. An empty `data` raises `ValueError` before anything is sent.
 
         https://docs.api.combocurve.com/api/patch-econ-settings
 
@@ -367,11 +370,11 @@ class EconSettings(APIBase):
 
     # Econ report settings
 
-    def get_econ_report_settings(self, filters: Optional[dict[str, str]] = None) -> ItemList:
+    def get_econ_report_settings(self, filters: Optional[QueryFilters] = None) -> ItemList:
         """
         Returns the company econ report settings. An absent `allWellsAgg` is returned as `true`, and an
         absent `rollUpEachLevel` as `false`. `filters` take `name`, `createdAt`, `updatedAt`, `skip`,
-        `take` and `cursor`.
+        `take` and `cursor`. `skip` and `take` may be given as `int` or `str`.
 
         https://docs.api.combocurve.com/api/get-econ-report-settings
 
@@ -393,7 +396,7 @@ class EconSettings(APIBase):
         """
         return self._get_documents(ECON_REPORT_SETTINGS, filters)
 
-    def count_econ_report_settings(self, filters: Optional[dict[str, str]] = None) -> int:
+    def count_econ_report_settings(self, filters: Optional[QueryFilters] = None) -> int:
         """
         Returns the number of company econ report settings matching `filters`, from the `X-Query-Count`
         header of a HEAD request (no documents are fetched).
@@ -430,6 +433,9 @@ class EconSettings(APIBase):
         always 207 Multi-Status. Names must be unique on external writes. `headers` is ordered, holds at
         most five entries, and each must be a member of the header list. An omitted `headers` becomes an
         empty list; omitted aggregation booleans are not stored and take their read defaults.
+
+        Sends `data` in one request; the API states no record cap. One document (a dict) is sent as a
+        one-item list. An empty `data` raises `ValueError` before anything is sent.
 
         https://docs.api.combocurve.com/api/post-econ-report-settings
 
@@ -481,6 +487,9 @@ class EconSettings(APIBase):
         are rejected. An omitted `headers` becomes an empty list; omitted aggregation booleans are removed
         so their read defaults apply.
 
+        Sends `data` in one request; the API states no record cap. One document (a dict) is sent as a
+        one-item list. An empty `data` raises `ValueError` before anything is sent.
+
         https://docs.api.combocurve.com/api/put-econ-report-settings
 
         Example data:
@@ -529,6 +538,9 @@ class EconSettings(APIBase):
         Partially updates company econ report settings by `name`. It never inserts: a name with no match
         is a per-record 404. Omitted `headers`, `allWellsAgg` and `rollUpEachLevel` are unchanged; a
         provided `headers` replaces the whole ordered list.
+
+        Sends `data` in one request; the API states no record cap. One document (a dict) is sent as a
+        one-item list. An empty `data` raises `ValueError` before anything is sent.
 
         https://docs.api.combocurve.com/api/patch-econ-report-settings
 

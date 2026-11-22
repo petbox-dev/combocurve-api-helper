@@ -15,13 +15,22 @@ from `raise_for_status` names only the status and the url, and the body (the Com
 is the evidence a live failure needs. A 404 seen once on 2026-11-13 could not be diagnosed for lack
 of it.
 
-Every test gets its own OAuth token cache directory (`_isolated_token_cache`).
+Every test gets its own OAuth token cache directory (`_isolated_token_cache`). The live dev tests share
+one session-scoped client (`dev_api`), so a run fetches at most one token for them; the setup they share
+is in `tests/live_support.py`.
 """
 
-from collections.abc import Generator
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from combocurve_api_helper import ComboCurveAPI
 
 # A ComboCurve error body is a short JSON object; the cap keeps an HTML gateway page from flooding
 # the report.
@@ -59,6 +68,17 @@ def _isolated_token_cache(tmp_path_factory: pytest.TempPathFactory, monkeypatch:
     from combocurve_api_helper import config
 
     monkeypatch.setattr(config, 'TOKEN_CACHE_DIRECTORY', tmp_path_factory.mktemp('token-cache'))
+
+
+@pytest.fixture(scope='session')
+def dev_api() -> ComboCurveAPI:
+    """One dev client for every live test of the session. It keeps its token in memory, so the
+    per-test token cache directory does not make it fetch again. Built only when a live test that is
+    not skipped asks for it: constructing it reads the credential files, and sends nothing."""
+    from combocurve_api_helper import ComboCurveAPI
+    from tests.live_support import DEV_CREDENTIALS_DIRECTORY
+
+    return ComboCurveAPI.from_credentials_directory(DEV_CREDENTIALS_DIRECTORY)
 
 
 try:

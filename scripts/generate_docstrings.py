@@ -22,7 +22,7 @@ only when its shape, keys or placeholder values change.
 
 Usage:
     python scripts/generate_docstrings.py             # rewrite in place
-    python scripts/generate_docstrings.py --check      # exit 1 if stale (no write)
+    python scripts/generate_docstrings.py --check      # exit 1 if stale or unsourced (no write)
     python scripts/generate_docstrings.py --collection PATH  # local collection JSON
 """
 
@@ -39,6 +39,8 @@ import urllib.request
 from typing import Any, Literal, NamedTuple
 
 COLLECTION_URL = 'https://docs.api.combocurve.com/downloads/combocurve-api.postman_collection.json'
+# Seconds for the collection fetch (connect and each read). A timeout is a failure to fetch: exit 2.
+FETCH_TIMEOUT_SECONDS = 60
 SRC_DIR = pathlib.Path(__file__).resolve().parents[1] / 'src' / 'combocurve_api_helper'
 URL_RE = re.compile(r'https://docs\.api\.combocurve\.com/api/([a-z0-9-]+)')
 TOKEN_RE = re.compile(r'<(\w+)>')
@@ -87,6 +89,15 @@ class RewriteOutcome(NamedTuple):
     changed: bool  # at least one example block differs from the collection
     replaced: int  # marker blocks matched to a collection example
     unsourced: list[str]  # markers with no collection example, left untouched
+    sourced: list[str]  # labels of the markers matched to a collection example
+
+
+# Markers known to have no collection example, as '<file>.py:<method or constant> [<marker line>]'
+# (the label `--check` prints). Any other marker without a collection example makes `--check`
+# exit 1, so a renamed slug cannot silently drop a block out of the check. An entry whose marker
+# gets an example, or no longer exists, also makes `--check` exit 1: remove the entry.
+# Empty on 2026-11-21: every marker in `src/` then had a collection example.
+ALLOWED_UNSOURCED_MARKERS: frozenset[str] = frozenset()
 
 
 def spoof(token: str, key: str) -> str | int | float | bool:
@@ -205,10 +216,11 @@ def load_collection(source: str) -> dict[str, Any]:
     if source.startswith(('http://', 'https://')):
         request = urllib.request.Request(source, headers={'User-Agent': 'Mozilla/5.0'})
         try:
-            raw_bytes = urllib.request.urlopen(request).read()
+            raw_bytes = urllib.request.urlopen(request, timeout=FETCH_TIMEOUT_SECONDS).read()
         except (OSError, http.client.HTTPException) as exc:
             # OSError covers urllib.error.URLError, ssl.SSLError (e.g. a malformed cert
-            # in the Windows store breaking load_default_certs), timeouts and resets.
+            # in the Windows store breaking load_default_certs), timeouts (TimeoutError, from
+            # the `timeout` above) and resets.
             # http.client.HTTPException does NOT derive from OSError and must be named
             # separately -- a Content-Length-framed response cut short raises
             # IncompleteRead here, and this endpoint serves Content-Length.
@@ -246,22 +258,38 @@ def load_collection(source: str) -> dict[str, Any]:
 
 
 def build_examples(collection: dict[str, Any]) -> dict[str, CollectionExample]:
-    """Map each operation's collection item name to its filled example bodies."""
+    """Map each operation's collection item name to its filled example bodies.
+
+    Raises `CollectionUnavailable` when a tree entry, an operation's `request` or one of its
+    saved responses is not an object: such a collection gives no verdict (exit 2), and an
+    unguarded `.get` would end in a traceback that the freshness test reads as "stale".
+    """
     examples: dict[str, CollectionExample] = {}
 
-    def walk(items: list[dict[str, Any]]) -> None:
+    def walk(items: object) -> None:
         """Recurse the collection's folder tree, collecting every operation leaf."""
+        if not isinstance(items, list):
+            raise CollectionUnavailable(f'collection `item` is {type(items).__name__}, expected a list')
         for item in items:
+            if not isinstance(item, dict):
+                raise CollectionUnavailable(f'collection `item` entry is {type(item).__name__}, expected an object')
             if 'item' in item:
                 walk(item['item'])
             elif 'request' in item:
                 name = item.get('name')
                 if not isinstance(name, str):
                     continue  # unnamed operation: nothing for a docstring slug to match on
+                if not isinstance(item['request'], dict):
+                    raise CollectionUnavailable(f'operation {name!r}: `request` is not an object')
+                saved_responses = item.get('response') or []
+                if not isinstance(saved_responses, list) or not all(
+                    isinstance(saved, dict) for saved in saved_responses
+                ):
+                    raise CollectionUnavailable(f'operation {name!r}: `response` is not a list of objects')
                 saved_by_code = {
                     saved.get('code'): saved
-                    for saved in (item.get('response') or [])
-                    if (saved.get('body') or '').strip()
+                    for saved in saved_responses
+                    if isinstance(saved.get('body'), str) and saved['body'].strip()
                 }
                 chosen = next((saved_by_code[code] for code in _RESPONSE_CODES if code in saved_by_code), None)
                 if chosen is None and saved_by_code:
@@ -272,9 +300,10 @@ def build_examples(collection: dict[str, Any]) -> dict[str, CollectionExample]:
                         response = fill(json.loads(chosen['body']))
                     except (ValueError, TypeError):
                         response = None
-                raw_request_body = (item['request'].get('body') or {}).get('raw')
+                request_body = item['request'].get('body')
+                raw_request_body = request_body.get('raw') if isinstance(request_body, dict) else None
                 request = None
-                if raw_request_body and raw_request_body.strip():
+                if isinstance(raw_request_body, str) and raw_request_body.strip():
                     try:
                         request = fill(json.loads(raw_request_body))
                     except (ValueError, TypeError):
@@ -380,16 +409,18 @@ def _keeps_existing_block(existing_lines: list[str], body: Any, indent: str) -> 
 
 def plan_replacements(
     source_text: str, examples: dict[str, CollectionExample]
-) -> tuple[list[LineReplacement], list[str]]:
+) -> tuple[list[LineReplacement], list[str], list[str]]:
     """Work out which example blocks in one module would be rewritten.
 
     Pure -- no reads, no writes -- so the matching rules stay testable apart from
     the file handling in `rewrite_file`. Returns the replacements in discovery
-    order plus a label for every marker that had no collection example.
+    order, a label for every marker that had no collection example, and a label
+    for every marker that had one.
     """
     lines = source_text.split('\n')
     replacements: list[LineReplacement] = []
     unsourced: list[str] = []
+    sourced: list[str] = []
     for node, slug in collect_targets(ast.parse(source_text)):
         example = examples.get(slug)
         label: str = getattr(node, 'name', None) or slug
@@ -405,6 +436,7 @@ def plan_replacements(
             if body is None:
                 unsourced.append(f'{label} [{lines[line_index].strip()}]')
                 continue
+            sourced.append(f'{label} [{lines[line_index].strip()}]')
             indent = ' ' * (len(lines[line_index]) - len(lines[line_index].lstrip()))
             existing_lines = lines[span[0] : span[1] + 1]
             if _keeps_existing_block(existing_lines, body, indent):
@@ -412,14 +444,14 @@ def plan_replacements(
             else:
                 rendered = render_block(body, indent)
             replacements.append(LineReplacement(start=span[0], end=span[1], lines=rendered))
-    return replacements, unsourced
+    return replacements, unsourced, sourced
 
 
 def rewrite_file(path: pathlib.Path, examples: dict[str, CollectionExample], check: bool) -> RewriteOutcome:
     """Refresh one module's example blocks in place, or only report staleness when `check`."""
     source_text = path.read_text(encoding='utf-8')
     lines = source_text.split('\n')
-    replacements, unsourced = plan_replacements(source_text, examples)
+    replacements, unsourced, sourced = plan_replacements(source_text, examples)
 
     changed = False
     # Applied bottom-up so a resized block cannot shift the line indices of the
@@ -432,7 +464,7 @@ def rewrite_file(path: pathlib.Path, examples: dict[str, CollectionExample], che
     if changed and not check:
         with open(path, 'w', encoding='utf-8', newline='\n') as handle:
             handle.write('\n'.join(lines))
-    return RewriteOutcome(changed=changed, replaced=len(replacements), unsourced=unsourced)
+    return RewriteOutcome(changed=changed, replaced=len(replacements), unsourced=unsourced, sourced=sourced)
 
 
 def main() -> None:
@@ -444,32 +476,53 @@ def main() -> None:
 
     try:
         collection = load_collection(args.collection)
+        examples = build_examples(collection)
     except CollectionUnavailable as exc:
-        print(f'could not fetch collection ({args.collection}): {exc}', file=sys.stderr)
+        print(f'could not use collection ({args.collection}): {exc}', file=sys.stderr)
         sys.exit(2)  # distinct from 1 (stale) so a freshness test can skip when offline
-    examples = build_examples(collection)
 
     any_stale = False
     all_unsourced: list[str] = []
+    all_sourced: set[str] = set()
     total_replaced = 0
     for path in sorted(SRC_DIR.glob('*.py')):
         outcome = rewrite_file(path, examples, args.check)
         total_replaced += outcome.replaced
         all_unsourced += [f'{path.name}:{marker}' for marker in outcome.unsourced]
+        all_sourced |= {f'{path.name}:{marker}' for marker in outcome.sourced}
         if outcome.changed:
             any_stale = True
             print(f'{"STALE" if args.check else "updated"}: {path.name}')
-    if all_unsourced:
-        print('\nno collection example (left as-is):')
-        for marker in all_unsourced:
+    allowed_unsourced = [marker for marker in all_unsourced if marker in ALLOWED_UNSOURCED_MARKERS]
+    unexpected_unsourced = [marker for marker in all_unsourced if marker not in ALLOWED_UNSOURCED_MARKERS]
+    if allowed_unsourced:
+        print('\nno collection example (allowed, left as-is):')
+        for marker in allowed_unsourced:
             print(f'  {marker}')
+    if unexpected_unsourced:
+        print('\nno collection example (NOT in ALLOWED_UNSOURCED_MARKERS):')
+        for marker in unexpected_unsourced:
+            print(f'  {marker}')
+    # An allowlist entry that now has an example (or whose marker is gone) must be removed, or
+    # the list would go stale and hide a later rename of the same marker.
+    unneeded_allowlist = sorted(ALLOWED_UNSOURCED_MARKERS - set(allowed_unsourced))
+    if unneeded_allowlist:
+        print('\nALLOWED_UNSOURCED_MARKERS entries no longer needed:')
+        for marker in unneeded_allowlist:
+            reason = 'now has a collection example' if marker in all_sourced else 'marker not found'
+            print(f'  {marker} ({reason})')
     if total_replaced == 0:
         # No marker matched a collection example (an empty collection, or every operation renamed):
         # every block is "unsourced", and exiting 0 would pass --check having verified nothing.
         print(f'\nno docstring marker matched the collection ({args.collection}): no verdict', file=sys.stderr)
         sys.exit(2)
-    if args.check and any_stale:
-        print('\nDocstring examples are out of sync. Run scripts/generate_docstrings.py.')
+    if args.check and (any_stale or unexpected_unsourced or unneeded_allowlist):
+        if any_stale:
+            print('\nDocstring examples are out of sync. Run scripts/generate_docstrings.py.')
+        if unexpected_unsourced:
+            print('\nFix the slug of each marker listed as NOT allowed, or add it to ALLOWED_UNSOURCED_MARKERS.')
+        if unneeded_allowlist:
+            print('\nRemove the listed entries from ALLOWED_UNSOURCED_MARKERS.')
         sys.exit(1)
     if not args.check:
         print('done.')

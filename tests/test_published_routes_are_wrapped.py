@@ -2,8 +2,8 @@
 
 The manifest holds one entry per collection operation (see `tests/route_manifest.py`). This test fails when:
 
-- the collection has an operation the manifest does not list, or the manifest lists one the collection
-  no longer has (run `python scripts/generate_route_coverage.py`);
+- the committed file differs from what the generator would write now: an operation added, removed or
+  renamed in the collection, a status or `method` that changed (run `python scripts/generate_route_coverage.py`);
 - a `wrapped` route is not sent by the public method the manifest names, or a method sends a route the
   manifest does not call `wrapped` (the manifest's `status` must match the code);
 - a public method sends nothing (give it an `ARGUMENT_OVERRIDES` entry);
@@ -12,71 +12,74 @@ The manifest holds one entry per collection operation (see `tests/route_manifest
 A `gap` route passes: it is a published operation the helper does not send yet, and the manifest lists it.
 
 Network-dependent, skipped when the collection can't be fetched -- same policy as `test_route_paths.py` /
-`test_docstring_slugs.py`.
+`test_docstring_slugs.py`. The offline checks of the tooling itself are in `test_route_manifest_tooling.py`.
 """
 
 from __future__ import annotations
 
-import inspect
+import difflib
 
-from combocurve_api_helper import ComboCurveAPI
-from tests.postman_collection import collection_requests, normalized_segments
+from tests.postman_collection import COLLECTION_URL, collection_requests
 from tests.route_manifest import (
+    ROUTE_MANIFEST_PATH,
     SENDS_NOTHING_BY_DESIGN,
     STATUSES,
+    build_manifest,
     load_manifest,
+    operations_from_collection,
+    public_method_names,
+    render_manifest,
+    routes_reached,
     sent_by_method,
-    template_reached_by,
 )
 
-
-def _collection_keys() -> set[tuple[str, str]]:
-    """(VERB, '/path') for every collection operation, in the manifest's form."""
-    keys: set[tuple[str, str]] = set()
-    for _, request in collection_requests():
-        segments = (request.get('url') or {}).get('path')
-        if segments:
-            keys.add((str(request.get('method', '')).upper(), '/' + '/'.join(normalized_segments(segments))))
-    return keys
+# Diff lines shown on failure; the full diff of a large change helps no one.
+_MAX_DIFF_LINES = 60
 
 
-def test_manifest_lists_every_collection_operation_and_no_other() -> None:
-    manifest_keys = {route.key for route in load_manifest()}
-    collection_keys = _collection_keys()
-    missing = sorted(collection_keys - manifest_keys)
-    stale = sorted(manifest_keys - collection_keys)
-    assert not missing, (
-        'collection operations missing from tests/route_manifest.json (run the generator):\n'
-        + '\n'.join(f'{verb} {path}' for verb, path in missing)
-    )
-    assert not stale, 'manifest routes the collection no longer has (run the generator):\n' + '\n'.join(
-        f'{verb} {path}' for verb, path in stale
-    )
+def test_manifest_is_what_the_generator_would_write() -> None:
+    operations = operations_from_collection(collection_requests())
+    expected = render_manifest(build_manifest(operations, sent_by_method().sent, load_manifest()), COLLECTION_URL)
+    committed = ROUTE_MANIFEST_PATH.read_text(encoding='utf-8') if ROUTE_MANIFEST_PATH.exists() else ''
+    if committed != expected:
+        diff = list(
+            difflib.unified_diff(
+                committed.splitlines(),
+                expected.splitlines(),
+                'tests/route_manifest.json (committed)',
+                'tests/route_manifest.json (generated)',
+                lineterm='',
+                n=2,
+            )
+        )
+        shown = diff[:_MAX_DIFF_LINES] + (
+            [f'... {len(diff) - _MAX_DIFF_LINES} more lines'] if len(diff) > _MAX_DIFF_LINES else []
+        )
+        raise AssertionError(
+            'tests/route_manifest.json is stale: run python scripts/generate_route_coverage.py\n' + '\n'.join(shown)
+        )
 
 
 def test_manifest_statuses_match_what_the_methods_send() -> None:
-    sent, silent = sent_by_method()
-    assert sorted(silent) == sorted(SENDS_NOTHING_BY_DESIGN), (
-        f'public methods that sent no request (give them ARGUMENT_OVERRIDES): {sorted(silent)}'
+    calls = sent_by_method()
+    assert sorted(calls.silent) == sorted(SENDS_NOTHING_BY_DESIGN), (
+        f'public methods that sent no request (give them ARGUMENT_OVERRIDES): {sorted(calls.silent)}'
     )
-    public_methods = {
-        name for name, _ in inspect.getmembers(ComboCurveAPI, inspect.isfunction) if not name.startswith('_')
-    }
+    public_methods = set(public_method_names())
+    routes = load_manifest()
+    reached = routes_reached((route.template() for route in routes), calls.sent)
 
     problems: list[str] = []
-    for route in load_manifest():
+    for route in routes:
         if route.status not in STATUSES:
             problems.append(f'{route.verb} {route.path}: unknown status {route.status!r}')
             continue
-        reached_by_any = any(template_reached_by(route.template(), operations) for operations in sent.values())
+        reaching = reached.get(route.template(), [])
         if route.status == 'wrapped':
             if route.method not in public_methods:
                 problems.append(f'{route.verb} {route.path}: method {route.method!r} does not exist')
-            elif not template_reached_by(route.template(), sent[route.method or '']):
+            elif route.method not in reaching:
                 problems.append(f'{route.verb} {route.path}: {route.method} does not send it')
-        elif reached_by_any:
-            reaching = sorted(
-                name for name, operations in sent.items() if template_reached_by(route.template(), operations)
-            )
+        elif reaching:
             problems.append(f'{route.verb} {route.path}: status {route.status!r} but sent by {reaching}; regenerate')
     assert not problems, 'tests/route_manifest.json disagrees with the methods:\n' + '\n'.join(problems)

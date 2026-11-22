@@ -1,5 +1,3 @@
-import math
-import re
 import threading
 import time
 import warnings
@@ -8,19 +6,45 @@ from collections.abc import Iterator, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Callable, ClassVar, Optional, Union
-from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
+from typing import Any, Callable, ClassVar, Optional, Union, cast
+from urllib.parse import parse_qsl, quote, urlencode, urlsplit
 
 import requests
-import urllib3.exceptions
 from more_itertools import chunked
 from requests import Response
 from requests.structures import CaseInsensitiveDict
 from typing_extensions import Self, TypeAlias, TypedDict
 
 from . import config
-from ._batch import BatchChunk, BatchWriteResult, _RateLimitState
+from ._batch import BatchChunk, BatchWriteResult, ChunkSpec, _RateLimitState
 from ._deprecation import warn_deprecated
+
+# The transport policy and I/O (timeouts, connection and status retries, the call deadline, `Link`
+# pagination, the batch-chunk send loop) live in `_transport`. These names are re-exported because tests
+# and callers import them from `base`.
+from ._transport import _CALL_DEADLINE_SECONDS as _CALL_DEADLINE_SECONDS
+from ._transport import _CONNECTION_BACKOFF_SECONDS as _CONNECTION_BACKOFF_SECONDS
+from ._transport import _GATEWAY_BACKOFF_SECONDS as _GATEWAY_BACKOFF_SECONDS
+from ._transport import _MAX_CONNECTION_RETRIES as _MAX_CONNECTION_RETRIES
+from ._transport import _MAX_REQUEST_RETRIES as _MAX_REQUEST_RETRIES
+from ._transport import _MAX_RETRY_AFTER_SECONDS as _MAX_RETRY_AFTER_SECONDS
+from ._transport import _RATE_LIMIT_DEFAULT_PAUSE_SECONDS as _RATE_LIMIT_DEFAULT_PAUSE_SECONDS
+from ._transport import _READ_ONLY_METHODS as _READ_ONLY_METHODS
+from ._transport import _REQUEST_TIMEOUT_SECONDS as _REQUEST_TIMEOUT_SECONDS
+from ._transport import _RETRYABLE_GATEWAY_STATUSES as _RETRYABLE_GATEWAY_STATUSES
+from ._transport import _CallDeadlinePassed as _CallDeadlinePassed
+from ._transport import _gateway_retry_allowed as _gateway_retry_allowed
+from ._transport import _is_read_only as _is_read_only
+from ._transport import _next_page_url_on_request_origin as _next_page_url_on_request_origin
+from ._transport import _request_was_never_sent as _request_was_never_sent
+from ._transport import _retry_after_seconds as _retry_after_seconds
+from ._transport import _retry_delay_seconds as _retry_delay_seconds
+from ._transport import _retry_fits_before_deadline as _retry_fits_before_deadline
+from ._transport import _safe_to_send_again as _safe_to_send_again
+from ._transport import _send_batch_chunk, _send_with_status_retries
+from ._transport import _send_request as _send_request
+from ._transport import _timeout_within as _timeout_within
+from ._transport import get_next_page_url as get_next_page_url
 from .auth import APIAuth, auth_from_credentials_directory, auth_from_credentials_file, default_auth
 
 # A single JSON value: the recursive union of everything `json.loads` can yield.
@@ -43,13 +67,31 @@ JsonValue: TypeAlias = Union[str, int, float, bool, Sequence['JsonValue'], Mappi
 Item: TypeAlias = dict[str, JsonValue]
 ItemList: TypeAlias = list[Item]
 
-# A query filter whose value may be one id or a list of ids, sent as repeated keys. Spelled with
-# `Union` and not `TypeAlias` on purpose: it is a runtime-evaluated annotation on Python 3.9.
-WellFilters = Mapping[str, Union[str, Sequence[str]]]
+# The query filters `_build_params_string` renders and the `*_url` builders take. A value is one string, an
+# int (`take`, `skip`; rendered with `str`, so a `bool` would arrive as `True`: pass `'true'`), a sequence of
+# strings (the key is repeated once per element, `?well=a&well=b`, for the routes that take several values
+# of one key), or `None` (the key is left out). Spelled with `Union`/`Optional` because a `TypeAlias`
+# right-hand side is evaluated at runtime on Python 3.9.
+QueryFilters: TypeAlias = Mapping[str, Union[str, int, Sequence[str], None]]
+
+# The name the repeated-`well` builders used before `QueryFilters` (2026-11-20); kept as an alias of it
+# because it is importable from this public module.
+WellFilters: TypeAlias = QueryFilters
 
 # The most repeated `well` (or `wellId`) values one request takes on the production, forecast-output and
 # scenario model-assignment routes. Verified live 2026-11-20 on dev: 100 accepted, 101 refused with a 400.
+# The `wells` filter of the scenario well-assignments DELETE and the econ-model unassign DELETE has the same
+# limit (verified live 2026-11-21 on dev: 100 -> 204, 101 -> 400 `RequestStructureError`
+# "`[object Object]` is not a valid ObjectId", 500 -> 431 at a 15.6k-character url).
 WELL_FILTER_LIMIT = 100
+
+# A job in one of these statuses has not finished (`APIBase._wait_for_job`). Seen live: shapefile and
+# formations jobs go `pending` -> `running` -> `successful` (2026-11-21 and 2026-11-22).
+RUNNING_JOB_STATUSES = frozenset({'pending', 'running'})
+
+# Paging filters that a request split by `_filter_value_batches` cannot honour: each batch request would
+# apply them on its own.
+_PAGING_FILTER_KEYS = ('skip', 'cursor')
 
 # The comparison orders `_keysort` is called with. Single-sourced here because the
 # same mapping was previously spelled out at a dozen call sites across six modules
@@ -94,170 +136,6 @@ class WriteResponse(TypedDict):
     generalErrors: list[WriteError]
 
 
-# HTTP retry policy. Two retryable conditions:
-#   * 429 (Too Many Requests) -- ComboCurve's write quota is enforced by Google
-#     Cloud and resets ~every 60s, so a fixed 60s pause is the safe fallback when
-#     the response carries no `Retry-After` header.
-#   * 502/503/504 -- transient gateway errors, retried with exponential backoff,
-#     for a GET or HEAD ONLY (`_READ_ONLY_METHODS`). The gateway gives up waiting
-#     while the server behind it may still apply the request, so a POST sent again
-#     after a gateway status can create the records twice; a write gets the gateway
-#     status back instead, and its caller must check what the server holds.
-#     A 429 is retried for every method: the quota refuses the request before it runs.
-_MAX_REQUEST_RETRIES = 5
-_RATE_LIMIT_DEFAULT_PAUSE_SECONDS = 60.0
-# Ceiling on an honoured `Retry-After`: `time.sleep` raises OverflowError near 1e10 s, which would
-# abort a batch and lose the results of chunks already applied. 120 s (chosen 2026-11-05; it was
-# 3600 s) so that one 429 cannot hold a caller for an hour.
-_MAX_RETRY_AFTER_SECONDS = 120.0
-# Wall-clock budget for ONE call (one url, one body) across every connection retry and every status
-# retry, measured with `time.monotonic()` from the start of the call. Without it the status retry (6
-# attempts) around the connection retry (3 sends) could send one GET 18 times: about 91 min worst
-# case, so a caller with a 240 s budget was held far past it (arithmetic in
-# docs/todo/closed/request-retries-have-no-overall-deadline.md). Chosen 2026-11-05. A retry whose
-# pause would pass the deadline is not made. The budget is per request, not per multi-page listing:
-# each page is its own call through `_request_with_retry`.
-_CALL_DEADLINE_SECONDS = 600.0
-_RETRYABLE_GATEWAY_STATUSES = frozenset({502, 503, 504})
-_GATEWAY_BACKOFF_SECONDS = 1.0  # sleep before a gateway retry = _GATEWAY_BACKOFF_SECONDS * 2**attempt
-
-
-# Connection-failure policy: a request that raised instead of returning a response.
-#   * Every request carries a timeout. `requests` has none by default, so a connection that stalls
-#     without a reset blocked forever and no retry could start. (connect, read) seconds; a large
-#     paginated GET or a big POST can take minutes to answer.
-#   * A request that was never sent (connect timeout, refused connection, DNS failure) is sent again,
-#     whatever its method: the server received nothing.
-#   * A GET or HEAD that failed after it was sent (reset, read timeout, truncated body) is sent again:
-#     it changes nothing on the server. A POST/PUT/PATCH/DELETE that failed after it was sent is NOT:
-#     the server may have applied it and only the response was lost, so a second send could write the
-#     records twice. The error goes to the caller, who must check what the server holds.
-_REQUEST_TIMEOUT_SECONDS = (30.0, 300.0)
-_MAX_CONNECTION_RETRIES = 2
-_CONNECTION_BACKOFF_SECONDS = 2.0  # sleep before a connection retry = _CONNECTION_BACKOFF_SECONDS * 2**failure
-_READ_ONLY_METHODS = frozenset({'get', 'head'})
-
-
-def _request_was_never_sent(error: requests.RequestException) -> bool:
-    """True when `error` happened before the request reached the server: a connect timeout, or a
-    connection that could not be opened (refused, DNS failure). `requests` wraps the second as a
-    `ConnectionError` around urllib3's `MaxRetryError(reason=NewConnectionError)`."""
-    if isinstance(error, requests.ConnectTimeout):
-        return True
-    if not isinstance(error, requests.ConnectionError) or not error.args:
-        return False
-    cause = error.args[0]
-    if isinstance(cause, urllib3.exceptions.MaxRetryError):
-        cause = cause.reason
-    return isinstance(cause, urllib3.exceptions.NewConnectionError)
-
-
-def _safe_to_send_again(method: str, error: requests.RequestException) -> bool:
-    """True when the request that raised `error` can be sent again without a risk of applying it twice."""
-    if _request_was_never_sent(error):
-        return True
-    connection_lost = isinstance(
-        error, (requests.ConnectionError, requests.Timeout, requests.exceptions.ChunkedEncodingError)
-    )
-    return connection_lost and _is_read_only(method)
-
-
-def _is_read_only(method: str) -> bool:
-    """True when `method` cannot write, so sending it twice cannot apply anything twice."""
-    return method.lower() in _READ_ONLY_METHODS
-
-
-class _CallDeadlinePassed(requests.ConnectTimeout):
-    """No time remained for a send. A `ConnectTimeout`, because that class says "never sent", which is
-    true here, so a caller does not report a write as possibly applied."""
-
-
-def _retry_fits_before_deadline(method: str, pause_seconds: float, deadline: float) -> bool:
-    """True when a status retry of `method` after `pause_seconds` may start. A GET or HEAD needs the
-    pause to end before `deadline`; its read timeout then shrinks to the time that remains. A write
-    also needs the full read timeout to fit after the pause: a shortened timeout could turn a
-    known-not-applied 429 into a lost connection, and then "the server may have applied it"."""
-    needed = pause_seconds
-    if not _is_read_only(method):
-        return time.monotonic() + needed + _REQUEST_TIMEOUT_SECONDS[1] <= deadline
-    return time.monotonic() + needed < deadline
-
-
-def _timeout_within(deadline: float) -> tuple[float, float]:
-    """The (connect, read) timeout for a send that must end by `deadline` (a `time.monotonic()` time):
-    `_REQUEST_TIMEOUT_SECONDS`, each part cut to the time that remains. Connect and read can each use
-    the whole remainder, so one late send can run up to about twice the remainder. Raises
-    `_CallDeadlinePassed` when none remains."""
-    remaining = deadline - time.monotonic()
-    if remaining <= 0:
-        raise _CallDeadlinePassed(f'call deadline of {_CALL_DEADLINE_SECONDS:.0f} s passed before the request was sent')
-    connect_seconds, read_seconds = _REQUEST_TIMEOUT_SECONDS
-    return min(connect_seconds, remaining), min(read_seconds, remaining)
-
-
-def _send_request(
-    method: str,
-    url: str,
-    auth_headers: Callable[[], Mapping[str, str]],
-    *,
-    params: Optional[Mapping[str, Union[str, int, float]]] = None,
-    json_body: Any = None,
-    deadline: Optional[float] = None,
-) -> Response:
-    """Send one HTTP request with the timeout, and send it again after a connection failure when
-    `_safe_to_send_again` allows it, up to `_MAX_CONNECTION_RETRIES` times. `auth_headers` is called
-    for each attempt. Any other error, and the last one, is raised to the caller. A response is
-    returned whatever its status: status retries are the caller's (`_retry_delay_seconds`).
-
-    `deadline` is an absolute `time.monotonic()` time, or None for no overall limit. Each send's timeout
-    is cut to the time that remains (connect and read can each use the remainder, so one late send can
-    run up to about twice the remainder). A connection retry whose pause would reach the deadline is
-    not made: the last error is raised. A send with no time left is not made (`requests.ConnectTimeout`)."""
-    for failure in range(_MAX_CONNECTION_RETRIES + 1):
-        try:
-            # The token fetch is inside the `try`: its connection failure is retried like this request's
-            # (see auth.py). It runs first, so its time counts against the deadline.
-            headers = dict(auth_headers())
-            timeout = _REQUEST_TIMEOUT_SECONDS if deadline is None else _timeout_within(deadline)
-            return requests.request(
-                method,
-                url,
-                headers=headers,
-                params=params,
-                json=json_body,
-                timeout=timeout,
-            )
-        except _CallDeadlinePassed:
-            raise  # a refusal is final: it is a ConnectTimeout, which the branch below would retry
-        except requests.RequestException as error:
-            if failure == _MAX_CONNECTION_RETRIES or not _safe_to_send_again(method, error):
-                raise
-            pause_seconds = _CONNECTION_BACKOFF_SECONDS * (2.0**failure)
-            if deadline is not None and time.monotonic() + pause_seconds >= deadline:
-                raise
-            time.sleep(pause_seconds)
-    raise RuntimeError('unreachable: the loop returns or raises on the final attempt')
-
-
-def _retry_after_seconds(response: Response) -> Optional[float]:
-    """Return the `Retry-After` header as seconds if present in delta-seconds form.
-
-    The HTTP-date form is not parsed here; callers fall back to the default pause. A value that
-    is negative or not finite (`-1`, `nan`, `inf`) is treated the same way: `time.sleep` raises on it.
-    A value above `_MAX_RETRY_AFTER_SECONDS` is capped to it.
-    """
-    value = response.headers.get('Retry-After')
-    if value is None:
-        return None
-    try:
-        seconds = float(value)
-    except ValueError:
-        return None
-    if not math.isfinite(seconds) or seconds < 0:
-        return None
-    return min(seconds, _MAX_RETRY_AFTER_SECONDS)
-
-
 def _drop_params_already_in_url(
     url: str, params: Optional[Mapping[str, Union[str, int, float]]]
 ) -> Optional[Mapping[str, Union[str, int, float]]]:
@@ -282,93 +160,6 @@ def _drop_params_already_in_url(
     existing = {key for key, _ in parse_qsl(urlsplit(url).query, keep_blank_values=True)}
 
     return {key: value for key, value in params.items() if key not in existing}
-
-
-def _retry_delay_seconds(response: Response, attempt: int, method: str) -> Optional[float]:
-    """Seconds to wait before retrying the `method` request that got `response`, or None if it is not
-    retryable.
-
-    Retryable: HTTP 429 for every method (wait `Retry-After` or the default quota pause), and the
-    transient gateway errors 502/503/504 for a GET or HEAD only (exponential backoff; see the policy
-    comment above). Any other status, and a gateway status on a write, returns None for the caller.
-    """
-    status = response.status_code
-    if status == 429:
-        retry_after = _retry_after_seconds(response)
-        # `is None`, not `or`: `Retry-After: 0` is a valid "retry now", not a missing header.
-        return _RATE_LIMIT_DEFAULT_PAUSE_SECONDS if retry_after is None else retry_after
-    if _gateway_retry_allowed(status, method):
-        return _GATEWAY_BACKOFF_SECONDS * (2.0**attempt)
-    return None
-
-
-def _whole_chunk_failure(
-    index: int, offset: int, count: int, *, http_status: int, error_message: str, may_have_applied: bool
-) -> BatchChunk:
-    """A chunk that failed as a whole, with one placeholder result per record.
-
-    The placeholders keep `BatchWriteResult.results[i]` aligned with `data[i]` after the chunks are
-    stitched together; without them every later chunk's results shift left, and a caller that picks
-    records to resend by position picks the wrong ones. Each has the shape of a 207 error element.
-    """
-    placeholder: Item = {
-        'status': 'ChunkFailed',
-        'code': http_status,
-        'errors': [{'name': 'ChunkFailed', 'message': error_message}],
-        'mayHaveApplied': may_have_applied,
-    }
-    return BatchChunk(
-        index=index,
-        offset=offset,
-        count=count,
-        http_status=http_status,
-        failed_count=count,
-        results=[dict(placeholder) for _ in range(count)],
-        error_message=error_message,
-        may_have_applied=may_have_applied,
-    )
-
-
-def _gateway_retry_allowed(status: int, method: str) -> bool:
-    """True when `status` is a transient gateway error and `method` cannot write twice."""
-    return status in _RETRYABLE_GATEWAY_STATUSES and _is_read_only(method)
-
-
-# One `<url>` and the parameters after it, up to the next `<`. URLs cannot hold `<` or `>`.
-_LINK_HEADER_ENTRY = re.compile(r'<([^<>]*)>([^<]*)')
-
-
-def get_next_page_url(response_headers: Mapping[str, str]) -> Optional[str]:
-    """The `rel="next"` url of the `Link` header (RFC 8288), or None on the last page.
-
-    Replaces `combocurve_api_v1.pagination.get_next_page_url`, whose pattern required `;rel=` with no
-    space: `; rel="next"`, legal in the RFC, matched nothing and ended pagination with no error. This
-    accepts optional whitespace, an unquoted value, and a space-separated list of relation types.
-    """
-    for url, parameters in _LINK_HEADER_ENTRY.findall(response_headers.get('Link', '')):
-        for parameter in parameters.split(';'):
-            name, _, value = parameter.partition('=')
-            relation_types = value.strip().rstrip(',').strip().strip('"').split()
-            if name.strip().lower() == 'rel' and 'next' in relation_types:
-                return str(url)
-    return None
-
-
-def _next_page_url_on_request_origin(response_headers: Mapping[str, str], request_url: str) -> Optional[str]:
-    """The next-page url with the scheme and host of `request_url`; only its path and query come from
-    the `Link` header.
-
-    The OAuth (v2) backend writes its internal Cloud Run host into `Link`
-    (`https://external-api-<n>.us-central1.run.app/v1/...`, verified 2026-10-27), not
-    `api.combocurve.com`. Following it as given answers 401, and it sends the bearer token and API key to
-    a host taken from a response header. The same path and query on the request's own host answer 200.
-    """
-    next_page_url = get_next_page_url(response_headers)
-    if next_page_url is None:
-        return None
-    request_parts = urlsplit(request_url)
-    link_parts = urlsplit(next_page_url)
-    return urlunsplit((request_parts.scheme, request_parts.netloc, link_parts.path, link_parts.query, ''))
 
 
 class APIBase:
@@ -464,29 +255,20 @@ class APIBase:
         GET or HEAD, transient gateway errors 502/503/504 (exponential backoff), for up to
         `_MAX_REQUEST_RETRIES` retries. Any other response (success or a
         non-transient error) is returned immediately for the caller to handle
-        (e.g. `raise_for_status`). A connection failure is handled one level down, in
-        `_send_request` (timeout, and a second send only when it cannot write twice).
+        (e.g. `raise_for_status`). The status retries are `_transport._send_with_status_retries`;
+        a connection failure is handled one level down, in `_transport._send_request` (timeout,
+        and a second send only when it cannot write twice).
 
-        Every verb funnels through here EXCEPT the batched-write path (`_send_one_chunk`
-        calls `_send_request` directly and carries its own status retry loop), so this is also
+        Every verb funnels through here EXCEPT the batched-write path (`_send_one_chunk` ->
+        `_transport._send_batch_chunk` calls `_send_request` directly and carries its own status
+        retry loop), so this is also
         where `params` is reconciled against a query string already present on
         `url` -- see `_drop_params_already_in_url`. The batch path passes no `params`,
         so it has nothing to reconcile today; a future change that adds one there would
         NOT be covered by this.
         """
         params = _drop_params_already_in_url(url, params)
-        deadline = time.monotonic() + _CALL_DEADLINE_SECONDS
-        for attempt in range(_MAX_REQUEST_RETRIES + 1):
-            response = _send_request(
-                method, url, self._auth_headers, params=params, json_body=json_body, deadline=deadline
-            )
-            delay = _retry_delay_seconds(response, attempt, method)
-            if delay is None or attempt == _MAX_REQUEST_RETRIES:
-                return response
-            if not _retry_fits_before_deadline(method, delay, deadline):
-                return response  # the caller reports this status
-            time.sleep(delay)
-        raise RuntimeError('unreachable: retry loop always returns')
+        return _send_with_status_retries(method, url, self._auth_headers, params=params, json_body=json_body)
 
     def _request_items_pages(
         self, method: str, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None
@@ -566,120 +348,17 @@ class APIBase:
         self,
         method: str,
         url: str,
-        index: int,
-        offset: int,
-        chunk: ItemList,
+        chunk_spec: ChunkSpec,
         rate_limit: _RateLimitState,
     ) -> BatchChunk:
         """Send one batch chunk with transient-failure retries; parse its 207 body.
 
-        Runs on a worker thread. Auth headers are fetched through `_auth_headers` for
-        every attempt, so a batch that outlives its token (a 429 pause is 60 s) sends a
-        refreshed one. A 429 pauses every worker via `rate_limit` (for the response's
-        `Retry-After` when present) and retries up to `_MAX_REQUEST_RETRIES`. A gateway
-        error (502/503/504) is retried only for a read-only method, which a batch write
-        never is. Any other 4xx/5xx, and a 429 that survives all retries, is recorded as a
-        whole-chunk failure.
-
-        A write that got a gateway status, or whose connection was lost after it was sent,
-        is recorded as a whole-chunk failure with `may_have_applied=True`: the server may
-        have applied it. A connection failure does not raise out of the batch, so the other
-        chunks' results still reach the caller.
-
-        The whole chunk has `_CALL_DEADLINE_SECONDS`, counted from this call, across every status
-        and connection retry. A pause that would reach the deadline is not taken: the last status
-        is recorded as the chunk failure.
+        Runs on a worker thread. Auth headers are fetched through `_auth_headers` for every attempt.
+        The retry policy (429 pauses shared through `rate_limit`, gateway statuses for read-only methods
+        only, `may_have_applied` on a write that may have reached the server, the call deadline) is
+        `_transport._send_batch_chunk`'s.
         """
-        count = len(chunk)
-        deadline = time.monotonic() + _CALL_DEADLINE_SECONDS
-        last_status: Optional[int] = None
-        for attempt in range(_MAX_REQUEST_RETRIES + 1):
-            rate_limit.wait_if_limited()
-            try:
-                response = _send_request(method, url, self._auth_headers, json_body=chunk, deadline=deadline)
-            except requests.RequestException as error:
-                if isinstance(error, _CallDeadlinePassed) and last_status is not None:
-                    # A shared 429 pause of another worker used the time left: report the status
-                    # this chunk last got, not a connection failure.
-                    return _whole_chunk_failure(
-                        index,
-                        offset,
-                        count,
-                        http_status=last_status,
-                        error_message=f'call deadline passed after status {last_status}: {error}',
-                        may_have_applied=last_status in _RETRYABLE_GATEWAY_STATUSES and not _is_read_only(method),
-                    )
-                never_sent = _request_was_never_sent(error)
-                may_have_applied = not _is_read_only(method) and not never_sent
-                if may_have_applied:
-                    outcome = 'the server may have applied this chunk'
-                elif never_sent:
-                    outcome = 'the chunk was not sent'
-                else:
-                    outcome = 'a read-only request changes nothing on the server'
-                return _whole_chunk_failure(
-                    index,
-                    offset,
-                    count,
-                    http_status=0,  # no response was received
-                    error_message=f'connection failed ({type(error).__name__}): {outcome}; {error}',
-                    may_have_applied=may_have_applied,
-                )
-            status = response.status_code
-            last_status = status
-
-            if attempt < _MAX_REQUEST_RETRIES:
-                # A retry that does not fit the deadline is not made: the status is recorded below.
-                if status == 429:
-                    retry_after = _retry_after_seconds(response)
-                    pause_seconds = rate_limit.pause_seconds if retry_after is None else retry_after
-                    if _retry_fits_before_deadline(method, pause_seconds, deadline):
-                        rate_limit.set_limited(retry_after)
-                        continue
-                elif _gateway_retry_allowed(status, method):
-                    pause_seconds = _GATEWAY_BACKOFF_SECONDS * (2.0**attempt)
-                    if _retry_fits_before_deadline(method, pause_seconds, deadline):
-                        time.sleep(pause_seconds)
-                        continue
-
-            if status >= 400:
-                try:
-                    detail: Any = response.json()
-                except ValueError:
-                    detail = response.text
-                error_message = str(detail)
-                may_have_applied = status in _RETRYABLE_GATEWAY_STATUSES and not _is_read_only(method)
-                if may_have_applied:
-                    error_message = f'gateway status {status}: the server may have applied this chunk; {error_message}'
-                return _whole_chunk_failure(
-                    index,
-                    offset,
-                    count,
-                    http_status=status,
-                    error_message=error_message,
-                    may_have_applied=may_have_applied,
-                )
-
-            try:
-                body: Any = response.json()
-            except ValueError:
-                body = {}
-            if not isinstance(body, dict):
-                body = {}
-            results_raw = body.get('results') or []
-            general_raw = body.get('generalErrors') or []
-            return BatchChunk(
-                index=index,
-                offset=offset,
-                count=count,
-                http_status=status,
-                success_count=int(body.get('successCount', 0) or 0),
-                failed_count=int(body.get('failedCount', 0) or 0),
-                results=[r for r in results_raw if isinstance(r, dict)],
-                general_errors=[e for e in general_raw if isinstance(e, dict)],
-            )
-
-        raise RuntimeError('unreachable: retry loop always returns on the final attempt')
+        return _send_batch_chunk(method, url, self._auth_headers, chunk_spec, rate_limit)
 
     def _request_batched(
         self,
@@ -705,20 +384,19 @@ class APIBase:
         the workers from refreshing the token concurrently. A chunk that failed with
         `may_have_applied=True` must not be sent again before checking the server.
         """
-        chunk_specs: list[tuple[int, int, ItemList]] = []
+        chunk_specs: list[ChunkSpec] = []
         offset = 0
         for index, chunk in enumerate(chunked(data, chunksize)):
-            chunk_list: ItemList = list(chunk)
-            chunk_specs.append((index, offset, chunk_list))
-            offset += len(chunk_list)
+            records: ItemList = list(chunk)
+            chunk_specs.append(ChunkSpec(index=index, offset=offset, records=records))
+            offset += len(records)
 
         rate_limit = _RateLimitState(pause_seconds=_RATE_LIMIT_DEFAULT_PAUSE_SECONDS)
         completed: list[BatchChunk] = []
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = [
-                executor.submit(self._send_one_chunk, method, url, index, off, chunk_list, rate_limit)
-                for index, off, chunk_list in chunk_specs
+                executor.submit(self._send_one_chunk, method, url, chunk_spec, rate_limit) for chunk_spec in chunk_specs
             ]
             for future in as_completed(futures):
                 chunk_result = future.result()
@@ -746,7 +424,7 @@ class APIBase:
             chunks=completed,
         )
 
-    def _count_items(self, url: str) -> int:
+    def _count_items(self, url: str, method: str = 'head') -> int:
         """Send a HEAD request to `url` and return its `X-Query-Count` header as an int.
 
         Every list route has a HEAD twin that returns no body, only the total number of
@@ -754,14 +432,52 @@ class APIBase:
         change it, and a filter that matches nothing gives 0). A response without the
         header raises instead of reading as 0, so "could not count" never looks like
         "counted nothing".
+
+        `method='get'` sends a GET instead, for the `.../head` sub-routes that formations and
+        shapefiles publish for clients that cannot send HEAD: same header, no body, same
+        contract. A keyword rather than a second method, so the header contract is in one place.
         """
-        response = self._request_with_retry('head', url)
+        response = self._request_with_retry(method, url)
         response.raise_for_status()
         count = response.headers.get('X-Query-Count')
         if count is None:
-            raise ValueError(f'HEAD {url} returned no X-Query-Count header')
+            raise ValueError(f'{method.upper()} {url} returned no X-Query-Count header')
 
         return int(count)
+
+    def _send_for_item(self, method: str, url: str, body: Optional[Item] = None) -> Item:
+        """Send one request with a single-object JSON body (or none) and return the single-object response.
+
+        For the routes whose body and answer are one object, not the list that `_post_items` and the
+        other list helpers chunk and page: one `_request_with_retry` call, `raise_for_status`, then the
+        first object of `_extract_json`. No next page is followed.
+        """
+        response = self._request_with_retry(method, url, json_body=body)
+        response.raise_for_status()
+        return self._extract_json(response)[0]
+
+    @staticmethod
+    def _wait_for_job(
+        read_job: Callable[[], Item], timeout_seconds: float, poll_seconds: float, description: str
+    ) -> Item:
+        """Call `read_job` every `poll_seconds` until the job's `status` is not in `RUNNING_JOB_STATUSES`
+        (`pending`, `running`), and return the last job read; the caller checks its `status`. Raises
+        `TimeoutError` when the next poll would come after `timeout_seconds` (counted with
+        `time.monotonic` from this call); `description` names the job in that message
+        (`'shapefile job <id>'`). A job read with no `status` (absent or null) raises `ValueError`
+        naming `description` and the keys it has: a missing status is not a finished job. Sleeps with
+        `time.sleep`, which tests patch.
+        """
+        deadline = time.monotonic() + timeout_seconds
+        while True:
+            job = read_job()
+            if job.get('status') is None:
+                raise ValueError(f'{description} was read with no status; its keys are {sorted(job)}')
+            if job.get('status') not in RUNNING_JOB_STATUSES:
+                return job
+            if time.monotonic() + poll_seconds > deadline:
+                raise TimeoutError(f'{description} is still {job.get("status")!r} after {timeout_seconds} seconds')
+            time.sleep(poll_seconds)
 
     def _get_responses_iterator(
         self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None
@@ -785,6 +501,36 @@ class APIBase:
         """
         Generic method for dispatching GET requests for the given `url`
         strictly returning a generator of JSON of type: list of objects
+
+        The same generator as the public `iter_pages`, which holds the code and the documentation.
+        Downstream code calls this name, so it stays without a deprecation warning.
+        """
+        yield from self.iter_pages(url, params)
+
+    def iter_pages(self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None) -> Iterator[ItemList]:
+        """
+        Yield one page of a GET list route at a time: the parsed JSON list of each response, so a
+        caller can stop early and bound its memory or bytes while it reads.
+
+        Next pages are followed through the `Link` response header, with the scheme and host of the
+        request (never the host the header names), and with the same retries and timeouts as every
+        other GET. Pages come in ComboCurve's order and are not sorted: the `get_*` list methods sort
+        their combined result with `_keysort`, and this iterator does not.
+
+        Pass the `url` from a public `get_*_url` builder and a `take` page size, in the url or in
+        `params`. A `take` above the route's maximum is answered with 400. Maximums to use (the
+        module `GET_LIMIT*` constants): 200 for most list routes (projects, scenarios, forecasts,
+        econ runs, econ models, embedded lookup tables, formations, shapefiles); wells 1,000;
+        forecast outputs for ARIES 1,000; type-curve list 2,500 (type-curve volumes 2,500, type-curve
+        wells 1,000); scenario model assignments and well incrementals 500; econ-run monthly
+        exports 100; directional surveys 100; production 20,000. Read the constant in the module
+        that builds the route; this list can go stale.
+
+        The generator is lazy: no request is sent until the first page is read, and a caller that
+        stops reading stops the requests, so a request is sent only for the pages consumed.
+
+        `params` goes to `requests` apart from the query string of `url`. A key in both is sent once:
+        the url wins (see `_drop_params_already_in_url`).
         """
         for response in self._request_items_pages('get', url, params):
             yield self._extract_json(response)
@@ -954,19 +700,87 @@ class APIBase:
             raise ValueError(f'data must hold at least one {noun}')
 
     @staticmethod
+    def _records_from(data: Union[Item, ItemList], noun: str) -> ItemList:
+        """
+        Return `data` as a list of records for a route whose body is an array: a single record (a `dict`)
+        becomes a one-item list, and any other iterable is materialised with `list()`, so a one-shot
+        iterable is read once. An empty result is refused by `_require_records`, with `noun` in the message.
+        """
+        records = [data] if isinstance(data, dict) else list(data)
+        APIBase._require_records(records, noun)
+        return records
+
+    @staticmethod
     def _require_id_sequence(ids: Sequence[str], argument: str) -> list[str]:
         """
         Return `ids` as a list, or raise when it names no id: a bare `str` (it would be sent one
-        character per id), an empty sequence, or an empty id (an unresolved lookup). The list is taken
-        FIRST, so a one-shot iterable cannot pass the check and then arrive empty, which would widen a
-        delete to the whole group.
+        character per id), an empty sequence, or an empty id (an unresolved lookup). The whitespace around
+        each `str` id is stripped, so `' a '` is sent as `'a'` and an id of only whitespace counts as empty.
+        The list is taken FIRST, so a one-shot iterable cannot pass the check and then arrive empty, which
+        would widen a delete to the whole group.
         """
         if isinstance(ids, str):
             raise ValueError(f'{argument} must be a sequence of ids, not a str')
-        id_list = list(ids)
+        id_list = [value.strip() if isinstance(value, str) else value for value in ids]
         if not id_list or not all(id_list):
             raise ValueError(f'{argument} must be a non-empty sequence of non-empty ids')
         return id_list
+
+    @staticmethod
+    def _require_at_most(count: int, limit: int, argument: str, noun: str) -> None:
+        """
+        Refuse a `count` above `limit` before any request: the route takes at most `limit` per request,
+        and the methods that call this send one request rather than split it (a split write can leave
+        its earlier batches applied when a later one fails, and the helper returns nothing that tells
+        the caller which were sent). `argument` and `noun` name the parameter and what is counted in
+        the message (`data holds 501 records; ...`).
+        """
+        if count > limit:
+            raise ValueError(f'{argument} holds {count} {noun}; the route takes at most {limit} per request')
+
+    @staticmethod
+    def _count_well_ids(data: ItemList) -> int:
+        """The number of `wellIds` across the records of `data`; a record without a list `wellIds` counts 0."""
+        count = 0
+        for record in data:
+            well_ids = record.get('wellIds')
+            if isinstance(well_ids, list):
+                count += len(well_ids)
+        return count
+
+    @staticmethod
+    def _split_ids(ids: Union[str, Sequence[str]], argument: str) -> list[str]:
+        """
+        Return `ids` as a list of ids, or raise when it names no id or holds an empty one.
+
+        A sequence is checked by `_require_id_sequence` (empty, an empty id, or a bare `str`
+        refused; the whitespace around each id stripped). A `str` is taken as one id or a list the caller
+        joined with `,`, and is split on `,`, with the whitespace around each element stripped
+        (`'a, b'` gives `['a', 'b']`): it is refused when it is empty or when an element is empty after
+        stripping (`'a,'`, `','`, `'a,,b'`, `' '`, `'a, ,b'`). Either would send a blank id (`wells=` or
+        `wells=a,`).
+        """
+        if isinstance(ids, str):
+            id_list = [element.strip() for element in ids.split(',')]
+            if not all(id_list):
+                raise ValueError(f'{argument} must name at least one id, with no empty id between commas')
+            return id_list
+        return APIBase._require_id_sequence(ids, argument)
+
+    @staticmethod
+    def _require_assignment_wells(data: ItemList) -> None:
+        """
+        Refuse an assignment record that names no well: one without `allWells: true` whose `wellIds`
+        is absent, empty, a bare `str`, or holds an empty id (an unresolved lookup). Checked for every
+        record before any request.
+        """
+        for index, record in enumerate(data):
+            if record.get('allWells') is True:
+                continue
+            well_ids = record.get('wellIds')
+            if not isinstance(well_ids, Sequence):
+                raise ValueError(f'data[{index}] must have allWells: true or a non-empty wellIds')
+            APIBase._require_id_sequence(cast('Sequence[str]', well_ids), f'data[{index}].wellIds')
 
     @staticmethod
     def _require_any_filter(filters: Mapping[str, Optional[str]], parameters: str) -> dict[str, str]:
@@ -994,7 +808,7 @@ class APIBase:
         return present
 
     @staticmethod
-    def _build_params_string(filters: Optional[Mapping[str, Union[str, Sequence[str], None]]] = None) -> str:
+    def _build_params_string(filters: Optional[QueryFilters] = None) -> str:
         """Render `filters` as a query string, or `''` when there is nothing to send.
 
         `None` values are DROPPED rather than rendered, matching how `requests` treats a
@@ -1006,19 +820,21 @@ class APIBase:
 
         `,` is deliberately left LITERAL via `safe`, and `quote` is used instead of the
         `urlencode` default `quote_plus` so a space encodes as `%20` rather than `+`.
-        Two internal callers comma-join list filters -- `econ_runs` `columns` and
-        `_econ_model_base` `wells`; `scenarios.delete_scenario_qualifiers` forwards
-        `econNames`/`qualifierNames` as strings the caller has already comma-joined. Each
-        of those comma-separated wire formats was verified live against the API in its
+        `econ_runs` comma-joins its `columns` filter, and `scenarios.delete_scenario_qualifiers`
+        forwards `econNames`/`qualifierNames` as strings the caller has already comma-joined.
+        Those comma-separated wire formats were verified live against the API in their
         unencoded form, so encoding the separator would break a request known to work,
-        for no benefit: `,` is a legal unencoded query character (RFC 3986 sub-delim). Do
+        for no benefit: `,` is a legal unencoded query character (RFC 3986 sub-delim). Not
+        every route takes a comma list: the econ-model assignment DELETE (`_econ_model_base`)
+        answers a comma-joined `wells` of two or more ids with 400 (verified live 2026-11-21),
+        so it sends one repeated `wells` key per id (the sequence rule below). Do
         NOT add `+` to `safe` to match -- a literal `+` is decoded as a space under
         form-urlencoded query rules, so `quote` correctly emits it as `%2B`.
 
         A non-`str` sequence value repeats its key once per element (`{'well': ['a', 'b']}` ->
         `?well=a&well=b`), which is how the forecast-outputs `well` filter and the v2 type-curve
         `phase` filter take several values; a comma-joined `well` is a 400 (verified live
-        2026-11-05). A `str` value is never split.
+        2026-11-05). A `str` value is never split. An `int` value is rendered with `str`.
         """
         pairs = [(key, value) for key, value in (filters or {}).items() if value is not None]
 
@@ -1026,28 +842,83 @@ class APIBase:
 
     @staticmethod
     def _filter_value_batches(
-        filters: Optional[WellFilters], key: str, limit: int = WELL_FILTER_LIMIT
-    ) -> list[Optional[WellFilters]]:
+        filters: Optional[QueryFilters], key: str, limit: int = WELL_FILTER_LIMIT
+    ) -> list[Optional[QueryFilters]]:
         """Split a repeated-key filter list longer than `limit` into filters of at most `limit` values each.
 
         `None`, a single string, and a list at or under the limit pass through as one batch. A longer list is
         de-duplicated first, so a repeated id does not return its rows twice, then cut with `more_itertools.chunked`
         (the same chunker the batched writes use). The batches cover disjoint values, so their rows concatenate and
         their counts add.
+
+        A split into more than one batch refuses a `skip` or `cursor` filter with `ValueError`, before any
+        request: each batch request would carry it, so `skip=10` would skip 10 rows per batch and a cursor
+        from one batch means nothing to the next. A single batch keeps them. A `skip` of `0` or `'0'` skips
+        nothing, so it is not refused; every batch carries it.
         """
         if filters is None:
             return [None]
 
         values = filters.get(key)
-        if values is None or isinstance(values, str) or len(values) <= limit:
+        if values is None or isinstance(values, (str, int)) or len(values) <= limit:
             return [filters]
 
-        batches: list[Optional[WellFilters]] = []
+        batches: list[Optional[QueryFilters]] = []
         for batch_values in chunked(dict.fromkeys(values), limit):
-            batch: dict[str, Union[str, Sequence[str]]] = {**filters, key: list(batch_values)}
+            batch: dict[str, Union[str, int, Sequence[str], None]] = {**filters, key: list(batch_values)}
             batches.append(batch)
 
+        if len(batches) > 1:
+            paging_keys = APIBase._paging_filters_in(filters)
+            if paging_keys:
+                raise ValueError(
+                    f'{paging_keys[0]!r} cannot be combined with more than {limit} distinct {key!r} values: the '
+                    f'{key!r} list is split into requests of {limit} values each, and every request would apply '
+                    f'{paging_keys[0]!r} on its own. Page through fewer {key!r} values, or drop {paging_keys[0]!r}.'
+                )
+
         return batches
+
+    @staticmethod
+    def _paging_filters_in(filters: Optional[QueryFilters]) -> list[str]:
+        """The paging filters (`skip`, `cursor`) that `filters` sets, in that order. A `skip` of 0 (or '0') is a
+        no-op and is not counted. A caller that splits one read into several requests refuses these, because each
+        request would apply them on its own."""
+        if filters is None:
+            return []
+        return [
+            key
+            for key in _PAGING_FILTER_KEYS
+            if filters.get(key) is not None and not (key == 'skip' and str(filters.get(key)) == '0')
+        ]
+
+    def _get_items_in_value_batches(
+        self,
+        build_url: Callable[[Optional[QueryFilters]], str],
+        filters: Optional[QueryFilters],
+        key: str,
+        params: Optional[Mapping[str, Union[str, int, float]]] = None,
+    ) -> ItemList:
+        """GET every row matching `filters`, splitting a `key` list longer than `WELL_FILTER_LIMIT` into
+        requests of at most that many distinct values (`_filter_value_batches`, which also refuses `skip` and
+        `cursor` on a split). `build_url` turns one batch's filters into the request url; `params` goes with
+        every request. The rows of the batches are concatenated in request order, unsorted.
+        """
+        items: ItemList = []
+        for batch_filters in self._filter_value_batches(filters, key):
+            items.extend(self._get_items(build_url(batch_filters), params))
+
+        return items
+
+    def _count_items_in_value_batches(
+        self, build_url: Callable[[Optional[QueryFilters]], str], filters: Optional[QueryFilters], key: str
+    ) -> int:
+        """Count the rows matching `filters` with one HEAD request per batch of `_filter_value_batches` (see
+        `_get_items_in_value_batches`) and return the sum. The batches cover disjoint values, so the counts add.
+        """
+        return sum(
+            self._count_items(build_url(batch_filters)) for batch_filters in self._filter_value_batches(filters, key)
+        )
 
     @staticmethod
     def _keysort(items: ItemList, order: Mapping[str, int], reverse: bool = False) -> ItemList:

@@ -12,13 +12,13 @@ from pytest import MonkeyPatch
 
 from combocurve_api_helper import ComboCurveAPI, ItemList
 from combocurve_api_helper.base import WELL_FILTER_LIMIT
-from tests.http_fakes import FakeResponse, install_recording_transport, make_offline_api
+from tests.http_fakes import V1, FakeResponse, install_recording_transport, make_offline_api
 
 PROJECT_ID = 'a' * 24
-COMPANY_MONTHLY_URL = 'https://api.combocurve.com/v1/monthly-productions'
-COMPANY_DAILY_URL = 'https://api.combocurve.com/v1/daily-productions'
-PROJECT_MONTHLY_URL = f'https://api.combocurve.com/v1/projects/{PROJECT_ID}/monthly-productions'
-PROJECT_DAILY_URL = f'https://api.combocurve.com/v1/projects/{PROJECT_ID}/daily-productions'
+COMPANY_MONTHLY_URL = f'{V1}/monthly-productions'
+COMPANY_DAILY_URL = f'{V1}/daily-productions'
+PROJECT_MONTHLY_URL = f'{V1}/projects/{PROJECT_ID}/monthly-productions'
+PROJECT_DAILY_URL = f'{V1}/projects/{PROJECT_ID}/daily-productions'
 
 
 def well_ids(count: int) -> list[str]:
@@ -153,10 +153,8 @@ def test_count_over_the_limit_sums_the_batches(
 
 FORECAST_ID = 'b' * 24
 SCENARIO_ID = 'c' * 24
-FORECAST_OUTPUTS_URL = f'https://api.combocurve.com/v1/projects/{PROJECT_ID}/forecasts/{FORECAST_ID}/outputs'
-SCENARIO_MODEL_ASSIGNMENTS_URL = (
-    f'https://api.combocurve.com/v1/projects/{PROJECT_ID}/scenarios/{SCENARIO_ID}/assignments/models'
-)
+FORECAST_OUTPUTS_URL = f'{V1}/projects/{PROJECT_ID}/forecasts/{FORECAST_ID}/outputs'
+SCENARIO_MODEL_ASSIGNMENTS_URL = f'{V1}/projects/{PROJECT_ID}/scenarios/{SCENARIO_ID}/assignments/models'
 
 
 def test_forecast_outputs_list_over_the_limit_is_split_and_combined(monkeypatch: MonkeyPatch) -> None:
@@ -213,10 +211,8 @@ def test_scenario_model_assignments_keeps_a_non_list_filter_as_one_request(monke
     assert [call_.url for call_ in recorder.calls] == [f'{SCENARIO_MODEL_ASSIGNMENTS_URL}?model=forecast']
 
 
-FORECAST_DAILY_VOLUMES_URL = (
-    f'https://api.combocurve.com/v1/projects/{PROJECT_ID}/forecasts/{FORECAST_ID}/daily-volumes'
-)
-ROOT_DAILY_VOLUMES_URL = 'https://api.combocurve.com/v1/forecast-daily-volumes'
+FORECAST_DAILY_VOLUMES_URL = f'{V1}/projects/{PROJECT_ID}/forecasts/{FORECAST_ID}/daily-volumes'
+ROOT_DAILY_VOLUMES_URL = f'{V1}/forecast-daily-volumes'
 
 
 def test_forecast_daily_volumes_split_and_sorted_by_well(monkeypatch: MonkeyPatch) -> None:

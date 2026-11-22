@@ -7,7 +7,7 @@ One copy, so a double cannot drift from production on its own. `FakeResponse` ma
 `requests.exceptions.JSONDecodeError` for a body that is not JSON (a gateway's HTML error page).
 """
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
@@ -16,6 +16,9 @@ from pytest import MonkeyPatch
 from requests.structures import CaseInsensitiveDict
 
 from combocurve_api_helper import ComboCurveAPI
+
+V1 = ComboCurveAPI.API_BASE_URL
+V2 = ComboCurveAPI.API_BASE_URL_V2
 
 
 class FakeResponse:
@@ -72,24 +75,32 @@ class StubAuth:
 @dataclass(frozen=True)
 class RecordedCall:
     """One request the transport sent: the verb (upper case, as `requests` sends it), the url, the
-    `params` mapping, the JSON body and the timeout."""
+    `params` mapping, the JSON body, the timeout, the request headers, and the raw `data=` body (the
+    bytes of an upload to a signed url; None for an API request, which sends `json=`)."""
 
     method: str
     url: str
     params: Any
     body: Any
     timeout: Any
+    headers: Any = None
+    data: Any = None
 
 
 @dataclass
 class RecordingTransport:
-    """Stands in for `requests.request`: answers the queued `responses` in order and keeps every call.
-    The signature is the keyword set `base._send_request` passes, so an unexpected keyword fails. One
-    request more than there are responses raises `IndexError`, so an extra request does not pass
-    unseen."""
+    """Stands in for `requests.request` and keeps every call. It answers the queued `responses` in
+    order; one request more than there are responses raises `IndexError`, so an extra request does not
+    pass unseen. With `respond` set instead, it answers every request with `respond(call)`: for a
+    response that depends on the request (a batch chunk's 207 echoes its records) or for a request
+    count the test does not fix (threads).
+
+    The signature is the keyword set `_transport._send_request` (re-exported from `base`) passes, plus
+    `data` for the raw upload in `shapefiles.py`, so an unexpected keyword fails."""
 
     responses: list[FakeResponse]
     calls: list[RecordedCall] = field(default_factory=list)
+    respond: Optional[Callable[[RecordedCall], FakeResponse]] = None
 
     def __call__(
         self,
@@ -99,15 +110,34 @@ class RecordingTransport:
         params: Optional[Any] = None,
         json: Any = None,
         timeout: Any = None,
+        data: Any = None,
     ) -> FakeResponse:
-        self.calls.append(RecordedCall(method.upper(), url, params, json, timeout))
+        call = RecordedCall(method.upper(), url, params, json, timeout, headers, data)
+        self.calls.append(call)
+        if self.respond is not None:
+            return self.respond(call)
         return self.responses.pop(0)
+
+    @property
+    def methods_and_urls(self) -> list[tuple[str, str]]:
+        """(verb, url) of every call, in order."""
+        return [(call.method, call.url) for call in self.calls]
 
 
 def install_recording_transport(monkeypatch: MonkeyPatch, *responses: FakeResponse) -> RecordingTransport:
     """Patch `requests.request` with a `RecordingTransport` that answers `responses` in order; returns
     it."""
     transport = RecordingTransport(list(responses))
+    monkeypatch.setattr(requests, 'request', transport)
+    return transport
+
+
+def install_responding_transport(
+    monkeypatch: MonkeyPatch, respond: Callable[[RecordedCall], FakeResponse]
+) -> RecordingTransport:
+    """Patch `requests.request` with a `RecordingTransport` that answers every request with
+    `respond(call)`; returns it."""
+    transport = RecordingTransport([], respond=respond)
     monkeypatch.setattr(requests, 'request', transport)
     return transport
 

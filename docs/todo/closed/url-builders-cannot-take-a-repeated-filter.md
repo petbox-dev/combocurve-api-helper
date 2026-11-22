@@ -1,5 +1,8 @@
 # URL builders cannot take a repeated filter
 
+Closed: 2026-11-21 -- settled by: `base.QueryFilters` (exported; `WellFilters` is now an alias of it) types `_build_params_string` and every builder whose route takes a repeated key; `scenarios.delete_scenario_qualifiers` and the v1-compatibility forecast-outputs read now call their builders. The lookup-table assignments `column` takes one value (3.2.0)
+If this was wrong, you will see: a typed caller unable to pass a list to a repeated-key builder, or a forecast-outputs or qualifier URL that its builder does not produce
+
 Severity: low
 Opened: 2026-11-13
 
@@ -35,10 +38,22 @@ Routes that take a repeated filter through a `dict[str, str]` builder:
   also refuse 101, but they accept a `well` list only together with `forecast`: `well` alone, and
   `project` with `well`, return 400 even at 100 values. `_require_volume_scope` now refuses a `well` filter
   without `forecast` with a local ValueError (2026-11-20), so those requests never reach the API.
-- Scenario econ-model assignments have no well filter, so they are not affected.
+- Scenario econ-model assignments (`get_scenario_econ_model_assignments_url`, key `wellId`): the
+  builder takes `QueryFilters` since 2026-11-21. Verified live 2026-11-21 on dev: repeated keys work, a
+  comma-joined `wellId` is a 400, 100 values are accepted and 101 refused with a 400. The public
+  `get_scenario_econ_model_assignments` takes no filters, so nothing splits a longer list.
 
-Two other methods bypass their builders the same way: `scenarios.delete_scenario_qualifiers`
-(`f'{base_url}/qualifiers' + ...`) and the compatibility outputs call above.
+Two other methods bypassed their builders the same way: `scenarios.delete_scenario_qualifiers`
+(`f'{base_url}/qualifiers' + ...`) and the compatibility outputs call above. **Done 2026-11-21:** both
+call their builders (`get_scenario_qualifiers_url`; `get_forecast_outputs_url` through
+`_get_items_in_value_batches`, with the `forecasts.py` page size of 1,000 instead of 200).
+
+## Status 2026-11-21
+
+`base.QueryFilters` (`Mapping[str, Union[str, int, Sequence[str], None]]`) types `_build_params_string`,
+the value-batch helpers, and every builder whose route takes a repeated key. `WellFilters` is an alias of
+it. Still open: the lookup-table assignments `column` filter (documented as comma-separated) is not
+live-verified, and the builders of routes with no repeated key keep `dict[str, str]` on purpose.
 
 ## Fix
 

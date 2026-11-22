@@ -1,15 +1,15 @@
 {
   "collection": "https://docs.api.combocurve.com/downloads/combocurve-api.postman_collection.json",
   "counts": {
-    "wrapped": 426,
-    "gap": 58,
+    "wrapped": 484,
+    "gap": 0,
     "retired": 17,
     "not-via-method": 1
   },
   "routes": [
     {
       "verb": "GET",
-      "path": "/v1/custom-columns/:p",
+      "path": "/v1/custom-columns/:collection",
       "name": "get-custom-columns",
       "area": "custom-columns",
       "status": "wrapped",
@@ -116,7 +116,8 @@
       "path": "/v1/directional-surveys/batch",
       "name": "post-directional-surveys-batch",
       "area": "directional-surveys",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "post_directional_surveys_batch"
     },
     {
       "verb": "GET",
@@ -140,7 +141,7 @@
       "name": "get-company-econ-model-by-id",
       "area": "econ-models",
       "status": "wrapped",
-      "method": "get_company_actual_forecast_models"
+      "method": "get_company_econ_model_by_id"
     },
     {
       "verb": "GET",
@@ -1155,63 +1156,72 @@
       "path": "/v1/formations",
       "name": "get-formations",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_company_formations"
     },
     {
       "verb": "HEAD",
       "path": "/v1/formations",
       "name": "head-formations",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "count_company_formations"
     },
     {
       "verb": "PATCH",
       "path": "/v1/formations",
       "name": "patch-formations",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "patch_company_formations"
     },
     {
       "verb": "PUT",
       "path": "/v1/formations",
       "name": "put-formations",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "put_company_formations"
     },
     {
       "verb": "DELETE",
       "path": "/v1/formations/:p",
       "name": "delete-formation-by-id",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "delete_company_formation_by_id"
     },
     {
       "verb": "GET",
       "path": "/v1/formations/:p",
       "name": "get-formation-by-id",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_company_formation_by_id"
     },
     {
       "verb": "GET",
       "path": "/v1/formations/:p/points",
       "name": "get-formation-points",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_company_formation_points"
     },
     {
       "verb": "GET",
       "path": "/v1/formations/head",
       "name": "get-head-formations",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "count_company_formations_with_get"
     },
     {
       "verb": "GET",
       "path": "/v1/formations/jobs/:p",
       "name": "get-formations-job",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_company_formations_job"
     },
     {
       "verb": "DELETE",
@@ -1314,70 +1324,80 @@
       "path": "/v1/production-comment-types",
       "name": "get-production-comment-types",
       "area": "production-comment-types",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_production_comment_types"
     },
     {
       "verb": "PATCH",
       "path": "/v1/production-comment-types",
       "name": "patch-production-comment-types",
       "area": "production-comment-types",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "patch_production_comment_types"
     },
     {
       "verb": "DELETE",
       "path": "/v1/production-comments",
       "name": "delete-production-comments",
       "area": "production-comments",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "delete_company_production_comments"
     },
     {
       "verb": "GET",
       "path": "/v1/production-comments",
       "name": "get-production-comments",
       "area": "production-comments",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_company_production_comments"
     },
     {
       "verb": "HEAD",
       "path": "/v1/production-comments",
       "name": "head-production-comments",
       "area": "production-comments",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "count_company_production_comments"
     },
     {
       "verb": "PATCH",
       "path": "/v1/production-comments",
       "name": "patch-production-comments",
       "area": "production-comments",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "patch_company_production_comments"
     },
     {
       "verb": "POST",
       "path": "/v1/production-comments",
       "name": "post-production-comments",
       "area": "production-comments",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "post_company_production_comments"
     },
     {
       "verb": "PUT",
       "path": "/v1/production-comments",
       "name": "put-production-comments",
       "area": "production-comments",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "put_company_production_comments"
     },
     {
       "verb": "DELETE",
       "path": "/v1/production-comments/:p",
       "name": "delete-production-comment-by-id",
       "area": "production-comments",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "delete_company_production_comment_by_id"
     },
     {
       "verb": "GET",
       "path": "/v1/production-comments/:p",
       "name": "get-production-comment-by-id",
       "area": "production-comments",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_company_production_comment_by_id"
     },
     {
       "verb": "GET",
@@ -1469,7 +1489,7 @@
     },
     {
       "verb": "GET",
-      "path": "/v1/projects/:p/custom-columns/:p",
+      "path": "/v1/projects/:p/custom-columns/:customColumn",
       "name": "get-project-custom-columns",
       "area": "custom-columns",
       "status": "wrapped",
@@ -1540,16 +1560,8 @@
       "method": "count_econ_models"
     },
     {
-      "verb": "GET",
-      "path": "/v1/projects/:p/econ-models/:p",
-      "name": "get-econ-model-by-id",
-      "area": "econ-models",
-      "status": "wrapped",
-      "method": "get_actual_forecast_models"
-    },
-    {
       "verb": "DELETE",
-      "path": "/v1/projects/:p/econ-models/:p/:p/assignments",
+      "path": "/v1/projects/:p/econ-models/:econName/:p/assignments",
       "name": "delete-econ-model-assignment-delete",
       "area": "econ-models",
       "status": "wrapped",
@@ -1557,7 +1569,7 @@
     },
     {
       "verb": "GET",
-      "path": "/v1/projects/:p/econ-models/:p/:p/assignments",
+      "path": "/v1/projects/:p/econ-models/:econName/:p/assignments",
       "name": "get-econ-models-assignments-read",
       "area": "econ-models",
       "status": "wrapped",
@@ -1565,7 +1577,7 @@
     },
     {
       "verb": "HEAD",
-      "path": "/v1/projects/:p/econ-models/:p/:p/assignments",
+      "path": "/v1/projects/:p/econ-models/:econName/:p/assignments",
       "name": "head-econ-models-assignments-count",
       "area": "econ-models",
       "status": "wrapped",
@@ -1573,7 +1585,7 @@
     },
     {
       "verb": "POST",
-      "path": "/v1/projects/:p/econ-models/:p/:p/assignments",
+      "path": "/v1/projects/:p/econ-models/:econName/:p/assignments",
       "name": "post-econ-model-assignment-upsert",
       "area": "econ-models",
       "status": "wrapped",
@@ -1581,11 +1593,19 @@
     },
     {
       "verb": "PUT",
-      "path": "/v1/projects/:p/econ-models/:p/:p/assignments",
+      "path": "/v1/projects/:p/econ-models/:econName/:p/assignments",
       "name": "put-econ-model-assignment-upsert",
       "area": "econ-models",
       "status": "wrapped",
       "method": "put_actual_forecast_assignments_by_id"
+    },
+    {
+      "verb": "GET",
+      "path": "/v1/projects/:p/econ-models/:p",
+      "name": "get-econ-model-by-id",
+      "area": "econ-models",
+      "status": "wrapped",
+      "method": "get_econ_model_by_id"
     },
     {
       "verb": "GET",
@@ -2597,7 +2617,7 @@
     },
     {
       "verb": "DELETE",
-      "path": "/v1/projects/:p/forecasts/:p/parameters/:p/:p/:p",
+      "path": "/v1/projects/:p/forecasts/:p/parameters/:p/:phase/:series",
       "name": "delete-projects-forecast-segment-parameters",
       "area": "forecasts",
       "status": "wrapped",
@@ -2605,7 +2625,7 @@
     },
     {
       "verb": "POST",
-      "path": "/v1/projects/:p/forecasts/:p/parameters/:p/:p/:p",
+      "path": "/v1/projects/:p/forecasts/:p/parameters/:p/:phase/:series",
       "name": "post-projects-forecast-segment-parameters",
       "area": "forecasts",
       "status": "wrapped",
@@ -2613,7 +2633,7 @@
     },
     {
       "verb": "PUT",
-      "path": "/v1/projects/:p/forecasts/:p/parameters/:p/:p/:p",
+      "path": "/v1/projects/:p/forecasts/:p/parameters/:p/:phase/:series",
       "name": "put-projects-forecast-segment-parameters",
       "area": "forecasts",
       "status": "wrapped",
@@ -2664,63 +2684,72 @@
       "path": "/v1/projects/:p/formations",
       "name": "get-project-formations",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_project_formations"
     },
     {
       "verb": "HEAD",
       "path": "/v1/projects/:p/formations",
       "name": "head-project-formations",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "count_project_formations"
     },
     {
       "verb": "PATCH",
       "path": "/v1/projects/:p/formations",
       "name": "patch-project-formations",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "patch_project_formations"
     },
     {
       "verb": "PUT",
       "path": "/v1/projects/:p/formations",
       "name": "put-project-formations",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "put_project_formations"
     },
     {
       "verb": "DELETE",
       "path": "/v1/projects/:p/formations/:p",
       "name": "delete-project-formation-by-id",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "delete_project_formation_by_id"
     },
     {
       "verb": "GET",
       "path": "/v1/projects/:p/formations/:p",
       "name": "get-project-formation-by-id",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_project_formation_by_id"
     },
     {
       "verb": "GET",
       "path": "/v1/projects/:p/formations/:p/points",
       "name": "get-project-formation-points",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_project_formation_points"
     },
     {
       "verb": "GET",
       "path": "/v1/projects/:p/formations/head",
       "name": "get-head-project-formations",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "count_project_formations_with_get"
     },
     {
       "verb": "GET",
       "path": "/v1/projects/:p/formations/jobs/:p",
       "name": "get-project-formations-job",
       "area": "formations",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_project_formations_job"
     },
     {
       "verb": "DELETE",
@@ -2775,56 +2804,64 @@
       "path": "/v1/projects/:p/production-comments",
       "name": "delete-project-production-comments",
       "area": "production-comments",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "delete_project_production_comments"
     },
     {
       "verb": "GET",
       "path": "/v1/projects/:p/production-comments",
       "name": "get-project-production-comments",
       "area": "production-comments",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_project_production_comments"
     },
     {
       "verb": "HEAD",
       "path": "/v1/projects/:p/production-comments",
       "name": "head-project-production-comments",
       "area": "production-comments",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "count_project_production_comments"
     },
     {
       "verb": "PATCH",
       "path": "/v1/projects/:p/production-comments",
       "name": "patch-project-production-comments",
       "area": "production-comments",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "patch_project_production_comments"
     },
     {
       "verb": "POST",
       "path": "/v1/projects/:p/production-comments",
       "name": "post-project-production-comments",
       "area": "production-comments",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "post_project_production_comments"
     },
     {
       "verb": "PUT",
       "path": "/v1/projects/:p/production-comments",
       "name": "put-project-production-comments",
       "area": "production-comments",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "put_project_production_comments"
     },
     {
       "verb": "DELETE",
       "path": "/v1/projects/:p/production-comments/:p",
       "name": "delete-project-production-comment-by-id",
       "area": "production-comments",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "delete_project_production_comment_by_id"
     },
     {
       "verb": "GET",
       "path": "/v1/projects/:p/production-comments/:p",
       "name": "get-project-production-comment-by-id",
       "area": "production-comments",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_project_production_comment_by_id"
     },
     {
       "verb": "DELETE",
@@ -3072,7 +3109,7 @@
       "name": "get-one-liner-by-id",
       "area": "scenarios",
       "status": "wrapped",
-      "method": "get_econ_run_by_id"
+      "method": "get_econ_run_oneline_by_id"
     },
     {
       "verb": "GET",
@@ -3223,70 +3260,80 @@
       "path": "/v1/projects/:p/shapefiles",
       "name": "get-project-shapefiles",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_project_shapefiles"
     },
     {
       "verb": "HEAD",
       "path": "/v1/projects/:p/shapefiles",
       "name": "head-project-shapefiles",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "count_project_shapefiles"
     },
     {
       "verb": "POST",
       "path": "/v1/projects/:p/shapefiles",
       "name": "post-project-shapefiles",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "post_project_shapefiles"
     },
     {
       "verb": "DELETE",
       "path": "/v1/projects/:p/shapefiles/:p",
       "name": "delete-project-shapefile-by-id",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "delete_project_shapefile_by_id"
     },
     {
       "verb": "GET",
       "path": "/v1/projects/:p/shapefiles/:p",
       "name": "get-project-shapefile-by-id",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_project_shapefile_by_id"
     },
     {
       "verb": "GET",
       "path": "/v1/projects/:p/shapefiles/:p/features",
       "name": "get-project-shapefile-features",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_project_shapefile_features"
     },
     {
       "verb": "GET",
       "path": "/v1/projects/:p/shapefiles/head",
       "name": "get-head-project-shapefiles",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "count_project_shapefiles_with_get"
     },
     {
       "verb": "GET",
       "path": "/v1/projects/:p/shapefiles/jobs/:p",
       "name": "get-project-shapefiles-job",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_project_shapefile_job"
     },
     {
       "verb": "POST",
       "path": "/v1/projects/:p/shapefiles/uploads",
       "name": "post-project-shapefiles-upload",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "post_project_shapefile_upload"
     },
     {
       "verb": "POST",
       "path": "/v1/projects/:p/shapefiles/uploads/:p",
       "name": "post-project-shapefiles-upload-import",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "post_project_shapefile_upload_import"
     },
     {
       "verb": "DELETE",
@@ -3509,77 +3556,88 @@
       "path": "/v1/shapefiles",
       "name": "get-shapefiles",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_company_shapefiles"
     },
     {
       "verb": "HEAD",
       "path": "/v1/shapefiles",
       "name": "head-shapefiles",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "count_company_shapefiles"
     },
     {
       "verb": "PATCH",
       "path": "/v1/shapefiles",
       "name": "patch-shapefiles",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "patch_company_shapefiles"
     },
     {
       "verb": "POST",
       "path": "/v1/shapefiles",
       "name": "post-shapefiles",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "post_company_shapefiles"
     },
     {
       "verb": "DELETE",
       "path": "/v1/shapefiles/:p",
       "name": "delete-shapefile-by-id",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "delete_company_shapefile_by_id"
     },
     {
       "verb": "GET",
       "path": "/v1/shapefiles/:p",
       "name": "get-shapefile-by-id",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_company_shapefile_by_id"
     },
     {
       "verb": "GET",
       "path": "/v1/shapefiles/:p/features",
       "name": "get-shapefile-features",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_company_shapefile_features"
     },
     {
       "verb": "GET",
       "path": "/v1/shapefiles/head",
       "name": "get-head-shapefiles",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "count_company_shapefiles_with_get"
     },
     {
       "verb": "GET",
       "path": "/v1/shapefiles/jobs/:p",
       "name": "get-shapefiles-job",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "get_company_shapefile_job"
     },
     {
       "verb": "POST",
       "path": "/v1/shapefiles/uploads",
       "name": "post-shapefiles-upload",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "post_company_shapefile_upload"
     },
     {
       "verb": "POST",
       "path": "/v1/shapefiles/uploads/:p",
       "name": "post-shapefiles-upload-import",
       "area": "shapefiles",
-      "status": "gap"
+      "status": "wrapped",
+      "method": "post_company_shapefile_upload_import"
     },
     {
       "verb": "GET",

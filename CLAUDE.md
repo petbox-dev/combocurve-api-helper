@@ -184,7 +184,8 @@ do not run in CI or on machines without dev access. The skip predicate uses the 
 loader on purpose: a hand-written filename that does not match makes the predicate always true and the
 live tests silently un-runnable, which is what happened to `test_api.py` (it looked for
 `cc_api_config.json`) until 2.1.0. `test_api.py` is read-only;
-**`test_assignments_live.py` performs writes** (it creates and deletes a throwaway scenario qualifier).
+**`test_assignments_live.py` performs writes** (it creates and deletes throwaway `API Helper Fixture Q *`
+scenario qualifiers, a saved combo and a scenario lookup table, and assigns/unassigns the dates model on two wells).
 `test_embedded_lookup_tables_live.py` also performs writes on dev (it creates and deletes a throwaway
 `API Helper Fixture ELT *` embedded lookup table at project and company scope; needs `CC_DEV_PROJECT_ID`).
 The dev target ids are environment variables with **no defaults**, because a real id must not sit in
@@ -195,7 +196,13 @@ type curve) and needs a tenant enrolled in Type Curve 2.0: it skips unless `CC_L
 `CC_TC2_PROJECT_ID` and `CC_TC2_TYPE_CURVE_ID` are set (it passed 2026-11-05). Unlike the other live
 tests, it uses the DEFAULT `~/.combocurve` credentials (production), not `~/.combocurve/dev`, because
 the dev tenant is not enrolled in v2. It writes only `API Helper Fixture*` objects in the
-`CC_TC2_PROJECT_ID` project and deletes them. Put these variables in a repo-root `.env` (gitignored; copy `.env.example`):
+`CC_TC2_PROJECT_ID` project and deletes them. `test_econ_settings_live.py`, `test_formations_live.py`,
+`test_shapefiles_live.py` and `test_production_comments_live.py` also write `API Helper Fixture*` objects on
+dev and delete them; the econ-settings test also needs `CC_DEV_ECON_CATEGORY` and `CC_DEV_ECON_COLUMN_KEY`
+(a real econ column and its category, e.g. `Cash Flow` / `net_income`), and the production-comment routes
+answer `ProductionCommentsDisabledError` on dev, so that test skips its comment part. The dev credentials
+path and the fixture prefix live in `tests/live_support.py`; the session-scoped `dev_api` fixture in
+`tests/conftest.py` builds one client per run, so a run fetches at most one dev token. Put these variables in a repo-root `.env` (gitignored; copy `.env.example`):
 `tests/conftest.py` loads it with `python-dotenv` (a `dev` dependency-group entry), searching upward
 from `tests/`, so the working directory does not matter. A variable already set in the shell wins.
 
@@ -204,7 +211,7 @@ from `tests/`, so the working directory does not matter. A variable already set 
 **Single entrypoint via mixin composition.** `ComboCurveAPI` (`__init__.py`) is an empty class that
 multiply-inherits every endpoint group: `Root, Projects, Scenarios, Production, EconRuns, Wells, Models,
 CompanyModels, Forecasts, TypeCurvesV1Compatibility (over TypeCurves), Directional, ForecastConfigurations,
-OwnershipQualifiers, Exports, EmbeddedLookupTables`. Each of those is a mixin in its own module that
+OwnershipQualifiers, Exports, EmbeddedLookupTables, EconSettings, ProductionComments, Formations, Shapefiles`. Each of those is a mixin in its own module that
 subclasses `APIBase`. Users only ever instantiate `ComboCurveAPI`.
 
 **`base.py` is the HTTP engine.** `APIBase` holds the auth object and all request plumbing. For each verb
@@ -274,11 +281,16 @@ reconciles them once, in `_request_with_retry`: **the url wins**, so an explicit
 method's default page size. Do not re-introduce a second reconciliation point, and do not assume a value
 passed in `params` survives — if the url already carries that key, it is dropped. Note the batched-write
 path does NOT funnel through `_request_with_retry` (nor do the direct `requests.*` calls described in the
-next paragraph): `_send_one_chunk` calls
+next paragraph): `_send_one_chunk` -> `_transport._send_batch_chunk` calls
 `_send_request` directly and has its own status retry loop. It passes no `params` today, so nothing is wrong —
 but a query parameter added there would not be reconciled.
 
-**Connection failures: a write is never sent twice.** `_send_request` (`base.py`) is where both paths
+**Connection failures: a write is never sent twice.** The transport policy lives in `_transport.py`
+(`base.py` re-exports every moved name, so `from combocurve_api_helper.base import _send_request` still
+works): the timeout, retry and deadline constants, the connection policy, `_send_with_status_retries` (what
+`APIBase._request_with_retry` calls) and `_send_batch_chunk` (what `APIBase._send_one_chunk` calls; the 207
+body is parsed by the pure `_batch.chunk_from_207_body`). `base.py` keeps `APIBase`, the types and the sort
+orders. `_send_request` is where both paths
 call `requests.request`. It sets `_REQUEST_TIMEOUT_SECONDS` (without a timeout, a stalled connection
 blocks forever) and sends a request again after a connection failure only when the request never reached
 the server (connect timeout, refused connection, DNS failure) or is a GET/HEAD. A POST/PUT/PATCH/DELETE
@@ -290,13 +302,36 @@ wall-clock budget (`_CALL_DEADLINE_SECONDS`) across every retry, and an honoured
 120 s (`_MAX_RETRY_AFTER_SECONDS`); a retry whose pause would reach the deadline is not made. The direct
 single-object calls in `directional.py`, `exports.py` and `forecasts.py` (eight sites) also send through
 `_request_with_retry`, so they have the timeout and the retries (since 3.0.0; `tests/test_single_object_requests_use_the_transport.py`;
-todo item closed: `docs/todo/closed/direct-requests-calls-bypass-timeout-and-retry.md`).
+todo item closed: `docs/todo/closed/direct-requests-calls-bypass-timeout-and-retry.md`). A request to a
+non-ComboCurve host (the signed shapefile upload URL) goes through `_transport._send_to_external_url`, which
+sends only the caller's headers (never the API key or the bearer token) with the same timeout and
+connection-failure policy.
 
 Relatedly, `_build_params_string` percent-encodes and drops `None` values, so callers must NOT pre-encode.
-It keeps `,` literal and encodes a space as `%20`, not `+`: two callers comma-join list filters
-(`econ_runs` `columns`, `_econ_model_base` `wells`), while `scenarios.delete_scenario_qualifiers` forwards
-already-comma-joined `econNames`/`qualifierNames` strings; those wire formats were live-verified unencoded.
-Don't "fix" that back to the `urlencode` default.
+It keeps `,` literal and encodes a space as `%20`, not `+`: `econ_runs` comma-joins its `columns` filter,
+and `scenarios.delete_scenario_qualifiers` forwards already-comma-joined `econNames`/`qualifierNames`
+strings; those wire formats were live-verified unencoded. Don't "fix" that back to the `urlencode` default.
+**A comma join is not a list in general.** The econ-model unassign route and `delete_scenario_wells` answer
+400 ("`a,b` is not a valid ObjectId") to a comma-joined `wells`, and the forecast-output and production
+`well` filters answer 400 to a comma-joined value too; they take one key per value, which
+`_build_params_string` writes for a sequence value (live 2026-11-05, 2026-11-20 and 2026-11-21). Check each route before you join.
+
+**Repeated filters are capped at 100 values per request** on the production, forecast-output, forecast and
+root volume, scenario model-assignment and well-incremental routes, and the forecast-configurations bulk
+DELETE (101 is a 400 or 500, verified live). `APIBase._filter_value_batches` de-duplicates a longer list and
+splits it into batches of 100; `_get_items_in_value_batches` / `_count_items_in_value_batches` are the shared
+get/count loops over those batches. A `skip` or `cursor` filter with more than one batch raises `ValueError`
+(it would apply once per batch; `APIBase._paging_filters_in` is the shared test).
+
+**ComboCurve's project-scoped root volume listing is wrong; the helper does not use it.** With `project` and
+no `forecast`, `/v1/forecast-{daily,monthly}-volumes` returned short pages with no next link and repeated and
+dropped `(forecast, well)` pairs on every dev project above 200 rows, while the HEAD count matched (2026-11-20
+and 2026-11-21). `get_root_forecast_*_volumes` therefore read a `project`-only scope one forecast at a time and
+raise `RuntimeError` when the total differs from the project count. Do not "simplify" it back to one listing
+until ComboCurve fixes the route (`docs/todo/open/project-scoped-root-volumes-repeat-and-drop-rows.md`).
+
+**`APIBase.iter_pages(url, params)` is the public page iterator** (lazy, ComboCurve order, unsorted);
+`_get_items_iterator` delegates to it and stays, because a downstream server calls it.
 
 **Route paths are hand-written and were wrong FIVE times.** `forecast-monthly-volumes`,
 `forecast-daily-volumes`, `wells-identifiers`, `type-curves/{id}/fits/daily` and `.../fits/monthly` all
@@ -307,10 +342,17 @@ and asserts the paired `*_url` builder produces that item's path — run it (net
 `test_docstring_slugs.py`) rather than eyeballing a new route literal.
 
 **Route coverage lives in `tests/route_manifest.json`**: one entry per collection operation (502), with its
-`status` (`wrapped` by a named method, `gap`, `retired`, `not-via-method`). Regenerate it with
-`python scripts/generate_route_coverage.py` after any method or collection change; `--check` exits 1 when it is
-stale. `tests/test_published_routes_are_wrapped.py` fails when the manifest is stale or a status disagrees with
-what the methods send. To wrap a gap, add the method, regenerate, and the route turns `wrapped`.
+`status` (`wrapped` by a named method, `gap`, `retired`, `not-via-method`); on 2026-11-21 484 are wrapped and
+none is a gap. Regenerate it with `python scripts/generate_route_coverage.py` after any method or collection
+change; `--check` exits 0 (current), 1 (stale) or 2 (collection unavailable), like `generate_docstrings.py`.
+`tests/test_published_routes_are_wrapped.py` fails when the committed file differs from what the generator
+would write, or a status disagrees with what the methods send. To wrap a gap, add the method, regenerate, and
+the route turns `wrapped`. Matching (`tests/route_manifest.py`): an id parameter (`:id`, `:...Id`, written
+`:p`) matches only a placeholder id the audit sent, never a literal segment; a literal-valued parameter
+(`:econName`, `:collection`, `:phase`, ...) keeps its name in the manifest and matches any one segment; a sent
+request counts only toward the most specific template. The audit calls every public method once on a fake
+transport; a method that needs a real argument gets an `ARGUMENT_OVERRIDES` entry, and every exception it
+raises must be in the reviewed `EXPECTED_EXCEPTIONS`.
 All three network tests read the collection through `tests/postman_collection.py`, which fetches it
 once per session and skips the caller when it is unusable; a new collection test uses it rather than
 its own `requests.get`. Offline transport doubles live in `tests/http_fakes.py`
@@ -417,9 +459,16 @@ the template in `scripts/`, never the output** — editing the output makes the 
   block that differs only at those positions is kept as-is, and array elements that differ only at
   those positions collapse to one (so a `phases` or `series` list shows one element, not several).
   `--check` goes stale on a change of shape, keys, array length or placeholder type, not on a re-draw.
+  Exception: an array that collapsed to one element cannot show a change of its length (the docstring
+  holds one element either way).
   The costs: an enum member that ComboCurve removes stays in a docstring until something else in that
   block changes, and a position that changes from a `<type>` placeholder to a literal is not detected
   (the committed spoof string is accepted as a draw).
+
+  **A marker with no collection example fails `--check`** (exit 1, naming it), unless it is listed in
+  `ALLOWED_UNSOURCED_MARKERS` in the script; an allowlist entry whose marker gained an example or no longer
+  exists also fails, so the list cannot go stale. Add a marker only where the operation has a saved 2xx
+  example of that kind (a HEAD, or a DELETE answering 204, has none).
 
   **Exit 1 vs 2 is load-bearing** — the freshness test reads 1 as "the docstrings are stale" (failure)
   and 2 as "skip". So *every* failure to obtain a usable collection must raise `CollectionUnavailable`

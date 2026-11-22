@@ -1,6 +1,8 @@
-from typing import Optional
+from typing import Optional, cast
 
-from .base import APIBase, Item, ItemList
+from requests.structures import CaseInsensitiveDict
+
+from .base import APIBase, Item, ItemList, WriteResponse
 
 # The API maximum of `take` on this route is 100 (verified live 2026-11-05: 1000 answers 400).
 GET_LIMIT = 100
@@ -28,6 +30,12 @@ class Directional(APIBase):
         """
         base_url = self.get_directional_surveys_url()
         return f'{base_url}/{directional_survey_id}'
+
+    def get_directional_surveys_batch_url(self) -> str:
+        """
+        Returns the API url of the directional-survey batch upsert.
+        """
+        return f'{self.get_directional_surveys_url()}/batch'
 
     ###########
     # API calls
@@ -192,10 +200,89 @@ class Directional(APIBase):
         # `self._post_items` (which chunks a list) does not apply.
         url = self.get_directional_surveys_url()
 
-        response = self._request_with_retry('post', url, json_body=data)
-        response.raise_for_status()
+        return self._send_for_item('post', url, data)
 
-        return self._extract_json(response)[0]
+    def post_directional_surveys_batch(self, data: ItemList) -> list[WriteResponse]:
+        """
+        Upserts several directional surveys in one request, one per well. Each record carries the same
+        fields as the `post_directional_surveys` body (`chosenID`, `dataSource`, `spatialDataType`, the depth
+        and coordinate arrays, and `projectID`). The response is 207 Multi-Status with one `results` entry
+        per record, keyed by `chosenID`: a record the server refuses is reported there, not raised. An empty
+        list raises `ValueError` before anything is sent. `data` is sent in one request; the documentation
+        states no record limit, and none was measured.
+
+        Verified live 2026-11-21 on dev: the well is found by `chosenID`, `dataSource` and `projectID`. A
+        well with no survey gets one (`status` `created`, `code` 201); a well that has one has it replaced
+        (`updated`, 200; the arrays are the new ones, the survey id is kept). A record whose well is not
+        found is `status` `Error`, `code` 404, `WellNotFound`, while the other records are applied. The
+        envelope had no `generalErrors` key when there were none.
+
+        https://docs.api.combocurve.com/api/post-directional-surveys-batch
+
+        Example data:
+        [
+            {
+                "chosenID": "string",
+                "dataSource": "string",
+                "spatialDataType": "NAD27",
+                "measuredDepth": [
+                    123.45
+                ],
+                "trueVerticalDepth": [
+                    123.45
+                ],
+                "azimuth": [
+                    123.45
+                ],
+                "inclination": [
+                    123.45
+                ],
+                "deviationEW": [
+                    123.45
+                ],
+                "deviationNS": [
+                    123.45
+                ],
+                "latitude": [
+                    123.45
+                ],
+                "longitude": [
+                    123.45
+                ],
+                "projectID": "string"
+            }
+        ]
+
+        Example response:
+        {
+            "generalErrors": [
+                {
+                    "name": "Example",
+                    "message": "string",
+                    "location": "string"
+                }
+            ],
+            "results": [
+                {
+                    "status": "string",
+                    "code": 123,
+                    "chosenID": "string",
+                    "errors": [
+                        {
+                            "name": "Example",
+                            "message": "string",
+                            "location": "string"
+                        }
+                    ]
+                }
+            ],
+            "failedCount": 123,
+            "successCount": 123
+        }
+        """
+        self._require_records(data, 'directional survey')
+        url = self.get_directional_surveys_batch_url()
+        return cast('list[WriteResponse]', self._post_items(url, data))
 
     def put_directional_survey_by_id(self, directional_survey_id: str, data: Item) -> Item:
         """
@@ -283,16 +370,17 @@ class Directional(APIBase):
         # The endpoint receives a single object body, not a list.
         url = self.get_directional_survey_by_id_url(directional_survey_id)
 
-        response = self._request_with_retry('put', url, json_body=data)
-        response.raise_for_status()
+        return self._send_for_item('put', url, data)
 
-        return self._extract_json(response)[0]
-
-    def delete_directional_survey_by_id(self, directional_survey_id: str) -> ItemList:
+    def delete_directional_survey_by_id(self, directional_survey_id: str) -> CaseInsensitiveDict[str]:
         """
-        Deletes a specific directional survey from its id.
+        Deletes a specific directional survey from its id, and returns the headers of the delete response.
+
+        The route answers a success with an empty body (verified live 2026-11-21 on dev). Through 3.2.0 this
+        method returned the parsed body, so it raised `JSONDecodeError` after the survey was already deleted;
+        it now returns the headers, like the other delete-by-id methods.
 
         https://docs.api.combocurve.com/api/delete-directional-surveys-by-id
         """
         url = self.get_directional_survey_by_id_url(directional_survey_id)
-        return self._delete_items(url, data=[])
+        return self._delete_headers(url)

@@ -7,13 +7,11 @@ the caller never meant. These tests pin both halves -- that nothing is sent when
 filter is empty, and that an empty filter is dropped rather than forwarded.
 """
 
-from typing import Any, Optional
-
 import pytest
-from requests.structures import CaseInsensitiveDict
 
 from combocurve_api_helper import ComboCurveAPI
 from combocurve_api_helper.base import APIBase
+from tests.http_fakes import FakeResponse, RecordingTransport, install_responding_transport, make_offline_api
 
 PROJECT_ID = '000000000000000000000001'
 WELL_ID = '000000000000000000000002'
@@ -30,62 +28,59 @@ GUARDED_DELETES: list[tuple[str, tuple[str, ...], dict[str, str], str]] = [
 ]
 
 
-class _StubResponse:
-    """Stands in for the single `requests.Response` a delete returns."""
-
-    def __init__(self) -> None:
-        self.headers: CaseInsensitiveDict[str] = CaseInsensitiveDict({'X-Delete-Count': '1'})
+Recording = tuple[ComboCurveAPI, RecordingTransport]
 
 
-def _recording_api() -> tuple[ComboCurveAPI, list[str]]:
-    """A client that records delete urls instead of issuing requests, and needs no auth."""
-    api = ComboCurveAPI.__new__(ComboCurveAPI)
-    urls: list[str] = []
+@pytest.fixture
+def recording(monkeypatch: pytest.MonkeyPatch) -> Recording:
+    """An offline client whose every request is recorded and answered with `X-Delete-Count: 1`."""
+    transport = install_responding_transport(
+        monkeypatch, lambda call: FakeResponse(200, [], headers={'X-Delete-Count': '1'})
+    )
+    return make_offline_api(), transport
 
-    def fake_delete_responses(url: str, data: Any, chunksize: Optional[int] = None) -> list[Any]:
-        urls.append(url)
-        return [_StubResponse()]
 
-    api._delete_responses = fake_delete_responses  # type: ignore[method-assign]
-
-    return api, urls
+def _urls(transport: RecordingTransport) -> list[str]:
+    """The url of every request sent; each must be a DELETE."""
+    assert {call.method for call in transport.calls} <= {'DELETE'}
+    return [call.url for call in transport.calls]
 
 
 @pytest.mark.parametrize(('method', 'args', 'valid', 'parameters'), GUARDED_DELETES)
 def test_no_filters_raises_and_sends_nothing(
-    method: str, args: tuple[str, ...], valid: dict[str, str], parameters: str
+    recording: Recording, method: str, args: tuple[str, ...], valid: dict[str, str], parameters: str
 ) -> None:
-    api, urls = _recording_api()
+    api, transport = recording
 
     with pytest.raises(ValueError, match=f'Must provide at least one of {parameters}'):
         getattr(api, method)(*args)
 
-    assert urls == []
+    assert _urls(transport) == []
 
 
 @pytest.mark.parametrize(('method', 'args', 'valid', 'parameters'), GUARDED_DELETES)
 def test_all_filters_empty_raises_and_sends_nothing(
-    method: str, args: tuple[str, ...], valid: dict[str, str], parameters: str
+    recording: Recording, method: str, args: tuple[str, ...], valid: dict[str, str], parameters: str
 ) -> None:
     """`''` must be refused, not forwarded -- the old `(a or b or c) is None` let it pass."""
-    api, urls = _recording_api()
+    api, transport = recording
     empty = dict.fromkeys(valid, '')
 
     with pytest.raises(ValueError, match='Must provide at least one of'):
         getattr(api, method)(*args, **empty)
 
-    assert urls == []
+    assert _urls(transport) == []
 
 
 @pytest.mark.parametrize(('method', 'args', 'valid', 'parameters'), GUARDED_DELETES)
 def test_a_single_valid_filter_is_enough(
-    method: str, args: tuple[str, ...], valid: dict[str, str], parameters: str
+    recording: Recording, method: str, args: tuple[str, ...], valid: dict[str, str], parameters: str
 ) -> None:
-    api, urls = _recording_api()
+    api, transport = recording
 
     headers = getattr(api, method)(*args, **valid)
 
-    assert len(urls) == 1
+    assert len(_urls(transport)) == 1
     assert headers['X-Delete-Count'] == '1'
 
 
@@ -117,65 +112,66 @@ SCENARIO_GUARDED_DELETES: list[tuple[str, tuple[str, ...], tuple[str, ...], str]
 
 @pytest.mark.parametrize(('method', 'empty_args', 'valid_args', 'message'), SCENARIO_GUARDED_DELETES)
 def test_scenario_delete_empty_filter_raises_and_sends_nothing(
-    method: str, empty_args: tuple[str, ...], valid_args: tuple[str, ...], message: str
+    recording: Recording, method: str, empty_args: tuple[str, ...], valid_args: tuple[str, ...], message: str
 ) -> None:
     """An empty filter string on a scenario sub-delete is refused, not sent as `?key=`."""
-    api, urls = _recording_api()
+    api, transport = recording
 
     with pytest.raises(ValueError, match=message):
         getattr(api, method)(*empty_args)
 
-    assert urls == []
+    assert _urls(transport) == []
 
 
 @pytest.mark.parametrize(('method', 'empty_args', 'valid_args', 'message'), SCENARIO_GUARDED_DELETES)
 def test_scenario_delete_valid_filter_sends_one_request(
-    method: str, empty_args: tuple[str, ...], valid_args: tuple[str, ...], message: str
+    recording: Recording, method: str, empty_args: tuple[str, ...], valid_args: tuple[str, ...], message: str
 ) -> None:
-    api, urls = _recording_api()
+    api, transport = recording
 
     getattr(api, method)(*valid_args)
 
-    assert len(urls) == 1
+    assert len(_urls(transport)) == 1
 
 
 @pytest.mark.parametrize('args', [(PROJECT_ID, SCENARIO_ID, '', 'q1'), (PROJECT_ID, SCENARIO_ID, 'oil', '')])
-def test_scenario_qualifiers_mixed_empty_is_refused(args: tuple[str, ...]) -> None:
+def test_scenario_qualifiers_mixed_empty_is_refused(recording: Recording, args: tuple[str, ...]) -> None:
     """A partially-unresolved lookup ('' in ONE field) must not forward a blank filter
     alongside a real one -- both econNames and qualifierNames are required by the API, so
     a blank either could widen the delete if the API reads it as "unfiltered"."""
-    api, urls = _recording_api()
+    api, transport = recording
 
     with pytest.raises(ValueError, match='Must provide both econ_names and qualifier_names'):
         api.delete_scenario_qualifiers(*args)
 
-    assert urls == []
+    assert _urls(transport) == []
 
 
 @pytest.mark.parametrize('method', ['delete_company_wells', 'delete_project_company_wells', 'delete_project_wells'])
-def test_an_empty_filter_is_dropped_not_forwarded(method: str) -> None:
+def test_an_empty_filter_is_dropped_not_forwarded(recording: Recording, method: str) -> None:
     """The specific hazard: an empty value alongside a real one must not reach the query.
 
     Covers all three sibling well deletes that share the `chosen_id`/`data_source`/`well_id`
     guard, not just `delete_company_wells` -- a regression in any one of them would forward
     `?chosenID=&dataSource=internal` and pass a single-method test.
     """
-    api, urls = _recording_api()
+    api, transport = recording
     args = () if method == 'delete_company_wells' else (PROJECT_ID,)
 
     getattr(api, method)(*args, chosen_id='', data_source='internal')
 
-    assert 'chosenID' not in urls[0]
-    assert urls[0].endswith('?dataSource=internal')
+    (url,) = _urls(transport)
+    assert 'chosenID' not in url
+    assert url.endswith('?dataSource=internal')
 
 
-def test_delete_company_wells_filters_are_keyword_only() -> None:
+def test_delete_company_wells_filters_are_keyword_only(recording: Recording) -> None:
     """A stale positional `delete_company_wells(project_id)` must raise, not silently rebind.
 
     All three filters are `Optional[str]`, so a positional argument would otherwise bind to
     `chosen_id` and issue a real, differently-scoped DELETE. The `*` makes it a `TypeError`.
     """
-    api, _urls = _recording_api()
+    api, _transport = recording
 
     with pytest.raises(TypeError):
         api.delete_company_wells(WELL_ID)  # type: ignore[call-arg]

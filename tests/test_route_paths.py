@@ -42,6 +42,10 @@ _SLUG_RE = re.compile(r'https://docs\.api\.combocurve\.com/api/([a-z0-9-]+)')
 # the placeholder type). Their paths were checked by hand on 2026-09-30.
 _UNCHECKED_BY_DESIGN = (
     'count_econ_model_assignments_by_type_by_id',
+    # 2026-11-21: these two gained docs links; like the count, their by-type builder asserts on the
+    # placeholder econ-model type, so it cannot be called here.
+    'delete_econ_model_assignments_by_type_by_id',
+    'get_econ_model_assignments_by_type_by_id',
     'count_econ_run_monthly_exports',
     'get_custom_columns_daily_production',
     'get_custom_columns_monthly_production',
@@ -63,6 +67,11 @@ _BUILDER_BY_METHOD = {
     'patch_type_curve': 'get_type_curve_by_id_url',
     'post_type_curve': 'get_type_curves_url',
     'post_type_curve_lookup_table': 'get_type_curve_lookup_tables_url',
+    # GET `.../head` sub-routes: the count method reads `X-Query-Count` from a GET, not a HEAD.
+    'count_company_formations_with_get': 'get_company_formations_head_url',
+    'count_project_formations_with_get': 'get_project_formations_head_url',
+    'count_company_shapefiles_with_get': 'get_company_shapefiles_head_url',
+    'count_project_shapefiles_with_get': 'get_project_shapefiles_head_url',
 }
 
 # Builders whose path legitimately has no collection counterpart.

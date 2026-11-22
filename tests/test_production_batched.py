@@ -2,35 +2,29 @@
 
 from typing import Any
 
-import requests
 from pytest import MonkeyPatch
 
 from combocurve_api_helper import BatchWriteResult
 from combocurve_api_helper.production import PUT_LIMIT
-from tests.http_fakes import FakeResponse, make_offline_api
+from tests.http_fakes import FakeResponse, RecordedCall, install_responding_transport, make_offline_api
 
 
 def test_put_project_monthly_productions_batched_chunks_and_preserves_the_envelope(monkeypatch: MonkeyPatch) -> None:
     api = make_offline_api()
-    seen_urls: list[str] = []
 
-    def fake_request(
-        method: str, url: str, headers: Any = None, params: Any = None, json: Any = None, timeout: Any = None
-    ) -> FakeResponse:
-        seen_urls.append(url)
-        assert method == 'put'
-        record_count = len(json)
+    def respond(call: RecordedCall) -> FakeResponse:
+        record_count = len(call.body)
         return FakeResponse(
             207,
             {
                 'successCount': record_count,
                 'failedCount': 0,
-                'results': [{'status': 'Success', 'well': record['well']} for record in json],
+                'results': [{'status': 'Success', 'well': record['well']} for record in call.body],
                 'generalErrors': [],
             },
         )
 
-    monkeypatch.setattr(requests, 'request', fake_request)
+    transport = install_responding_transport(monkeypatch, respond)
 
     data: list[dict[str, Any]] = [
         {'well': f'w{i}', 'date': '2026-01-15', 'oil': 1.0, 'gas': 2.0, 'water': 3.0, 'daysOn': 31} for i in range(7)
@@ -41,30 +35,27 @@ def test_put_project_monthly_productions_batched_chunks_and_preserves_the_envelo
     assert result.ok and result.success_count == 7
     assert [chunk.count for chunk in result.chunks] == [3, 3, 1]
     assert [record['well'] for record in result.results] == [f'w{i}' for i in range(7)]
-    assert all(url.endswith('/projects/000000000000000000000001/monthly-productions') for url in seen_urls)
+    assert {call.method for call in transport.calls} == {'PUT'}
+    assert all(call.url.endswith('/projects/000000000000000000000001/monthly-productions') for call in transport.calls)
 
 
 def test_put_project_monthly_productions_batched_defaults_to_the_put_limit(monkeypatch: MonkeyPatch) -> None:
     api = make_offline_api()
-    chunk_sizes: list[int] = []
 
-    def fake_request(
-        method: str, url: str, headers: Any = None, params: Any = None, json: Any = None, timeout: Any = None
-    ) -> FakeResponse:
-        chunk_sizes.append(len(json))
+    def respond(call: RecordedCall) -> FakeResponse:
         return FakeResponse(
             207,
             {
-                'successCount': len(json),
+                'successCount': len(call.body),
                 'failedCount': 0,
-                'results': [{'status': 'Success'}] * len(json),
+                'results': [{'status': 'Success'}] * len(call.body),
                 'generalErrors': [],
             },
         )
 
-    monkeypatch.setattr(requests, 'request', fake_request)
+    transport = install_responding_transport(monkeypatch, respond)
 
     data: list[dict[str, Any]] = [{'well': f'w{i}', 'date': '2026-01-15', 'oil': 1.0} for i in range(PUT_LIMIT + 1)]
     api.put_project_monthly_productions_batched('000000000000000000000001', data, max_workers=1)
 
-    assert sorted(chunk_sizes) == [1, PUT_LIMIT]
+    assert sorted(len(call.body) for call in transport.calls) == [1, PUT_LIMIT]

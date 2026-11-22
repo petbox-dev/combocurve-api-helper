@@ -6,12 +6,11 @@ from collections.abc import Callable
 from typing import Any
 
 import pytest
-import requests
 from pytest import MonkeyPatch
 
 from combocurve_api_helper import ComboCurveAPI
 from combocurve_api_helper.typecurves import TypeCurves
-from tests.http_fakes import FakeResponse, make_offline_api
+from tests.http_fakes import FakeResponse, install_responding_transport, make_offline_api
 
 PROJECT_ID = '000000000000000000000001'
 TYPE_CURVE_ID = '000000000000000000000002'
@@ -54,10 +53,9 @@ ENDPOINT_CALLS: dict[str, Callable[[ComboCurveAPI], object]] = {
 def _answer_every_request(monkeypatch: MonkeyPatch) -> None:
     """Answer every request with a 200 and a count header, so each method runs to completion."""
 
-    def fake_request(method: str, url: str, **kwargs: Any) -> FakeResponse:
-        return FakeResponse(200, [{'id': TYPE_CURVE_ID}], headers={'X-Query-Count': '1'})
-
-    monkeypatch.setattr(requests, 'request', fake_request)
+    install_responding_transport(
+        monkeypatch, lambda call: FakeResponse(200, [{'id': TYPE_CURVE_ID}], headers={'X-Query-Count': '1'})
+    )
 
 
 def test_every_public_endpoint_method_is_listed() -> None:

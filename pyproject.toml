@@ -30,7 +30,7 @@ dependencies = [
     # (the package that brought it in before); an optional `legacy` extra in a 3.x release, not before 2027-01-31.
     'pyjwt[crypto]>=2',
     'requests',
-    'typing-extensions',
+    'typing-extensions>=4.5.0',  # `deprecated` (root.get_project_custom_columns overloads) is 4.5.0+
     'urllib3',
 ]
 keywords = [

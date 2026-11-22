@@ -14,9 +14,8 @@ from pytest import MonkeyPatch
 from combocurve_api_helper import ComboCurveAPI
 from combocurve_api_helper.base import ItemList
 from combocurve_api_helper.scenarios import MAX_LOOKUP_TABLE_ASSIGNMENT_RECORDS, MAX_LOOKUP_TABLE_UNASSIGN_WELLS
-from tests.http_fakes import FakeResponse, install_recording_transport, make_offline_api
+from tests.http_fakes import V1, FakeResponse, install_recording_transport, make_offline_api
 
-V1 = 'https://api.combocurve.com/v1'
 PROJECT_ID = '000000000000000000000001'
 SCENARIO_ID = '000000000000000000000002'
 TABLE_ID = '000000000000000000000003'

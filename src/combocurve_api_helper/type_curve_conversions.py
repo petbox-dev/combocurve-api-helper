@@ -93,9 +93,10 @@ def fits_for_put(fits: Item) -> Item:
 def normalization_for_put(normalization: Item) -> Item:
     """A v2 `GET /normalization` body made acceptable to `PUT /normalization`.
 
-    Drops `aValue`/`bValue` on `1_to_1` segments (GET returns `aValue 1, bValue 0` on migrated
-    curves; PUT refuses them, live 2026-11-05) and drops `xAxis` when `customBasisKey` is set
-    (documented: GET returns a composite ratio there that PUT refuses).
+    Drops `aValue`/`bValue` on `1_to_1` segments (GET returned `aValue 1, bValue 0` on migrated
+    curves and PUT refused them, live 2026-11-05; a read of all 1,065 `1_to_1` segments on the production
+    tenant on 2026-11-21 found none carrying them, so the drop is now a guard) and drops `xAxis` when
+    `customBasisKey` is set (documented: GET returns a composite ratio there that PUT refuses).
     """
     writable = copy.deepcopy(normalization)
     for phase in PHASES:

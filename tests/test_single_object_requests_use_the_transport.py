@@ -15,7 +15,13 @@ from pytest import MonkeyPatch
 
 from combocurve_api_helper import ComboCurveAPI
 from combocurve_api_helper.base import _REQUEST_TIMEOUT_SECONDS
-from tests.http_fakes import FakeResponse, make_offline_api
+from tests.http_fakes import (
+    FakeResponse,
+    RecordingTransport,
+    install_recording_transport,
+    install_responding_transport,
+    make_offline_api,
+)
 
 PROJECT_ID = '000000000000000000000001'
 FORECAST_ID = '000000000000000000000002'
@@ -70,68 +76,49 @@ SINGLE_OBJECT_CALLS: dict[str, tuple[Callable[[ComboCurveAPI], object], str, str
 }
 
 
-class _Recorder:
-    """Stands in for `requests.request`; keeps every call with its timeout."""
-
-    def __init__(self) -> None:
-        self.calls: list[dict[str, Any]] = []
-
-    def __call__(
-        self, method: str, url: str, headers: Any = None, params: Any = None, json: Any = None, timeout: Any = None
-    ) -> FakeResponse:
-        self.calls.append({'method': method.upper(), 'url': url, 'json': json, 'timeout': timeout})
-        return FakeResponse(200, {'id': JOB_ID})
-
-
-def _install(monkeypatch: MonkeyPatch) -> _Recorder:
-    recorder = _Recorder()
-    monkeypatch.setattr(requests, 'request', recorder)
+def _install(monkeypatch: MonkeyPatch) -> RecordingTransport:
+    """Record every request through the transport, and fail any direct `requests.get/post/put/patch`."""
+    transport = install_responding_transport(monkeypatch, lambda call: FakeResponse(200, {'id': JOB_ID}))
 
     def direct_call(*arguments: Any, **keywords: Any) -> None:
         raise AssertionError('a direct requests.get/post/put/patch call bypasses the transport')
 
     for verb in ('get', 'post', 'put', 'patch'):
         monkeypatch.setattr(requests, verb, direct_call)
-    return recorder
+    return transport
 
 
 @pytest.mark.parametrize('method_name', sorted(SINGLE_OBJECT_CALLS))
 def test_single_object_call_goes_through_the_transport(monkeypatch: MonkeyPatch, method_name: str) -> None:
-    recorder = _install(monkeypatch)
+    transport = _install(monkeypatch)
     call, verb, url_suffix, body = SINGLE_OBJECT_CALLS[method_name]
 
     call(make_offline_api())
 
-    assert len(recorder.calls) == 1
-    sent = recorder.calls[0]
-    assert sent['method'] == verb
-    assert sent['url'].endswith(url_suffix)
-    assert sent['json'] == body
-    assert sent['timeout'] == _REQUEST_TIMEOUT_SECONDS
+    (sent,) = transport.calls
+    assert sent.method == verb
+    assert sent.url.endswith(url_suffix)
+    assert sent.body == body
+    assert sent.timeout == _REQUEST_TIMEOUT_SECONDS
 
 
 def test_post_forecast_wells_sends_each_chunk_through_the_transport(monkeypatch: MonkeyPatch) -> None:
-    recorder = _install(monkeypatch)
+    transport = _install(monkeypatch)
 
     make_offline_api().post_forecast_wells(PROJECT_ID, FORECAST_ID, ['w1', 'w2', 'w3'], chunksize=2)
 
-    assert [call['json'] for call in recorder.calls] == [{'wellIds': ['w1', 'w2']}, {'wellIds': ['w3']}]
-    assert all(call['method'] == 'POST' and call['timeout'] == _REQUEST_TIMEOUT_SECONDS for call in recorder.calls)
+    assert [call.body for call in transport.calls] == [{'wellIds': ['w1', 'w2']}, {'wellIds': ['w3']}]
+    assert all(call.method == 'POST' and call.timeout == _REQUEST_TIMEOUT_SECONDS for call in transport.calls)
 
 
 def test_a_get_is_sent_again_after_a_gateway_timeout(monkeypatch: MonkeyPatch) -> None:
     """The export status poll is a GET, so a 504 is retried (writes are not)."""
-    responses = [FakeResponse(504, {'message': 'gateway'}), FakeResponse(200, {'status': 'complete'})]
-    calls: list[str] = []
-
-    def answer(method: str, url: str, **keywords: Any) -> FakeResponse:
-        calls.append(method.upper())
-        return responses.pop(0)
-
-    monkeypatch.setattr(requests, 'request', answer)
+    transport = install_recording_transport(
+        monkeypatch, FakeResponse(504, {'message': 'gateway'}), FakeResponse(200, {'status': 'complete'})
+    )
     monkeypatch.setattr('time.sleep', lambda seconds: None)
 
     result = make_offline_api()._get_v2_export('forecast-parameters', JOB_ID)
 
-    assert calls == ['GET', 'GET']
+    assert [call.method for call in transport.calls] == ['GET', 'GET']
     assert result == {'status': 'complete'}

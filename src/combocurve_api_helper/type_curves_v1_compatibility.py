@@ -14,7 +14,8 @@ from typing import TYPE_CHECKING, TypeVar
 import requests
 
 from ._deprecation import warn_deprecated
-from .base import Item, ItemList, WriteError, WriteResponse
+from .base import WELL_FILTER_LIMIT, Item, ItemList, WriteError, WriteResponse
+from .forecasts import GET_LIMIT_OUTPUTS_ARIES
 from .type_curve_conversions import (
     PHASES,
     fits_from_v1,
@@ -31,11 +32,15 @@ if TYPE_CHECKING:
 
     from requests.structures import CaseInsensitiveDict
 
+    from .base import QueryFilters
+
 # Representative wells carry no timestamps; name then well id. The id key is `wellId`, not `id`.
 _REP_WELL_SORT_ORDER: Mapping[str, int] = MappingProxyType({'wellName': 0, 'wellId': 1})
-# Forecast outputs take at most 100 `well` values per request (migration guide).
-FORECAST_OUTPUTS_WELLS_PER_REQUEST = 100
-FORECAST_OUTPUTS_GET_LIMIT = 200
+# The names this module used for the forecast-outputs `well` cap and page size through 3.2.0. The outputs
+# are now read with `forecasts.py`'s page size (`GET_LIMIT_OUTPUTS_ARIES`, 1,000; it was 200 here) and
+# `base.WELL_FILTER_LIMIT` values per request; both names stay bound because this module is public.
+FORECAST_OUTPUTS_WELLS_PER_REQUEST = WELL_FILTER_LIMIT
+FORECAST_OUTPUTS_GET_LIMIT = GET_LIMIT_OUTPUTS_ARIES
 _V1_TYPE_CURVE_ONLY_FIELDS = ('fits', 'regressionType', 'normalizations')
 _ResultType = TypeVar('_ResultType')
 
@@ -65,7 +70,7 @@ def _is_lookup_table_not_found(error: requests.HTTPError) -> bool:
 
 def _stage_failure_result(error: requests.RequestException, stage: str, location: str) -> Item:
     """A failed result for a stage whose request failed as a whole. `mayHaveApplied` is True unless
-    the server answered with an HTTP error status (as `base._whole_chunk_failure` marks it)."""
+    the server answered with an HTTP error status (as `_batch._whole_chunk_failure` marks it)."""
     response = error.response if isinstance(error, requests.HTTPError) else None
     if response is not None:
         status, message = response.status_code, _error_message(response)
@@ -107,6 +112,13 @@ def _place_results(
 
 
 class TypeCurvesV1Compatibility(TypeCurves):
+    if TYPE_CHECKING:
+        # Provided at runtime by `Forecasts`, which precedes this class in `ComboCurveAPI`'s bases; declared
+        # here for the type checker only, with the same signature.
+        def get_forecast_outputs_url(
+            self, project_id: str, forecast_id: str, filters: QueryFilters | None = None
+        ) -> str: ...
+
     ###################################
     # Removed v1 reads, kept as wrappers
     ###################################
@@ -131,15 +143,18 @@ class TypeCurvesV1Compatibility(TypeCurves):
         return volumes_to_v1(self.get_type_curve_volumes(project_id, type_curve_id, 'monthly'))
 
     def _forecast_outputs_for_wells(self, project_id: str, forecast_id: str, well_ids: Sequence[str]) -> ItemList:
-        """Forecast outputs for `well_ids`, 100 repeated `well` values per request (a comma-joined
-        `well` is a 400, live 2026-11-05)."""
-        base_url = f'{self.API_BASE_URL}/projects/{project_id}/forecasts/{forecast_id}/outputs'
-        outputs: ItemList = []
-        for start in range(0, len(well_ids), FORECAST_OUTPUTS_WELLS_PER_REQUEST):
-            chunk = list(well_ids[start : start + FORECAST_OUTPUTS_WELLS_PER_REQUEST])
-            url = base_url + self._build_params_string({'well': chunk})
-            outputs.extend(self._get_items(url, {'take': FORECAST_OUTPUTS_GET_LIMIT}))
-        return outputs
+        """Forecast outputs for `well_ids`, read like `get_forecast_outputs`: at most 100 repeated `well`
+        values per request (a comma-joined `well` is a 400, live 2026-11-05; a list over 100 is
+        de-duplicated, then split), pages of `GET_LIMIT_OUTPUTS_ARIES`. No well ids, no request: an empty
+        `well` filter would read every output of the forecast."""
+        if not well_ids:
+            return []
+        return self._get_items_in_value_batches(
+            lambda batch_filters: self.get_forecast_outputs_url(project_id, forecast_id, batch_filters),
+            {'well': list(well_ids)},
+            'well',
+            {'take': GET_LIMIT_OUTPUTS_ARIES},
+        )
 
     def get_type_curve_representative_fits(self, project_id: str, type_curve_id: str) -> ItemList:
         """

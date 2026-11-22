@@ -3,64 +3,57 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from combocurve_api_helper.models import Models
+from tests.http_fakes import V1, FakeResponse, install_recording_transport, make_offline_api
 
 if TYPE_CHECKING:
     import pytest
 
     from combocurve_api_helper.base import ItemList
 
+ASSIGNMENTS = f'{V1}/projects/p/econ-models/capex/id/assignments'
+
 
 def test_post_put_delete_assignment_generics_delegate(monkeypatch: pytest.MonkeyPatch) -> None:
-    m = Models.__new__(Models)  # no auth/__init__
-    captured_url_calls: list[tuple[str, str, str, dict[str, str] | None]] = []
+    api = make_offline_api()
+    transport = install_recording_transport(
+        monkeypatch,
+        FakeResponse(207, [{'results': ['posted']}]),
+        FakeResponse(207, [{'results': ['put']}]),
+        *[FakeResponse(200, [], headers={'X-Delete-Count': '1'})] * 4,
+    )
 
-    def fake_url(pid: str, t: str, mid: str, filters: dict[str, str] | None = None) -> str:
-        captured_url_calls.append((pid, t, mid, filters))
-        return f'URL/{pid}/{t}/{mid}'
-
-    monkeypatch.setattr(m, 'get_econ_model_assignments_by_type_by_id_url', fake_url)
-    monkeypatch.setattr(m, '_post_items', lambda url, data: ('POST', url, data))
-    monkeypatch.setattr(m, '_put_items', lambda url, data: ('PUT', url, data))
-    monkeypatch.setattr(m, '_delete_responses', lambda url, data: ('DEL', url, data))
-
-    body: ItemList = [{'scenario': 's', 'qualifierName': 'P50', 'wells': ['w'], 'allWells': False}]
-    post_result: object = m.post_econ_model_assignments_by_type_by_id('p', 'Capex', 'id', body)
-    assert post_result == ('POST', 'URL/p/Capex/id', body)
-    put_result: object = m.put_econ_model_assignments_by_type_by_id('p', 'Capex', 'id', body)
-    assert put_result == ('PUT', 'URL/p/Capex/id', body)
+    # Two records: each assignment write goes as ONE request (no chunking), so both are in one body.
+    body: ItemList = [
+        {'scenario': 's', 'qualifierName': 'P50', 'wells': ['w'], 'allWells': False},
+        {'scenario': 's', 'qualifierName': 'P50', 'wells': ['v'], 'allWells': False},
+    ]
+    post_result: object = api.post_econ_model_assignments_by_type_by_id('p', 'Capex', 'id', body)
+    assert post_result == [{'results': ['posted']}]
+    put_result: object = api.put_econ_model_assignments_by_type_by_id('p', 'Capex', 'id', body)
+    assert put_result == [{'results': ['put']}]
 
     # DELETE takes query filters, not a body: scenarioId is required, the rest
-    # are optional and only added to the filters dict when provided.
-    delete_result: object = m.delete_econ_model_assignments_by_type_by_id(
+    # are optional and only added to the filters when provided.
+    delete_result: object = api.delete_econ_model_assignments_by_type_by_id(
         'p', 'Capex', 'id', 'scenario1', qualifier_name='P50', wells='w1,w2', all_wells=True
     )
-    assert delete_result == ('DEL', 'URL/p/Capex/id', [])
-    assert captured_url_calls[-1] == (
-        'p',
-        'Capex',
-        'id',
-        {'scenarioId': 'scenario1', 'qualifierName': 'P50', 'wells': 'w1,w2', 'allWells': 'true'},
-    )
+    assert [response.headers['X-Delete-Count'] for response in delete_result] == ['1']  # type: ignore[attr-defined]
+    api.delete_econ_model_assignments_by_type_by_id('p', 'Capex', 'id', 'scenario2')
 
-    minimal_delete_result: object = m.delete_econ_model_assignments_by_type_by_id('p', 'Capex', 'id', 'scenario2')
-    assert minimal_delete_result == ('DEL', 'URL/p/Capex/id', [])
-    assert captured_url_calls[-1] == ('p', 'Capex', 'id', {'scenarioId': 'scenario2'})
+    # `wells` accepts a sequence or a comma-joined str; both become a list, which the
+    # url builder sends as one repeated `wells` key per id. The route refuses a
+    # comma-joined value (400, verified live 2026-11-21).
+    api.delete_econ_model_assignments_by_type_by_id('p', 'Capex', 'id', 'scenario3', wells=['w1', 'w2'])
+    api.delete_econ_model_assignments_by_type_by_id('p', 'Capex', 'id', 'scenario4', wells='w1')
 
-    # `wells` accepts a sequence too -- e.g. a list reused from a POST/PUT body
-    # by a JSON-driven caller not protected by mypy's `Optional[str]` type --
-    # and must be normalized to the same comma-separated string filter, not
-    # passed through as a Python list-repr that matches nothing server-side.
-    list_delete_result: object = m.delete_econ_model_assignments_by_type_by_id(
-        'p', 'Capex', 'id', 'scenario3', wells=['w1', 'w2']
-    )
-    assert list_delete_result == ('DEL', 'URL/p/Capex/id', [])
-    assert captured_url_calls[-1] == ('p', 'Capex', 'id', {'scenarioId': 'scenario3', 'wells': 'w1,w2'})
-
-    str_delete_result: object = m.delete_econ_model_assignments_by_type_by_id(
-        'p', 'Capex', 'id', 'scenario4', wells='w1'
-    )
-    assert str_delete_result == ('DEL', 'URL/p/Capex/id', [])
-    assert captured_url_calls[-1] == ('p', 'Capex', 'id', {'scenarioId': 'scenario4', 'wells': 'w1'})
+    assert [(call.method, call.url, call.body) for call in transport.calls] == [
+        ('POST', ASSIGNMENTS, body),
+        ('PUT', ASSIGNMENTS, body),
+        ('DELETE', f'{ASSIGNMENTS}?scenarioId=scenario1&qualifierName=P50&wells=w1&wells=w2&allWells=true', None),
+        ('DELETE', f'{ASSIGNMENTS}?scenarioId=scenario2', None),
+        ('DELETE', f'{ASSIGNMENTS}?scenarioId=scenario3&wells=w1&wells=w2', None),
+        ('DELETE', f'{ASSIGNMENTS}?scenarioId=scenario4&wells=w1', None),
+    ]
 
 
 def test_assignment_url_uses_kebab_route_not_econ_model_type() -> None:

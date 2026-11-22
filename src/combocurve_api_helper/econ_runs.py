@@ -133,13 +133,48 @@ class EconRuns(APIBase):
     # API calls
     ###########
 
-    def get_econ_runs(self, project_id: str, scenario_id: str, add_combo_names: bool = True) -> ItemList:
+    def get_econ_runs(
+        self,
+        project_id: str,
+        scenario_id: str,
+        add_combo_names: bool = True,
+        filters: Optional[dict[str, str]] = None,
+    ) -> ItemList:
         """
-        Returns a list of econ runs for a specific project id and scenario id.
+        Returns a list of econ runs for a specific project id and scenario id, newest `runDate`
+        first. Pages of 200 are requested.
 
-        `add_combo_names` will add the list of combo names to each econ run.
+        `add_combo_names` will add the list of combo names to each econ run (one more request per
+        run).
+
+        `filters` take the query keys the route documents: `runDate` and `tags` (the same keys as
+        `count_econ_runs`, so a filtered count has a matching list), plus `sort`, `skip` and `take`.
+        The runs are re-sorted here, newest first, so `sort` does not change the order returned. A
+        `take` in `filters` replaces the page size of 200.
+
+        https://docs.api.combocurve.com/api/get-econ-runs
+
+        Example response:
+        [
+            {
+                "id": "5e272d38b78910dd2a1bd691",
+                "project": "string",
+                "runDate": "2020-01-01",
+                "scenario": "string",
+                "status": "string",
+                "tags": [
+                    {
+                        "name": "Example",
+                        "description": "string"
+                    }
+                ],
+                "outputParams": {
+                    "prodAnalyticsType": "none"
+                }
+            }
+        ]
         """
-        url = self.get_econ_runs_url(project_id, scenario_id)
+        url = self.get_econ_runs_url(project_id, scenario_id, filters)
         params = {'take': GET_LIMIT}
         econruns = self._get_items(url, params)
 
@@ -184,12 +219,23 @@ class EconRuns(APIBase):
 
         return cast('list[str]', sorted(set(data)))
 
-    def get_econ_run_onelines(self, project_id: str, scenario_id: str, econ_run_id: str) -> ItemList:
+    def get_econ_run_onelines(
+        self, project_id: str, scenario_id: str, econ_run_id: str, filters: Optional[dict[str, str]] = None
+    ) -> ItemList:
         """
-        Returns a list of onelines for a specific project id, scenario id,
-        and econ run id.
+        Returns a list of onelines for a specific project id, scenario id, and econ run id, in the
+        order received. Each one-liner's `output` object is merged into the one-liner itself. Pages
+        of 200 are requested.
+
+        `filters` take the query keys the route documents: `comboName` and `well` (the same keys as
+        `count_econ_run_onelines`, so a filtered count has a matching list), plus `sort`, `skip` and
+        `take`. A `take` in `filters` replaces the page size of 200.
+
+        https://docs.api.combocurve.com/api/get-one-liners
+
+        The example response is large; see it on the docs page linked above.
         """
-        url = self.get_econ_run_onelines_url(project_id, scenario_id, econ_run_id)
+        url = self.get_econ_run_onelines_url(project_id, scenario_id, econ_run_id, filters)
 
         # in this specific case we do some post-processing to "flatten" the results
         # into the expected type of: ItemList

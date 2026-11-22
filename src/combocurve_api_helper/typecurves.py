@@ -17,12 +17,16 @@ from .base import LIST_SORT_ORDER, WELL_LIST_SORT_ORDER, APIBase, Item, ItemList
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from .base import QueryFilters
+
 Phase = Literal['oil', 'gas', 'water']
 Resolution = Literal['daily', 'monthly']
 
 # `take` limits enforced by the server (live 2026-11-05): lookup tables 200, wells 1,000; the
-# type-curve list and volumes accept 2,500 although their schemas say 200.
+# type-curve list and volumes accept 2,500 although their schemas say 200. The list cap was checked
+# again on 2026-11-21: `take=2500` answers 200, `take=2501` answers 400 ("Must be between 1 and 2500").
 GET_LIMIT = 200
+TYPE_CURVE_LIST_GET_LIMIT = 2500
 WELLS_GET_LIMIT = 1000
 VOLUMES_GET_LIMIT = 2500
 # Batch routes: at most 100 type curves, 500 lookup tables per request.
@@ -47,8 +51,9 @@ class TypeCurves(APIBase):
     # URLs
     ######
 
-    def get_type_curves_url(self, project_id: str, filters: dict[str, str] | None = None) -> str:
-        """Returns the v2 API url of the type curves of a project."""
+    def get_type_curves_url(self, project_id: str, filters: QueryFilters | None = None) -> str:
+        """Returns the v2 API url of the type curves of a project. A sequence value repeats its key: the
+        DELETE route takes several `id` or `name` values that way (up to 100, per the documentation)."""
         return f'{self.API_BASE_URL_V2}/projects/{project_id}/type-curves' + self._build_params_string(filters)
 
     def get_type_curves_batch_url(self, project_id: str) -> str:
@@ -120,6 +125,9 @@ class TypeCurves(APIBase):
         Returns the type curves of a project. Fits and normalization are not embedded (v1
         embedded `fits`); read them with `get_type_curve_fits` / `get_type_curve_normalization`.
 
+        Reads 2,500 type curves per page, the server's maximum (its schema says 200), and follows the
+        pages to the end. The list is sorted by `LIST_SORT_ORDER`.
+
         https://docs.api.combocurve.com/api/get-v2-type-curves
 
         Example response:
@@ -141,7 +149,8 @@ class TypeCurves(APIBase):
             }
         ]
         """
-        type_curves = self._get_items(self.get_type_curves_url(project_id, filters), {'take': GET_LIMIT})
+        url = self.get_type_curves_url(project_id, filters)
+        type_curves = self._get_items(url, {'take': TYPE_CURVE_LIST_GET_LIMIT})
         return self._keysort(type_curves, LIST_SORT_ORDER)
 
     def count_type_curves(self, project_id: str, filters: dict[str, str] | None = None) -> int:
@@ -391,9 +400,7 @@ class TypeCurves(APIBase):
 
         https://docs.api.combocurve.com/api/delete-v2-type-curve
         """
-        response = self._request_with_retry('delete', self.get_type_curve_by_id_url(project_id, type_curve_id))
-        response.raise_for_status()
-        return response.headers
+        return self._delete_headers(self.get_type_curve_by_id_url(project_id, type_curve_id))
 
     def get_type_curve_fits(self, project_id: str, type_curve_id: str, phases: Sequence[Phase] | None = None) -> Item:
         """
@@ -918,7 +925,4 @@ class TypeCurves(APIBase):
 
         https://docs.api.combocurve.com/api/delete-v2-type-curve-lookup-table-by-id
         """
-        url = self.get_type_curve_lookup_table_by_id_url(project_id, lookup_table_id)
-        response = self._request_with_retry('delete', url)
-        response.raise_for_status()
-        return response.headers
+        return self._delete_headers(self.get_type_curve_lookup_table_by_id_url(project_id, lookup_table_id))

@@ -1,5 +1,8 @@
 # Count methods and list methods do not pair everywhere
 
+Closed: 2026-11-21 -- settled by: optional `filters` added to `get_econ_model_assignments_by_type_by_id` (and the 16 generated per-type wrappers), `get_econ_runs` and `get_econ_run_onelines`, with the keys each GET documents; `get_scenario_combos` already took them
+If this was wrong, you will see: a filtered list whose length disagrees with its `count_*` twin
+
 Severity: low
 Opened: 2026-09-30
 
@@ -29,3 +32,11 @@ The company-route bullet needs no decision (settled above).
 
 - `src/combocurve_api_helper/_econ_model_base.py`, `scenarios.py`, `econ_runs.py`, `company_models.py`
 - `assets/econModels.json`, `scripts/generate_model_methods.py`
+
+## Resolution (2026-11-21)
+
+Decision taken: add `filters` (default `None`, last parameter). The GET operations document the same
+keys as their HEAD twins: `get_econ_model_assignments_by_type_by_id` and every generated
+`get_<type>_assignments_by_id` (`wells`, `scenarios`), `econ_runs.get_econ_runs` (`runDate`, `tags`),
+`econ_runs.get_econ_run_onelines` (`comboName`, `well`); each also documents `sort`, `skip`, `take`.
+`scenarios.get_scenario_combos` already took `filters` (`savedName`, `updatedAt`, `sort`); no change.

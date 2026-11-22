@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Optional, cast
 
-from .base import APIBase, Item, ItemList, WellFilters, WriteResponse
+from .base import APIBase, Item, ItemList, QueryFilters, WriteResponse
 
 GET_LIMIT = 200
 
@@ -11,7 +11,7 @@ class ForecastConfigurations(APIBase):
     # URLs
     ######
 
-    def get_forecast_configurations_url(self, filters: Optional[WellFilters] = None) -> str:
+    def get_forecast_configurations_url(self, filters: Optional[QueryFilters] = None) -> str:
         """
         Returns the API url for forecast configurations.
         """
@@ -119,9 +119,15 @@ class ForecastConfigurations(APIBase):
 
     def delete_forecast_configurations(self, ids: Sequence[str]) -> list[WriteResponse]:
         """
-        Deletes forecast configurations by id in one request: each id is sent as a repeated `id` query
-        parameter. A configuration owned by another user is a per-record 403, and an unknown id is a
-        per-record 404; the response reports each record.
+        Deletes forecast configurations by id: each id is sent as a repeated `id` query parameter. A
+        configuration owned by another user is a per-record 403, and an unknown id is a per-record 404;
+        the 207 envelope reports each record, so neither raises.
+
+        The route takes at most 100 ids per request, which the API docs do not state: 101 ids answered
+        500, and 500 ids answered 431 (the URL is too long) on dev, 2026-11-21. A longer `ids` list is
+        de-duplicated and sent in requests of 100, and the list holds one envelope per request. The
+        requests are independent: a failed later request leaves the earlier deletes applied. An empty
+        `ids`, a bare `str`, or an empty id raises `ValueError` before anything is sent.
 
         https://docs.api.combocurve.com/api/delete-forecast-configurations
 
@@ -152,5 +158,7 @@ class ForecastConfigurations(APIBase):
             "successCount": 123
         }
         """
-        url = self.get_forecast_configurations_url({'id': self._require_id_sequence(ids, 'ids')})
-        return cast('list[WriteResponse]', self._delete_items(url, data=[]))
+        envelopes: ItemList = []
+        for batch_filters in self._filter_value_batches({'id': self._require_id_sequence(ids, 'ids')}, 'id'):
+            envelopes.extend(self._delete_items(self.get_forecast_configurations_url(batch_filters), data=[]))
+        return cast('list[WriteResponse]', envelopes)

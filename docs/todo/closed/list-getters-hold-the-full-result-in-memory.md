@@ -1,5 +1,8 @@
 # List getters hold the full result in memory; no public page iterator
 
+Closed: 2026-11-21 -- settled by: public `APIBase.iter_pages(url, params)` yields one page at a time in ComboCurve order (lazy, unsorted); `_get_items_iterator` delegates to it unchanged and emits no warning yet (maintainer decision: option A). Not planned: per-getter `iter_*` twins; deprecate `_get_items_iterator` only after the downstream MCP server has moved its call sites
+If this was wrong, you will see: a caller of `iter_pages` getting pages in a different order or on a different host than `_get_items_iterator`, or a request sent before the first page is read
+
 Severity: low
 Opened: 2026-11-06
 
@@ -51,3 +54,11 @@ inside the iterator, so callers stop importing module `GET_LIMIT` values.
 - `src/combocurve_api_helper/base.py`: `_get_items_iterator`, `_get_items`, `_keysort`
 - `src/combocurve_api_helper/forecasts.py`, `wells.py`, `scenarios.py`, `production.py`,
   `econ_runs.py`: list getters and their `GET_LIMIT` constants
+
+## Status (2026-11-21)
+
+`APIBase.iter_pages(url, params=None)` is the public page iterator. It yields one parsed page at a
+time in ComboCurve's order (no `_keysort`), follows `Link` on the request's own host, and is lazy, so
+a caller that stops reading stops the requests. `_get_items_iterator` now delegates to it with the
+same signature and no deprecation warning. Downstream callers of `_get_items_iterator` can move to
+`iter_pages`. Not done: an `iter_*` twin per list getter, and a public per-route page-size constant.

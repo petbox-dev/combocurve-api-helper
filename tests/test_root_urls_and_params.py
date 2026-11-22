@@ -82,24 +82,25 @@ def test_well_identifiers_url_is_plural() -> None:
 def test_unscoped_volume_request_is_refused(
     monkeypatch: MonkeyPatch, method: str, filters: Optional[dict[str, str]]
 ) -> None:
-    """The API 400s without project/forecast/well, so it never leaves the process."""
+    """The API 400s without project or forecast, so it never leaves the process."""
     api = make_offline_api()
     calls = _capture_requests(monkeypatch)
 
-    with pytest.raises(ValueError, match='at least one of project, forecast, well'):
+    with pytest.raises(ValueError, match="at least one of 'project' or 'forecast'"):
         getattr(api, method)(filters)
 
     assert calls == []
 
 
-@pytest.mark.parametrize('scope', ['project', 'forecast'])
-def test_any_one_scope_filter_is_accepted(monkeypatch: MonkeyPatch, scope: str) -> None:
+def test_forecast_scope_is_accepted(monkeypatch: MonkeyPatch) -> None:
+    """A `forecast` scope is one listing as sent. (A `project` scope is read per forecast:
+    `tests/test_root_volumes_per_forecast.py`.)"""
     api = make_offline_api()
     calls = _capture_requests(monkeypatch)
 
-    api.get_root_forecast_monthly_volumes({scope: 'X'})
+    api.get_root_forecast_monthly_volumes({'forecast': 'X'})
 
-    assert calls[0] == (f'{V1}/forecast-monthly-volumes?{scope}=X', {'take': 200})
+    assert calls == [(f'{V1}/forecast-monthly-volumes?forecast=X', {'take': 200})]
 
 
 def test_well_with_forecast_is_accepted(monkeypatch: MonkeyPatch) -> None:
@@ -111,14 +112,26 @@ def test_well_with_forecast_is_accepted(monkeypatch: MonkeyPatch) -> None:
     assert calls[0][0] == f'{V1}/forecast-monthly-volumes?forecast=F&well=W'
 
 
-@pytest.mark.parametrize('filters', [{'well': 'W'}, {'project': 'P', 'well': 'W'}])
-def test_well_without_forecast_is_refused_before_sending(monkeypatch: MonkeyPatch, filters: dict[str, str]) -> None:
-    """The API 400s a `well` filter with no `forecast`, so it never leaves the process."""
+@pytest.mark.parametrize(
+    ('method', 'filters'),
+    [
+        ('get_root_forecast_monthly_volumes', {'well': 'W'}),
+        ('get_root_forecast_daily_volumes', {'well': 'W'}),
+        ('count_root_forecast_monthly_volumes', {'well': 'W'}),
+        ('count_root_forecast_monthly_volumes', {'project': 'P', 'well': 'W'}),
+        ('count_root_forecast_daily_volumes', {'project': 'P', 'well': 'W'}),
+    ],
+)
+def test_well_without_forecast_is_refused_before_sending(
+    monkeypatch: MonkeyPatch, method: str, filters: dict[str, str]
+) -> None:
+    """The API 400s a `well` filter with no `forecast`, so it never leaves the process. (The list methods
+    take `well` with `project`, read per forecast: `tests/test_root_volumes_per_forecast.py`.)"""
     api = make_offline_api()
     calls = _capture_requests(monkeypatch)
 
     with pytest.raises(ValueError, match="must come with 'forecast'"):
-        api.get_root_forecast_monthly_volumes(filters)
+        getattr(api, method)(filters)
 
     assert calls == []
 
@@ -249,7 +262,19 @@ def test_project_custom_columns_accepts_the_deprecated_collection_keyword(monkey
 
 def test_project_custom_columns_needs_exactly_one_name_for_the_segment() -> None:
     api = make_offline_api()
+    # The overloads refuse both calls under mypy (tests/test_project_custom_columns_typing.py); the
+    # runtime check is what an untyped caller meets.
     with pytest.raises(TypeError, match='missing required argument'):
-        api.get_project_custom_columns_url('P')
+        api.get_project_custom_columns_url('P')  # type: ignore[call-overload]
     with pytest.raises(TypeError, match='not both'):
-        api.get_project_custom_columns_url('P', custom_column='headers', collection='headers')
+        api.get_project_custom_columns_url('P', custom_column='headers', collection='headers')  # type: ignore[call-overload]
+
+
+def test_project_custom_columns_without_a_name_raises_before_sending(monkeypatch: MonkeyPatch) -> None:
+    api = make_offline_api()
+    calls = _capture_requests(monkeypatch)
+    with pytest.raises(TypeError, match='missing required argument'):
+        api.get_project_custom_columns('P')  # type: ignore[call-overload]
+    with pytest.raises(TypeError, match='not both'):
+        api.get_project_custom_columns('P', custom_column='headers', collection='headers')  # type: ignore[call-overload]
+    assert calls == []

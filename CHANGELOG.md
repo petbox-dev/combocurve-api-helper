@@ -7,6 +7,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Every operation in the ComboCurve Postman collection now has a method (484 of 502; the other 18 are the
+  retired v1 type-curve routes and the OAuth token route). New methods:
+  - Company econ settings and econ report settings: `get_`, `count_`, `post_`, `put_`, `patch_`
+    `econ_settings` / `econ_report_settings`, `get_` and `delete_econ_setting_by_id` /
+    `econ_report_setting_by_id`.
+  - Scenarios: `put_scenario_econ_model_assignments`, `delete_scenario_econ_model_assignments`,
+    `get_scenario_well_incrementals`.
+  - Forecasts: `put_forecast_daily_volumes`, `put_forecast_monthly_volumes`; forecast configurations:
+    `delete_forecast_configurations` (bulk, by id); wells: `patch_project_company_wells`.
+  - Production comments (`ProductionComments`, company and project scope) and production comment types.
+  - `post_directional_surveys_batch`.
+  - Formations (`Formations`, company and project scope; the PUT is an asynchronous import, with
+    `wait_for_company_formations_job` / `wait_for_project_formations_job`).
+  - Shapefiles (`Shapefiles`, company and project scope), including the three-step zip upload
+    (`upload_company_shapefile` / `upload_project_shapefile` run it end to end and wait for the job). The
+    file goes to the signed storage URL with only the headers the upload ticket names, never the API key
+    or the bearer token.
+- `iter_pages(url, params=None)`: a public, lazy page iterator (one parsed page per step, in ComboCurve's
+  order, unsorted). The private `_get_items_iterator` delegates to it and keeps working.
+- `filters` on `get_econ_model_assignments_by_type_by_id` (and the 16 per-type `get_<type>_assignments_by_id`),
+  `get_econ_runs` and `get_econ_run_onelines`, for the query keys their GET routes document.
+- `QueryFilters` (and `WellFilters`, now an alias of it) exported from the package root: the filter mapping
+  the url builders take, where a sequence value is sent as one repeated key per value.
+
+### Changed
+
+- A repeated `well` / `wellId` / `id` filter longer than 100 values is de-duplicated and sent in requests of
+  100 (the routes refuse 101), for the production, forecast-output, forecast and root volume, scenario
+  model-assignment and well-incremental getters and counts, and `delete_forecast_configurations`. A `skip` or
+  `cursor` filter combined with more than one batch raises `ValueError`, because it would apply once per batch.
+- Refused locally with `ValueError` before any request: a blank or empty well id in an unassign or a
+  scenario well removal, an assignment-delete record with neither `allWells` nor non-empty `wellIds`, more
+  than 500 records on a scenario assignment write, more than 25,000 `wellIds` across one assignment PUT, and
+  an empty `data` on the new write methods. The root volume routes refuse `well` without `forecast`.
+  `delete_scenario_wells` and the econ-model unassign methods refuse more than 100 well ids (101 is a
+  400 on both routes, live 2026-11-21) instead of splitting the delete. A production-comment bulk delete
+  refuses `production_comment_id` together with `well_id`. Id lists given as a comma string are split and
+  stripped (`'a, b'` is two ids); a blank or whitespace-only id is refused.
+- `get_type_curves` reads 2,500 type curves per page (the route's maximum), not 200. The v1-compatibility
+  type-curve wrappers read forecast outputs at 1,000 per page, like `get_forecast_outputs`, not 200.
+- `get_project_custom_columns` and its url builder are typed with overloads: a type checker now refuses a
+  call with neither `custom_column` nor the deprecated `collection`. Requires `typing-extensions>=4.5.0`.
+- `delete_directional_survey_by_id` returns the response headers, like the other deletes by id (it was
+  annotated `ItemList`, see Fixed).
+- The transport policy (timeouts, retries, deadline, connection failures) moved from `base.py` to the
+  private `_transport.py`; `base.py` re-exports every moved name.
+- `get_root_forecast_daily_volumes` / `_monthly_volumes` with `project` and no `forecast` now read the
+  project one forecast at a time (one forecast list, one forecast-scoped listing per forecast) and check the
+  total against the project count, raising `RuntimeError` on a mismatch. ComboCurve's own project-scoped
+  listing returns wrong rows on every dev project above 200 rows (short pages end the read early;
+  `(forecast, well)` pairs repeat and drop) while its count matches. Rows now come grouped by forecast, in
+  forecast-name order. `well` is now accepted with `project` (per forecast; the count check is skipped for a
+  narrowed read), and `skip` / `cursor` are refused with `project` alone. The counts are unchanged.
+
+### Fixed
+
+- `delete_econ_model_assignments_by_type_by_id` (and the 16 per-type unassign methods) sent two or more wells
+  as one comma-joined `wells` value, which ComboCurve answers with 400; it now sends one `wells` key per id.
+  `delete_scenario_wells` had the same defect and the same fix. A single well is sent as before.
+- `delete_directional_survey_by_id` raised `JSONDecodeError` after the survey was deleted, because the route
+  answers with an empty body.
+
 ## [3.2.0] - 2026-11-17
 
 ### Changed

@@ -10,14 +10,22 @@ import pytest
 import requests
 from pytest import MonkeyPatch
 
-from tests.http_fakes import FakeResponse, install_recording_transport, make_offline_api
+from tests.http_fakes import (
+    V1,
+    V2,
+    FakeResponse,
+    RecordedCall,
+    install_recording_transport,
+    install_responding_transport,
+    make_offline_api,
+)
 
 FIXTURES = Path(__file__).parent / 'fixtures'
 PROJECT_ID = '000000000000000000000001'
 TYPE_CURVE_ID = '000000000000000000000002'
 FORECAST_ID = '000000000000000000000004'
 V1_TABLE_ID = 'aaaaaaaaaaaabbbbbbbbbbbb'
-BASE = f'https://api.combocurve.com/v2/projects/{PROJECT_ID}/type-curves'
+BASE = f'{V2}/projects/{PROJECT_ID}/type-curves'
 
 
 def load(name: str) -> Any:
@@ -75,8 +83,7 @@ def test_representative_wells_wrapper_joins_wells_and_outputs(monkeypatch: Monke
 
     outputs_call = transport.calls[2]
     assert outputs_call.url == (
-        f'https://api.combocurve.com/v1/projects/{PROJECT_ID}/forecasts/{FORECAST_ID}/outputs'
-        f'?well={wells[0]["id"]}&well={wells[1]["id"]}'
+        f'{V1}/projects/{PROJECT_ID}/forecasts/{FORECAST_ID}/outputs?well={wells[0]["id"]}&well={wells[1]["id"]}'
     )
     assert [row['wellName'] for row in rows] == ['Sample Well 0', 'Sample Well 1']
     assert cast('Any', rows[0]['oil'])['eur'] == 5.0
@@ -250,10 +257,10 @@ def test_a_failed_patch_stage_still_writes_the_fits_of_created_records(monkeypat
 def test_a_connection_failure_in_the_create_stage_marks_the_results_as_maybe_applied(
     monkeypatch: MonkeyPatch,
 ) -> None:
-    def refuse(*arguments: Any, **keywords: Any) -> Any:
+    def refuse(call: RecordedCall) -> FakeResponse:
         raise requests.ConnectionError('reset')
 
-    monkeypatch.setattr(requests, 'request', refuse)
+    install_responding_transport(monkeypatch, refuse)
 
     with pytest.warns(DeprecationWarning):
         envelopes = make_offline_api().post_type_curves(PROJECT_ID, [load('v1_type_curve_ratio_linear.json')])

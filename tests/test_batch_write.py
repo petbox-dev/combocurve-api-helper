@@ -1,6 +1,6 @@
 """Unit tests for the batched-write driver (_request_batched) — no live API.
 
-Monkeypatches auth + requests.request so we exercise chunking, parallel
+Answers requests.request from the shared recording transport so we exercise chunking, parallel
 completion, 207-envelope parsing, in-order stitching, and partial/whole-chunk
 failure accounting deterministically.
 """
@@ -8,31 +8,34 @@ failure accounting deterministically.
 import time
 from typing import Any
 
-import requests
 from pytest import MonkeyPatch
 
 from combocurve_api_helper import BatchWriteResult
-from tests.http_fakes import FakeResponse, make_offline_api
+from tests.http_fakes import (
+    FakeResponse,
+    RecordedCall,
+    install_recording_transport,
+    install_responding_transport,
+    make_offline_api,
+)
 
 
 def test_request_batched_chunks_and_stitches_207_in_order(monkeypatch: MonkeyPatch) -> None:
     api = make_offline_api()
 
-    def fake_request(
-        method: str, url: str, headers: Any = None, params: Any = None, json: Any = None, timeout: Any = None
-    ) -> FakeResponse:
-        n = len(json)
+    def respond(call: RecordedCall) -> FakeResponse:
+        n = len(call.body)
         return FakeResponse(
             207,
             {
                 'successCount': n,
                 'failedCount': 0,
-                'results': [{'status': 'Success', 'well': rec['well']} for rec in json],
+                'results': [{'status': 'Success', 'well': rec['well']} for rec in call.body],
                 'generalErrors': [],
             },
         )
 
-    monkeypatch.setattr(requests, 'request', fake_request)
+    install_responding_transport(monkeypatch, respond)
 
     data: list[dict[str, Any]] = [{'well': f'w{i}', 'phase': 'oil', 'segments': []} for i in range(60)]
     result = api._request_batched('put', 'https://x/parameters', data, chunksize=25, max_workers=4)
@@ -50,16 +53,14 @@ def test_request_batched_chunks_and_stitches_207_in_order(monkeypatch: MonkeyPat
 def test_request_batched_preserves_partial_and_whole_chunk_failures(monkeypatch: MonkeyPatch) -> None:
     api = make_offline_api()
 
-    def fake_request(
-        method: str, url: str, headers: Any = None, params: Any = None, json: Any = None, timeout: Any = None
-    ) -> FakeResponse:
-        if json[0]['well'] == 'BAD':
+    def respond(call: RecordedCall) -> FakeResponse:
+        if call.body[0]['well'] == 'BAD':
             return FakeResponse(400, {'generalErrors': [{'message': 'bad batch'}]})
-        n = len(json)
+        n = len(call.body)
         results = [{'status': 'Error' if i == 0 else 'Success'} for i in range(n)]
         return FakeResponse(207, {'successCount': n - 1, 'failedCount': 1, 'results': results, 'generalErrors': []})
 
-    monkeypatch.setattr(requests, 'request', fake_request)
+    install_responding_transport(monkeypatch, respond)
 
     # chunk 0: 25 records, 1 fails in the 207; chunk 1: 25 records, whole-chunk 400.
     data: list[dict[str, Any]] = (
@@ -75,8 +76,9 @@ def test_request_batched_preserves_partial_and_whole_chunk_failures(monkeypatch:
 
 def test_request_batched_empty_data(monkeypatch: MonkeyPatch) -> None:
     api = make_offline_api()
-    monkeypatch.setattr(requests, 'request', lambda *a, **k: FakeResponse(207, {}))
+    transport = install_recording_transport(monkeypatch)
     result = api._request_batched('put', 'https://x/parameters', [], chunksize=25)
+    assert transport.calls == []
     assert result.ok
     assert result.success_count == 0
     assert result.results == []
@@ -87,21 +89,14 @@ def test_request_batched_does_not_send_a_write_again_after_a_gateway_5xx(monkeyp
     """The server behind the gateway may have applied the chunk: a second send could write it twice."""
     api = make_offline_api()
     monkeypatch.setattr(time, 'sleep', lambda _s: None)  # skip real backoff
-    calls = {'n': 0}
-
-    def fake_request(
-        method: str, url: str, headers: Any = None, params: Any = None, json: Any = None, timeout: Any = None
-    ) -> FakeResponse:
-        calls['n'] += 1
-        return FakeResponse(503, {'error': 'temporarily unavailable'})
-
-    monkeypatch.setattr(requests, 'request', fake_request)
+    # One queued response: a second send would raise IndexError inside the chunk.
+    transport = install_recording_transport(monkeypatch, FakeResponse(503, {'error': 'temporarily unavailable'}))
     data: list[dict[str, Any]] = [{'well': f'w{i}'} for i in range(10)]
     result = api._request_batched('put', 'https://x', data, chunksize=25, max_workers=1)
 
     assert not result.ok
     assert result.failed_count == 10
-    assert calls['n'] == 1  # one 503, not sent again
+    assert len(transport.calls) == 1  # one 503, not sent again
     (chunk,) = result.chunks
     assert chunk.http_status == 503
     assert chunk.error_message is not None
@@ -112,27 +107,19 @@ def test_request_batched_does_not_send_a_write_again_after_a_gateway_5xx(monkeyp
 def test_request_batched_does_not_retry_non_gateway_5xx(monkeypatch: MonkeyPatch) -> None:
     api = make_offline_api()
     monkeypatch.setattr(time, 'sleep', lambda _s: None)
-    calls = {'n': 0}
-
-    def fake_request(
-        method: str, url: str, headers: Any = None, params: Any = None, json: Any = None, timeout: Any = None
-    ) -> FakeResponse:
-        calls['n'] += 1
-        return FakeResponse(500, {'error': 'boom'})
-
-    monkeypatch.setattr(requests, 'request', fake_request)
+    transport = install_recording_transport(monkeypatch, FakeResponse(500, {'error': 'boom'}))
     result = api._request_batched('put', 'https://x', [{'well': 'w0'}], chunksize=25, max_workers=1)
 
     assert not result.ok
     assert result.failed_count == 1
-    assert calls['n'] == 1  # 500 is not a retryable gateway status
+    assert len(transport.calls) == 1  # 500 is not a retryable gateway status
 
 
 def test_request_batched_reports_a_gateway_error_page_that_is_not_json(monkeypatch: MonkeyPatch) -> None:
     """A real gateway 503 carries an HTML page, so `json()` raises and the text is the detail."""
     api = make_offline_api()
     page = '<html><body>503 Service Unavailable</body></html>'
-    monkeypatch.setattr(requests, 'request', lambda *a, **k: FakeResponse(503, text=page))
+    install_recording_transport(monkeypatch, FakeResponse(503, text=page))
     result = api._request_batched('put', 'https://x', [{'well': 'w0'}], chunksize=25, max_workers=1)
 
     (chunk,) = result.chunks
@@ -142,7 +129,7 @@ def test_request_batched_reports_a_gateway_error_page_that_is_not_json(monkeypat
 
 def test_request_batched_counts_nothing_from_a_success_with_no_json_body(monkeypatch: MonkeyPatch) -> None:
     api = make_offline_api()
-    monkeypatch.setattr(requests, 'request', lambda *a, **k: FakeResponse(207, text=''))
+    install_recording_transport(monkeypatch, FakeResponse(207, text=''))
     result = api._request_batched('put', 'https://x', [{'well': 'w0'}], chunksize=25, max_workers=1)
 
     (chunk,) = result.chunks

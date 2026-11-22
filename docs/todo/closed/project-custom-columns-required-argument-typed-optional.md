@@ -1,5 +1,8 @@
 # get_project_custom_columns types its required argument as Optional
 
+Closed: 2026-11-21 -- settled by: `typing.overload`s on `get_project_custom_columns` and its url builder (`custom_column: str` required; keyword-only `collection` marked `typing_extensions.deprecated`); runtime `TypeError` test and a mypy typing test
+If this was wrong, you will see: `tests/test_project_custom_columns_typing.py` failing, or `mypy --strict` accepting `api.get_project_custom_columns(project_id)`
+
 Severity: low
 Opened: 2026-11-06
 
@@ -46,3 +49,18 @@ Add a test that a call with neither argument raises the `TypeError`. A typing te
 - `src/combocurve_api_helper/root.py`: `_custom_column_argument`, `get_project_custom_columns_url`,
   `get_project_custom_columns`
 - `tests/test_root_urls_and_params.py`: the URL tests for this route
+
+## Status (2026-11-21)
+
+Done with the first option. `get_project_custom_columns` and `get_project_custom_columns_url` have
+two `typing.overload`s: `custom_column: str` required, or keyword-only `collection: str` marked
+`typing_extensions.deprecated`. The implementation keeps `_custom_column_argument` (runtime
+`TypeError` for neither or both, `DeprecationWarning` for `collection=`).
+
+- mypy 2.4.1 refuses a call with neither (`call-overload`). It reports the deprecated overload only
+  with `--enable-error-code deprecated`; this repo does not enable that code, so a `collection=` call
+  passes the repo's own mypy run silently.
+- `typing_extensions.deprecated` exists from typing_extensions 4.5.0; `pyproject.toml` lists
+  `typing-extensions` with no lower bound. It needs `>=4.5.0`.
+- Tests: `tests/test_root_urls_and_params.py` (runtime `TypeError`, nothing sent) and
+  `tests/test_project_custom_columns_typing.py` (runs mypy on a snippet; about 50 s cold).

@@ -1,20 +1,15 @@
 """Unit tests for the v2/v1 export wrappers (exports.py) -- no live API.
 
-Monkeypatches auth + requests.request (the transport's one send call) so we verify URL construction, the
-per-kind -> URL mapping, and the raw-request delegation deterministically
+Answers requests.request (the transport's one send call) from the shared recording transport so we
+verify URL construction, the per-kind -> URL mapping, and the raw-request delegation deterministically
 (the one new module with logic beyond a thin URL-build-and-dispatch wrapper).
 """
-
-from typing import Any, Optional
 
 import pytest
 import requests
 from pytest import MonkeyPatch
 
-from tests.http_fakes import FakeResponse, make_offline_api
-
-V1 = 'https://api.combocurve.com/v1'
-V2 = 'https://api.combocurve.com/v2'
+from tests.http_fakes import V1, V2, FakeResponse, install_recording_transport, make_offline_api
 
 # export kind (URL segment) -> the snake fragment in the public method names
 KINDS: dict[str, str] = {
@@ -36,64 +31,41 @@ def test_export_url_builders() -> None:
 @pytest.mark.parametrize('kind', sorted(KINDS))
 def test_post_export_hits_correct_v2_url(monkeypatch: MonkeyPatch, kind: str) -> None:
     api = make_offline_api()
-    calls: list[tuple[str, Any]] = []
-
-    def fake_request(
-        method: str, url: str, headers: Any = None, params: Any = None, json: Any = None, timeout: Any = None
-    ) -> FakeResponse:
-        assert method.upper() == 'POST'
-        calls.append((url, json))
-        return FakeResponse(200, [{'id': 'JOB'}])
-
-    monkeypatch.setattr(requests, 'request', fake_request)
+    transport = install_recording_transport(monkeypatch, FakeResponse(200, [{'id': 'JOB'}]))
 
     result = getattr(api, f'post_export_{KINDS[kind]}')({'scenarioId': 's'})
 
-    assert calls == [(f'{V2}/exports/{kind}', {'scenarioId': 's'})]
+    assert [(call.method, call.url, call.body) for call in transport.calls] == [
+        ('POST', f'{V2}/exports/{kind}', {'scenarioId': 's'})
+    ]
     assert result == {'id': 'JOB'}
 
 
 @pytest.mark.parametrize('kind', sorted(KINDS))
 def test_get_export_by_job_id_hits_correct_v2_url(monkeypatch: MonkeyPatch, kind: str) -> None:
     api = make_offline_api()
-    calls: list[str] = []
-
-    def fake_request(
-        method: str, url: str, headers: Any = None, params: Optional[Any] = None, json: Any = None, timeout: Any = None
-    ) -> FakeResponse:
-        assert method.upper() == 'GET'
-        calls.append(url)
-        return FakeResponse(200, [{'status': 'complete'}])
-
-    monkeypatch.setattr(requests, 'request', fake_request)
+    transport = install_recording_transport(monkeypatch, FakeResponse(200, [{'status': 'complete'}]))
 
     result = getattr(api, f'get_export_{KINDS[kind]}_by_job_id')('JOB123')
 
-    assert calls == [f'{V2}/exports/{kind}/JOB123']
+    assert transport.methods_and_urls == [('GET', f'{V2}/exports/{kind}/JOB123')]
     assert result == {'status': 'complete'}
 
 
 def test_post_export_v1_hits_v1_url(monkeypatch: MonkeyPatch) -> None:
     api = make_offline_api()
-    calls: list[tuple[str, Any]] = []
-
-    def fake_request(
-        method: str, url: str, headers: Any = None, params: Any = None, json: Any = None, timeout: Any = None
-    ) -> FakeResponse:
-        assert method.upper() == 'POST'
-        calls.append((url, json))
-        return FakeResponse(200, [{'id': 'X'}])
-
-    monkeypatch.setattr(requests, 'request', fake_request)
+    transport = install_recording_transport(monkeypatch, FakeResponse(200, [{'id': 'X'}]))
 
     result = api.post_export({'exportType': 'x'})
 
-    assert calls == [(f'{V1}/exports', {'exportType': 'x'})]
+    assert [(call.method, call.url, call.body) for call in transport.calls] == [
+        ('POST', f'{V1}/exports', {'exportType': 'x'})
+    ]
     assert result == {'id': 'X'}
 
 
 def test_export_raises_on_http_error(monkeypatch: MonkeyPatch) -> None:
     api = make_offline_api()
-    monkeypatch.setattr(requests, 'request', lambda *arguments, **keywords: FakeResponse(400, {}))
+    install_recording_transport(monkeypatch, FakeResponse(400, {}))
     with pytest.raises(requests.HTTPError):
         api.post_export_econ_monthly({})

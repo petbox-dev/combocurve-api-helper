@@ -15,10 +15,19 @@ from __future__ import annotations
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .base import ItemList
+    from .base import Item, ItemList
+
+
+@dataclass(frozen=True)
+class ChunkSpec:
+    """One chunk of a batched write, before it is sent."""
+
+    index: int  # 0-based chunk number (order the chunks were split from the payload)
+    offset: int  # index of this chunk's first record in the full payload
+    records: ItemList  # the chunk's records, sent as the request body
 
 
 @dataclass
@@ -88,3 +97,53 @@ class _RateLimitState:
         pause = self.pause_seconds if retry_after_seconds is None else retry_after_seconds
         with self.lock:
             self.resume_at = max(self.resume_at, time.monotonic() + pause)
+
+
+def _whole_chunk_failure(
+    chunk_spec: ChunkSpec, *, http_status: int, error_message: str, may_have_applied: bool
+) -> BatchChunk:
+    """A chunk that failed as a whole, with one placeholder result per record.
+
+    The placeholders keep `BatchWriteResult.results[i]` aligned with `data[i]` after the chunks are
+    stitched together; without them every later chunk's results shift left, and a caller that picks
+    records to resend by position picks the wrong ones. Each has the shape of a 207 error element.
+    """
+    count = len(chunk_spec.records)
+    placeholder: Item = {
+        'status': 'ChunkFailed',
+        'code': http_status,
+        'errors': [{'name': 'ChunkFailed', 'message': error_message}],
+        'mayHaveApplied': may_have_applied,
+    }
+    return BatchChunk(
+        index=chunk_spec.index,
+        offset=chunk_spec.offset,
+        count=count,
+        http_status=http_status,
+        failed_count=count,
+        results=[dict(placeholder) for _ in range(count)],
+        error_message=error_message,
+        may_have_applied=may_have_applied,
+    )
+
+
+def chunk_from_207_body(chunk_spec: ChunkSpec, http_status: int, body: object) -> BatchChunk:
+    """The `BatchChunk` of a chunk whose request succeeded, from its decoded 207 body.
+
+    `body` is the decoded JSON, or None when the body was not JSON. A body that is not a JSON object
+    reads as an empty envelope (zero counts, no results); `results` and `generalErrors` keep only their
+    object elements.
+    """
+    envelope: dict[str, Any] = body if isinstance(body, dict) else {}
+    results_raw = envelope.get('results') or []
+    general_raw = envelope.get('generalErrors') or []
+    return BatchChunk(
+        index=chunk_spec.index,
+        offset=chunk_spec.offset,
+        count=len(chunk_spec.records),
+        http_status=http_status,
+        success_count=int(envelope.get('successCount', 0) or 0),
+        failed_count=int(envelope.get('failedCount', 0) or 0),
+        results=[result for result in results_raw if isinstance(result, dict)],
+        general_errors=[error for error in general_raw if isinstance(error, dict)],
+    )

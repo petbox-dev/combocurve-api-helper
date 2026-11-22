@@ -1,7 +1,10 @@
 import warnings
-from typing import Optional, cast
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Optional, cast, overload
 
-from .base import APIBase, Item, ItemList, WellFilters, WriteResponse
+from typing_extensions import deprecated
+
+from .base import APIBase, Item, ItemList, QueryFilters, WriteResponse
 
 GET_LIMIT = 200
 
@@ -22,35 +25,57 @@ def _custom_column_argument(custom_column: Optional[str], collection: Optional[s
     return custom_column
 
 
-# The root volume routes reject any request that does not scope itself to at least one
-# of these. Enforced locally so the mistake is a ValueError at the call site rather than
-# a round trip that always 400s.
-_VOLUME_SCOPE_FILTERS = ('project', 'forecast', 'well')
+# The root volume routes reject any request that does not scope itself to one of these.
+# Enforced locally so the mistake is a ValueError at the call site rather than a round
+# trip that always 400s. `well` is not a scope on its own: see `_require_volume_scope`.
+_VOLUME_SCOPE_FILTERS = ('project', 'forecast')
 
 
-def _require_volume_scope(filters: Optional[WellFilters]) -> WellFilters:
+def _require_volume_scope(filters: Optional[QueryFilters]) -> QueryFilters:
     """Return `filters` unchanged, or raise if it does not scope the volume query.
 
-    A `well` filter also needs `forecast`: verified live 2026-11-20 on dev, the API returns 400 for `well`
-    alone and for `project` with `well`, and accepts `well` with `forecast`.
+    The scope is `project` or `forecast`. A `well` filter also needs `forecast`: verified live
+    2026-11-20 on dev, the API returns 400 for `well` alone and for `project` with `well`, and accepts
+    `well` with `forecast`. The list methods read `project` without `forecast` one forecast at a time and
+    do not call this for that scope, so there `well` with `project` is accepted.
     """
-    if not filters or not any(filters.get(key) for key in _VOLUME_SCOPE_FILTERS):
-        raise ValueError(
-            'filters must include at least one of '
-            + ', '.join(_VOLUME_SCOPE_FILTERS)
-            + '; the API rejects an unscoped forecast-volumes request'
-        )
-
-    if filters.get('well') and not filters.get('forecast'):
+    if filters and filters.get('well') and not filters.get('forecast'):
         raise ValueError(
             "a 'well' filter on the root volume routes must come with 'forecast'; the API rejects "
-            "'well' alone and 'well' with 'project'"
+            "'well' alone and 'well' with 'project' (the get_root_forecast_*_volumes list methods also take "
+            "'well' with 'project', read one forecast at a time)"
+        )
+
+    if not filters or not any(filters.get(key) for key in _VOLUME_SCOPE_FILTERS):
+        raise ValueError(
+            "filters must include at least one of 'project' or 'forecast' ('well' only together with "
+            "'forecast'); the API rejects an unscoped forecast-volumes request"
         )
 
     return filters
 
 
+# The filters that leave the per-forecast fallback's rows comparable with the project count: `project` itself,
+# `forecast` when it is empty (no forecast scope), `take`, which sets the page size, not the rows returned, and
+# `skip`, which can only be 0 there (any other value is refused). Any other filter with a value (`well`,
+# `startDate`, `endDate`, ...) skips the count check.
+_COUNT_COMPARABLE_VOLUME_FILTERS = frozenset({'project', 'forecast', 'take', 'skip'})
+
+
+def _reads_one_forecast_at_a_time(filters: Optional[QueryFilters]) -> bool:
+    """True when `filters` scopes a root volume listing to `project` and not to `forecast`: the scope whose
+    server listing repeats and drops rows, which the getters replace with one listing per forecast."""
+    if not filters or not filters.get('project'):
+        return False
+    return not filters.get('forecast')
+
+
 class Root(APIBase):
+    if TYPE_CHECKING:
+        # Provided at runtime by `Forecasts`, which follows this class in `ComboCurveAPI`'s bases; declared
+        # here for the type checker only, with the same signature.
+        def get_forecasts(self, project_id: str, filters: Optional[dict[str, str]] = None) -> ItemList: ...
+
     ######
     # URLs
     ######
@@ -104,7 +129,7 @@ class Root(APIBase):
         """
         return f'{self.API_BASE_URL}/econ-runs/{econrun_id}'
 
-    def get_root_forecast_daily_volumes_url(self, filters: Optional[WellFilters] = None) -> str:
+    def get_root_forecast_daily_volumes_url(self, filters: Optional[QueryFilters] = None) -> str:
         """
         Returns the API url for daily volumes.
         """
@@ -119,7 +144,7 @@ class Root(APIBase):
         url += self._build_params_string(filters)
         return url
 
-    def get_root_forecast_monthly_volumes_url(self, filters: Optional[WellFilters] = None) -> str:
+    def get_root_forecast_monthly_volumes_url(self, filters: Optional[QueryFilters] = None) -> str:
         """
         Returns the API url for monthly volumes.
         """
@@ -137,6 +162,22 @@ class Root(APIBase):
         """
         return f'{self.API_BASE_URL}/users/roles'
 
+    @overload
+    def get_project_custom_columns_url(
+        self, project_id: str, custom_column: str, filters: Optional[dict[str, str]] = None
+    ) -> str: ...
+
+    @overload
+    @deprecated('the collection argument is deprecated; pass custom_column')
+    def get_project_custom_columns_url(
+        self,
+        project_id: str,
+        custom_column: None = None,
+        filters: Optional[dict[str, str]] = None,
+        *,
+        collection: str,
+    ) -> str: ...
+
     def get_project_custom_columns_url(
         self,
         project_id: str,
@@ -149,6 +190,10 @@ class Root(APIBase):
         Returns the API url for a project's custom columns. `custom_column` -- "Currently
         only `headers` is supported" per the docs. `custom_column` is required; `collection`
         is its deprecated keyword alias (the name before 2.2.2).
+
+        The overloads make a type checker refuse a call with neither argument, and flag a
+        `collection=` call as deprecated. At run time a call with neither, or with both, raises
+        `TypeError` before the url is built, and `collection=` warns with `DeprecationWarning`.
         """
         segment = _custom_column_argument(custom_column, collection)
         url = f'{self.API_BASE_URL}/projects/{project_id}/custom-columns/{segment}'
@@ -277,26 +322,83 @@ class Root(APIBase):
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)[0]
 
-    def get_root_forecast_daily_volumes(self, filters: Optional[WellFilters] = None) -> ItemList:
+    def _get_root_forecast_volumes(
+        self,
+        build_url: Callable[[Optional[QueryFilters]], str],
+        count: Callable[[Optional[QueryFilters]], int],
+        filters: Optional[QueryFilters],
+    ) -> ItemList:
+        """The rows of a root volume listing (`build_url` is the daily or monthly url builder, `count` its count
+        method). A `forecast` scope is read as sent. A `project` scope without `forecast` is read one forecast at
+        a time, because the server's project-scoped listing repeats and drops rows (see the public getters)."""
+        if not _reads_one_forecast_at_a_time(filters):
+            return self._get_items_in_value_batches(
+                build_url, _require_volume_scope(filters), 'well', {'take': GET_LIMIT}
+            )
+
+        assert filters is not None  # `_reads_one_forecast_at_a_time` is False for None
+        project_id = filters['project']
+        if not isinstance(project_id, str):
+            raise ValueError(f"filters['project'] must be one project id string, not {project_id!r}")
+        paging_keys = self._paging_filters_in(filters)
+        if paging_keys:
+            raise ValueError(
+                f'{paging_keys[0]!r} cannot be combined with a project-scoped root volume read: it is read one '
+                f'forecast at a time, and every forecast request would apply {paging_keys[0]!r} on its own. '
+                f"Pass 'forecast' to page through one forecast."
+            )
+
+        narrowed = any(
+            value is not None and key not in _COUNT_COMPARABLE_VOLUME_FILTERS for key, value in filters.items()
+        )
+        expected_count = None if narrowed else count({'project': project_id})
+
+        rows: ItemList = []
+        for forecast in self.get_forecasts(project_id):
+            forecast_filters = {key: value for key, value in filters.items() if key != 'project'}
+            forecast_filters['forecast'] = str(forecast['id'])
+            rows.extend(self._get_items_in_value_batches(build_url, forecast_filters, 'well', {'take': GET_LIMIT}))
+
+        if expected_count is not None and len(rows) != expected_count:
+            raise RuntimeError(
+                f'the per-forecast read of project {project_id} returned {len(rows)} volume rows, but the project '
+                f'count is {expected_count}: the rows are incomplete or repeated (or the project changed during '
+                'the read)'
+            )
+
+        return rows
+
+    def get_root_forecast_daily_volumes(self, filters: Optional[QueryFilters] = None) -> ItemList:
         """
-        Returns a list of daily volumes.
+        Returns a list of daily volumes, one row per (forecast, well); each row's `forecast` field
+        names its forecast.
 
-        Scope: any number of forecasts, with `project`, `forecast` or `well` filters. Rows from several
-        forecasts can come back in one response, and each row's `forecast` field says which forecast
-        it belongs to. To read one forecast by its path (no `forecast` filter needed), use
-        `Forecasts.get_forecast_daily_volumes(project_id, forecast_id)`, which is scoped to that forecast.
+        Scope: `filters` is REQUIRED here, unlike the other root list methods, and must carry `project`
+        or `forecast`. The API rejects any other request with a ValidationError, so it is refused
+        locally rather than sent. Accepted keys are `project`, `forecast`, `well`, `startDate`,
+        `endDate`, `skip` and `take`; `sort` is not accepted (400 `Unrecognized filter`, dev 2026-11-21).
 
-        `filters` is REQUIRED here, unlike the other root list methods, and must carry
-        at least one of `project`, `forecast` or `well` -- the API rejects anything else
-        with a ValidationError, so it is refused locally rather than sent, as
-        `get_econ_run_monthly_econ_result_by_id` does for its own required `columns`
-        filter. Accepted keys
-        are `project`, `forecast`, `well`, `startDate`, `endDate`, `skip` and `take`.
+        `filters['well']` is accepted with `forecast`, and with `project` (read per forecast, below); the API
+        returns 400 for `well` alone and for `project` with `well` (verified live 2026-11-20 on dev), so `well`
+        alone is refused locally. It may be a list of well ids, sent as repeated `well` keys. The API accepts at
+        most 100 per request, so a longer list is split into requests of 100 wells and the volumes are combined
+        into one list.
 
-        `filters['well']` may be a list of well ids, sent as repeated `well` keys. The API accepts
-        at most 100 per request, so a longer list is split into requests of 100 wells and the volumes
-        are combined into one list. Verified live 2026-11-20 on dev: a `well` filter is accepted only
-        together with `forecast`; `well` alone, or `project` with `well`, is refused locally.
+        `project` without `forecast` is read one forecast at a time. The server's own project-scoped listing
+        returns wrong rows above one page of 200: it repeats some (forecast, well) rows and leaves others out,
+        or ends early on a short page with no next link, while the count stays right (dev 2026-11-21: a
+        3,983-row project came back with 348 pairs twice and 348 missing; projects of 216 to 1,107 rows came
+        back as one short page). The `forecast` scope was exact on every dev forecast (up to 6,890 rows). So
+        this method sends one HEAD `count_root_forecast_daily_volumes({'project': P})`, lists the project's
+        forecasts with `Forecasts.get_forecasts(P)`, then one listing per forecast with the caller's filters,
+        `project` replaced by `forecast` (so a `well` filter is valid here). Cost: one count, one forecast
+        list and one listing (paged by 200) per forecast. The rows come grouped by forecast, in the order
+        `get_forecasts` returns the forecasts, and in server order within a forecast. If the row total differs
+        from the count, `RuntimeError` names both numbers; a mismatch means the rows are still wrong (or the
+        project changed during the read). The check is skipped, and the count not sent, when any filter other
+        than `project`, `take` and a `skip` of 0 has a value (`well`, `startDate`, `endDate`), because the
+        project count does not apply to the narrowed rows. `skip` (other than 0) and `cursor` are refused with
+        `ValueError` with this scope, because each forecast request would apply them on its own.
 
         https://docs.api.combocurve.com/api/get-root-forecast-daily-volumes
 
@@ -337,49 +439,59 @@ class Root(APIBase):
             }
         ]
         """
-        daily_volumes: ItemList = []
-        for batch_filters in self._filter_value_batches(_require_volume_scope(filters), 'well'):
-            url = self.get_root_forecast_daily_volumes_url(batch_filters)
-            params = {'take': GET_LIMIT}
-            daily_volumes.extend(self._get_items(url, params))
+        return self._get_root_forecast_volumes(
+            self.get_root_forecast_daily_volumes_url, self.count_root_forecast_daily_volumes, filters
+        )
 
-        return daily_volumes
-
-    def count_root_forecast_daily_volumes(self, filters: Optional[WellFilters] = None) -> int:
+    def count_root_forecast_daily_volumes(self, filters: Optional[QueryFilters] = None) -> int:
         """
         Returns the number of forecast daily-volume documents matching `filters`, from the
-        `X-Query-Count` header of a HEAD request (no documents are fetched). `filters` must
-        scope the query, as for `get_root_forecast_daily_volumes`. A `well` list longer than 100
-        is counted in batches of 100 and the counts are summed. For the count of one forecast by its
-        path, use `Forecasts.count_forecast_daily_volumes`.
+        `X-Query-Count` header of a HEAD request (no documents are fetched). `filters` must carry
+        `project` or `forecast`, as for `get_root_forecast_daily_volumes`; `well` only together with
+        `forecast`. A `well` list longer than 100 is counted in batches of 100 and the counts are summed.
+        For the count of one forecast by its path, use `Forecasts.count_forecast_daily_volumes`.
+
+        With `project` alone the count is right and is not affected by the listing defect described in
+        `get_root_forecast_daily_volumes` (it equals the sum of the per-forecast counts on every dev project,
+        2026-11-21); that method sends this count to check its per-forecast read.
 
         https://docs.api.combocurve.com/api/head-root-forecast-daily-volumes
         """
-        return sum(
-            self._count_items(self.get_root_forecast_daily_volumes_url(batch_filters))
-            for batch_filters in self._filter_value_batches(_require_volume_scope(filters), 'well')
+        return self._count_items_in_value_batches(
+            self.get_root_forecast_daily_volumes_url, _require_volume_scope(filters), 'well'
         )
 
-    def get_root_forecast_monthly_volumes(self, filters: Optional[WellFilters] = None) -> ItemList:
+    def get_root_forecast_monthly_volumes(self, filters: Optional[QueryFilters] = None) -> ItemList:
         """
-        Returns a list of monthly volumes.
+        Returns a list of monthly volumes, one row per (forecast, well); each row's `forecast` field
+        names its forecast.
 
-        Scope: any number of forecasts, with `project`, `forecast` or `well` filters. Rows from several
-        forecasts can come back in one response, and each row's `forecast` field says which forecast
-        it belongs to. To read one forecast by its path (no `forecast` filter needed), use
-        `Forecasts.get_forecast_monthly_volumes(project_id, forecast_id)`, which is scoped to that forecast.
+        Scope: `filters` is REQUIRED here, unlike the other root list methods, and must carry `project`
+        or `forecast`. The API rejects any other request with a ValidationError, so it is refused
+        locally rather than sent. Accepted keys are `project`, `forecast`, `well`, `startDate`,
+        `endDate`, `skip` and `take`; `sort` is not accepted (400 `Unrecognized filter`, dev 2026-11-21).
 
-        `filters` is REQUIRED here, unlike the other root list methods, and must carry
-        at least one of `project`, `forecast` or `well` -- the API rejects anything else
-        with a ValidationError, so it is refused locally rather than sent, as
-        `get_econ_run_monthly_econ_result_by_id` does for its own required `columns`
-        filter. Accepted keys
-        are `project`, `forecast`, `well`, `startDate`, `endDate`, `skip` and `take`.
+        `filters['well']` is accepted with `forecast`, and with `project` (read per forecast, below); the API
+        returns 400 for `well` alone and for `project` with `well` (verified live 2026-11-20 on dev), so `well`
+        alone is refused locally. It may be a list of well ids, sent as repeated `well` keys. The API accepts at
+        most 100 per request, so a longer list is split into requests of 100 wells and the volumes are combined
+        into one list.
 
-        `filters['well']` may be a list of well ids, sent as repeated `well` keys. The API accepts
-        at most 100 per request, so a longer list is split into requests of 100 wells and the volumes
-        are combined into one list. Verified live 2026-11-20 on dev: a `well` filter is accepted only
-        together with `forecast`; `well` alone, or `project` with `well`, is refused locally.
+        `project` without `forecast` is read one forecast at a time. The server's own project-scoped listing
+        returns wrong rows above one page of 200: it repeats some (forecast, well) rows and leaves others out,
+        or ends early on a short page with no next link, while the count stays right (dev 2026-11-21: a
+        3,983-row project came back with 348 pairs twice and 348 missing; projects of 216 to 1,107 rows came
+        back as one short page). The `forecast` scope was exact on every dev forecast (up to 6,890 rows). So
+        this method sends one HEAD `count_root_forecast_monthly_volumes({'project': P})`, lists the project's
+        forecasts with `Forecasts.get_forecasts(P)`, then one listing per forecast with the caller's filters,
+        `project` replaced by `forecast` (so a `well` filter is valid here). Cost: one count, one forecast
+        list and one listing (paged by 200) per forecast. The rows come grouped by forecast, in the order
+        `get_forecasts` returns the forecasts, and in server order within a forecast. If the row total differs
+        from the count, `RuntimeError` names both numbers; a mismatch means the rows are still wrong (or the
+        project changed during the read). The check is skipped, and the count not sent, when any filter other
+        than `project`, `take` and a `skip` of 0 has a value (`well`, `startDate`, `endDate`), because the
+        project count does not apply to the narrowed rows. `skip` (other than 0) and `cursor` are refused with
+        `ValueError` with this scope, because each forecast request would apply them on its own.
 
         https://docs.api.combocurve.com/api/get-root-forecast-monthly-volumes
 
@@ -420,27 +532,26 @@ class Root(APIBase):
             }
         ]
         """
-        monthly_volumes: ItemList = []
-        for batch_filters in self._filter_value_batches(_require_volume_scope(filters), 'well'):
-            url = self.get_root_forecast_monthly_volumes_url(batch_filters)
-            params = {'take': GET_LIMIT}
-            monthly_volumes.extend(self._get_items(url, params))
+        return self._get_root_forecast_volumes(
+            self.get_root_forecast_monthly_volumes_url, self.count_root_forecast_monthly_volumes, filters
+        )
 
-        return monthly_volumes
-
-    def count_root_forecast_monthly_volumes(self, filters: Optional[WellFilters] = None) -> int:
+    def count_root_forecast_monthly_volumes(self, filters: Optional[QueryFilters] = None) -> int:
         """
         Returns the number of forecast monthly-volume documents matching `filters`, from the
-        `X-Query-Count` header of a HEAD request (no documents are fetched). `filters` must
-        scope the query, as for `get_root_forecast_monthly_volumes`. A `well` list longer than 100
-        is counted in batches of 100 and the counts are summed. For the count of one forecast by its
-        path, use `Forecasts.count_forecast_monthly_volumes`.
+        `X-Query-Count` header of a HEAD request (no documents are fetched). `filters` must carry
+        `project` or `forecast`, as for `get_root_forecast_monthly_volumes`; `well` only together with
+        `forecast`. A `well` list longer than 100 is counted in batches of 100 and the counts are summed.
+        For the count of one forecast by its path, use `Forecasts.count_forecast_monthly_volumes`.
+
+        With `project` alone the count is right and is not affected by the listing defect described in
+        `get_root_forecast_monthly_volumes` (it equals the sum of the per-forecast counts on every dev project,
+        2026-11-21); that method sends this count to check its per-forecast read.
 
         https://docs.api.combocurve.com/api/head-root-forecast-monthly-volumes
         """
-        return sum(
-            self._count_items(self.get_root_forecast_monthly_volumes_url(batch_filters))
-            for batch_filters in self._filter_value_batches(_require_volume_scope(filters), 'well')
+        return self._count_items_in_value_batches(
+            self.get_root_forecast_monthly_volumes_url, _require_volume_scope(filters), 'well'
         )
 
     def get_users_roles(self) -> ItemList:
@@ -472,6 +583,22 @@ class Root(APIBase):
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
 
+    @overload
+    def get_project_custom_columns(
+        self, project_id: str, custom_column: str, filters: Optional[dict[str, str]] = None
+    ) -> ItemList: ...
+
+    @overload
+    @deprecated('the collection argument is deprecated; pass custom_column')
+    def get_project_custom_columns(
+        self,
+        project_id: str,
+        custom_column: None = None,
+        filters: Optional[dict[str, str]] = None,
+        *,
+        collection: str,
+    ) -> ItemList: ...
+
     def get_project_custom_columns(
         self,
         project_id: str,
@@ -487,6 +614,10 @@ class Root(APIBase):
         ('wells', 'daily-productions', ...), this one is not. The project-scoped
         counterpart to `get_custom_columns`. `custom_column` is required; `collection`
         is its deprecated keyword alias (the name before 2.2.2) and warns.
+
+        The overloads make a type checker refuse a call with neither argument, and flag a
+        `collection=` call as deprecated. At run time a call with neither, or with both, raises
+        `TypeError` before anything is sent, and `collection=` warns with `DeprecationWarning`.
 
         The response is a list with one entry per project custom header -- 0 if the
         project has none defined, or several for a project with multiple. Verified

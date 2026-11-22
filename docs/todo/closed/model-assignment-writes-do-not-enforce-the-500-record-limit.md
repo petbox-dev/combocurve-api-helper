@@ -1,5 +1,8 @@
 # Model-assignment writes do not enforce the 500-record limit
 
+Closed: 2026-11-21 -- settled by: `APIBase._require_at_most` enforces 500 records on the model-assignment PUT/DELETE (and the econ-model and lookup-table assignment writes), plus the 25,000-`wellIds` cap, before any request
+If this was wrong, you will see: a 400 from the server instead of a local `ValueError` on 501 records, or a valid batch of 500 or fewer refused locally
+
 Severity: low
 Opened: 2026-11-13
 
@@ -28,3 +31,12 @@ lookup-table PUT).
 `get_scenario_model_assignments` documents `wellId` "up to 100 values"; that is also not checked.
 
 Found by the `/code-fix` run over 3.1.0 (2026-11-13), Phase 2 duplication pass.
+
+## Resolution (2026-11-21)
+
+`put_scenario_model_assignments` and `delete_scenario_model_assignments` refuse more than 500 records
+with `ValueError` before any request, through one helper (`scenarios._require_at_most`) that all six
+scenario limit checks now share, with the existing messages. Both assignment PUTs (model and econ-model)
+also refuse more than 25,000 `wellIds` summed across the records (documented). The `wellId` "up to 100
+values" on `get_scenario_model_assignments` was already handled by batching (`_filter_value_batches`);
+`get_scenario_well_incrementals` now batches the same way.

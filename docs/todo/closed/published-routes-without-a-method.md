@@ -1,5 +1,8 @@
 # Published routes without a method
 
+Closed: 2026-11-21 -- settled by: every one of the 502 collection operations is `wrapped`, `retired` or `not-via-method` in `tests/route_manifest.json` (484 wrapped, 0 gap): econ settings and report settings, production comments and types, the directional-survey batch, formations and shapefiles were wrapped on 2026-11-20 and 2026-11-21
+If this was wrong, you will see: `tests/test_published_routes_are_wrapped.py` reporting a `gap`, or a published route with no method
+
 Severity: low
 Opened: 2026-11-05
 

@@ -65,7 +65,7 @@ def test_changed_enum_pick_keeps_the_committed_block() -> None:
     request = generator.fill({'exportType': 'monthlyCombinedVolumeExport', 'expirationHours': '<integer>'})
     request['expirationHours'] = 24
     lines = source.split('\n')
-    replacements, unsourced = generator.plan_replacements(source, _examples(request))
+    replacements, unsourced, _ = generator.plan_replacements(source, _examples(request))
     assert unsourced == []
     assert len(replacements) == 1
     replacement = replacements[0]
@@ -76,7 +76,7 @@ def test_changed_placeholder_value_rewrites_the_block() -> None:
     source = _source_with_block({'exportType': 'econMonthlyExport', 'expirationHours': 24})
     request = generator.fill({'exportType': 'econMonthlyExport', 'expirationHours': '<integer>'})
     lines = source.split('\n')
-    replacements, _ = generator.plan_replacements(source, _examples(request))
+    replacements, _, _ = generator.plan_replacements(source, _examples(request))
     replacement = replacements[0]
     assert replacement.lines != lines[replacement.start : replacement.end + 1]
     assert '"expirationHours": 123' in '\n'.join(replacement.lines)
@@ -86,7 +86,7 @@ def test_added_key_rewrites_the_block() -> None:
     source = _source_with_block({'exportType': 'econMonthlyExport'})
     request = generator.fill({'exportType': 'econMonthlyExport', 'expirationHours': '<integer>'})
     lines = source.split('\n')
-    replacements, _ = generator.plan_replacements(source, _examples(request))
+    replacements, _, _ = generator.plan_replacements(source, _examples(request))
     replacement = replacements[0]
     assert replacement.lines != lines[replacement.start : replacement.end + 1]
 
@@ -97,7 +97,7 @@ def test_reindented_block_is_rewritten() -> None:
     request = generator.fill({'exportType': 'econMonthlyExport', 'expirationHours': '<integer>'})
     request['expirationHours'] = 24
     lines = source.split('\n')
-    replacements, _ = generator.plan_replacements(source, _examples(request))
+    replacements, _, _ = generator.plan_replacements(source, _examples(request))
     replacement = replacements[0]
     assert replacement.lines != lines[replacement.start : replacement.end + 1]
 

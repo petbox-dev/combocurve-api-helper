@@ -9,6 +9,8 @@ from .auth import ComboCurveAuthError as ComboCurveAuthError
 from .base import Item as Item
 from .base import ItemList as ItemList
 from .base import JsonValue as JsonValue
+from .base import QueryFilters as QueryFilters
+from .base import WellFilters as WellFilters
 from .base import WriteError as WriteError
 from .base import WriteResponse as WriteResponse
 from .company_models import CompanyModels
@@ -24,12 +26,15 @@ from .forecast_parameters import forecast_parameters_to_csv as forecast_paramete
 from .forecast_parameters import forecast_parameters_to_row_dicts as forecast_parameters_to_row_dicts
 from .forecast_parameters import write_forecast_parameters_csv as write_forecast_parameters_csv
 from .forecasts import Forecasts
+from .formations import Formations
 from .models import Models
 from .ownership_qualifiers import OwnershipQualifiers
 from .production import Production
+from .production_comments import ProductionComments
 from .projects import Projects
 from .root import Root
 from .scenarios import Scenarios
+from .shapefiles import Shapefiles
 from .type_curve_conversions import fits_for_put as fits_for_put
 from .type_curve_conversions import fits_from_v1 as fits_from_v1
 from .type_curve_conversions import fits_to_v1 as fits_to_v1
@@ -61,6 +66,9 @@ class ComboCurveAPI(
     Exports,
     EmbeddedLookupTables,
     EconSettings,
+    ProductionComments,
+    Formations,
+    Shapefiles,
 ):
     """
     This class is the primary interface for interacting with the Combo Curve

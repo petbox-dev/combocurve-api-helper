@@ -11,29 +11,23 @@ CC_DEV_PROJECT_ID is set, so CI and other machines are unaffected. Passed agains
 from __future__ import annotations
 
 import os
-import pathlib
 import uuid
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
-from combocurve_api_helper import ComboCurveAPI, Item
-from combocurve_api_helper.config import find_native_credentials_directory
+from tests.live_support import FIXTURE_PREFIX, live_tests_enabled
 
-DEV = pathlib.Path.home() / '.combocurve' / 'dev'
+if TYPE_CHECKING:
+    from combocurve_api_helper import ComboCurveAPI, Item
 
 # The dev target id comes from the environment, with no default: this repo is public.
 PROJECT_ID = os.environ.get('CC_DEV_PROJECT_ID', '')
 
 pytestmark = pytest.mark.skipif(
-    not os.environ.get('CC_LIVE_TEST') or find_native_credentials_directory(DEV) is None or not PROJECT_ID,
+    not live_tests_enabled() or not PROJECT_ID,
     reason='requires CC_LIVE_TEST=1, ~/.combocurve/dev credentials, and CC_DEV_PROJECT_ID',
 )
-
-
-@pytest.fixture(scope='module')
-def api() -> ComboCurveAPI:
-    return ComboCurveAPI.from_credentials_directory(DEV)
 
 
 def _table(name: str, value: float) -> Item:
@@ -68,21 +62,21 @@ def _rule_value(table: Item) -> Any:
 
 
 @pytest.mark.parametrize('scope', ['project', 'company'])
-def test_embedded_lookup_table_round_trip(api: ComboCurveAPI, scope: str) -> None:
-    name = f'API Helper Fixture ELT {uuid.uuid4().hex[:8]}'
+def test_embedded_lookup_table_round_trip(dev_api: ComboCurveAPI, scope: str) -> None:
+    name = f'{FIXTURE_PREFIX} ELT {uuid.uuid4().hex[:8]}'
     project = scope == 'project'
 
     def find_by_name() -> list[Item]:
         if project:
-            return api.get_embedded_lookup_tables(PROJECT_ID, {'name': name})
-        return api.get_company_embedded_lookup_tables({'name': name})
+            return dev_api.get_embedded_lookup_tables(PROJECT_ID, {'name': name})
+        return dev_api.get_company_embedded_lookup_tables({'name': name})
 
     created_id = ''
     try:
         if project:
-            created = api.post_embedded_lookup_tables(PROJECT_ID, [_table(name, 1.5)])
+            created = dev_api.post_embedded_lookup_tables(PROJECT_ID, [_table(name, 1.5)])
         else:
-            created = api.post_company_embedded_lookup_tables([_table(name, 1.5)])
+            created = dev_api.post_company_embedded_lookup_tables([_table(name, 1.5)])
         result = cast('Any', created)[0]['results'][0]
         assert result['status'] == 'Created', created
         created_id = str(result['id'])  # the POST returns the new id (verified 2026-11-13)
@@ -92,11 +86,11 @@ def test_embedded_lookup_table_round_trip(api: ComboCurveAPI, scope: str) -> Non
         assert _rule_value(listed[0]) == [1.5]
 
         if project:
-            api.put_embedded_lookup_tables(PROJECT_ID, [_table(name, 2.25)])
-            stored = api.get_embedded_lookup_table_by_id(PROJECT_ID, created_id)
+            dev_api.put_embedded_lookup_tables(PROJECT_ID, [_table(name, 2.25)])
+            stored = dev_api.get_embedded_lookup_table_by_id(PROJECT_ID, created_id)
         else:
-            api.put_company_embedded_lookup_tables([_table(name, 2.25)])
-            stored = api.get_company_embedded_lookup_table_by_id(created_id)
+            dev_api.put_company_embedded_lookup_tables([_table(name, 2.25)])
+            stored = dev_api.get_company_embedded_lookup_table_by_id(created_id)
         assert str(stored['id']) == created_id, 'a PUT by name must replace the table, not create one'
         assert _rule_value(stored) == [2.25]
     finally:
@@ -106,9 +100,9 @@ def test_embedded_lookup_table_round_trip(api: ComboCurveAPI, scope: str) -> Non
         delete_counts = []
         for table in find_by_name():
             if project:
-                headers = api.delete_embedded_lookup_table_by_id(PROJECT_ID, str(table['id']))
+                headers = dev_api.delete_embedded_lookup_table_by_id(PROJECT_ID, str(table['id']))
             else:
-                headers = api.delete_company_embedded_lookup_table_by_id(str(table['id']))
+                headers = dev_api.delete_company_embedded_lookup_table_by_id(str(table['id']))
             delete_counts.append(headers.get('X-Delete-Count'))
         assert find_by_name() == []
         assert delete_counts == ['1'] * len(delete_counts)
