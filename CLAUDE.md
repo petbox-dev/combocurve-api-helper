@@ -192,11 +192,10 @@ The dev target ids are environment variables with **no defaults**, because a rea
 this public repo: `CC_DEV_PROJECT_ID` (the one `test_api.py` test that needs it skips without it), and
 `CC_DEV_PROJECT_ID`, `CC_DEV_SCENARIO_ID`, `CC_DEV_DATES_MODEL_ID` (`test_assignments_live.py` skips
 unless all three are set). `test_type_curves_v2_live.py` performs writes (it creates and deletes its own
-type curve) and needs a tenant enrolled in Type Curve 2.0: it skips unless `CC_LIVE_TEST=1`,
-`CC_TC2_PROJECT_ID` and `CC_TC2_TYPE_CURVE_ID` are set (it passed 2026-11-05). Unlike the other live
-tests, it uses the DEFAULT `~/.combocurve` credentials (production), not `~/.combocurve/dev`, because
-the dev tenant is not enrolled in v2. It writes only `API Helper Fixture*` objects in the
-`CC_TC2_PROJECT_ID` project and deletes them. `test_econ_settings_live.py`, `test_formations_live.py`,
+type curve and lookup table in `CC_DEV_PROJECT_ID`) and also needs `CC_DEV_TYPE_CURVE_ID`, a type curve of
+that project with fits on every phase, a normalization and at least 10 wells, which it only reads. It ran on
+production until 2026-11-21, because the dev tenant was not enrolled in Type Curve 2.0; dev answers the v2
+routes since (checked 2026-11-22), so no test writes to production any more. `test_econ_settings_live.py`, `test_formations_live.py`,
 `test_shapefiles_live.py` and `test_production_comments_live.py` also write `API Helper Fixture*` objects on
 dev and delete them; the econ-settings test also needs `CC_DEV_ECON_CATEGORY` and `CC_DEV_ECON_COLUMN_KEY`
 (a real econ column and its category, e.g. `Cash Flow` / `net_income`), and the production-comment routes
@@ -329,6 +328,12 @@ dropped `(forecast, well)` pairs on every dev project above 200 rows, while the 
 and 2026-11-21). `get_root_forecast_*_volumes` therefore read a `project`-only scope one forecast at a time and
 raise `RuntimeError` when the total differs from the project count. Do not "simplify" it back to one listing
 until ComboCurve fixes the route (`docs/todo/open/project-scoped-root-volumes-repeat-and-drop-rows.md`).
+
+**Async jobs share one poll helper, `APIBase._wait_for_job`**, which waits while the status is `pending` or
+`running` (`base.RUNNING_JOB_STATUSES`). Observed final statuses (dev, 2026-11-21/22): shapefile and formation
+jobs and forecast exports end `successful`, econ exports end `complete`, and every kind fails as `failed`;
+an unknown export job id answers 200 with `failed`, not 404. A delete by id whose route answers 204 with an
+empty body must return `_delete_headers(url)`, never `_delete_items` (which parses the body and raises).
 
 **`APIBase.iter_pages(url, params)` is the public page iterator** (lazy, ComboCurve order, unsorted);
 `_get_items_iterator` delegates to it and stays, because a downstream server calls it.

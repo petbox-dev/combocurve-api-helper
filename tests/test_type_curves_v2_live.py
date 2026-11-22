@@ -1,5 +1,10 @@
-"""Type Curve 2.0 live round trip. WRITES: creates and deletes throwaway objects named
-'API Helper Fixture *'. Skips unless CC_LIVE_TEST=1 and both CC_TC2_* ids are set."""
+"""Type Curve 2.0 live round trip on the DEV tenant. WRITES: creates and deletes throwaway objects named
+'API Helper Fixture *' in the dev project. Skips unless the dev live tests are enabled (CC_LIVE_TEST=1 and
+~/.combocurve/dev credentials), CC_DEV_PROJECT_ID is set, and CC_DEV_TYPE_CURVE_ID names a type curve of that
+project with fits on every phase, a normalization and at least 10 wells (it is read, never written).
+
+Until 2026-11-21 this test ran on production, because the dev tenant was not enrolled in Type Curve 2.0; dev
+answers the v2 routes since (checked 2026-11-22)."""
 
 import os
 import uuid
@@ -9,23 +14,24 @@ from typing import TYPE_CHECKING, Any, cast
 import pytest
 
 from combocurve_api_helper import ComboCurveAPI, fits_for_put, normalization_for_put
+from tests.live_support import FIXTURE_PREFIX, live_tests_enabled
 
 if TYPE_CHECKING:
     from combocurve_api_helper.base import Item
 
-PROJECT_ID = os.environ.get('CC_TC2_PROJECT_ID', '')
-SOURCE_TYPE_CURVE_ID = os.environ.get('CC_TC2_TYPE_CURVE_ID', '')
+PROJECT_ID = os.environ.get('CC_DEV_PROJECT_ID', '')
+SOURCE_TYPE_CURVE_ID = os.environ.get('CC_DEV_TYPE_CURVE_ID', '')
 
 pytestmark = pytest.mark.skipif(
-    not os.environ.get('CC_LIVE_TEST') or not PROJECT_ID or not SOURCE_TYPE_CURVE_ID,
-    reason='live Type Curve 2.0 test: needs CC_LIVE_TEST=1, CC_TC2_PROJECT_ID, CC_TC2_TYPE_CURVE_ID',
+    not live_tests_enabled() or not PROJECT_ID or not SOURCE_TYPE_CURVE_ID,
+    reason='live Type Curve 2.0 test: needs CC_LIVE_TEST=1, ~/.combocurve/dev, CC_DEV_PROJECT_ID, CC_DEV_TYPE_CURVE_ID',
 )
 
 
-@pytest.fixture(scope='module')
-def api() -> ComboCurveAPI:
-    """One client for the module: one OAuth token (10 tokens per 15 minutes per client id)."""
-    return ComboCurveAPI()
+@pytest.fixture
+def api(dev_api: ComboCurveAPI) -> ComboCurveAPI:
+    """The session's dev client (`tests/conftest.py`): one OAuth token for every live test of the run."""
+    return dev_api
 
 
 @pytest.fixture
@@ -34,7 +40,7 @@ def throwaway_type_curve(api: ComboCurveAPI) -> Iterator[str]:
     wells = list(cast('Any', source['wells']))[:10]
     created = api.post_type_curve(
         PROJECT_ID,
-        {'name': f'API Helper Fixture {uuid.uuid4().hex[:8]}', 'forecast': source['forecast'], 'wells': wells},
+        {'name': f'{FIXTURE_PREFIX} {uuid.uuid4().hex[:8]}', 'forecast': source['forecast'], 'wells': wells},
     )
     type_curve_id = str(created['id'])
     try:
@@ -62,7 +68,7 @@ def test_fits_normalization_volumes_and_wells_round_trip(api: ComboCurveAPI, thr
 
 def test_v1_shaped_lookup_table_is_translated(api: ComboCurveAPI, throwaway_type_curve: str) -> None:
     v1_table: Item = {
-        'name': f'API Helper Fixture Table {uuid.uuid4().hex[:8]}',
+        'name': f'{FIXTURE_PREFIX} Table {uuid.uuid4().hex[:8]}',
         'rules': [
             {
                 'filter': [{'key': 'state', 'operator': 'equal', 'value': 'TX'}],
@@ -86,6 +92,6 @@ def test_v1_shaped_lookup_table_is_translated(api: ComboCurveAPI, throwaway_type
 
 
 def test_delete_with_no_match_reads_zero(api: ComboCurveAPI) -> None:
-    headers = api.delete_type_curves(PROJECT_ID, name=f'API Helper Fixture Missing {uuid.uuid4().hex[:8]}')
+    headers = api.delete_type_curves(PROJECT_ID, name=f'{FIXTURE_PREFIX} Missing {uuid.uuid4().hex[:8]}')
 
     assert headers['X-Delete-Count'] == '0'

@@ -3,8 +3,8 @@ name prefix of every object a live test creates.
 
 The `dev_api` fixture (`tests/conftest.py`) builds one client from `DEV_CREDENTIALS_DIRECTORY` for the
 whole session, so a pytest run fetches at most one OAuth token for the dev tests: the token endpoint
-allows 10 fetches per client per 15 minutes. `test_type_curves_v2_live.py` does not use it: it needs the
-production credentials (the dev tenant is not enrolled in Type Curve 2.0).
+allows 10 fetches per client per 15 minutes. Every live module uses it, `test_type_curves_v2_live.py`
+included: the dev tenant answers the Type Curve 2.0 routes (checked 2026-11-22).
 
 Each live module keeps its own `pytestmark` skip condition, built from `live_tests_enabled()` plus the
 environment variables it needs. Nothing here touches the network, so every live module collects offline.

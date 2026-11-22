@@ -14,18 +14,18 @@ This repo is public: no confidential project, model, well or fund names in any d
 
 | Item | Opened | Severity | Summary |
 |---|---|---|---|
-| [project-scoped-root-volumes-repeat-and-drop-rows](open/project-scoped-root-volumes-repeat-and-drop-rows.md) | 2026-11-20 | medium | Server defect: project-scoped root volume listing returns wrong rows above 200 rows; the helper now reads per forecast (verified on dev); open until ComboCurve fixes the route (support report drafted, not sent) |
-| [decisions-pending-from-the-route-and-todo-pass](open/decisions-pending-from-the-route-and-todo-pass.md) | 2026-11-21 | medium | Recommendations carried out; still yours: send the two drafted ComboCurve requests, time the `_get_items_iterator` deprecation |
+| [project-scoped-root-volumes-repeat-and-drop-rows](open/project-scoped-root-volumes-repeat-and-drop-rows.md) | 2026-11-20 | medium | Server defect: project-scoped root volume listing returns wrong rows above 200 rows; the helper now reads per forecast (verified on dev); open until ComboCurve fixes the route (reported 2026-11-22) |
+| [decisions-pending-from-the-route-and-todo-pass](open/decisions-pending-from-the-route-and-todo-pass.md) | 2026-11-21 | medium | Recommendations carried out and both ComboCurve requests sent; still open: time the `_get_items_iterator` deprecation |
 | [type-curve-v1-wrappers-outlive-the-v1-api](open/type-curve-v1-wrappers-outlive-the-v1-api.md) | 2026-11-05 | low | `type_curves_v1_compatibility.py` stays until at least 2027-01-31; the file lists the removal steps |
 | [production-comment-routes-are-unverified-live](open/production-comment-routes-are-unverified-live.md) | 2026-11-21 | low | Comment routes answer `ProductionCommentsDisabledError` on dev and prod; page size 200 is a guess |
-| [forecast-segment-parameter-slope-on-write-is-unverified](open/forecast-segment-parameter-slope-on-write-is-unverified.md) | 2026-11-21 | low | Reads carry the sign in `slope`; the write side is unchecked |
-| [shapefile-paths-not-verified-live](open/shapefile-paths-not-verified-live.md) | 2026-11-21 | low | Company upload, `projectIds` PATCH, shared-layer unlink and failed-job shape not exercised live |
-| [export-jobs-have-no-wait-method](open/export-jobs-have-no-wait-method.md) | 2026-11-21 | low | v2 export job statuses unverified, so no `wait_for_export_*` on `_wait_for_job` |
 
 ## Done
 
 | Item | Closed | Settled by |
 |---|---|---|
+| [forecast-segment-parameter-slope-on-write-is-unverified](closed/forecast-segment-parameter-slope-on-write-is-unverified.md) | 2026-11-22 | `slope` on write is the value per day; `slopeValue` refused; qEnd checked |
+| [shapefile-paths-not-verified-live](closed/shapefile-paths-not-verified-live.md) | 2026-11-22 | All four paths verified live; company create without `scope` refused locally |
+| [export-jobs-have-no-wait-method](closed/export-jobs-have-no-wait-method.md) | 2026-11-22 | Four `wait_for_export_*` methods on `_wait_for_job` (statuses verified live) |
 | [v1-type-curve-normalizations-are-not-written-to-v2](closed/v1-type-curve-normalizations-are-not-written-to-v2.md) | 2026-11-21 | Won't do: no v1/v2 pair can be read anymore; 12 of 526 production curves affected |
 | [list-getters-hold-the-full-result-in-memory](closed/list-getters-hold-the-full-result-in-memory.md) | 2026-11-21 | Public `iter_pages`; `_get_items_iterator` delegates to it |
 | [docstring-freshness-check-tolerates-unsourced-markers](closed/docstring-freshness-check-tolerates-unsourced-markers.md) | 2026-11-21 | Unsourced markers fail `--check`; fetch timeout; malformed shapes exit 2; collapsed-array length gap accepted |

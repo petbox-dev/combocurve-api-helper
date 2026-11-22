@@ -27,13 +27,15 @@ maintainer. Close it when the "Still open" list is empty.
 8. **Unassign of more than 100 wells:** refused locally, not split (recommendation kept).
 9. **v1 normalization mapping:** closed as won't-do (maintainer decision);
    `v1-type-curve-normalizations-are-not-written-to-v2` is in `closed/`.
-10. **Package index skill:** its dependents list now names all seven packages and the scripts that use the
+10. **ComboCurve requests sent (2026-11-22, by the maintainer):** the project-scoped root volume bug report
+   (`docs/local/2026-11-21-combocurve-bug-report-project-scoped-root-volumes.md`) and the request to enable
+   production comments on the dev tenant (`docs/local/2026-11-21-combocurve-request-enable-production-comments.md`).
+   Their follow-ups live in `project-scoped-root-volumes-repeat-and-drop-rows` and
+   `production-comment-routes-are-unverified-live`.
+11. **Package index skill:** its dependents list now names all seven packages and the scripts that use the
    helper (edited in the skills repo; not committed).
 
 ## Still open
 
-1. **Send the two ComboCurve requests.** Drafts are in `docs/local/combocurve-support-requests.md`
-   (git-ignored): the project-scoped root volume bug report, and the request to enable production comments on
-   the dev tenant (and the maximum `take` of those routes). Fill in the bracketed ids, then send them.
-2. **Deprecation of `_get_items_iterator`:** start the warning after the downstream MCP server moves its call
+1. **Deprecation of `_get_items_iterator`:** start the warning after the downstream MCP server moves its call
    sites to `iter_pages`. **Recommendation:** move those call sites when that server next updates the helper.

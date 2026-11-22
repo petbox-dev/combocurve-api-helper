@@ -24,3 +24,7 @@ probe `take` 200/201 (and higher) on the list route, and record the cap in `prod
 ## Files
 
 `src/combocurve_api_helper/production_comments.py`, `tests/test_production_comments_live.py`
+
+## Requested from ComboCurve (2026-11-22)
+
+The maintainer asked ComboCurve to enable production comments on the dev tenant and to confirm the list routes' maximum `take` (`docs/local/2026-11-21-combocurve-request-enable-production-comments.md`, git-ignored).

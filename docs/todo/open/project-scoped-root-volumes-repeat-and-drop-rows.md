@@ -186,3 +186,7 @@ call per forecast; report the defect to ComboCurve support so the fallback can g
 - `src/combocurve_api_helper/root.py`: `get_root_forecast_daily_volumes`, `get_root_forecast_monthly_volumes`
 - `src/combocurve_api_helper/forecasts.py`: path-level volume methods; cross-reference docstrings
 - `src/combocurve_api_helper/base.py`: `_request_items_pages`, `_next_page_url_on_request_origin`
+
+## Reported to ComboCurve (2026-11-22)
+
+The maintainer sent the bug report (`docs/local/2026-11-21-combocurve-bug-report-project-scoped-root-volumes.md`, git-ignored). When ComboCurve fixes the route, re-run the reproduction; if the project-scoped listing is exact, the per-forecast fallback in `root.py` can be removed and this item closed.

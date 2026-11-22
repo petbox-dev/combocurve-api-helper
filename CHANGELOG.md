@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     (`upload_company_shapefile` / `upload_project_shapefile` run it end to end and wait for the job). The
     file goes to the signed storage URL with only the headers the upload ticket names, never the API key
     or the bearer token.
+- `wait_for_export_forecast_parameters`, `wait_for_export_forecast_volumes`, `wait_for_export_econ_monthly` and
+  `wait_for_export_econ_one_liners` poll a v2 export job until it leaves `pending`/`running` (default timeout
+  900 s). A finished forecast export reads `successful`, an econ export `complete`, a failed one `failed`.
 - `iter_pages(url, params=None)`: a public, lazy page iterator (one parsed page per step, in ComboCurve's
   order, unsorted). The private `_get_items_iterator` delegates to it and keeps working.
 - `filters` on `get_econ_model_assignments_by_type_by_id` (and the 16 per-type `get_<type>_assignments_by_id`),
@@ -47,12 +50,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   400 on both routes, live 2026-11-21) instead of splitting the delete. A production-comment bulk delete
   refuses `production_comment_id` together with `well_id`. Id lists given as a comma string are split and
   stripped (`'a, b'` is two ids); a blank or whitespace-only id is refused.
+  A company-route shapefile create (`post_company_shapefiles`, `post_company_shapefile_upload_import`,
+  `upload_company_shapefile`) without `scope` `company` or `project` is refused before any request (the API
+  answers 400 `RequiredFieldError`, after the upload was reserved).
 - `get_type_curves` reads 2,500 type curves per page (the route's maximum), not 200. The v1-compatibility
   type-curve wrappers read forecast outputs at 1,000 per page, like `get_forecast_outputs`, not 200.
 - `get_project_custom_columns` and its url builder are typed with overloads: a type checker now refuses a
   call with neither `custom_column` nor the deprecated `collection`. Requires `typing-extensions>=4.5.0`.
-- `delete_directional_survey_by_id` returns the response headers, like the other deletes by id (it was
-  annotated `ItemList`, see Fixed).
+- `delete_directional_survey_by_id`, `delete_forecast_by_id`, `delete_forecast_segment_parameters`,
+  `delete_project_by_id` and `delete_forecast_configuration_by_id` return the response headers, like the other
+  deletes by id (they were annotated `ItemList`, see Fixed).
 - The transport policy (timeouts, retries, deadline, connection failures) moved from `base.py` to the
   private `_transport.py`; `base.py` re-exports every moved name.
 - `get_root_forecast_daily_volumes` / `_monthly_volumes` with `project` and no `forecast` now read the
@@ -68,8 +75,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `delete_econ_model_assignments_by_type_by_id` (and the 16 per-type unassign methods) sent two or more wells
   as one comma-joined `wells` value, which ComboCurve answers with 400; it now sends one `wells` key per id.
   `delete_scenario_wells` had the same defect and the same fix. A single well is sent as before.
-- `delete_directional_survey_by_id` raised `JSONDecodeError` after the survey was deleted, because the route
-  answers with an empty body.
+- `delete_directional_survey_by_id`, `delete_forecast_by_id`, `delete_forecast_segment_parameters`,
+  `delete_project_by_id` and `delete_forecast_configuration_by_id` raised `JSONDecodeError` after the delete
+  had gone through, because each route answers success with an empty body.
 
 ## [3.2.0] - 2026-11-17
 

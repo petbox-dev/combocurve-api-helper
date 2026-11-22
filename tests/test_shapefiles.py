@@ -16,7 +16,7 @@ import requests
 from combocurve_api_helper import shapefiles as shapefiles_module
 from combocurve_api_helper.base import Item
 from combocurve_api_helper.shapefiles import GET_LIMIT, Shapefiles
-from tests.http_fakes import FakeResponse
+from tests.http_fakes import FakeResponse, install_recording_transport, make_offline_api
 
 BASE = Shapefiles.API_BASE_URL
 PROJECT = 'p1'
@@ -128,7 +128,12 @@ def test_urls_for_both_scopes() -> None:
         (lambda api: api.get_project_shapefile_job(PROJECT, 'j1'), 'GET', f'{PROJECT_ROOT}/jobs/j1', None),
         (lambda api: api.delete_company_shapefile_by_id('s1'), 'DELETE', f'{COMPANY_ROOT}/s1', None),
         (lambda api: api.delete_project_shapefile_by_id(PROJECT, 's1'), 'DELETE', f'{PROJECT_ROOT}/s1', None),
-        (lambda api: api.post_company_shapefiles({'name': 'n'}), 'POST', COMPANY_ROOT, {'name': 'n'}),
+        (
+            lambda api: api.post_company_shapefiles({'name': 'n', 'scope': 'company'}),
+            'POST',
+            COMPANY_ROOT,
+            {'name': 'n', 'scope': 'company'},
+        ),
         (lambda api: api.post_project_shapefiles(PROJECT, {'name': 'n'}), 'POST', PROJECT_ROOT, {'name': 'n'}),
         (
             lambda api: api.post_company_shapefile_upload(),
@@ -334,6 +339,12 @@ def test_wait_polls_until_the_job_leaves_pending_and_running(monkeypatch: pytest
     assert [call.url for call in transport.calls] == [f'{PROJECT_ROOT}/jobs/j1'] * 3
 
 
+def test_wait_returns_a_failed_job_without_raising(monkeypatch: pytest.MonkeyPatch) -> None:
+    failed = {'jobId': 'j1', 'type': 'upload', 'status': 'failed', 'error': 'Error uploading to Mapbox: x'}
+    _install(monkeypatch, FakeResponse(200, {'jobId': 'j1', 'status': 'running'}), FakeResponse(200, failed))
+    assert _api().wait_for_company_shapefile_job('j1') == failed
+
+
 class _SleepDrivenClock:
     """A `time.monotonic` that advances only when `time.sleep` is called. The transport also reads
     `time.monotonic` (its call deadline), so a clock that advanced on every read would be consumed by the
@@ -412,10 +423,18 @@ def test_upload_runs_the_three_steps_and_returns_the_new_layer(monkeypatch: pyte
 
 
 def test_upload_raises_when_the_job_does_not_succeed(monkeypatch: pytest.MonkeyPatch) -> None:
-    failed: Item = {'jobId': 'j1', 'status': 'failed', 'error': 'bad zip'}
+    # The shape of a failed job seen live 2026-11-22: no `result`, an `error` message string.
+    failed: Item = {
+        'jobId': 'j1',
+        'type': 'upload',
+        'status': 'failed',
+        'createdAt': '2026-11-22T00:00:00.000Z',
+        'completedAt': '2026-11-22T00:00:10.000Z',
+        'error': 'Error uploading to Mapbox: Unknown filetype',
+    }
     transport = _install(monkeypatch, *_upload_responses(failed))
-    with pytest.raises(RuntimeError, match='did not succeed'):
-        _api().upload_company_shapefile(GOOD_ZIP, {'name': 'n'})
+    with pytest.raises(RuntimeError, match=r'did not succeed.*Unknown filetype'):
+        _api().upload_company_shapefile(GOOD_ZIP, {'name': 'n', 'scope': 'company'})
     assert transport.calls[0].url == f'{COMPANY_ROOT}/uploads'
 
 
@@ -423,4 +442,20 @@ def test_upload_refuses_a_bad_zip_before_reserving_an_upload(monkeypatch: pytest
     transport = _install(monkeypatch)
     with pytest.raises(ValueError, match='not a zip'):
         _api().upload_company_shapefile(b'not a zip', {'name': 'n'})
+    assert transport.calls == []
+
+
+@pytest.mark.parametrize(
+    'send',
+    [
+        lambda api: api.post_company_shapefiles({'name': 'x', 'type': 'FeatureCollection', 'features': []}),
+        lambda api: api.post_company_shapefile_upload_import('upload-1', {'name': 'x'}),
+        lambda api: api.post_company_shapefile_upload_import('upload-1', {'name': 'x', 'scope': 'everyone'}),
+    ],
+)
+def test_company_create_without_scope_is_refused_before_sending(monkeypatch: pytest.MonkeyPatch, send: Any) -> None:
+    """The company route answers 400 `RequiredFieldError` without `scope` (live 2026-11-22): refuse it locally."""
+    transport = install_recording_transport(monkeypatch)
+    with pytest.raises(ValueError, match=r"requires data\['scope'\]"):
+        send(make_offline_api())
     assert transport.calls == []

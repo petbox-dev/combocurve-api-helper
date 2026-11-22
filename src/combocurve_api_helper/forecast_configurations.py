@@ -1,6 +1,8 @@
 from collections.abc import Sequence
 from typing import Optional, cast
 
+from requests.structures import CaseInsensitiveDict
+
 from .base import APIBase, Item, ItemList, QueryFilters, WriteResponse
 
 GET_LIMIT = 200
@@ -99,23 +101,21 @@ class ForecastConfigurations(APIBase):
         url = self.get_forecast_configurations_url()
         return cast('list[WriteResponse]', self._patch_items(url, data))
 
-    def delete_forecast_configuration_by_id(self, forecast_configuration_id: str) -> ItemList:
+    def delete_forecast_configuration_by_id(self, forecast_configuration_id: str) -> CaseInsensitiveDict[str]:
         """
         Deletes a specific forecast configuration from its id.
 
+        The route answers success with 204 and an empty body (the collection's saved success response), so this
+        returns the response headers, like the other deletes by id; it used to parse that empty body and raise
+        `JSONDecodeError` after the delete. A configuration owned by another user answers 403, an unknown id 404,
+        and both raise `requests.HTTPError`.
+
         https://docs.api.combocurve.com/api/delete-forecast-configuration-by-id
 
-        Example response:
-        {
-            "name": "Example",
-            "message": "string",
-            "details": {
-                "location": "string"
-            }
-        }
+        Returns the headers from the delete response.
         """
         url = self.get_forecast_configuration_by_id_url(forecast_configuration_id)
-        return self._delete_items(url, data=[])
+        return self._delete_headers(url)
 
     def delete_forecast_configurations(self, ids: Sequence[str]) -> list[WriteResponse]:
         """

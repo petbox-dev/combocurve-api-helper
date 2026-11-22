@@ -4,6 +4,7 @@ from types import MappingProxyType
 from typing import Callable, Optional, cast
 
 from more_itertools import chunked
+from requests.structures import CaseInsensitiveDict
 
 from ._batch import BatchChunk, BatchWriteResult
 from .base import LIST_SORT_ORDER, WELL_LIST_SORT_ORDER, APIBase, Item, ItemList, QueryFilters, WriteResponse
@@ -743,14 +744,19 @@ class Forecasts(APIBase):
 
         return forecasts[0]
 
-    def delete_forecast_by_id(self, project_id: str, forecast_id: str) -> ItemList:
+    def delete_forecast_by_id(self, project_id: str, forecast_id: str) -> CaseInsensitiveDict[str]:
         """
-        Deletes a specific forecast from its project id and forecast id.
+        Deletes a specific forecast from its project id and forecast id, and returns the headers of the
+        delete response.
+
+        The route answers a success with an empty body (verified live 2026-11-22 on dev). Through 3.2.0 this
+        method returned the parsed body, so it raised `JSONDecodeError` after the forecast was already
+        deleted; it now returns the headers, like the other delete-by-id methods.
 
         https://docs.api.combocurve.com/api/delete-forecast-by-id
         """
         url = self.get_forecast_by_id_url(project_id, forecast_id)
-        return self._delete_items(url, data=[])
+        return self._delete_headers(url)
 
     def patch_forecast_by_id(self, project_id: str, forecast_id: str, data: Item) -> Item:
         """
@@ -848,7 +854,9 @@ class Forecasts(APIBase):
         on dev over 3,695 outputs: `arps`, `arps_modified` and `exp_dec` read -1, `arps_inc` and
         `exp_inc` read 1, `flat` and `empty` read 0, all with no `slopeValue`; every `linear` segment
         had `slopeValue` (for example `qStart` 350, `qEnd` 940 over 30 days: `slope` 1, `slopeValue`
-        19.67). The examples below are spoofed and show both fields with the same number.
+        19.67). The examples below are spoofed and show both fields with the same number. The writes
+        (`post_forecast_segment_parameters`, `put_forecast_segment_parameters`) take the value in `slope`
+        and refuse `slopeValue`.
 
         https://docs.api.combocurve.com/api/get-forecast-outputs
 
@@ -1467,6 +1475,24 @@ class Forecasts(APIBase):
         Inserts a specific well's forecast parameters from its forecast id,
         well id, phase, and series.
 
+        Behavior verified live 2026-11-22 on dev (the API docs state none of it):
+
+        - Only a deterministic forecast takes segments; a probabilistic one answers 400
+          `Only deterministic forecasts are supported`.
+        - On a `linear` segment, `slope` is the VALUE of the slope in rate units per day, not the sign that
+          `get_forecast_outputs` returns in `slope`. It is required, and so is `qEnd`, and they must agree:
+          `qEnd = qStart + slope * (endDate - startDate, in days)` to within 1e-5, or the route answers 400
+          `ParameterRangeError` naming the `qEnd` range it would accept. The server does not derive one from
+          the other. `slopeValue` is refused (`slopeValue provided for the linear segment`). For example
+          `qStart` 100, `qEnd` 400, `startDate` 2025-01-01, `endDate` 2025-01-31 needs `slope` 10, and reads
+          back as `slope` 1, `slopeValue` 10; a falling segment (400 to 100) needs `slope` -10 and reads back
+          `slope` -1, `slopeValue` -10. `slope` 1 or 5 with that `qEnd` is refused, with the range 130 or 250.
+        - A success answers 201 with one object, `{"status": "Created", "segmentsCount": 1, "id": ...}`:
+          the count key is `segmentsCount`, not the `segmentCount` of the example below, and `id` is the
+          forecast output's id.
+
+        This method sends `data` as given; it converts nothing.
+
         https://docs.api.combocurve.com/api/post-projects-forecast-segment-parameters
 
         Example data:
@@ -1506,7 +1532,12 @@ class Forecasts(APIBase):
     ) -> list[WriteResponse]:
         """
         Updates a specific well's forecast parameters from its forecast id,
-        well id, phase, and series.
+        well id, phase, and series: the segments in `data` replace all of that series' segments.
+
+        Takes `slope` on a `linear` segment as the value in rate units per day, with the same rules, the
+        same refusals and the same 201 answer (status `Created`, key `segmentsCount`) as
+        `post_forecast_segment_parameters`; verified live 2026-11-22 on dev with the same requests. This
+        method sends `data` as given; it converts nothing.
 
         https://docs.api.combocurve.com/api/put-projects-forecast-segment-parameters
 
@@ -1544,17 +1575,19 @@ class Forecasts(APIBase):
 
     def delete_forecast_segment_parameters(
         self, project_id: str, forecast_id: str, well_id: str, phase: str, series: str
-    ) -> ItemList:
+    ) -> CaseInsensitiveDict[str]:
         """
         Deletes a specific well's forecast parameters from its forecast id,
-        well id, phase, and series.
+        well id, phase, and series, and returns the headers of the delete response.
+
+        The route answers a success with an empty body (verified live 2026-11-22 on dev). Through 3.2.0
+        this method returned the parsed body, so it raised `JSONDecodeError` after the route had already
+        answered success.
 
         https://docs.api.combocurve.com/api/delete-projects-forecast-segment-parameters
         """
         url = self.get_forecast_segment_parameters_url(project_id, forecast_id, well_id, phase, series)
-        segments = self._delete_items(url, data=[])
-
-        return segments
+        return self._delete_headers(url)
 
     # Bulk forecast parameters (whole-forecast PUT) and forecast run (async job)
 

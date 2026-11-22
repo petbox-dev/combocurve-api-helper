@@ -1,5 +1,7 @@
 from typing import Optional, cast
 
+from requests.structures import CaseInsensitiveDict
+
 from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
 
 GET_LIMIT = 200
@@ -128,11 +130,17 @@ class Projects(APIBase):
 
         return projects[0]
 
-    def delete_project_by_id(self, id: str) -> ItemList:
+    def delete_project_by_id(self, id: str) -> CaseInsensitiveDict[str]:
         """
         Deletes a specific project from its project id.
 
+        The route answers success with 204 and an empty body (dev, 2026-11-22), so this returns the response
+        headers, like the other deletes by id. Before this change it parsed the empty body and raised
+        `JSONDecodeError` after the project was already deleted.
+
         https://docs.api.combocurve.com/api/delete-project-by-id
+
+        Returns the headers from the delete response.
         """
         url = self.get_project_by_id_url(id)
-        return self._delete_items(url, data=[])
+        return self._delete_headers(url)

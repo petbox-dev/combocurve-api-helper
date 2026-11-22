@@ -20,7 +20,8 @@ MAX_UPLOAD_BYTES = 260 * 1024 * 1024
 UPLOAD_CONTENT_TYPES = ('application/zip', 'application/x-zip-compressed')
 
 # The status of a finished good job (`base.RUNNING_JOB_STATUSES` are the unfinished ones). Seen live
-# 2026-11-22: an upload job goes `running` -> `successful`, a delete job `pending` -> `running` -> `successful`.
+# 2026-11-22: an upload job goes `running` -> `successful` or `failed`, a delete job `pending` -> `running` ->
+# `successful`.
 SUCCESSFUL_JOB_STATUS = 'successful'
 
 # A layer record has no `createdAt` / `updatedAt`, so the shared `LIST_SORT_ORDER` would pad those keys
@@ -46,8 +47,10 @@ class Shapefiles(APIBase):
       `put_shapefile_upload_file` (the zip to that url), `post_..._shapefile_upload_import` (the import).
       `upload_company_shapefile` / `upload_project_shapefile` run all three and wait for the job.
 
-    Every shapefile route is the same at both scopes except PATCH, which is company only. The public
-    methods delegate to the private `_...` helpers, which take `project_id=None` for company scope.
+    Every shapefile route is the same at both scopes except PATCH, which is company only, and `scope`,
+    which a company-route create (GeoJSON or zip import) requires (400 `RequiredFieldError` without it) and
+    a project route refuses. The public methods delegate to the private `_...` helpers, which take
+    `project_id=None` for company scope.
 
     Behavior verified live 2026-11-22 that the API docs do not state: a `name` filter is an exact,
     case-sensitive match; the `jobId` of an import equaled its `uploadId` (the docs say not to rely on
@@ -171,6 +174,18 @@ class Shapefiles(APIBase):
         if refused:
             raise ValueError(f'a project route sets the scope; remove {refused} or use the company route')
 
+    @staticmethod
+    def _require_create_scope(project_id: Optional[str], data: Item) -> None:
+        """Check a create body before sending: a project route refuses `scope` and `projectIds`; the company
+        route requires `scope` (`company` or `project`), which the API otherwise refuses with 400
+        `RequiredFieldError` after the upload was reserved (verified live 2026-11-22)."""
+        if project_id is not None:
+            Shapefiles._refuse_project_route_keys(data)
+        elif data.get('scope') not in ('company', 'project'):
+            raise ValueError(
+                f"the company route requires data['scope'] to be 'company' or 'project', not {data.get('scope')!r}"
+            )
+
     def _get_shapefiles(self, project_id: Optional[str], filters: Optional[dict[str, str]]) -> ItemList:
         """Returns every layer of the company or of a project, all pages, ordered by name then id."""
         layers = self._get_items(self._shapefiles_url(project_id, filters), params={'take': GET_LIMIT})
@@ -185,8 +200,7 @@ class Shapefiles(APIBase):
 
     def _post_shapefile(self, project_id: Optional[str], data: Item) -> Item:
         """Creates a layer from a GeoJSON FeatureCollection; returns the job (`jobId`)."""
-        if project_id is not None:
-            self._refuse_project_route_keys(data)
+        self._require_create_scope(project_id, data)
         return self._send_for_item('post', self._shapefiles_url(project_id), data)
 
     def _post_shapefile_upload(self, project_id: Optional[str], content_type: str) -> Item:
@@ -200,8 +214,7 @@ class Shapefiles(APIBase):
         """Step 3: imports an uploaded zip as a layer; returns the job (`jobId`)."""
         if not upload_id:
             raise ValueError('upload_id must be a non-empty upload id')
-        if project_id is not None:
-            self._refuse_project_route_keys(data)
+        self._require_create_scope(project_id, data)
         return self._send_for_item('post', self._shapefile_url(project_id, 'uploads', upload_id), data)
 
     def _wait_for_shapefile_job(
@@ -223,8 +236,7 @@ class Shapefiles(APIBase):
     ) -> Item:
         """Runs the three upload steps, waits for the import job and returns the new layer."""
         content = _read_upload_zip(zip_file)
-        if project_id is not None:
-            self._refuse_project_route_keys(data)
+        self._require_create_scope(project_id, data)
         ticket = self._post_shapefile_upload(project_id, UPLOAD_CONTENT_TYPES[0])
         self._send_upload_zip(ticket, content)
         job = self._post_shapefile_upload_import(project_id, str(ticket['uploadId']), data)
@@ -353,9 +365,13 @@ class Shapefiles(APIBase):
 
     def get_company_shapefile_job(self, job_id: str) -> Item:
         """
-        Returns the status of a shapefile upload or delete job, at either scope. `status` is `pending`,
-        `running` or `successful` (seen live); a successful upload's `result` has the new layer's
-        `shapefileId`, and a failed job has `error`. An unknown id answers 404.
+        Returns the status of a shapefile upload or delete job, at either scope. `type` is `upload` or
+        `delete`; `status` is `pending`, `running`, `successful` or `failed` (all seen live 2026-11-22).
+        A finished job has `completedAt`. A successful upload's `result` has the new layer's `shapefileId`.
+        A failed job has no `result`; its `error` is a message string (seen: `Error uploading to Mapbox:
+        Unknown filetype` for an unreadable `.shp`, `... Invalid shapefile: invalid projection file` for a
+        bad `.prj`), and no layer is left behind. The import route accepts such a zip (202): only the job
+        reads the files. An unknown id answers 404.
 
         https://docs.api.combocurve.com/api/get-shapefiles-job
 
@@ -379,8 +395,9 @@ class Shapefiles(APIBase):
     ) -> Item:
         """
         Polls `get_company_shapefile_job` every `poll_seconds` until the job is no longer `pending` or
-        `running`, and returns it; check its `status`. Raises `TimeoutError` when it has not finished
-        within `timeout_seconds`. An upload of a small layer took about 20 seconds (live 2026-11-22).
+        `running`, and returns it; check its `status`: a `failed` job is returned, not raised. Raises
+        `TimeoutError` when it has not finished within `timeout_seconds`. An upload of a small layer took
+        about 20 seconds, a failed upload about 10, a delete about 30 (live 2026-11-22).
         Not an API route: it calls the job route repeatedly.
         """
         return self._wait_for_shapefile_job(None, job_id, timeout_seconds, poll_seconds)
@@ -410,6 +427,17 @@ class Shapefiles(APIBase):
         Every record must carry an `id`, and an id may appear once: the API rejects a later record for a
         layer already in the request (a per-record 400, verified live), so a repeated id raises
         `ValueError` here before anything is sent.
+
+        `scope` and `projectIds` (verified live 2026-11-22; each refusal is a per-record 400 in the 207
+        body, and the layer is left unchanged):
+
+        - `projectIds` replaces the layer's project list; it does not add to it. With `scope` `project` it
+          moves a company layer into those projects; on a project layer it can be sent alone.
+        - `projectIds` must be non-empty (`[]` is refused); to take a layer out of its last project, use a
+          delete route.
+        - `scope` `company` alone turns a project layer into a company layer, whose `projectIds` then reads
+          back `[]`; `scope` `company` with `projectIds` is refused.
+        - `scope` `project` without `projectIds` on a company layer is refused.
 
         https://docs.api.combocurve.com/api/patch-shapefiles
 
@@ -465,10 +493,12 @@ class Shapefiles(APIBase):
 
     def post_company_shapefiles(self, data: Item) -> Item:
         """
-        Creates a map layer from a GeoJSON FeatureCollection (`name`, `type`, `features`, optional
-        `description`, `color`, `scope`, `projectIds`), asynchronously: the features are converted to a
+        Creates a map layer from a GeoJSON FeatureCollection (`name`, `type`, `features`, `scope`, and
+        optional `description`, `color`, `projectIds`), asynchronously: the features are converted to a
         shapefile and imported like an uploaded zip. Returns the job (`jobId`); poll it with
-        `get_company_shapefile_job` or `wait_for_company_shapefile_job`.
+        `get_company_shapefile_job` or `wait_for_company_shapefile_job`. `scope` (`company` or `project`)
+        is required on this route: without it the API answers 400 `RequiredFieldError` (verified live
+        2026-11-22), so a missing or other `scope` raises `ValueError` before anything is sent.
 
         A name already in use where the layer would appear answers 409 with the existing layer's id as
         `conflictingId` in the error details; a clash with a heatmap layer answers 409 without it.
@@ -533,9 +563,14 @@ class Shapefiles(APIBase):
 
     def post_company_shapefile_upload_import(self, upload_id: str, data: Item) -> Item:
         """
-        Step 3: imports an uploaded zip as a map layer, asynchronously. `data` takes `name`, `description`,
-        `color`, `scope` and `projectIds`. The zip is checked first (400 if it is not a shapefile zip).
-        Returns the job (`jobId`); poll that id, not the upload id.
+        Step 3: imports an uploaded zip as a map layer, asynchronously. `data` takes `name`, `scope`, and
+        optional `description`, `color` and `projectIds`. `scope` (`company` or `project`) is required:
+        without it the API answers 400 `RequiredFieldError` (verified live 2026-11-22), so a missing or other
+        `scope` raises `ValueError` before anything is sent. Answers 202 with the
+        job (`jobId`); poll that id, not the upload id. The zip is checked first (400 if it is not a
+        shapefile zip), but its files are read only by the job, which ends `failed` for an unreadable
+        `.shp` or `.prj` (see `get_company_shapefile_job`). A layer created without `description` or
+        `color` reads back `""` and `#a0a0a0`; a company layer's `projectIds` reads back `[]`.
 
         An upload is imported once: a repeat answers 409 with the original `jobId` in the error details. An
         upload reserved through a project route answers 404 here (verified live).
@@ -569,14 +604,18 @@ class Shapefiles(APIBase):
     ) -> Item:
         """
         Uploads a shapefile zip as a map layer on the company route and returns the new layer's metadata.
-        `zip_file` is the zip's path or its bytes; `data` is the step-3 body (`name`, `description`,
-        `color`, `scope`, `projectIds`).
+        `zip_file` is the zip's path or its bytes; `data` is the step-3 body (`name`, `scope`, and optional
+        `description`, `color`, `projectIds`). `scope` (`company` or `project`) is required: the import
+        answers 400 without it (verified live 2026-11-22), so a missing or other `scope` raises `ValueError`
+        before step 1, and no upload is reserved. With `scope` `project` and `projectIds`, one upload lands in
+        several projects (verified live 2026-11-22).
 
         Runs `post_company_shapefile_upload`, `put_shapefile_upload_file`,
         `post_company_shapefile_upload_import` and `wait_for_company_shapefile_job`, then reads the layer.
         The zip is checked (one `.shp` with its `.shx` and `.dbf`, at most 260 MB) before anything is
-        sent. Raises `RuntimeError` when the job ends in any status but `successful`, and `TimeoutError`
-        when it has not ended within `timeout_seconds`.
+        sent. Raises `RuntimeError` when the job ends in any status but `successful`, with the job read in
+        the message (a `failed` job's `error` says why; verified live 2026-11-22), and `TimeoutError` when
+        it has not ended within `timeout_seconds`.
         """
         return self._upload_shapefile(None, zip_file, data, timeout_seconds, poll_seconds)
 
@@ -765,9 +804,11 @@ class Shapefiles(APIBase):
     def delete_project_shapefile_by_id(self, project_id: str, shapefile_id: str) -> Item:
         """
         Removes a layer from this project. A layer other projects also use is only unlinked from this one:
-        the response (200) has `id`, `result` and `remainingProjectIds`. A layer whose last project is this
-        one is deleted asynchronously: the response (202) has `jobId`; poll it with
-        `get_project_shapefile_job` or `wait_for_project_shapefile_job`.
+        the response (200) is `{"result": "unlinked", "id": ..., "remainingProjectIds": [...]}`; the layer
+        then answers 404 on this project's routes and is still readable in the remaining projects. A layer
+        whose last project is this one is deleted asynchronously: the response (202) is `{"jobId": ...}`;
+        poll it with `get_project_shapefile_job` or `wait_for_project_shapefile_job`. Check for `jobId` to
+        tell the two apart (both verified live 2026-11-22).
 
         https://docs.api.combocurve.com/api/delete-project-shapefile-by-id
 

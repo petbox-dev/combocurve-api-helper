@@ -97,7 +97,9 @@ ARGUMENT_OVERRIDES: dict[str, dict[str, Any]] = {
     },
     'delete_company_production_comments': {'production_comment_id': PLACEHOLDER},
     'delete_project_production_comments': {'production_comment_id': PLACEHOLDER},
-    'upload_company_shapefile': {'zip_file': _SHAPEFILE_ZIP},
+    'post_company_shapefiles': {'data': {'id': PLACEHOLDER, 'scope': 'company'}},
+    'post_company_shapefile_upload_import': {'data': {'id': PLACEHOLDER, 'scope': 'company'}},
+    'upload_company_shapefile': {'zip_file': _SHAPEFILE_ZIP, 'data': {'id': PLACEHOLDER, 'scope': 'company'}},
     'upload_project_shapefile': {'zip_file': _SHAPEFILE_ZIP},
 }
 # A by-type method (`econ_model_type` argument) is called once per econ-model type, because it
