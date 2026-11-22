@@ -2,7 +2,7 @@ from typing import Optional, Union, cast
 
 from requests.structures import CaseInsensitiveDict
 
-from .base import LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
+from .base import JOB_POLL_SECONDS, JOB_WAIT_TIMEOUT_SECONDS, LIST_SORT_ORDER, APIBase, Item, ItemList, WriteResponse
 
 GET_LIMIT = 200  # the maximum of `take` on the formations list routes (verified live 2026-11-21)
 POINTS_GET_LIMIT = 10000  # the maximum of `take` on the formation points routes (verified live 2026-11-21)
@@ -321,7 +321,7 @@ class Formations(APIBase):
         return self._get_items(self.get_company_formations_job_url(job_id))[0]
 
     def wait_for_company_formations_job(
-        self, job_id: str, timeout_seconds: float = 600.0, poll_seconds: float = 2.0
+        self, job_id: str, timeout_seconds: float = JOB_WAIT_TIMEOUT_SECONDS, poll_seconds: float = JOB_POLL_SECONDS
     ) -> Item:
         """
         Polls `get_company_formations_job` every `poll_seconds` until the job is no longer `pending` or
@@ -594,7 +594,11 @@ class Formations(APIBase):
         return self._get_items(self.get_project_formations_job_url(project_id, job_id))[0]
 
     def wait_for_project_formations_job(
-        self, project_id: str, job_id: str, timeout_seconds: float = 600.0, poll_seconds: float = 2.0
+        self,
+        project_id: str,
+        job_id: str,
+        timeout_seconds: float = JOB_WAIT_TIMEOUT_SECONDS,
+        poll_seconds: float = JOB_POLL_SECONDS,
     ) -> Item:
         """
         Polls `get_project_formations_job` every `poll_seconds` until the job is no longer `pending` or

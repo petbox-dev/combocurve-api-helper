@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import io
 import os
-import pathlib
 import struct
 import uuid
 import zipfile
@@ -25,17 +24,16 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from combocurve_api_helper import ComboCurveAPI
-from combocurve_api_helper.config import find_native_credentials_directory
+from tests.live_support import FIXTURE_PREFIX, live_tests_enabled
 
 if TYPE_CHECKING:
+    from combocurve_api_helper import ComboCurveAPI
     from combocurve_api_helper.base import Item
 
-DEV = pathlib.Path.home() / '.combocurve' / 'dev'
 PROJECT_ID = os.environ.get('CC_DEV_PROJECT_ID', '')
 
 pytestmark = pytest.mark.skipif(
-    os.environ.get('CC_LIVE_TEST') is None or find_native_credentials_directory(DEV) is None or not PROJECT_ID,
+    not live_tests_enabled() or not PROJECT_ID,
     reason='requires CC_LIVE_TEST=1, ~/.combocurve/dev credentials and CC_DEV_PROJECT_ID',
 )
 
@@ -83,9 +81,10 @@ def one_point_shapefile_zip(longitude: float, latitude: float, label: str) -> by
     return buffer.getvalue()
 
 
-@pytest.fixture(scope='module')
-def api() -> ComboCurveAPI:
-    return ComboCurveAPI.from_credentials_directory(DEV)
+@pytest.fixture
+def api(dev_api: ComboCurveAPI) -> ComboCurveAPI:
+    """The session's shared dev client (`dev_api`)."""
+    return dev_api
 
 
 def test_reads_at_both_scopes(api: ComboCurveAPI) -> None:
@@ -103,7 +102,7 @@ def test_reads_at_both_scopes(api: ComboCurveAPI) -> None:
 
 
 def test_upload_patch_and_delete_round_trip(api: ComboCurveAPI) -> None:
-    prefix = f'API Helper Fixture {uuid.uuid4().hex[:8]}'
+    prefix = f'{FIXTURE_PREFIX} {uuid.uuid4().hex[:8]}'
     try:
         layer = api.upload_project_shapefile(
             PROJECT_ID, one_point_shapefile_zip(-100.5, 31.25, 'A'), {'name': f'{prefix} zip'}
@@ -182,7 +181,7 @@ def test_company_upload_scope_patch_and_shared_project_delete(api: ComboCurveAPI
     )
     if other_project_id is None:
         pytest.skip('needs a second dev project')
-    prefix = f'API Helper Fixture {uuid.uuid4().hex[:8]}'
+    prefix = f'{FIXTURE_PREFIX} {uuid.uuid4().hex[:8]}'
     try:
         layer = api.upload_company_shapefile(
             one_point_shapefile_zip(-100.5, 31.25, 'A'), {'name': f'{prefix} company', 'scope': 'company'}
@@ -216,7 +215,7 @@ def test_company_upload_scope_patch_and_shared_project_delete(api: ComboCurveAPI
 
 
 def test_a_failed_upload_job_raises_with_the_job(api: ComboCurveAPI) -> None:
-    prefix = f'API Helper Fixture {uuid.uuid4().hex[:8]}'
+    prefix = f'{FIXTURE_PREFIX} {uuid.uuid4().hex[:8]}'
     try:
         with pytest.raises(RuntimeError, match=r"'status': 'failed'.*'error': 'Error uploading to Mapbox"):
             api.upload_company_shapefile(bad_projection_shapefile_zip(), {'name': f'{prefix} bad', 'scope': 'company'})

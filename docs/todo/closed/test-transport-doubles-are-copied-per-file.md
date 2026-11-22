@@ -1,7 +1,7 @@
 # Test transport doubles are copied per file
 
 Closed: 2026-11-21 -- settled by: 18 test files moved onto `tests/http_fakes.py` (`RecordingTransport`, new `install_responding_transport`, recorded `headers` and `data`); the route audit records (method, exception type) against `EXPECTED_EXCEPTIONS` and fills arguments from the evaluated annotations
-If this was wrong, you will see: a test file with its own `requests.request` replacement or a private-method stub, other than `test_connection_retry.py`, `test_auth.py`'s token endpoint and the route audit; or a route-audit exception that is not in `EXPECTED_EXCEPTIONS`
+If this was wrong, you will see: a test file with its own `requests.request` replacement or a private-method stub, other than `test_connection_retry.py`, `test_auth.py`'s token endpoint, `test_root_urls_and_params.py` (out of scope) and the route audit; or a route-audit exception that is not in `EXPECTED_EXCEPTIONS`
 
 Severity: low
 Opened: 2026-11-13
@@ -59,4 +59,4 @@ with the reason in the docstring: `_Script` in `test_connection_retry.py` (raise
 `FakeTokenEndpoint` in `test_auth.py` (`requests.post` for the token). `test_root_urls_and_params.py`
 and the route audit's `_Recorder` were out of this pass's scope.
 
-Still open: the route-audit part below.
+The route-audit part below was settled in the same pass (see the header).

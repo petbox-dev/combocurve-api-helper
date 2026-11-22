@@ -35,7 +35,7 @@ class ForecastConfigurations(APIBase):
     # API calls
     ###########
 
-    def get_forecast_configurations(self, filters: Optional[dict[str, str]] = None) -> ItemList:
+    def get_forecast_configurations(self, filters: Optional[QueryFilters] = None) -> ItemList:
         """
         Returns a list of forecast configurations. These are the reusable
         forecast-run presets referenced by `post_forecast_run`.
@@ -48,7 +48,7 @@ class ForecastConfigurations(APIBase):
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
 
-    def count_forecast_configurations(self, filters: Optional[dict[str, str]] = None) -> int:
+    def count_forecast_configurations(self, filters: Optional[QueryFilters] = None) -> int:
         """
         Returns the number of forecast configurations matching `filters`, from the
         `X-Query-Count` header of a HEAD request (no documents are fetched).
@@ -123,8 +123,9 @@ class ForecastConfigurations(APIBase):
         configuration owned by another user is a per-record 403, and an unknown id is a per-record 404;
         the 207 envelope reports each record, so neither raises.
 
-        The route takes at most 100 ids per request, which the API docs do not state: 101 ids answered
-        500, and 500 ids answered 431 (the URL is too long) on dev, 2026-11-21. A longer `ids` list is
+        The route refuses 101 ids, which the API docs do not state: 101 ids answered 500, and 500 ids answered
+        431 (the URL is too long) on dev, 2026-11-21; 100 is the cap the sibling repeated-filter routes were
+        measured at, not measured on this route. A longer `ids` list is
         de-duplicated and sent in requests of 100, and the list holds one envelope per request. The
         requests are independent: a failed later request leaves the earlier deletes applied. An empty
         `ids`, a bare `str`, or an empty id raises `ValueError` before anything is sent.

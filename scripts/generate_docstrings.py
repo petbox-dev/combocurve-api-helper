@@ -83,6 +83,14 @@ class LineReplacement(NamedTuple):
     lines: list[str]
 
 
+class ReplacementPlan(NamedTuple):
+    """What `plan_replacements` found in one module."""
+
+    replacements: list[LineReplacement]  # the example blocks that differ from the collection
+    unsourced: list[str]  # labels of the markers with no collection example
+    sourced: list[str]  # markers that matched a collection example
+
+
 class RewriteOutcome(NamedTuple):
     """What `rewrite_file` found for one module (and applied, unless only checking)."""
 
@@ -407,9 +415,7 @@ def _keeps_existing_block(existing_lines: list[str], body: Any, indent: str) -> 
     return matches_ignoring_enums(existing, body) and render_block(existing, indent) == existing_lines
 
 
-def plan_replacements(
-    source_text: str, examples: dict[str, CollectionExample]
-) -> tuple[list[LineReplacement], list[str], list[str]]:
+def plan_replacements(source_text: str, examples: dict[str, CollectionExample]) -> ReplacementPlan:
     """Work out which example blocks in one module would be rewritten.
 
     Pure -- no reads, no writes -- so the matching rules stay testable apart from
@@ -444,7 +450,7 @@ def plan_replacements(
             else:
                 rendered = render_block(body, indent)
             replacements.append(LineReplacement(start=span[0], end=span[1], lines=rendered))
-    return replacements, unsourced, sourced
+    return ReplacementPlan(replacements, unsourced, sourced)
 
 
 def rewrite_file(path: pathlib.Path, examples: dict[str, CollectionExample], check: bool) -> RewriteOutcome:
@@ -478,6 +484,9 @@ def main() -> None:
         collection = load_collection(args.collection)
         examples = build_examples(collection)
     except CollectionUnavailable as exc:
+        if not args.collection.startswith(('http://', 'https://')):
+            # A malformed local file is a real error, as in `load_collection`: exit 1, never the exit-2 skip.
+            raise ValueError(f'{args.collection} is not a usable Postman collection: {exc}') from exc
         print(f'could not use collection ({args.collection}): {exc}', file=sys.stderr)
         sys.exit(2)  # distinct from 1 (stale) so a freshness test can skip when offline
 

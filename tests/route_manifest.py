@@ -41,7 +41,7 @@ from collections.abc import Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, NamedTuple, Union
 from unittest import mock
 from urllib.parse import urlsplit
 
@@ -49,7 +49,7 @@ import requests
 
 from combocurve_api_helper import ComboCurveAPI, base
 from tests.http_fakes import FakeResponse, make_offline_api
-from tests.postman_collection import PLACEHOLDER, Operation, _operations_in, normalized_segments
+from tests.postman_collection import PLACEHOLDER, Operation, normalized_segments
 
 ROUTE_MANIFEST_PATH = Path(__file__).with_name('route_manifest.json')
 
@@ -86,7 +86,7 @@ ARGUMENT_OVERRIDES: dict[str, dict[str, Any]] = {
     'delete_scenario_model_assignments': {'data': [{'id': PLACEHOLDER, 'allWells': True}]},
     'delete_scenario_econ_model_assignments': {'data': [{'id': PLACEHOLDER, 'allWells': True}]},
     'delete_type_curves': {'id': PLACEHOLDER},
-    'get_project_custom_columns': {'custom_column': 'wells'},
+    'get_project_custom_columns': {'custom_column': 'headers'},
     'count_root_forecast_daily_volumes': {'filters': {'project': PLACEHOLDER}},
     'count_root_forecast_monthly_volumes': {'filters': {'project': PLACEHOLDER}},
     'get_root_forecast_daily_volumes': {'filters': {'project': PLACEHOLDER}},
@@ -123,38 +123,30 @@ EXPECTED_EXCEPTIONS: frozenset[tuple[str, str]] = frozenset(
         ('update_econ_run_combo_names', 'TypeError'),
         ('get_econ_run_monthly_export', 'KeyError'),
         ('get_stream_econ_run_monthly_export', 'KeyError'),
-        # By-type methods refuse, before they send, a type they have no route for: AssertionError for
-        # an `ECON_MODELS` type that is not an econ model (Forecast, Network, PSeries, Schedule);
-        # ValueError on a company route for a type with no company route (Emission, FluidModel).
-        ('count_company_econ_models_by_type', 'AssertionError'),
-        ('count_company_econ_models_by_type', 'ValueError'),
-        ('count_econ_model_assignments_by_type_by_id', 'AssertionError'),
-        ('count_econ_models_by_type', 'AssertionError'),
-        ('delete_company_econ_model_by_type_by_id', 'AssertionError'),
-        ('delete_company_econ_model_by_type_by_id', 'ValueError'),
-        ('delete_econ_model_assignments_by_type_by_id', 'AssertionError'),
-        ('delete_econ_model_by_type_by_id', 'AssertionError'),
-        ('get_company_econ_model_by_type_by_id', 'AssertionError'),
-        ('get_company_econ_model_by_type_by_id', 'ValueError'),
-        ('get_company_econ_models_by_type', 'AssertionError'),
-        ('get_company_econ_models_by_type', 'ValueError'),
-        ('get_econ_model_assignments_by_type_by_id', 'AssertionError'),
-        ('get_econ_model_by_type_by_id', 'AssertionError'),
-        ('get_econ_models_by_type', 'AssertionError'),
-        ('post_company_econ_models_by_type', 'AssertionError'),
-        ('post_company_econ_models_by_type', 'ValueError'),
-        ('post_econ_model_assignments_by_type_by_id', 'AssertionError'),
-        ('post_econ_models_by_type', 'AssertionError'),
-        ('put_company_econ_models_by_type', 'AssertionError'),
-        ('put_company_econ_models_by_type', 'ValueError'),
-        ('put_econ_model_assignments_by_type_by_id', 'AssertionError'),
-        ('put_econ_models_by_type', 'AssertionError'),
         # The upload flow reads `uploadUrl` from the step-1 ticket; the placeholder body has none, so it
         # stops with ValueError after step 1 has sent its route.
         ('upload_company_shapefile', 'ValueError'),
         ('upload_project_shapefile', 'ValueError'),
     }
 )
+
+
+# The exception types a by-type method refuses an unroutable econ-model type with.
+_TYPE_REFUSALS = frozenset({'AssertionError', 'ValueError'})
+
+
+def expected_type_refusal(method_name: str, econ_model_type: str) -> str | None:
+    """The exception a by-type method raises, before it sends, for a type it has no route for, read from
+    `ECON_MODELS`: `AssertionError` for a type with no route (not an econ model: Forecast, Network, PSeries,
+    Schedule); `ValueError` from a company method for a type with no company route (Emission, FluidModel).
+    None when the method has a route for the type and must send."""
+    entry = next(entry for entry in ComboCurveAPI.ECON_MODELS if entry['econModelType'] == econ_model_type)
+    if entry['route'] is None:
+        return 'AssertionError'
+    if 'company' in method_name and not entry['hasCompanyRoute']:
+        return 'ValueError'
+    return None
+
 
 # Public methods expected to reach `_MAX_REQUESTS_PER_CALL` (a poll loop). Any other method that reaches
 # it fails the tooling test: raise the cap, or give it an argument that ends the loop.
@@ -179,12 +171,15 @@ class Route:
 
     @property
     def key(self) -> tuple[str, str]:
+        """(VERB, path): the route's identity in the manifest."""
         return (self.verb, self.path)
 
     def template(self) -> Template:
+        """The route as a (VERB, path segments) template, for matching against what methods send."""
         return (self.verb, tuple(self.path.strip('/').split('/')))
 
     def to_json(self) -> dict[str, Any]:
+        """The manifest record: optional `method` and `note` only when set."""
         record: dict[str, Any] = {
             'verb': self.verb,
             'path': self.path,
@@ -200,6 +195,7 @@ class Route:
 
     @staticmethod
     def from_json(record: dict[str, Any]) -> Route:
+        """The Route a manifest record describes."""
         return Route(
             verb=str(record['verb']),
             path=str(record['path']),
@@ -224,7 +220,12 @@ class Recorder:
         # Requests sent since `begin_call`; caps a poll loop at `_MAX_REQUESTS_PER_CALL`.
         self.requests_in_call = 0
 
+    def begin_method(self) -> None:
+        """Forget what the previous method sent; called once per method, before its first call."""
+        self.operations = set()
+
     def begin_call(self) -> None:
+        """Restart the per-call request count; called before each call of a method."""
         self.requests_in_call = 0
 
     def __call__(self, method: str, url: str, **keywords: Any) -> FakeResponse:
@@ -262,17 +263,17 @@ def template_segments(raw_segments: Iterable[Any]) -> tuple[str, ...]:
     return tuple(segments)
 
 
-def match_score(template_segments_: tuple[str, ...], sent_segments: tuple[str, ...]) -> int | None:
+def match_score(template_path: tuple[str, ...], sent_segments: tuple[str, ...]) -> int | None:
     """How specifically one sent path matches one template path: the number of template literals it
     matches, or None for no match. `:p` matches only a sent id; another `:name` matches any one sent
     segment; a literal must be sent as written.
 
     Because `:p` never matches a sent literal, every request that reaches a template matches it the same
     way, and no tie-break between methods is needed beyond the name."""
-    if len(template_segments_) != len(sent_segments):
+    if len(template_path) != len(sent_segments):
         return None
     literals = 0
-    for expected, actual in zip(template_segments_, sent_segments):
+    for expected, actual in zip(template_path, sent_segments):
         if expected == ID_PARAMETER:
             if actual != ID_PARAMETER:
                 return None
@@ -373,8 +374,10 @@ def _placeholder_for_type(hint: Any) -> Any:
 
 
 def _placeholder_for_annotation_text(annotation: str) -> Any:
-    """The fallback for an annotation that cannot be evaluated: match its text. It reads only the outer
-    form, so a nested or unusual annotation (an alias it does not know) gets the placeholder string."""
+    """The fallback for an annotation that cannot be evaluated: match its text. Needed on Python 3.9, where
+    evaluating a PEP 604 string (`Item | ItemList`, in a module with `from __future__ import annotations`)
+    raises `TypeError`. It reads only the outer form, so a nested or unusual annotation (an alias it does not
+    know) gets the placeholder string."""
     if annotation.startswith(('ItemList', 'list[dict', 'list[Item', 'Sequence[Item', 'Sequence[dict')):
         return [{'id': PLACEHOLDER}]
     if annotation.startswith(('Sequence[str]', 'list[str]', 'Iterable[str]')):
@@ -406,8 +409,12 @@ class MethodCalls:
     sent: dict[str, set[Template]] = field(default_factory=dict)
     # methods that sent nothing
     silent: list[str] = field(default_factory=list)
-    # (method, exception type name) for every call that raised, the poll-loop stop excepted
+    # (method, exception type name) for every call that raised, the poll-loop stop and the by-type
+    # refusals `expected_type_refusal` predicts excepted
     exceptions: set[tuple[str, str]] = field(default_factory=set)
+    # (method, econ-model type, what happened) for every by-type call that did not refuse as
+    # `expected_type_refusal` predicts: a refusal it does not predict, or a predicted one that did not come
+    type_refusal_mismatches: set[tuple[str, str, str]] = field(default_factory=set)
     # methods with a call that reached `_MAX_REQUESTS_PER_CALL`
     capped: set[str] = field(default_factory=set)
 
@@ -450,9 +457,12 @@ def sent_by_method() -> MethodCalls:
         warnings.simplefilter('ignore')
         for name in public_method_names():
             function = getattr(ComboCurveAPI, name)
-            recorder.operations = set()
+            recorder.begin_method()
             for arguments in _call_arguments(name, function):
                 recorder.begin_call()
+                econ_model_type = arguments.get('econ_model_type')
+                expected_refusal = None if econ_model_type is None else expected_type_refusal(name, econ_model_type)
+                raised: str | None = None
                 try:
                     result = getattr(api, name)(**arguments)
                     if isinstance(result, Iterator):
@@ -464,7 +474,12 @@ def sent_by_method() -> MethodCalls:
                 except Exception as error:
                     # The response is a placeholder, so a method may fail after it sends; its routes
                     # are already recorded. `EXPECTED_EXCEPTIONS` lists every failure reviewed.
-                    calls.exceptions.add((name, type(error).__name__))
+                    raised = type(error).__name__
+                if expected_refusal is not None or (econ_model_type is not None and raised in _TYPE_REFUSALS):
+                    if raised != expected_refusal:
+                        calls.type_refusal_mismatches.add((name, str(econ_model_type), f'raised {raised}'))
+                elif raised is not None:
+                    calls.exceptions.add((name, raised))
             calls.sent[name] = set(recorder.operations)
             if not recorder.operations:
                 calls.silent.append(name)
@@ -481,21 +496,26 @@ def area_of(segments: tuple[str, ...]) -> str:
     return literal[0] if literal else 'projects'
 
 
-def collection_operations(payload: Mapping[str, Any]) -> list[Operation]:
-    """(item name, request) for every operation of a collection document; empty when it has no `item` list."""
-    items = payload.get('item')
-    return _operations_in(items) if isinstance(items, list) else []
+class CollectionOperation(NamedTuple):
+    """One collection operation, as the manifest builder reads it."""
+
+    name: str  # the collection item name (the docs slug)
+    area: str  # the resource it is about (`area_of`)
+    verb: str  # upper case
+    segments: tuple[str, ...]  # the path template (`template_segments`)
 
 
-def operations_from_collection(items: list[Operation]) -> list[tuple[str, str, str, tuple[str, ...]]]:
-    """(name, area, VERB, template path segments) per collection operation, from (item name, request) rows.
-    A request with no path is skipped."""
-    operations: list[tuple[str, str, str, tuple[str, ...]]] = []
+def operations_from_collection(items: list[Operation]) -> list[CollectionOperation]:
+    """One `CollectionOperation` per collection operation, from (item name, request) rows. A request with
+    no path is skipped."""
+    operations: list[CollectionOperation] = []
     for name, request in items:
         raw_segments = (request.get('url') or {}).get('path')
         if raw_segments:
             segments = template_segments(raw_segments)
-            operations.append((name, area_of(segments), str(request.get('method', '')).upper(), segments))
+            operations.append(
+                CollectionOperation(name, area_of(segments), str(request.get('method', '')).upper(), segments)
+            )
     return operations
 
 
@@ -514,7 +534,7 @@ def _key_with_every_parameter_as_id(verb: str, path: str) -> tuple[str, str]:
 
 
 def build_manifest(
-    operations: list[tuple[str, str, str, tuple[str, ...]]],
+    operations: list[CollectionOperation],
     sent: Mapping[str, set[Template]],
     previous: list[Route],
 ) -> list[Route]:

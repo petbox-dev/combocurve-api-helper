@@ -11,16 +11,11 @@ from pytest import MonkeyPatch
 from combocurve_api_helper import type_curves_v1_compatibility
 from combocurve_api_helper.base import WELL_FILTER_LIMIT, APIBase, QueryFilters, WellFilters
 from combocurve_api_helper.forecasts import GET_LIMIT_OUTPUTS_ARIES
-from tests.http_fakes import V1, V2, FakeResponse, install_recording_transport, make_offline_api
+from tests.http_fakes import V1, V2, FakeResponse, install_recording_transport, make_offline_api, object_ids
 
 PROJECT_ID = 'a' * 24
 FORECAST_ID = 'b' * 24
 SCENARIO_ID = 'c' * 24
-
-
-def well_ids(count: int) -> list[str]:
-    """`count` distinct 24-hex ObjectId-like strings."""
-    return [f'{index:024x}' for index in range(1, count + 1)]
 
 
 def query_pairs(url: str) -> list[tuple[str, str]]:
@@ -88,7 +83,7 @@ def test_delete_scenario_qualifiers_sends_the_qualifiers_builder_url(monkeypatch
 def test_compatibility_forecast_outputs_use_the_builder_and_the_forecasts_page_size(
     monkeypatch: MonkeyPatch,
 ) -> None:
-    wells = well_ids(WELL_FILTER_LIMIT + 1)
+    wells = object_ids(WELL_FILTER_LIMIT + 1)
     recorder = install_recording_transport(
         monkeypatch, FakeResponse(200, [{'id': 'o1'}]), FakeResponse(200, [{'id': 'o2'}])
     )

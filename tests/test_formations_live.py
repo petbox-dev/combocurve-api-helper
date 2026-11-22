@@ -13,34 +13,28 @@ needs CC_DEV_PROJECT_ID (no default: a real id must not sit in this public repo)
 from __future__ import annotations
 
 import os
-import pathlib
-import time
 import uuid
 from typing import TYPE_CHECKING
 
 import pytest
 
-from combocurve_api_helper.config import find_native_credentials_directory
-from combocurve_api_helper.formations import Formations
+from tests.live_support import FIXTURE_PREFIX, LIVE_TEST_SKIP_REASON, live_tests_enabled
 
 if TYPE_CHECKING:
+    from combocurve_api_helper import ComboCurveAPI
     from combocurve_api_helper.base import Item, ItemList
 
-DEV = pathlib.Path.home() / '.combocurve' / 'dev'
 PROJECT_ID = os.environ.get('CC_DEV_PROJECT_ID', '')
-RUNNING_JOB_STATUSES = ('pending', 'running')  # a job leaves these for its final status (`successful`)
 JOB_POLL_SECONDS = 3.0
 JOB_TIMEOUT_SECONDS = 180.0
 
-pytestmark = pytest.mark.skipif(
-    os.environ.get('CC_LIVE_TEST') is None or find_native_credentials_directory(DEV) is None,
-    reason='requires CC_LIVE_TEST=1 and ~/.combocurve/dev credentials',
-)
+pytestmark = pytest.mark.skipif(not live_tests_enabled(), reason=LIVE_TEST_SKIP_REASON)
 
 
-@pytest.fixture(scope='module')
-def api() -> Formations:
-    return Formations.from_credentials_directory(DEV)
+@pytest.fixture
+def api(dev_api: ComboCurveAPI) -> ComboCurveAPI:
+    """The session's shared dev client (`dev_api`)."""
+    return dev_api
 
 
 def _grid_points() -> ItemList:
@@ -52,20 +46,15 @@ def _grid_points() -> ItemList:
     ]
 
 
-def _wait_for_job(api: Formations, job_id: str, project_id: str | None) -> Item:
-    deadline = time.monotonic() + JOB_TIMEOUT_SECONDS
-    while True:
-        if project_id is None:
-            job = api.get_company_formations_job(job_id)
-        else:
-            job = api.get_project_formations_job(project_id, job_id)
-        if job.get('status') not in RUNNING_JOB_STATUSES or time.monotonic() > deadline:
-            return job
-        time.sleep(JOB_POLL_SECONDS)
+def _wait_for_job(api: ComboCurveAPI, job_id: str, project_id: str | None) -> Item:
+    """The formations job at its final status, through the public wait methods."""
+    if project_id is None:
+        return api.wait_for_company_formations_job(job_id, JOB_TIMEOUT_SECONDS, JOB_POLL_SECONDS)
+    return api.wait_for_project_formations_job(project_id, job_id, JOB_TIMEOUT_SECONDS, JOB_POLL_SECONDS)
 
 
-def _round_trip(api: Formations, project_id: str | None) -> None:
-    name = f'API Helper Fixture Formation {uuid.uuid4().hex[:8]}'
+def _round_trip(api: ComboCurveAPI, project_id: str | None) -> None:
+    name = f'{FIXTURE_PREFIX} Formation {uuid.uuid4().hex[:8]}'
     formation: Item = {'name': name, 'points': _grid_points(), 'color': '#123abc'}
 
     def listed() -> ItemList:
@@ -102,7 +91,8 @@ def _round_trip(api: Formations, project_id: str | None) -> None:
         assert patched['enabled'] is False
         assert patched['maxDepth'] == 9000
     finally:
-        for leftover in listed():
+        # Only this run's formations: the name filter is the server's, so check the name here too.
+        for leftover in (formation for formation in listed() if formation.get('name') == name):
             if project_id is None:
                 api.delete_company_formation_by_id(str(leftover['id']))
             else:
@@ -110,10 +100,10 @@ def _round_trip(api: Formations, project_id: str | None) -> None:
         assert listed() == []
 
 
-def test_company_formations_round_trip(api: Formations) -> None:
+def test_company_formations_round_trip(api: ComboCurveAPI) -> None:
     _round_trip(api, None)
 
 
 @pytest.mark.skipif(not PROJECT_ID, reason='requires CC_DEV_PROJECT_ID')
-def test_project_formations_round_trip(api: Formations) -> None:
+def test_project_formations_round_trip(api: ComboCurveAPI) -> None:
     _round_trip(api, PROJECT_ID)

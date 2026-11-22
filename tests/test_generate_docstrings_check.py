@@ -9,6 +9,7 @@ import json
 import pathlib
 import urllib.request
 from types import ModuleType
+from typing import Optional
 
 import pytest
 
@@ -52,7 +53,7 @@ def _collection(operations: list[dict[str, object]]) -> dict[str, object]:
     return {'item': operations}
 
 
-def _operation(name: str, response_body: str | None) -> dict[str, object]:
+def _operation(name: str, response_body: Optional[str]) -> dict[str, object]:
     saved = [{'code': 200, 'body': response_body}] if response_body is not None else []
     return {'name': name, 'request': {'method': 'GET'}, 'response': saved}
 
@@ -70,11 +71,19 @@ def _run_check(
     (source_directory / 'sample.py').write_text(
         SOURCE_WITH_TWO_MARKERS.format(second_slug=second_slug), encoding='utf-8'
     )
-    collection_path = tmp_path / 'collection.json'
-    collection_path.write_text(json.dumps(collection), encoding='utf-8')
+    body = json.dumps(collection).encode('utf-8')
+
+    class FetchedCollection:
+        """The fetched collection, as `urlopen` returns it (only `read` is used)."""
+
+        def read(self) -> bytes:
+            return body
+
+    # Served as the live collection (the URL branch), so a malformed tree takes the exit-2 path a fetch takes.
+    monkeypatch.setattr(urllib.request, 'urlopen', lambda request, timeout=None: FetchedCollection())
     monkeypatch.setattr(generator, 'SRC_DIR', source_directory)
     monkeypatch.setattr(generator, 'ALLOWED_UNSOURCED_MARKERS', allowlist)
-    monkeypatch.setattr('sys.argv', ['generate_docstrings.py', '--check', '--collection', str(collection_path)])
+    monkeypatch.setattr('sys.argv', ['generate_docstrings.py', '--check', '--collection', generator.COLLECTION_URL])
     try:
         generator.main()
     except SystemExit as exit_request:
@@ -157,6 +166,17 @@ def test_malformed_item_shapes_give_no_verdict(
 ) -> None:
     """Exit 2, never a traceback (exit 1, which the freshness test reads as "stale")."""
     assert _run_check(monkeypatch, tmp_path, {'item': operations}) == 2
+
+
+def test_a_malformed_local_collection_raises_rather_than_exit_2(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path
+) -> None:
+    """A local `--collection PATH` with a malformed tree is a real error (exit 1), never "offline"."""
+    collection_path = tmp_path / 'collection.json'
+    collection_path.write_text(json.dumps({'item': ['not an object']}), encoding='utf-8')
+    monkeypatch.setattr('sys.argv', ['generate_docstrings.py', '--check', '--collection', str(collection_path)])
+    with pytest.raises(ValueError, match='not a usable Postman collection'):
+        generator.main()
 
 
 def test_build_examples_raises_collection_unavailable_for_a_non_object_item() -> None:

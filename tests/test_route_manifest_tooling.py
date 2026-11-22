@@ -27,11 +27,13 @@ from tests.route_manifest import (
     EXPECTED_CAPPED,
     EXPECTED_EXCEPTIONS,
     SENDS_NOTHING_BY_DESIGN,
+    CollectionOperation,
     Route,
     Template,
     _placeholder_for,
     area_of,
     build_manifest,
+    load_manifest,
     match_score,
     operations_from_collection,
     public_method_names,
@@ -114,8 +116,8 @@ def test_a_literal_valued_parameter_takes_a_literal_when_no_sibling_spells_it() 
 
 def test_a_hand_kept_status_survives_the_new_spelling_of_a_literal_valued_parameter() -> None:
     previous = [Route('GET', '/v1/custom-columns/:p', 'get-custom-columns', 'custom-columns', 'retired', note='gone')]
-    operations: list[tuple[str, str, str, tuple[str, ...]]] = [
-        ('get-custom-columns', 'custom-columns', 'GET', ('v1', 'custom-columns', ':collection'))
+    operations = [
+        CollectionOperation('get-custom-columns', 'custom-columns', 'GET', ('v1', 'custom-columns', ':collection'))
     ]
     assert build_manifest(operations, {}, previous) == [
         Route('GET', '/v1/custom-columns/:collection', 'get-custom-columns', 'custom-columns', 'retired', note='gone')
@@ -155,6 +157,18 @@ def test_placeholder_values_follow_the_resolved_annotation() -> None:
     }
 
 
+def test_the_text_fallback_reads_the_outer_form_of_an_unevaluable_annotation() -> None:
+    """The fallback Python 3.9 needs (an `X | Y` string cannot be evaluated there) reads `ItemList` / `Item`."""
+
+    def function(records: Any, record: Any) -> None:
+        """Annotations replaced below with forms that name an unknown alias."""
+
+    function.__annotations__ = {'records': 'ItemList | UnknownAlias', 'record': 'Item | UnknownAlias'}
+    parameters = inspect.signature(function).parameters
+    assert _placeholder_for(function, parameters['records']) == [{'id': PLACEHOLDER}]
+    assert _placeholder_for(function, parameters['record']) == {'id': PLACEHOLDER}
+
+
 def test_an_annotation_that_cannot_be_evaluated_falls_back_to_its_text() -> None:
     def function(items: Any, other: Any) -> None:
         """Annotations replaced below with names that do not exist."""
@@ -186,6 +200,35 @@ def test_the_exceptions_raised_on_the_fake_transport_are_the_reviewed_ones() -> 
         f'add it to EXPECTED_EXCEPTIONS: {unexpected}'
     )
     assert not no_longer_raised, f'no longer raised; remove from EXPECTED_EXCEPTIONS: {no_longer_raised}'
+
+
+def test_by_type_methods_refuse_exactly_the_types_econ_models_json_gives_no_route() -> None:
+    """A by-type method refuses a type before it sends only as `expected_type_refusal` reads `ECON_MODELS`: a
+    method that refuses a type it has a route for, or sends for one it has none for, fails here, not hidden
+    behind a (method, exception) pair. A wrong `route` / `hasCompanyRoute` flag is read by both sides alike;
+    the manifest freshness test catches it (a `wrapped` route turning `gap`)."""
+    assert sent_by_method().type_refusal_mismatches == set()
+
+
+# Requests the audit sends that no collection route describes, reviewed: `iter_pages` is handed a bare url
+# (`/:p`), and the signed shapefile upload goes to a storage host, not the API.
+_SENT_OUTSIDE_THE_COLLECTION = frozenset({'iter_pages', 'put_shapefile_upload_file'})
+
+
+def test_every_request_a_method_sends_is_a_collection_route() -> None:
+    """A misspelled route path (five shipped before the route-path test) sends a request no collection template
+    matches. Offline: the committed manifest holds every collection template."""
+    templates = [route.template() for route in load_manifest()]
+    unmatched = sorted(
+        name
+        for name, sent in sent_by_method().sent.items()
+        for verb, segments in sent
+        if not any(
+            verb == template_verb and match_score(template_path, segments) is not None
+            for template_verb, template_path in templates
+        )
+    )
+    assert set(unmatched) == _SENT_OUTSIDE_THE_COLLECTION, unmatched
 
 
 def test_no_unexpected_method_reaches_the_request_cap() -> None:

@@ -60,7 +60,7 @@ two `typing.overload`s: `custom_column: str` required, or keyword-only `collecti
 - mypy 2.4.1 refuses a call with neither (`call-overload`). It reports the deprecated overload only
   with `--enable-error-code deprecated`; this repo does not enable that code, so a `collection=` call
   passes the repo's own mypy run silently.
-- `typing_extensions.deprecated` exists from typing_extensions 4.5.0; `pyproject.toml` lists
-  `typing-extensions` with no lower bound. It needs `>=4.5.0`.
+- `typing_extensions.deprecated` exists from typing_extensions 4.5.0; `pyproject.toml` now requires
+  `typing-extensions>=4.5.0`.
 - Tests: `tests/test_root_urls_and_params.py` (runtime `TypeError`, nothing sent) and
   `tests/test_project_custom_columns_typing.py` (runs mypy on a snippet; about 50 s cold).

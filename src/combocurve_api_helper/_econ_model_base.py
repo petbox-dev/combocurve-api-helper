@@ -214,7 +214,7 @@ class _EconModelMethodsBase(APIBase):
         return self._delete_responses(url, data=[])
 
     def get_econ_model_assignments_by_type_by_id(
-        self, project_id: str, econ_model_type: str, model_id: str, filters: Optional[dict[str, str]] = None
+        self, project_id: str, econ_model_type: str, model_id: str, filters: Optional[QueryFilters] = None
     ) -> Union[ItemList, None]:
         """
         Returns the assignments of one econ model, from its type and id, or `None` when it has none.
@@ -248,7 +248,7 @@ class _EconModelMethodsBase(APIBase):
         return assignments
 
     def count_econ_model_assignments_by_type_by_id(
-        self, project_id: str, econ_model_type: str, model_id: str, filters: Optional[dict[str, str]] = None
+        self, project_id: str, econ_model_type: str, model_id: str, filters: Optional[QueryFilters] = None
     ) -> int:
         """
         Returns the number of assignments of one econ model (filters: `wells`, `scenarios`) matching `filters`, from the
@@ -307,7 +307,9 @@ class _EconModelMethodsBase(APIBase):
         `wells=` with 400 `RequestStructureError` (`` `` is not a valid
         ObjectId ``) and deletes nothing (verified live 2026-11-21, dev). Leave
         `wells` as `None` to send no well filter. The whitespace around each
-        id is stripped.
+        id is stripped. A blank `scenario_id`, or a blank `qualifier_name`
+        (leave it `None` for every qualifier), is refused the same way: the
+        route may read it as absent and unassign more.
 
         At most 100 well ids per call: the route answers 101 with 400
         `RequestStructureError` (`` `[object Object]` is not a valid
@@ -318,8 +320,13 @@ class _EconModelMethodsBase(APIBase):
         call this method, so the same limit applies to them.
 
         https://docs.api.combocurve.com/api/delete-econ-model-assignment-delete"""
+        # A blank `scenarioId` or `qualifierName` the route may read as absent would widen the unassign.
+        if not scenario_id.strip():
+            raise ValueError('scenario_id must name a scenario; it is blank')
         filters: dict[str, Union[str, Sequence[str]]] = {'scenarioId': scenario_id}
         if qualifier_name is not None:
+            if not qualifier_name.strip():
+                raise ValueError('qualifier_name must name a qualifier, or be None for every qualifier; it is blank')
             filters['qualifierName'] = qualifier_name
 
         if wells is not None:

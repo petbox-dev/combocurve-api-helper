@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
     from requests import Response
 
-    from .base import Item, ItemList, WriteResponse
+    from .base import Item, ItemList, QueryFilters, WriteResponse
 
 
 class _GeneratedModelMethods(_EconModelMethodsBase):
@@ -66,11 +66,11 @@ CRUD = """
 # Emitted for every model entry with `assignable: true` (assignment CRUD).
 ASSIGN = """
     def get_{method_base}_assignments_by_id_url(self, project_id: str, model_id: str,
-                                      filters: dict[str, str] | None = None) -> str:
+                                      filters: QueryFilters | None = None) -> str:
         return self.get_econ_model_assignments_by_type_by_id_url(project_id, "{econ_model_type}", model_id, filters)
 
     def get_{method_base}_assignments_by_id(self, project_id: str, model_id: str,
-                                  filters: dict[str, str] | None = None) -> ItemList | None:
+                                  filters: QueryFilters | None = None) -> ItemList | None:
         \"\"\"Returns the assignments of one {econ_model_type} model, or `None` when it has none.
 
         `filters` take `wells` and `scenarios` (also `sort`, `skip` and `take`). Same behavior as
@@ -79,7 +79,7 @@ ASSIGN = """
         return self.get_econ_model_assignments_by_type_by_id(project_id, "{econ_model_type}", model_id, filters)
 
     def count_{method_base}_assignments_by_id(self, project_id: str, model_id: str,
-                                        filters: dict[str, str] | None = None) -> int:
+                                        filters: QueryFilters | None = None) -> int:
         return self.count_econ_model_assignments_by_type_by_id(project_id, "{econ_model_type}", model_id, filters)
 
     def post_{method_base}_assignments_by_id(

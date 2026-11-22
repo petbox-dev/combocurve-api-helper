@@ -3,6 +3,7 @@
 Kept until at least 2027-01-31, then removed in a 3.x release
 (docs/todo/open/type-curve-v1-wrappers-outlive-the-v1-api.md). To remove: delete this module
 and put `TypeCurves` back in `ComboCurveAPI`'s bases. Every method here warns once per call with `_deprecation_message`.
+The class works only composed with `Forecasts` (the representative-fit wrappers read forecast outputs).
 """
 
 from __future__ import annotations
@@ -113,11 +114,12 @@ def _place_results(
 
 class TypeCurvesV1Compatibility(TypeCurves):
     if TYPE_CHECKING:
-        # Provided at runtime by `Forecasts`, which precedes this class in `ComboCurveAPI`'s bases; declared
-        # here for the type checker only, with the same signature.
-        def get_forecast_outputs_url(
+        # Provided at runtime by `Forecasts`: the v1 representative-fit wrappers read forecast outputs, so
+        # this class works only composed with `Forecasts` (as in `ComboCurveAPI`). Declared here for the
+        # type checker only, with the same signature; mypy checks it against `Forecasts` there.
+        def get_forecast_outputs(
             self, project_id: str, forecast_id: str, filters: QueryFilters | None = None
-        ) -> str: ...
+        ) -> ItemList: ...
 
     ###################################
     # Removed v1 reads, kept as wrappers
@@ -143,18 +145,11 @@ class TypeCurvesV1Compatibility(TypeCurves):
         return volumes_to_v1(self.get_type_curve_volumes(project_id, type_curve_id, 'monthly'))
 
     def _forecast_outputs_for_wells(self, project_id: str, forecast_id: str, well_ids: Sequence[str]) -> ItemList:
-        """Forecast outputs for `well_ids`, read like `get_forecast_outputs`: at most 100 repeated `well`
-        values per request (a comma-joined `well` is a 400, live 2026-11-05; a list over 100 is
-        de-duplicated, then split), pages of `GET_LIMIT_OUTPUTS_ARIES`. No well ids, no request: an empty
-        `well` filter would read every output of the forecast."""
+        """Forecast outputs for `well_ids`, read with `get_forecast_outputs` (repeated `well` keys, batches of
+        100). No well ids, no request: an empty `well` filter would read every output of the forecast."""
         if not well_ids:
             return []
-        return self._get_items_in_value_batches(
-            lambda batch_filters: self.get_forecast_outputs_url(project_id, forecast_id, batch_filters),
-            {'well': list(well_ids)},
-            'well',
-            {'take': GET_LIMIT_OUTPUTS_ARIES},
-        )
+        return self.get_forecast_outputs(project_id, forecast_id, {'well': list(well_ids)})
 
     def get_type_curve_representative_fits(self, project_id: str, type_curve_id: str) -> ItemList:
         """

@@ -147,7 +147,8 @@ Live check, dev, read-only, through the new method with `{'project': P}`:
 `{'project': P, 'well': [3 wells]}` on the 3,983-row project: 33 rows over 12 forecasts, equal to
 the sum of the forecast-and-well counts, no repeats, no row outside the filter.
 
-The item stays open: the server defect itself is unreported to ComboCurve, and the fallback costs a
+The item stays open: the server defect is ComboCurve's to fix (reported 2026-11-22, see below), and the
+fallback costs a
 listing per forecast (the 24,798-row project took about 11 minutes). When ComboCurve fixes the
 project-scoped listing, the fallback can go.
 

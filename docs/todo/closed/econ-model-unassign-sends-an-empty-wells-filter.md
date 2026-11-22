@@ -50,8 +50,8 @@ two wells, cleaned up; nothing of that name is left):
 
 Fixed: `delete_econ_model_assignments_by_type_by_id` (and the 16 generated wrappers, which delegate)
 refuse an empty sequence, an empty id, `''` and a `str` with an empty element after splitting on `,`,
-before any request (`scenarios._split_ids`, which reuses `APIBase._require_id_sequence`); they send one
+before any request (`APIBase._split_ids`, which reuses `APIBase._require_id_sequence`); they send one
 repeated `wells` key per id. A `str` is still accepted and split on `,`.
 `delete_scenario_model_assignments` refuses a record without `allWells: true` whose `wellIds` is absent,
-empty, a `str` or holds an empty id. `delete_scenario_wells` refuses `','`-style input (its
-comma-joined wire form is not verified live).
+empty, a `str` or holds an empty id. `delete_scenario_wells` refuses `','`-style input; its comma-joined
+wire form was verified live 2026-11-21 (a 400; repeated `wells` keys answer 204).

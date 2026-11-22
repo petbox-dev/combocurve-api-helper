@@ -1,5 +1,5 @@
 import warnings
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Optional, cast, overload
 
 from typing_extensions import deprecated
@@ -62,18 +62,23 @@ def _require_volume_scope(filters: Optional[QueryFilters]) -> QueryFilters:
 _COUNT_COMPARABLE_VOLUME_FILTERS = frozenset({'project', 'forecast', 'take', 'skip'})
 
 
-def _reads_one_forecast_at_a_time(filters: Optional[QueryFilters]) -> bool:
-    """True when `filters` scopes a root volume listing to `project` and not to `forecast`: the scope whose
-    server listing repeats and drops rows, which the getters replace with one listing per forecast."""
-    if not filters or not filters.get('project'):
-        return False
-    return not filters.get('forecast')
+def _project_read_one_forecast_at_a_time(filters: Optional[QueryFilters]) -> Optional[str]:
+    """The project id when `filters` scopes a root volume listing to `project` and not to `forecast` (the
+    scope whose server listing repeats and drops rows, which the getters replace with one listing per
+    forecast); None for any other scope. A `project` that is not one id string is refused."""
+    if not filters or not filters.get('project') or filters.get('forecast'):
+        return None
+    project_id = filters['project']
+    if not isinstance(project_id, str):
+        raise ValueError(f"filters['project'] must be one project id string, not {project_id!r}")
+    return project_id
 
 
 class Root(APIBase):
     if TYPE_CHECKING:
-        # Provided at runtime by `Forecasts`, which follows this class in `ComboCurveAPI`'s bases; declared
-        # here for the type checker only, with the same signature.
+        # Provided at runtime by `Forecasts`: the project-scoped root volume reads list the project's
+        # forecasts, so `Root` works only composed with `Forecasts` (as in `ComboCurveAPI`). Declared here
+        # for the type checker only, with the same signature; mypy checks it against `Forecasts` there.
         def get_forecasts(self, project_id: str, filters: Optional[dict[str, str]] = None) -> ItemList: ...
 
     ######
@@ -331,15 +336,25 @@ class Root(APIBase):
         """The rows of a root volume listing (`build_url` is the daily or monthly url builder, `count` its count
         method). A `forecast` scope is read as sent. A `project` scope without `forecast` is read one forecast at
         a time, because the server's project-scoped listing repeats and drops rows (see the public getters)."""
-        if not _reads_one_forecast_at_a_time(filters):
+        project_id = _project_read_one_forecast_at_a_time(filters)
+        if project_id is None or filters is None:
             return self._get_items_in_value_batches(
                 build_url, _require_volume_scope(filters), 'well', {'take': GET_LIMIT}
             )
+        return self._get_project_root_volumes_per_forecast(build_url, count, project_id, filters)
 
-        assert filters is not None  # `_reads_one_forecast_at_a_time` is False for None
-        project_id = filters['project']
-        if not isinstance(project_id, str):
-            raise ValueError(f"filters['project'] must be one project id string, not {project_id!r}")
+    def _get_project_root_volumes_per_forecast(
+        self,
+        build_url: Callable[[Optional[QueryFilters]], str],
+        count: Callable[[Optional[QueryFilters]], int],
+        project_id: str,
+        filters: QueryFilters,
+    ) -> ItemList:
+        """The rows of project `project_id`'s root volume listing, read one forecast at a time (`filters`
+        without `project`, plus each forecast), checked for a repeated (forecast, well) pair and, when no other
+        filter narrows the read, against the project count. Paging filters are refused: every forecast request
+        would apply them on its own."""
+        self._filter_value_batches(filters, 'well')  # refuses an empty `well` list before any request
         paging_keys = self._paging_filters_in(filters)
         if paging_keys:
             raise ValueError(
@@ -353,11 +368,28 @@ class Root(APIBase):
         )
         expected_count = None if narrowed else count({'project': project_id})
 
+        filters_without_project = {key: value for key, value in filters.items() if key != 'project'}
+        wells = filters_without_project.get('well')
+        if isinstance(wells, Sequence) and not isinstance(wells, str):
+            # A well named twice would read its rows twice, which the repeated-pair check below reads as the
+            # server defect; `_filter_value_batches` de-duplicates only a list it splits.
+            filters_without_project['well'] = list(dict.fromkeys(wells))
         rows: ItemList = []
         for forecast in self.get_forecasts(project_id):
-            forecast_filters = {key: value for key, value in filters.items() if key != 'project'}
-            forecast_filters['forecast'] = str(forecast['id'])
+            forecast_filters = {**filters_without_project, 'forecast': str(forecast['id'])}
             rows.extend(self._get_items_in_value_batches(build_url, forecast_filters, 'well', {'take': GET_LIMIT}))
+
+        # The server defect repeats some pairs and drops as many others, so a total equal to the count proves
+        # nothing on its own: the listing is one row per (forecast, well), so a repeated pair is the defect.
+        seen_pairs: set[tuple[object, object]] = set()
+        for row in rows:
+            pair = (row.get('forecast'), row.get('well'))
+            if pair in seen_pairs:
+                raise RuntimeError(
+                    f'the per-forecast read of project {project_id} repeats the (forecast, well) pair {pair}: the '
+                    'rows are repeated (or the project changed during the read)'
+                )
+            seen_pairs.add(pair)
 
         if expected_count is not None and len(rows) != expected_count:
             raise RuntimeError(
@@ -394,11 +426,13 @@ class Root(APIBase):
         `project` replaced by `forecast` (so a `well` filter is valid here). Cost: one count, one forecast
         list and one listing (paged by 200) per forecast. The rows come grouped by forecast, in the order
         `get_forecasts` returns the forecasts, and in server order within a forecast. If the row total differs
-        from the count, `RuntimeError` names both numbers; a mismatch means the rows are still wrong (or the
-        project changed during the read). The check is skipped, and the count not sent, when any filter other
-        than `project`, `take` and a `skip` of 0 has a value (`well`, `startDate`, `endDate`), because the
-        project count does not apply to the narrowed rows. `skip` (other than 0) and `cursor` are refused with
-        `ValueError` with this scope, because each forecast request would apply them on its own.
+        from the count, `RuntimeError` names both numbers, and a (forecast, well) pair read twice raises
+        `RuntimeError` too, on every read (the server defect repeats and drops pairs at an equal total). Either
+        means the rows are still wrong (or the project changed during the read). The count check is skipped,
+        and the count not sent, when any filter other than `project`, `take` and a `skip` of 0 has a value
+        (`well`, `startDate`, `endDate`), because the project count does not apply to the narrowed rows. `skip`
+        (other than 0) and `cursor` are refused with `ValueError` with this scope, because each forecast request
+        would apply them on its own.
 
         https://docs.api.combocurve.com/api/get-root-forecast-daily-volumes
 
@@ -487,11 +521,13 @@ class Root(APIBase):
         `project` replaced by `forecast` (so a `well` filter is valid here). Cost: one count, one forecast
         list and one listing (paged by 200) per forecast. The rows come grouped by forecast, in the order
         `get_forecasts` returns the forecasts, and in server order within a forecast. If the row total differs
-        from the count, `RuntimeError` names both numbers; a mismatch means the rows are still wrong (or the
-        project changed during the read). The check is skipped, and the count not sent, when any filter other
-        than `project`, `take` and a `skip` of 0 has a value (`well`, `startDate`, `endDate`), because the
-        project count does not apply to the narrowed rows. `skip` (other than 0) and `cursor` are refused with
-        `ValueError` with this scope, because each forecast request would apply them on its own.
+        from the count, `RuntimeError` names both numbers, and a (forecast, well) pair read twice raises
+        `RuntimeError` too, on every read (the server defect repeats and drops pairs at an equal total). Either
+        means the rows are still wrong (or the project changed during the read). The count check is skipped,
+        and the count not sent, when any filter other than `project`, `take` and a `skip` of 0 has a value
+        (`well`, `startDate`, `endDate`), because the project count does not apply to the narrowed rows. `skip`
+        (other than 0) and `cursor` are refused with `ValueError` with this scope, because each forecast request
+        would apply them on its own.
 
         https://docs.api.combocurve.com/api/get-root-forecast-monthly-volumes
 

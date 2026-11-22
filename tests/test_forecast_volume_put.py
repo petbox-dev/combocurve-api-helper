@@ -28,3 +28,14 @@ def test_put_forecast_volumes_send_one_request_each(monkeypatch: pytest.MonkeyPa
     with pytest.raises(ValueError):
         api.put_forecast_monthly_volumes('p', 'fc', [])
     assert len(transport.calls) == 2
+
+
+def test_put_forecast_volumes_send_one_record_as_a_one_item_list(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`data` may be one well record (the docstring says so): it is sent as a one-item list, not as the
+    record's key names."""
+    api = make_offline_api()
+    transport = install_recording_transport(monkeypatch, FakeResponse(207, []), FakeResponse(207, []))
+    record: Any = {'well': 'w1', 'phases': []}
+    api.put_forecast_daily_volumes('p', 'fc', record)
+    api.put_forecast_monthly_volumes('p', 'fc', record)
+    assert [call.body for call in transport.calls] == [[record], [record]]

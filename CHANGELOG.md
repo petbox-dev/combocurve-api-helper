@@ -39,13 +39,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - A repeated `well` / `wellId` / `id` filter longer than 100 values is de-duplicated and sent in requests of
-  100 (the routes refuse 101), for the production, forecast-output, forecast and root volume, scenario
-  model-assignment and well-incremental getters and counts, and `delete_forecast_configurations`. A `skip` or
+  100 (the routes refuse 101), for the production, forecast-output, forecast and root volume getters and
+  counts, the scenario model-assignment and well-incremental getters, and `delete_forecast_configurations`. A `skip` or
   `cursor` filter combined with more than one batch raises `ValueError`, because it would apply once per batch.
 - Refused locally with `ValueError` before any request: a blank or empty well id in an unassign or a
   scenario well removal, an assignment-delete record with neither `allWells` nor non-empty `wellIds`, more
   than 500 records on a scenario assignment write, more than 25,000 `wellIds` across one assignment PUT, and
-  an empty `data` on the new write methods. The root volume routes refuse `well` without `forecast`.
+  an empty `data` on the new write methods. The root volume counts refuse `well` without `forecast`; the
+  getters accept `well` with `project` (read per forecast, see below).
   `delete_scenario_wells` and the econ-model unassign methods refuse more than 100 well ids (101 is a
   400 on both routes, live 2026-11-21) instead of splitting the delete. A production-comment bulk delete
   refuses `production_comment_id` together with `well_id`. Id lists given as a comma string are split and
@@ -61,14 +62,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `delete_project_by_id` and `delete_forecast_configuration_by_id` return the response headers, like the other
   deletes by id (they were annotated `ItemList`, see Fixed).
 - The transport policy (timeouts, retries, deadline, connection failures) moved from `base.py` to the
-  private `_transport.py`; `base.py` re-exports every moved name.
+  private `_transport.py`; `base.py` re-exports the moved constants and functions (not `_whole_chunk_failure`,
+  now in `_batch.py` with a new signature, nor `_LINK_HEADER_ENTRY`). Patching a re-exported name in `base`
+  no longer intercepts the transport; patch `requests.request` or the `_transport` name.
 - `get_root_forecast_daily_volumes` / `_monthly_volumes` with `project` and no `forecast` now read the
   project one forecast at a time (one forecast list, one forecast-scoped listing per forecast) and check the
-  total against the project count, raising `RuntimeError` on a mismatch. ComboCurve's own project-scoped
+  total against the project count, raising `RuntimeError` on a mismatch or on a repeated `(forecast, well)` pair. ComboCurve's own project-scoped
   listing returns wrong rows on every dev project above 200 rows (short pages end the read early;
   `(forecast, well)` pairs repeat and drop) while its count matches. Rows now come grouped by forecast, in
   forecast-name order. `well` is now accepted with `project` (per forecast; the count check is skipped for a
   narrowed read), and `skip` / `cursor` are refused with `project` alone. The counts are unchanged.
+- Refused with `ValueError` before any request: an empty list for a batched repeated filter (`well: []`
+  sent no `well` key and read or counted every row); a delete whose url ends in `/` (a by-id delete given a
+  blank id would reach the collection url); a blank `scenario_id` or `qualifier_name` on the econ-model
+  unassign (the route may read it as absent and unassign more); a batched write with `chunksize` or
+  `max_workers` below 1 (`chunksize=0` sent nothing and reported a clean write).
+- The single-object writes (`_send_for_item`: exports, shapefile and formation imports, run starts) return `{}`
+  for a success with an empty body instead of raising after the write went through.
 
 ### Fixed
 

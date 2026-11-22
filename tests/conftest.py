@@ -1,10 +1,10 @@
 """Shared pytest setup: load the repo's gitignored `.env` into the environment, and add the response
 body of a failing `requests.HTTPError` to the test report.
 
-The live tests (`test_api.py`, `test_assignments_live.py`, `test_embedded_lookup_tables_live.py`,
-`test_type_curves_v2_live.py`) read their target ids (`CC_DEV_PROJECT_ID`, `CC_DEV_SCENARIO_ID`,
-`CC_DEV_DATES_MODEL_ID`, `CC_TC2_PROJECT_ID`, `CC_TC2_TYPE_CURVE_ID`) from the environment, because a
-real id must not sit in this public repo. `.env.example` lists the names.
+The live tests (`test_api.py` and every `test_*_live.py`) read their targets (`CC_DEV_PROJECT_ID`,
+`CC_DEV_SCENARIO_ID`, `CC_DEV_DATES_MODEL_ID`, `CC_DEV_TYPE_CURVE_ID`, `CC_DEV_ECON_CATEGORY`,
+`CC_DEV_ECON_COLUMN_KEY`) from the environment, because a real id must not sit in this public repo.
+`.env.example` lists the names.
 
 `load_dotenv()` searches from this file's directory upward, so the repo-root `.env` is found
 whatever the working directory. It never overrides a variable that is already set. This runs
@@ -71,14 +71,19 @@ def _isolated_token_cache(tmp_path_factory: pytest.TempPathFactory, monkeypatch:
 
 
 @pytest.fixture(scope='session')
-def dev_api() -> ComboCurveAPI:
-    """One dev client for every live test of the session. It keeps its token in memory, so the
-    per-test token cache directory does not make it fetch again. Built only when a live test that is
-    not skipped asks for it: constructing it reads the credential files, and sends nothing."""
-    from combocurve_api_helper import ComboCurveAPI
+def dev_api(tmp_path_factory: pytest.TempPathFactory) -> ComboCurveAPI:
+    """One dev client for every live test of the session. It keeps its token in memory, so a run fetches
+    at most one dev token. Its disk token cache is a session temp directory, never the user's
+    `~/.combocurve/token-cache`: the client reads `config.TOKEN_CACHE_DIRECTORY` when it is built, and this
+    session fixture is built before the per-test `_isolated_token_cache` patch applies. Built only when a
+    live test that is not skipped asks for it: constructing it reads the credential files, and sends
+    nothing."""
+    from combocurve_api_helper import ComboCurveAPI, config
     from tests.live_support import DEV_CREDENTIALS_DIRECTORY
 
-    return ComboCurveAPI.from_credentials_directory(DEV_CREDENTIALS_DIRECTORY)
+    with pytest.MonkeyPatch.context() as patcher:
+        patcher.setattr(config, 'TOKEN_CACHE_DIRECTORY', tmp_path_factory.mktemp('dev-token-cache'))
+        return ComboCurveAPI.from_credentials_directory(DEV_CREDENTIALS_DIRECTORY)
 
 
 try:

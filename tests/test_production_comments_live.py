@@ -144,6 +144,9 @@ def test_directional_survey_batch_round_trip(dev_api: ComboCurveAPI, well: dict[
         assert len(surveys) == 1
         assert surveys[0]['measuredDepth'] == [0, 200]
     finally:
+        # Only the survey this test wrote (the well had none before; its depths are the fixture's), so a
+        # survey another writer added meanwhile, or rows of a filter the route ignored, are left alone.
         for stored in dev_api.get_directional_surveys({'well': well_id}):
-            dev_api.delete_directional_survey_by_id(str(stored['id']))
+            if str(stored.get('well')) == well_id and stored.get('measuredDepth') in ([0, 100], [0, 200]):
+                dev_api.delete_directional_survey_by_id(str(stored['id']))
         assert dev_api.count_directional_surveys({'well': well_id}) == 0

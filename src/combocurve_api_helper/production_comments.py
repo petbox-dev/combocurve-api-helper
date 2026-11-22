@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from types import MappingProxyType
-from typing import Optional, Union, cast
+from typing import Literal, Optional, Union, cast
 
 from requests.structures import CaseInsensitiveDict
 
@@ -19,9 +19,10 @@ class ProductionComments(APIBase):
     """
     Production comments: a note with a comment type on a date range of one well's production. A comment is
     either company-scoped (`/production-comments`) or project-scoped (`/projects/{projectId}/production-comments`);
-    both scopes have the same eight routes, so the public methods delegate to the shared `_..._comments`
-    helpers below and differ only in the url. The comment types (`prod_comment_type_0` to
-    `prod_comment_type_14`) are a company-level configuration of a label and a color per key.
+    both scopes have the same eight routes, so the public methods delegate to the shared helpers below
+    (`_comments_url`, `_get_comments`, `_write_comments`) and differ only in the scope. The comment types
+    (`prod_comment_type_0` to `prod_comment_type_14`) are a company-level configuration of a label and a color
+    per key.
 
     Production comments are a per-tenant feature. On a tenant where it is off, every production-comment route
     (list, HEAD, by id, in both scopes) answers 404 with the body `{"name": "ProductionCommentsDisabledError",
@@ -36,16 +37,16 @@ class ProductionComments(APIBase):
     # URLs
     ######
 
+    def _comments_url(self, project_id: Optional[str], filters: Optional[dict[str, str]] = None) -> str:
+        """The production-comment collection url of a project, or of the company when `project_id` is None."""
+        scope = '' if project_id is None else f'/projects/{project_id}'
+        return f'{self.API_BASE_URL}{scope}/production-comments' + self._build_params_string(filters)
+
     def get_company_production_comments_url(self, filters: Optional[dict[str, str]] = None) -> str:
         """
         Returns the API url of the company production comments.
         """
-        url = f'{self.API_BASE_URL}/production-comments'
-        if filters is None:
-            return url
-
-        url += self._build_params_string(filters)
-        return url
+        return self._comments_url(None, filters)
 
     def get_company_production_comment_by_id_url(self, production_comment_id: str) -> str:
         """
@@ -57,12 +58,7 @@ class ProductionComments(APIBase):
         """
         Returns the API url of the production comments of a specific project.
         """
-        url = f'{self.API_BASE_URL}/projects/{project_id}/production-comments'
-        if filters is None:
-            return url
-
-        url += self._build_params_string(filters)
-        return url
+        return self._comments_url(project_id, filters)
 
     def get_project_production_comment_by_id_url(self, project_id: str, production_comment_id: str) -> str:
         """
@@ -83,6 +79,15 @@ class ProductionComments(APIBase):
     def _get_comments(self, url: str) -> ItemList:
         """Returns every production comment at `url` (all pages), ordered by well, start date and id."""
         return self._keysort(self._get_items(url, params={'take': GET_LIMIT}), _PRODUCTION_COMMENT_SORT_ORDER)
+
+    def _write_comments(
+        self, verb: Literal['post', 'put', 'patch'], project_id: Optional[str], data: Union[Item, ItemList]
+    ) -> list[WriteResponse]:
+        """POST, PUT or PATCH `data` (one comment or a list, refused when empty) to the company collection, or
+        the project's when `project_id` is given; one 207 envelope per batch."""
+        records = self._records_from(data, 'production comment')
+        write = {'post': self._post_items, 'put': self._put_items, 'patch': self._patch_items}[verb]
+        return cast('list[WriteResponse]', write(self._comments_url(project_id), records))
 
     @staticmethod
     def _comment_delete_filters(
@@ -234,9 +239,7 @@ class ProductionComments(APIBase):
             "failedCount": 123.45
         }
         """
-        records = self._records_from(data, 'production comment')
-        url = self.get_company_production_comments_url()
-        return cast('list[WriteResponse]', self._post_items(url, records))
+        return self._write_comments('post', None, data)
 
     def put_company_production_comments(self, data: Union[Item, ItemList]) -> list[WriteResponse]:
         """
@@ -290,9 +293,7 @@ class ProductionComments(APIBase):
             "failedCount": 123.45
         }
         """
-        records = self._records_from(data, 'production comment')
-        url = self.get_company_production_comments_url()
-        return cast('list[WriteResponse]', self._put_items(url, records))
+        return self._write_comments('put', None, data)
 
     def patch_company_production_comments(self, data: Union[Item, ItemList]) -> list[WriteResponse]:
         """
@@ -345,9 +346,7 @@ class ProductionComments(APIBase):
             "failedCount": 123.45
         }
         """
-        records = self._records_from(data, 'production comment')
-        url = self.get_company_production_comments_url()
-        return cast('list[WriteResponse]', self._patch_items(url, records))
+        return self._write_comments('patch', None, data)
 
     def delete_company_production_comments(
         self,
@@ -501,9 +500,7 @@ class ProductionComments(APIBase):
             "failedCount": 123.45
         }
         """
-        records = self._records_from(data, 'production comment')
-        url = self.get_project_production_comments_url(project_id)
-        return cast('list[WriteResponse]', self._post_items(url, records))
+        return self._write_comments('post', project_id, data)
 
     def put_project_production_comments(self, project_id: str, data: Union[Item, ItemList]) -> list[WriteResponse]:
         """
@@ -557,9 +554,7 @@ class ProductionComments(APIBase):
             "failedCount": 123.45
         }
         """
-        records = self._records_from(data, 'production comment')
-        url = self.get_project_production_comments_url(project_id)
-        return cast('list[WriteResponse]', self._put_items(url, records))
+        return self._write_comments('put', project_id, data)
 
     def patch_project_production_comments(self, project_id: str, data: Union[Item, ItemList]) -> list[WriteResponse]:
         """
@@ -612,9 +607,7 @@ class ProductionComments(APIBase):
             "failedCount": 123.45
         }
         """
-        records = self._records_from(data, 'production comment')
-        url = self.get_project_production_comments_url(project_id)
-        return cast('list[WriteResponse]', self._patch_items(url, records))
+        return self._write_comments('patch', project_id, data)
 
     def delete_project_production_comments(
         self,

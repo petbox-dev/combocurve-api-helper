@@ -223,7 +223,8 @@ there are four parallel methods following one naming scheme:
 
 GET goes through `_request_items_pages`; POST/PATCH/PUT/DELETE go through `_request_items_pages_chunks`,
 which splits `data` into `chunksize` batches (via `more_itertools.chunked`). Pagination is automatic:
-both loops follow `get_next_page_url(response.headers)` (`base.py`; it accepts `; rel="next"` with a space,
+both loops follow `_next_page_url_on_request_origin` over `get_next_page_url(response.headers)` (`_transport.py`,
+re-exported by `base.py`; it accepts `; rel="next"` with a space,
 which the replaced `combocurve-api-v1` parser did not) until exhausted. Auth headers are re-fetched through `self._auth_headers()` (which serialises the token refresh
 under `_auth_lock`) before every individual request, the batched-write workers included.
 
@@ -285,13 +286,15 @@ next paragraph): `_send_one_chunk` -> `_transport._send_batch_chunk` calls
 but a query parameter added there would not be reconciled.
 
 **Connection failures: a write is never sent twice.** The transport policy lives in `_transport.py`
-(`base.py` re-exports every moved name, so `from combocurve_api_helper.base import _send_request` still
-works): the timeout, retry and deadline constants, the connection policy, `_send_with_status_retries` (what
+(`base.py` re-exports the moved constants and functions, so `from combocurve_api_helper.base import
+_send_request` still works; not `_whole_chunk_failure`, now in `_batch.py` with a new signature, nor
+`_LINK_HEADER_ENTRY`. A re-export is an import only: patching `base._send_request` does not intercept the
+transport, which looks names up in `_transport`; patch `requests.request` or the `_transport` name): the timeout, retry and deadline constants, the connection policy, `_send_with_status_retries` (what
 `APIBase._request_with_retry` calls) and `_send_batch_chunk` (what `APIBase._send_one_chunk` calls; the 207
 body is parsed by the pure `_batch.chunk_from_207_body`). `base.py` keeps `APIBase`, the types and the sort
-orders. `_send_request` is where both paths
-call `requests.request`. It sets `_REQUEST_TIMEOUT_SECONDS` (without a timeout, a stalled connection
-blocks forever) and sends a request again after a connection failure only when the request never reached
+orders. `_send_request` is where both ComboCurve paths call `requests.request`; `_send_to_external_url`
+(a non-ComboCurve host) calls `requests.request` itself, sharing `_retry_connection_failures` with it. It sets
+`_REQUEST_TIMEOUT_SECONDS` (without a timeout, a stalled connection blocks forever) and sends a request again after a connection failure only when the request never reached
 the server (connect timeout, refused connection, DNS failure) or is a GET/HEAD. A POST/PUT/PATCH/DELETE
 that failed after it was sent raises: the server may have applied it, and a second send could create the
 records twice. Do not widen this to a blanket retry on `ConnectionError`. The same rule holds for status
@@ -320,13 +323,15 @@ root volume, scenario model-assignment and well-incremental routes, and the fore
 DELETE (101 is a 400 or 500, verified live). `APIBase._filter_value_batches` de-duplicates a longer list and
 splits it into batches of 100; `_get_items_in_value_batches` / `_count_items_in_value_batches` are the shared
 get/count loops over those batches. A `skip` or `cursor` filter with more than one batch raises `ValueError`
-(it would apply once per batch; `APIBase._paging_filters_in` is the shared test).
+(it would apply once per batch; `APIBase._paging_filters_in` is the shared test). An empty list is refused
+with `ValueError`: `_build_params_string` drops it, so the request would read or count every row.
 
 **ComboCurve's project-scoped root volume listing is wrong; the helper does not use it.** With `project` and
 no `forecast`, `/v1/forecast-{daily,monthly}-volumes` returned short pages with no next link and repeated and
 dropped `(forecast, well)` pairs on every dev project above 200 rows, while the HEAD count matched (2026-11-20
 and 2026-11-21). `get_root_forecast_*_volumes` therefore read a `project`-only scope one forecast at a time and
-raise `RuntimeError` when the total differs from the project count. Do not "simplify" it back to one listing
+raise `RuntimeError` when the total differs from the project count (skipped when another filter narrows the
+read) or a `(forecast, well)` pair repeats (the defect keeps the total right, so the count alone cannot catch it). Do not "simplify" it back to one listing
 until ComboCurve fixes the route (`docs/todo/open/project-scoped-root-volumes-repeat-and-drop-rows.md`).
 
 **Async jobs share one poll helper, `APIBase._wait_for_job`**, which waits while the status is `pending` or
@@ -383,9 +388,11 @@ Each `econModels.json` entry carries `hasCompanyRoute` (false for Emission and F
 company route for them; verified live 2026-09-30).
 `package-data` in `pyproject.toml` ships these in the wheel.
 
-**Module sizes / where the bulk is:** `models.py` (~104 methods) and `company_models.py` (~71) dominate —
-these build econ-model assumptions. `wells.py` (~30), `production.py` (~24), `scenarios.py` (~22),
-`forecasts.py` (~21) follow. `directional.py` and `typecurves.py` are small.
+**Module sizes / where the bulk is** (methods, `*_url` builders included, 2026-11-22): `_models_generated.py`
+(232, the per-type econ-model methods; `models.py` itself is empty) and `company_models.py` (69) dominate --
+these build econ-model assumptions. `scenarios.py` (52), `shapefiles.py` (40), `forecasts.py` (39), `wells.py`
+(35), `typecurves.py` (34), `formations.py` (30), `production.py` (29) and `root.py` (29) follow.
+`directional.py` (10) is small.
 
 **Econ-model CSV mappers** live in the `econ_models/` subpackage (hand-written, NOT generated — distinct
 from the generated CRUD methods below). Each econ-model type has a mapper subclassing the `EconModelMapper`

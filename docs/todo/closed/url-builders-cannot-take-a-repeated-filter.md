@@ -52,8 +52,8 @@ call their builders (`get_scenario_qualifiers_url`; `get_forecast_outputs_url` t
 
 `base.QueryFilters` (`Mapping[str, Union[str, int, Sequence[str], None]]`) types `_build_params_string`,
 the value-batch helpers, and every builder whose route takes a repeated key. `WellFilters` is an alias of
-it. Still open: the lookup-table assignments `column` filter (documented as comma-separated) is not
-live-verified, and the builders of routes with no repeated key keep `dict[str, str]` on purpose.
+it. The lookup-table assignments `column` filter takes one value (verified live 2026-11-13, 3.2.0), and the
+builders of routes with no repeated key keep `dict[str, str]` on purpose.
 
 ## Fix
 

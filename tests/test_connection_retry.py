@@ -22,7 +22,7 @@ from combocurve_api_helper._transport import (
     _MAX_RETRY_AFTER_SECONDS,
     _REQUEST_TIMEOUT_SECONDS,
 )
-from tests.http_fakes import V1, FakeResponse, StubAuth, make_offline_api
+from tests.http_fakes import V1, FakeClock, FakeResponse, StubAuth, install_fake_clock, make_offline_api
 
 if TYPE_CHECKING:
     from combocurve_api_helper.base import Item
@@ -36,32 +36,14 @@ def _never_sent_error() -> requests.ConnectionError:
     return requests.ConnectionError(urllib3.exceptions.MaxRetryError(cast('Any', None), URL, reason))
 
 
-class _FakeClock:
-    """A monotonic clock that only moves when the test moves it or when a pause is slept."""
-
-    def __init__(self) -> None:
-        self.now = 1000.0
-        self.sleeps: list[float] = []
-
-    def monotonic(self) -> float:
-        return self.now
-
-    def sleep(self, seconds: float) -> None:
-        self.sleeps.append(seconds)
-        self.now += seconds
-
-
 class _Script:
     """A fake `requests.request` that raises or returns the scripted outcomes in order.
 
-    Kept local rather than on `tests/http_fakes.RecordingTransport`: its job differs. An outcome may be
-    an exception to raise (connection failures, timeouts), and with a `_FakeClock` each send advances the
-    clock and ends in a `ReadTimeout` when it outlasts the read timeout it was given, which is what the
-    deadline tests need. Nothing else in the suite needs either."""
+    Kept local rather than on `tests/http_fakes.RecordingTransport` (which can also raise a queued
+    exception): with a `FakeClock` each send here advances the clock and ends in a `ReadTimeout` when it
+    outlasts the read timeout it was given, which only the deadline tests need."""
 
-    def __init__(
-        self, outcomes: list[Any], clock: Optional['_FakeClock'] = None, seconds_per_call: float = 0.0
-    ) -> None:
+    def __init__(self, outcomes: list[Any], clock: Optional[FakeClock] = None, seconds_per_call: float = 0.0) -> None:
         self._outcomes = iter(outcomes)
         self._clock = clock
         self._seconds_per_call = seconds_per_call
@@ -92,16 +74,13 @@ def sleeps(monkeypatch: MonkeyPatch) -> list[float]:
 
 
 @pytest.fixture
-def clock(monkeypatch: MonkeyPatch) -> _FakeClock:
+def clock(monkeypatch: MonkeyPatch) -> FakeClock:
     """Replace `time.monotonic` and `time.sleep` with a clock that a sleep advances."""
-    fake = _FakeClock()
-    monkeypatch.setattr(time, 'monotonic', fake.monotonic)
-    monkeypatch.setattr(time, 'sleep', fake.sleep)
-    return fake
+    return install_fake_clock(monkeypatch)
 
 
 def _install(
-    monkeypatch: MonkeyPatch, outcomes: list[Any], clock: Optional[_FakeClock] = None, seconds_per_call: float = 0.0
+    monkeypatch: MonkeyPatch, outcomes: list[Any], clock: Optional[FakeClock] = None, seconds_per_call: float = 0.0
 ) -> _Script:
     script = _Script(outcomes, clock, seconds_per_call)
     monkeypatch.setattr(requests, 'request', script)
@@ -369,7 +348,7 @@ def test_a_call_with_no_retry_carries_the_unchanged_timeout(monkeypatch: MonkeyP
 
 
 def test_a_get_that_keeps_answering_504_stops_at_the_deadline_and_returns_the_last_504(
-    monkeypatch: MonkeyPatch, clock: _FakeClock
+    monkeypatch: MonkeyPatch, clock: FakeClock
 ) -> None:
     api = make_offline_api()
     last = FakeResponse(504, {'last': True})
@@ -381,7 +360,7 @@ def test_a_get_that_keeps_answering_504_stops_at_the_deadline_and_returns_the_la
 
 
 def test_the_read_timeout_shrinks_to_the_remaining_budget_on_a_late_get_retry(
-    monkeypatch: MonkeyPatch, clock: _FakeClock
+    monkeypatch: MonkeyPatch, clock: FakeClock
 ) -> None:
     api = make_offline_api()
     limited = FakeResponse(429, {}, headers={'Retry-After': '120'})
@@ -393,7 +372,7 @@ def test_the_read_timeout_shrinks_to_the_remaining_budget_on_a_late_get_retry(
 
 
 def test_a_get_whose_connection_keeps_failing_stops_before_the_deadline_and_raises_the_last_error(
-    monkeypatch: MonkeyPatch, clock: _FakeClock
+    monkeypatch: MonkeyPatch, clock: FakeClock
 ) -> None:
     api = make_offline_api()
     failures = [requests.ReadTimeout(f'read timed out {i}') for i in range(_MAX_CONNECTION_RETRIES + 1)]
@@ -405,7 +384,7 @@ def test_a_get_whose_connection_keeps_failing_stops_before_the_deadline_and_rais
 
 
 def test_a_post_is_not_retried_when_its_full_read_timeout_would_not_fit(
-    monkeypatch: MonkeyPatch, clock: _FakeClock
+    monkeypatch: MonkeyPatch, clock: FakeClock
 ) -> None:
     """A write sent with a shortened read timeout could turn a known-not-applied 429 into "may have applied"."""
     api = make_offline_api()
@@ -416,7 +395,7 @@ def test_a_post_is_not_retried_when_its_full_read_timeout_would_not_fit(
     assert clock.sleeps == []
 
 
-def test_a_post_is_retried_with_the_full_read_timeout_when_it_fits(monkeypatch: MonkeyPatch, clock: _FakeClock) -> None:
+def test_a_post_is_retried_with_the_full_read_timeout_when_it_fits(monkeypatch: MonkeyPatch, clock: FakeClock) -> None:
     api = make_offline_api()
     limited = FakeResponse(429, {}, headers={'Retry-After': '120'})
     script = _install(monkeypatch, [limited, limited, limited], clock, 100.0)
@@ -427,7 +406,7 @@ def test_a_post_is_retried_with_the_full_read_timeout_when_it_fits(monkeypatch: 
 
 
 def test_a_get_in_the_same_situation_is_retried_with_the_shrunk_timeout(
-    monkeypatch: MonkeyPatch, clock: _FakeClock
+    monkeypatch: MonkeyPatch, clock: FakeClock
 ) -> None:
     api = make_offline_api()
     limited = FakeResponse(429, {}, headers={'Retry-After': '120'})
@@ -447,7 +426,7 @@ def test_a_send_after_the_deadline_is_refused_without_sending(monkeypatch: Monke
     assert _CALL_DEADLINE_SECONDS == 600.0
 
 
-def test_the_token_fetch_counts_against_the_deadline(monkeypatch: MonkeyPatch, clock: _FakeClock) -> None:
+def test_the_token_fetch_counts_against_the_deadline(monkeypatch: MonkeyPatch, clock: FakeClock) -> None:
     from combocurve_api_helper._transport import _send_request
 
     script = _install(monkeypatch, [FakeResponse(200, {})])
@@ -460,7 +439,7 @@ def test_the_token_fetch_counts_against_the_deadline(monkeypatch: MonkeyPatch, c
     assert script.calls[0]['timeout'] == (30.0, 50.0)
 
 
-def test_the_batched_write_path_stops_at_the_deadline(monkeypatch: MonkeyPatch, clock: _FakeClock) -> None:
+def test_the_batched_write_path_stops_at_the_deadline(monkeypatch: MonkeyPatch, clock: FakeClock) -> None:
     api = make_offline_api()
     limited = FakeResponse(429, {'detail': 'quota'}, headers={'Retry-After': '120'})
     script = _install(monkeypatch, [limited] * 10, clock, 100.0)
@@ -474,7 +453,7 @@ def test_the_batched_write_path_stops_at_the_deadline(monkeypatch: MonkeyPatch, 
 
 
 def test_a_batch_chunk_refused_by_the_deadline_after_a_shared_pause_reports_the_deadline(
-    monkeypatch: MonkeyPatch, clock: _FakeClock
+    monkeypatch: MonkeyPatch, clock: FakeClock
 ) -> None:
     api = make_offline_api()
     limited = FakeResponse(429, {}, headers={'Retry-After': '1'})
@@ -515,7 +494,7 @@ def test_a_token_fetch_that_fails_to_connect_is_retried(monkeypatch: MonkeyPatch
 
 
 def test_a_token_fetch_that_fails_to_connect_is_retried_under_a_deadline(
-    monkeypatch: MonkeyPatch, clock: _FakeClock
+    monkeypatch: MonkeyPatch, clock: FakeClock
 ) -> None:
     from combocurve_api_helper._transport import _send_request
 

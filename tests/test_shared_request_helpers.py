@@ -15,7 +15,16 @@ from pytest import MonkeyPatch
 
 from combocurve_api_helper import _transport
 from combocurve_api_helper.base import WELL_FILTER_LIMIT, APIBase, Item, ItemList
-from tests.http_fakes import FakeResponse, StubAuth, install_recording_transport, make_offline_api
+from combocurve_api_helper.scenarios import _count_well_ids, _require_assignment_wells
+from tests.http_fakes import (
+    FakeResponse,
+    RecordingTransport,
+    StubAuth,
+    install_fake_clock,
+    install_recording_transport,
+    make_offline_api,
+    object_ids,
+)
 
 V1 = APIBase.API_BASE_URL
 SCENARIO = f'{V1}/projects/p/scenarios/sc'
@@ -33,7 +42,7 @@ def test_require_at_most_allows_the_limit_and_refuses_one_more() -> None:
 
 def test_count_well_ids_sums_list_well_ids_and_ignores_other_shapes() -> None:
     records: ItemList = [{'wellIds': ['a', 'b']}, {'wellIds': 'a'}, {'allWells': True}, {'wellIds': ['c']}]
-    assert APIBase._count_well_ids(records) == 3
+    assert _count_well_ids(records) == 3
 
 
 @pytest.mark.parametrize(
@@ -83,11 +92,11 @@ def test_split_ids_refuses_a_blank_id(ids: Any, message: str) -> None:
 )
 def test_require_assignment_wells_refuses_a_record_that_names_no_well(record: Item, message: str) -> None:
     with pytest.raises(ValueError, match=f'^{message}$'):
-        APIBase._require_assignment_wells([record])
+        _require_assignment_wells([record])
 
 
 def test_require_assignment_wells_accepts_all_wells_or_well_ids() -> None:
-    APIBase._require_assignment_wells([{'allWells': True}, {'wellIds': ['w1']}])
+    _require_assignment_wells([{'allWells': True}, {'wellIds': ['w1']}])
 
 
 # Item 2: the econ-model assignment DELETE refuses a record that names no well
@@ -102,7 +111,7 @@ def test_econ_model_assignment_delete_refuses_a_record_without_wells(monkeypatch
 
 
 def test_econ_model_assignment_delete_sends_an_all_wells_record(monkeypatch: MonkeyPatch) -> None:
-    transport = install_recording_transport(monkeypatch, FakeResponse(204, [], headers={'X-Delete-Count': '2'}))
+    transport = install_recording_transport(monkeypatch, FakeResponse(204, None, headers={'X-Delete-Count': '2'}))
     record: Item = {'model': 'risking', 'qualifierName': 'q', 'allWells': True}
     headers = make_offline_api().delete_scenario_econ_model_assignments('p', 'sc', [record])
     assert headers['X-Delete-Count'] == '2'
@@ -213,11 +222,11 @@ def test_wait_for_job_refuses_a_job_with_no_status(monkeypatch: MonkeyPatch) -> 
 
 
 def test_wait_for_job_raises_before_a_poll_past_the_timeout(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setattr(time, 'sleep', lambda seconds: None)
-    clock = iter([0.0, 1.0, 9.0])
-    monkeypatch.setattr(time, 'monotonic', lambda: next(clock))
+    clock = install_fake_clock(monkeypatch)
     with pytest.raises(TimeoutError, match=r"^formations job j1 is still 'running' after 10\.0 seconds$"):
         APIBase._wait_for_job(lambda: {'status': 'running'}, 10.0, 2.0, 'formations job j1')
+    # Polls at 0, 2, 4, 6, 8 and 10 s; a sixth pause would end at 12 s, past the 10 s timeout.
+    assert clock.sleeps == [2.0] * 5
 
 
 # Item 7: the sender for a signed url on another host
@@ -229,24 +238,8 @@ def _new_connection_error() -> requests.ConnectionError:
     return requests.ConnectionError(urllib3.exceptions.MaxRetryError(None, SIGNED_URL, reason))  # type: ignore[arg-type]
 
 
-class _ScriptedTransport:
-    """Stands in for `requests.request`: raises or returns `outcomes` in order and keeps every call."""
-
-    def __init__(self, *outcomes: Any) -> None:
-        self.outcomes = list(outcomes)
-        self.calls: list[dict[str, Any]] = []
-
-    def __call__(self, method: str, url: str, **kwargs: Any) -> Any:
-        self.calls.append({'method': method, 'url': url, **kwargs})
-        outcome = self.outcomes.pop(0)
-        if isinstance(outcome, BaseException):
-            raise outcome
-        return outcome
-
-
-def _install_scripted(monkeypatch: MonkeyPatch, *outcomes: Any) -> _ScriptedTransport:
-    transport = _ScriptedTransport(*outcomes)
-    monkeypatch.setattr(requests, 'request', transport)
+def _install_scripted(monkeypatch: MonkeyPatch, *outcomes: Any) -> RecordingTransport:
+    transport = install_recording_transport(monkeypatch, *outcomes)
     monkeypatch.setattr(time, 'sleep', lambda seconds: None)
     return transport
 
@@ -255,10 +248,10 @@ def test_external_send_carries_only_the_given_headers_and_the_raw_body(monkeypat
     transport = _install_scripted(monkeypatch, FakeResponse(200))
     _transport._send_to_external_url('PUT', SIGNED_URL, {'Content-Type': 'application/zip'}, b'zip')
     [call] = transport.calls
-    assert call['headers'] == {'Content-Type': 'application/zip'}
-    assert call['data'] == b'zip'
-    assert 'json' not in call
-    assert call['timeout'] == _transport._REQUEST_TIMEOUT_SECONDS
+    assert call.headers == {'Content-Type': 'application/zip'}
+    assert call.data == b'zip'
+    assert call.body is None
+    assert call.timeout == _transport._REQUEST_TIMEOUT_SECONDS
 
 
 def test_external_send_retries_a_request_that_never_reached_the_host(monkeypatch: MonkeyPatch) -> None:
@@ -347,14 +340,10 @@ UNASSIGN_CALLS: list[UnassignCall] = [
 ]
 
 
-def _object_ids(count: int) -> list[str]:
-    return [f'{index:024x}' for index in range(1, count + 1)]
-
-
 @pytest.mark.parametrize('unassign', UNASSIGN_CALLS)
 def test_unassign_sends_100_wells_in_one_request(monkeypatch: MonkeyPatch, unassign: UnassignCall) -> None:
     transport = install_recording_transport(monkeypatch, FakeResponse(204, None))
-    unassign(make_offline_api(), _object_ids(WELL_FILTER_LIMIT))
+    unassign(make_offline_api(), object_ids(WELL_FILTER_LIMIT))
     assert len(transport.calls) == 1
     assert transport.calls[0].url.count('wells=') == WELL_FILTER_LIMIT
 
@@ -365,7 +354,27 @@ def test_unassign_refuses_101_wells_before_sending(
     monkeypatch: MonkeyPatch, unassign: UnassignCall, as_string: bool
 ) -> None:
     transport = install_recording_transport(monkeypatch)
-    wells = _object_ids(WELL_FILTER_LIMIT + 1)
+    wells = object_ids(WELL_FILTER_LIMIT + 1)
     with pytest.raises(ValueError, match=r'^wells holds 101 well ids; the route takes at most 100 per request$'):
         unassign(make_offline_api(), ','.join(wells) if as_string else wells)
+    assert transport.calls == []
+
+
+@pytest.mark.parametrize('response', [FakeResponse(204, None), FakeResponse(200, text=''), FakeResponse(200, [])])
+def test_send_for_item_returns_an_empty_object_for_an_empty_success_body(
+    monkeypatch: MonkeyPatch, response: FakeResponse
+) -> None:
+    """A write that succeeded with an empty body must not raise after the fact (the defect the deletes had)."""
+    install_recording_transport(monkeypatch, response)
+    assert make_offline_api()._send_for_item('post', f'{V1}/x', {'a': 1}) == {}
+
+
+@pytest.mark.parametrize(('chunksize', 'max_workers'), [(0, 1), (-1, 1), (10, 0)])
+def test_a_batched_write_refuses_a_chunk_size_or_worker_count_below_one(
+    monkeypatch: MonkeyPatch, chunksize: int, max_workers: int
+) -> None:
+    """`chunksize=0` sent nothing and reported a clean write."""
+    transport = install_recording_transport(monkeypatch)
+    with pytest.raises(ValueError, match='at least 1'):
+        make_offline_api()._request_batched('post', f'{V1}/x', [{'a': 1}], chunksize=chunksize, max_workers=max_workers)
     assert transport.calls == []

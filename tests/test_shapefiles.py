@@ -6,17 +6,22 @@ job polling.
 import io
 import time
 import zipfile
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import pytest
-import requests
 
 from combocurve_api_helper import shapefiles as shapefiles_module
 from combocurve_api_helper.base import Item
 from combocurve_api_helper.shapefiles import GET_LIMIT, Shapefiles
-from tests.http_fakes import FakeResponse, install_recording_transport, make_offline_api
+from tests.http_fakes import (
+    FakeResponse,
+    RecordingTransport,
+    StubAuth,
+    install_fake_clock,
+    install_recording_transport,
+    make_offline_api,
+)
 
 BASE = Shapefiles.API_BASE_URL
 PROJECT = 'p1'
@@ -26,60 +31,14 @@ SIGNED_URL = 'https://storage.example.test/bucket/upload.zip?X-Goog-Signature=ab
 SECRET_HEADERS = {'Authorization': 'Bearer secret-token', 'x-api-key': 'secret-key'}
 
 
-class _SecretAuth:
-    """Auth whose headers are recognizable, to prove where they are (and are not) sent."""
-
-    def __init__(self) -> None:
-        self.fetches = 0
-
-    def get_auth_headers(self) -> dict[str, str]:
-        self.fetches += 1
-        return dict(SECRET_HEADERS)
-
-
-@dataclass(frozen=True)
-class _Call:
-    method: str
-    url: str
-    headers: dict[str, str]
-    params: Any
-    json: Any
-    data: Any
-    timeout: Any
-
-
-@dataclass
-class _Transport:
-    """Stands in for `requests.request`, recording the headers and the raw `data` too: the signed upload
-    sends bytes, and its headers are the point of the test, which `tests/http_fakes.RecordingTransport`
-    does not record."""
-
-    responses: list[FakeResponse]
-    calls: list[_Call] = field(default_factory=list)
-
-    def __call__(
-        self,
-        method: str,
-        url: str,
-        headers: Any = None,
-        params: Any = None,
-        json: Any = None,
-        data: Any = None,
-        timeout: Any = None,
-    ) -> FakeResponse:
-        self.calls.append(_Call(method.upper(), url, dict(headers or {}), params, json, data, timeout))
-        return self.responses.pop(0)
-
-
-def _install(monkeypatch: pytest.MonkeyPatch, *responses: FakeResponse) -> _Transport:
-    transport = _Transport(list(responses))
-    monkeypatch.setattr(requests, 'request', transport)
+def _install(monkeypatch: pytest.MonkeyPatch, *responses: FakeResponse) -> RecordingTransport:
+    transport = install_recording_transport(monkeypatch, *responses)
     monkeypatch.setattr(time, 'sleep', lambda seconds: None)
     return transport
 
 
 def _api() -> Shapefiles:
-    return Shapefiles(auth=_SecretAuth())
+    return Shapefiles(auth=StubAuth(SECRET_HEADERS))
 
 
 def _shapefile_zip(*names: str) -> bytes:
@@ -166,7 +125,7 @@ def test_single_object_routes(monkeypatch: pytest.MonkeyPatch, call: Any, verb: 
     result = call(_api())
     assert result == {'jobId': 'j1'}
     [sent] = transport.calls
-    assert (sent.method, sent.url, sent.json) == (verb, url, body)
+    assert (sent.method, sent.url, sent.body) == (verb, url, body)
     assert sent.headers == SECRET_HEADERS
 
 
@@ -228,7 +187,7 @@ def test_patch_sends_one_request_of_records(monkeypatch: pytest.MonkeyPatch) -> 
     transport = _install(monkeypatch, FakeResponse(207, {'results': [], 'successCount': 1, 'failedCount': 0}))
     _api().patch_company_shapefiles({'id': 's1', 'description': 'd'})
     [sent] = transport.calls
-    assert (sent.method, sent.url, sent.json) == ('PATCH', COMPANY_ROOT, [{'id': 's1', 'description': 'd'}])
+    assert (sent.method, sent.url, sent.body) == ('PATCH', COMPANY_ROOT, [{'id': 's1', 'description': 'd'}])
 
 
 @pytest.mark.parametrize(
@@ -272,7 +231,7 @@ def test_upload_refuses_an_unknown_content_type_and_an_empty_upload_id(monkeypat
 
 def test_the_signed_upload_sends_only_the_ticket_headers(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     transport = _install(monkeypatch, FakeResponse(200, None), FakeResponse(200, None))
-    auth = _SecretAuth()
+    auth = StubAuth(SECRET_HEADERS)
     api = Shapefiles(auth=auth)
     zip_path = tmp_path / 'layer.zip'
     zip_path.write_bytes(GOOD_ZIP)
@@ -284,7 +243,7 @@ def test_the_signed_upload_sends_only_the_ticket_headers(monkeypatch: pytest.Mon
     for sent in transport.calls:
         assert (sent.method, sent.url, sent.data) == ('PUT', SIGNED_URL, GOOD_ZIP)
         assert sent.headers == {'Content-Type': 'application/zip'}
-        assert sent.json is None
+        assert sent.body is None
         assert sent.timeout is not None
 
 
@@ -345,34 +304,10 @@ def test_wait_returns_a_failed_job_without_raising(monkeypatch: pytest.MonkeyPat
     assert _api().wait_for_company_shapefile_job('j1') == failed
 
 
-class _SleepDrivenClock:
-    """A `time.monotonic` that advances only when `time.sleep` is called. The transport also reads
-    `time.monotonic` (its call deadline), so a clock that advanced on every read would be consumed by the
-    transport and the test would say nothing about the wait's own timeout boundary."""
-
-    def __init__(self) -> None:
-        self.now = 0.0
-        self.sleeps: list[float] = []
-
-    def monotonic(self) -> float:
-        return self.now
-
-    def sleep(self, seconds: float) -> None:
-        self.sleeps.append(seconds)
-        self.now += seconds
-
-
-def _install_clock(monkeypatch: pytest.MonkeyPatch) -> _SleepDrivenClock:
-    clock = _SleepDrivenClock()
-    monkeypatch.setattr(time, 'monotonic', clock.monotonic)
-    monkeypatch.setattr(time, 'sleep', clock.sleep)
-    return clock
-
-
 def test_wait_raises_when_the_next_poll_would_pass_the_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
     running = {'jobId': 'j1', 'status': 'running'}
     transport = _install(monkeypatch, *(FakeResponse(200, running) for _ in range(4)))
-    clock = _install_clock(monkeypatch)
+    clock = install_fake_clock(monkeypatch)
     # Polls at 0, 1 and 2; a poll at 3 would pass 2.5, so it raises after the third poll.
     with pytest.raises(TimeoutError, match='still'):
         _api().wait_for_company_shapefile_job('j1', timeout_seconds=2.5, poll_seconds=1.0)
@@ -384,7 +319,7 @@ def test_wait_still_polls_at_exactly_the_timeout(monkeypatch: pytest.MonkeyPatch
     running = {'jobId': 'j1', 'status': 'running'}
     done = {'jobId': 'j1', 'status': 'successful', 'result': {'shapefileId': 's1'}}
     transport = _install(monkeypatch, *(FakeResponse(200, running) for _ in range(3)), FakeResponse(200, done))
-    clock = _install_clock(monkeypatch)
+    clock = install_fake_clock(monkeypatch)
     # Timeout 3.0: the poll at 3 is not after the deadline, so it is made and sees the finished job.
     assert _api().wait_for_company_shapefile_job('j1', timeout_seconds=3.0, poll_seconds=1.0) == done
     assert len(transport.calls) == 4
@@ -419,7 +354,7 @@ def test_upload_runs_the_three_steps_and_returns_the_new_layer(monkeypatch: pyte
     signed_put = transport.calls[1]
     assert 'Authorization' not in signed_put.headers
     assert 'x-api-key' not in signed_put.headers
-    assert transport.calls[2].json == {'name': 'n'}
+    assert transport.calls[2].body == {'name': 'n'}
 
 
 def test_upload_raises_when_the_job_does_not_succeed(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -451,6 +386,8 @@ def test_upload_refuses_a_bad_zip_before_reserving_an_upload(monkeypatch: pytest
         lambda api: api.post_company_shapefiles({'name': 'x', 'type': 'FeatureCollection', 'features': []}),
         lambda api: api.post_company_shapefile_upload_import('upload-1', {'name': 'x'}),
         lambda api: api.post_company_shapefile_upload_import('upload-1', {'name': 'x', 'scope': 'everyone'}),
+        lambda api: api.upload_company_shapefile(GOOD_ZIP, {'name': 'x'}),
+        lambda api: api.upload_company_shapefile(GOOD_ZIP, {'name': 'x', 'scope': 'everyone'}),
     ],
 )
 def test_company_create_without_scope_is_refused_before_sending(monkeypatch: pytest.MonkeyPatch, send: Any) -> None:

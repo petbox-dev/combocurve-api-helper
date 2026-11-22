@@ -68,8 +68,10 @@ def test_econ_settings_round_trip(dev_api: ComboCurveAPI) -> None:
         stored = dev_api.get_econ_setting_by_id(created_id)
         assert str(stored['id']) == created_id, 'a PUT by name must replace the setting, not create one'
     finally:
+        # Only this run's documents: the name filter is the server's, so check the name here too.
         for setting in dev_api.get_econ_settings({'name': name}):
-            dev_api.delete_econ_setting_by_id(str(setting['id']))
+            if setting.get('name') == name:
+                dev_api.delete_econ_setting_by_id(str(setting['id']))
         assert dev_api.get_econ_settings({'name': name}) == []
 
 
@@ -92,6 +94,8 @@ def test_econ_report_settings_round_trip(dev_api: ComboCurveAPI) -> None:
         stored = dev_api.get_econ_report_setting_by_id(created_id)
         assert stored['rollUpEachLevel'] is False
     finally:
+        # Only this run's documents: the name filter is the server's, so check the name here too.
         for setting in dev_api.get_econ_report_settings({'name': name}):
-            dev_api.delete_econ_report_setting_by_id(str(setting['id']))
+            if setting.get('name') == name:
+                dev_api.delete_econ_report_setting_by_id(str(setting['id']))
         assert dev_api.get_econ_report_settings({'name': name}) == []

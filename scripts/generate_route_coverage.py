@@ -17,60 +17,27 @@ or a method check failed, 2 the live collection could not be obtained in usable 
 from __future__ import annotations
 
 import argparse
-import http.client
 import json
 import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
-import requests
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
+# `src` first, so the audit checks this checkout's package, not whichever copy is installed.
+sys.path.insert(0, str(REPO_ROOT / 'src'))
 
-from tests.postman_collection import COLLECTION_URL, Operation  # noqa: E402
+from tests.postman_collection import COLLECTION_URL, Operation, collection_operations, fetch_collection  # noqa: E402
 from tests.route_manifest import (  # noqa: E402
     ROUTE_MANIFEST_PATH,
     SENDS_NOTHING_BY_DESIGN,
     build_manifest,
-    collection_operations,
     load_manifest,
     operations_from_collection,
     render_manifest,
     sent_by_method,
 )
-
-# Seconds for the collection fetch (connect and each read). A timeout is a failure to fetch: exit 2.
-FETCH_TIMEOUT_SECONDS = 60
-
-
-class CollectionUnavailable(Exception):
-    """The live collection could not be obtained in usable form: a transport failure, or a fetched body
-    that is not a collection with operations. Exit 2, "no verdict", never 1 ("stale")."""
-
-
-def _fetch_collection_operations() -> list[Operation]:
-    """The live collection's operations. Every failure to obtain them raises `CollectionUnavailable`."""
-    try:
-        response = requests.get(COLLECTION_URL, headers={'User-Agent': 'Mozilla/5.0'}, timeout=FETCH_TIMEOUT_SECONDS)
-        response.raise_for_status()
-        payload = response.json()
-    except (requests.RequestException, http.client.HTTPException, OSError) as error:
-        # RequestException covers connection errors, timeouts and HTTP status errors. OSError covers a
-        # broken CA bundle or certificate store; http.client.HTTPException (a truncated read) does not
-        # derive from OSError.
-        raise CollectionUnavailable(str(error)) from error
-    except ValueError as error:
-        # A captive-portal or error HTML page.
-        raise CollectionUnavailable(f'malformed collection JSON: {error}') from error
-    if not isinstance(payload, dict):
-        raise CollectionUnavailable(f'collection JSON is {type(payload).__name__}, expected an object')
-    operations = collection_operations(payload)
-    if not operations:
-        # A well-formed object with no operation would make every route look removed.
-        raise CollectionUnavailable('the collection has no `item` tree with an operation in it')
-    return operations
 
 
 def _read_local_collection_operations(path: str) -> list[Operation]:
@@ -92,11 +59,11 @@ def main() -> int:
     if arguments.collection is not None:
         items = _read_local_collection_operations(arguments.collection)
     else:
-        try:
-            items = _fetch_collection_operations()
-        except CollectionUnavailable as error:
-            print(f'could not use the collection ({COLLECTION_URL}): {error}', file=sys.stderr)
+        fetched = fetch_collection()
+        if fetched.operations is None:
+            print(f'could not use the collection ({COLLECTION_URL}): {fetched.unavailable_reason}', file=sys.stderr)
             return 2
+        items = fetched.operations
     operations = operations_from_collection(items)
 
     previous = load_manifest()
@@ -126,7 +93,9 @@ def main() -> int:
         print('manifest is current')
         return 0
     if current != text:
-        ROUTE_MANIFEST_PATH.write_text(text, encoding='utf-8', newline='\n')
+        # `open`, not `Path.write_text(newline=...)`: that keyword is Python 3.10+, and the floor is 3.9.
+        with open(ROUTE_MANIFEST_PATH, 'w', encoding='utf-8', newline='\n') as handle:
+            handle.write(text)
         print(f'wrote {ROUTE_MANIFEST_PATH.relative_to(REPO_ROOT)}')
     else:
         print('manifest unchanged')

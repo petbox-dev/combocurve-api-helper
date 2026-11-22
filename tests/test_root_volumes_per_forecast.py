@@ -96,6 +96,21 @@ def test_a_row_total_that_differs_from_the_count_raises(
 
 
 @pytest.mark.parametrize(('route', 'list_volumes'), GETTERS)
+@pytest.mark.parametrize('filters', [{'project': 'P'}, {'project': 'P', 'well': ['W1', 'W2', 'W3']}])
+def test_a_repeated_pair_raises_even_when_the_total_matches(
+    monkeypatch: MonkeyPatch, route: str, list_volumes: ListVolumes, filters: QueryFilters
+) -> None:
+    """The server defect repeats some (forecast, well) pairs and drops as many others, so a total equal to the
+    count proves nothing: one row per pair is checked too, also on a narrowed read (which has no count)."""
+    repeated = {'F1': [{'forecast': 'F1', 'well': 'W1'}, {'forecast': 'F1', 'well': 'W1'}]}
+    monkeypatch.setattr(f'{__name__}.ROWS_BY_FORECAST', {**ROWS_BY_FORECAST, **repeated})
+    _install_project(monkeypatch, project_count=5)
+
+    with pytest.raises(RuntimeError, match=r"repeats the \(forecast, well\) pair \('F1', 'W1'\)"):
+        list_volumes(make_offline_api(), filters)
+
+
+@pytest.mark.parametrize(('route', 'list_volumes'), GETTERS)
 def test_take_keeps_the_count_check(monkeypatch: MonkeyPatch, route: str, list_volumes: ListVolumes) -> None:
     """`take` is a page size, not a narrowing filter: the count is still sent and checked."""
     transport = _install_project(monkeypatch, project_count=4)
@@ -210,3 +225,16 @@ def test_the_project_count_is_one_head_as_before(
 
     assert count_volumes(make_offline_api(), {'project': 'P'}) == 5
     assert transport.methods_and_urls == [('HEAD', f'{V1}/{route}?project=P')]
+
+
+@pytest.mark.parametrize(('route', 'list_volumes'), GETTERS)
+def test_a_well_named_twice_is_requested_once_per_forecast(
+    monkeypatch: MonkeyPatch, route: str, list_volumes: ListVolumes
+) -> None:
+    """A repeated well id would read its rows twice, which the repeated-pair check reads as the server defect."""
+    transport = _install_project(monkeypatch, project_count=5)
+
+    list_volumes(make_offline_api(), {'project': 'P', 'well': ['W1', 'W1']})
+
+    listings = [call.url for call in transport.calls if call.url.startswith(f'{V1}/{route}')]
+    assert [parse_qs(url.partition('?')[2])['well'] for url in listings] == [['W1'], ['W1']]

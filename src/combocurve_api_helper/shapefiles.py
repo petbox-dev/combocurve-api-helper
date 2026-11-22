@@ -8,7 +8,7 @@ from typing import Optional, Union, cast
 from urllib.parse import urlsplit
 
 from ._transport import _send_to_external_url
-from .base import APIBase, Item, ItemList, WriteResponse
+from .base import JOB_POLL_SECONDS, JOB_WAIT_TIMEOUT_SECONDS, APIBase, Item, ItemList, WriteResponse
 
 GET_LIMIT = 200  # the maximum of `take` on the shapefile list and features routes (verified live 2026-11-22)
 
@@ -242,7 +242,11 @@ class Shapefiles(APIBase):
         job = self._post_shapefile_upload_import(project_id, str(ticket['uploadId']), data)
         finished = self._wait_for_shapefile_job(project_id, str(job['jobId']), timeout_seconds, poll_seconds)
         result = finished.get('result')
-        if finished.get('status') != SUCCESSFUL_JOB_STATUS or not isinstance(result, Mapping):
+        if (
+            finished.get('status') != SUCCESSFUL_JOB_STATUS
+            or not isinstance(result, Mapping)
+            or 'shapefileId' not in result
+        ):
             raise RuntimeError(f'shapefile upload job {job["jobId"]} did not succeed: {finished}')
         shapefile_id = str(result['shapefileId'])
         return self._get_items(self._shapefile_url(project_id, shapefile_id))[0]
@@ -391,7 +395,7 @@ class Shapefiles(APIBase):
         return self._get_items(self.get_company_shapefile_job_url(job_id))[0]
 
     def wait_for_company_shapefile_job(
-        self, job_id: str, timeout_seconds: float = 600.0, poll_seconds: float = 2.0
+        self, job_id: str, timeout_seconds: float = JOB_WAIT_TIMEOUT_SECONDS, poll_seconds: float = JOB_POLL_SECONDS
     ) -> Item:
         """
         Polls `get_company_shapefile_job` every `poll_seconds` until the job is no longer `pending` or
@@ -599,8 +603,8 @@ class Shapefiles(APIBase):
         self,
         zip_file: Union[str, Path, bytes],
         data: Item,
-        timeout_seconds: float = 600.0,
-        poll_seconds: float = 2.0,
+        timeout_seconds: float = JOB_WAIT_TIMEOUT_SECONDS,
+        poll_seconds: float = JOB_POLL_SECONDS,
     ) -> Item:
         """
         Uploads a shapefile zip as a map layer on the company route and returns the new layer's metadata.
@@ -792,7 +796,11 @@ class Shapefiles(APIBase):
         return self._get_items(self.get_project_shapefile_job_url(project_id, job_id))[0]
 
     def wait_for_project_shapefile_job(
-        self, project_id: str, job_id: str, timeout_seconds: float = 600.0, poll_seconds: float = 2.0
+        self,
+        project_id: str,
+        job_id: str,
+        timeout_seconds: float = JOB_WAIT_TIMEOUT_SECONDS,
+        poll_seconds: float = JOB_POLL_SECONDS,
     ) -> Item:
         """
         Polls `get_project_shapefile_job` every `poll_seconds` until the job is no longer `pending` or
@@ -913,8 +921,8 @@ class Shapefiles(APIBase):
         project_id: str,
         zip_file: Union[str, Path, bytes],
         data: Item,
-        timeout_seconds: float = 600.0,
-        poll_seconds: float = 2.0,
+        timeout_seconds: float = JOB_WAIT_TIMEOUT_SECONDS,
+        poll_seconds: float = JOB_POLL_SECONDS,
     ) -> Item:
         """
         Uploads a shapefile zip as a map layer in this project and returns the new layer's metadata.
@@ -961,4 +969,4 @@ def _read_upload_zip(zip_file: Union[str, Path, bytes]) -> bytes:
 
 def _is_macos_metadata(member: PurePosixPath) -> bool:
     """True for a member that macOS adds to a zip: under a `__MACOSX` folder, or an AppleDouble `._` file."""
-    return member.parts[0] == '__MACOSX' or member.name.startswith('._')
+    return bool(member.parts) and (member.parts[0] == '__MACOSX' or member.name.startswith('._'))

@@ -17,11 +17,12 @@ from urllib.parse import urlsplit, urlunsplit
 import requests
 import urllib3.exceptions
 from requests import Response
+from typing_extensions import TypeAlias
 
 from ._batch import BatchChunk, ChunkSpec, _RateLimitState, _whole_chunk_failure, chunk_from_207_body
 
-# `requests` query parameters, as `APIBase` passes them.
-QueryParams = Mapping[str, Union[str, int, float]]
+# `requests` query parameters, as `APIBase` passes them (the `params` channel; see `base._drop_params_already_in_url`).
+QueryParams: TypeAlias = Mapping[str, Union[str, int, float]]
 
 # HTTP retry policy. Two retryable conditions:
 #   * 429 (Too Many Requests) -- ComboCurve's write quota is enforced by Google
@@ -106,10 +107,9 @@ def _retry_fits_before_deadline(method: str, pause_seconds: float, deadline: flo
     pause to end before `deadline`; its read timeout then shrinks to the time that remains. A write
     also needs the full read timeout to fit after the pause: a shortened timeout could turn a
     known-not-applied 429 into a lost connection, and then "the server may have applied it"."""
-    needed = pause_seconds
     if not _is_read_only(method):
-        return time.monotonic() + needed + _REQUEST_TIMEOUT_SECONDS[1] <= deadline
-    return time.monotonic() + needed < deadline
+        return time.monotonic() + pause_seconds + _REQUEST_TIMEOUT_SECONDS[1] <= deadline
+    return time.monotonic() + pause_seconds < deadline
 
 
 def _timeout_within(deadline: float) -> tuple[float, float]:
@@ -159,16 +159,14 @@ def _send_request(
     return _retry_connection_failures(method, send_once, deadline)
 
 
-def _send_to_external_url(
-    method: str, url: str, headers: Mapping[str, str], content: bytes, *, deadline: float | None = None
-) -> Response:
+def _send_to_external_url(method: str, url: str, headers: Mapping[str, str], content: bytes) -> Response:
     """Send `content` as the raw body to `url` on a host that is not ComboCurve (a signed storage url),
     with only `headers`: no auth header is fetched or sent. Same timeout and connection-failure policy as
     `_send_request` (`_retry_connection_failures`): a request that never reached the server is sent
     again, a GET or HEAD is sent again after a lost connection, and a write that may have reached the
-    server is not. `deadline` as in `_send_request`; None means `_CALL_DEADLINE_SECONDS` from this call.
-    No status is retried: the response is returned whatever its status."""
-    call_deadline = time.monotonic() + _CALL_DEADLINE_SECONDS if deadline is None else deadline
+    server is not. The call has `_CALL_DEADLINE_SECONDS` from now (see `_send_request` for how a deadline
+    cuts each send). No status is retried: the response is returned whatever its status."""
+    call_deadline = time.monotonic() + _CALL_DEADLINE_SECONDS
 
     def send_once() -> Response:
         return requests.request(method, url, headers=dict(headers), data=content, timeout=_send_timeout(call_deadline))

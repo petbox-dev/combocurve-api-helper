@@ -15,10 +15,52 @@ MAX_LOOKUP_TABLE_ASSIGNMENT_RECORDS = 500  # the documented maximum body length 
 MAX_ECON_MODEL_ASSIGNMENT_RECORDS = 500
 # The documented maximum body length of the model-assignment PUT and DELETE.
 MAX_MODEL_ASSIGNMENT_RECORDS = 500
-
-
 # The documented maximum number of `wellIds` across one assignment PUT request (econ-model and model).
 MAX_ASSIGNMENT_WELL_IDS = 25_000
+
+
+def _count_well_ids(data: ItemList) -> int:
+    """The number of `wellIds` across the records of `data`. A `wellIds` counts when it is a sequence of ids (a
+    list or a tuple, as `_require_assignment_wells` accepts); a record without one, or with a bare `str`,
+    counts 0."""
+    count = 0
+    for record in data:
+        well_ids = record.get('wellIds')
+        if isinstance(well_ids, Sequence) and not isinstance(well_ids, str):
+            count += len(well_ids)
+    return count
+
+
+def _require_assignment_wells(data: ItemList) -> None:
+    """
+    Refuse an assignment record that names no well: one without `allWells: true` whose `wellIds`
+    is absent, empty, a bare `str`, or holds an empty id (an unresolved lookup). Checked for every
+    record before any request.
+    """
+    for index, record in enumerate(data):
+        if record.get('allWells') is True:
+            continue
+        well_ids = record.get('wellIds')
+        if not isinstance(well_ids, Sequence):
+            raise ValueError(f'data[{index}] must have allWells: true or a non-empty wellIds')
+        APIBase._require_id_sequence(cast('Sequence[str]', well_ids), f'data[{index}].wellIds')
+
+
+def _require_assignment_put(data: ItemList, max_records: int) -> None:
+    """The local checks of an assignment PUT, before any request: at least one record, at most
+    `max_records` records, and at most `MAX_ASSIGNMENT_WELL_IDS` `wellIds` across them."""
+    APIBase._require_records(data, 'assignment record')
+    APIBase._require_at_most(len(data), max_records, 'data', 'records')
+    APIBase._require_at_most(_count_well_ids(data), MAX_ASSIGNMENT_WELL_IDS, 'data', 'wellIds')
+
+
+def _require_assignment_delete(data: ItemList, max_records: int) -> None:
+    """The local checks of an assignment DELETE, before any request: at least one record, at most
+    `max_records` records, and every record names its wells (`_require_assignment_wells`): an empty
+    selection would widen the delete."""
+    APIBase._require_records(data, 'assignment record')
+    APIBase._require_at_most(len(data), max_records, 'data', 'records')
+    _require_assignment_wells(data)
 
 
 class Scenarios(APIBase):
@@ -266,7 +308,7 @@ class Scenarios(APIBase):
     # Combos
 
     def get_scenario_combos(
-        self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None
+        self, project_id: str, scenario_id: str, filters: Optional[QueryFilters] = None
     ) -> ItemList:
         """
         Returns the saved combos (combo groups) of a specific scenario. Each one carries
@@ -282,7 +324,7 @@ class Scenarios(APIBase):
         params = {'take': GET_LIMIT}
         return self._get_items(url, params)
 
-    def count_scenario_combos(self, project_id: str, scenario_id: str, filters: Optional[dict[str, str]] = None) -> int:
+    def count_scenario_combos(self, project_id: str, scenario_id: str, filters: Optional[QueryFilters] = None) -> int:
         """
         Returns the number of combos in a scenario matching `filters`, from the
         `X-Query-Count` header of a HEAD request (no documents are fetched).
@@ -626,9 +668,7 @@ class Scenarios(APIBase):
             "successCount": 123
         }
         """
-        self._require_records(data, 'assignment record')
-        self._require_at_most(len(data), MAX_ECON_MODEL_ASSIGNMENT_RECORDS, 'data', 'records')
-        self._require_at_most(self._count_well_ids(data), MAX_ASSIGNMENT_WELL_IDS, 'data', 'wellIds')
+        _require_assignment_put(data, MAX_ECON_MODEL_ASSIGNMENT_RECORDS)
         url = self.get_scenario_econ_model_assignments_url(project_id, scenario_id)
         return cast('list[WriteResponse]', self._put_items(url, data))
 
@@ -668,9 +708,7 @@ class Scenarios(APIBase):
             }
         ]
         """
-        self._require_records(data, 'assignment record')
-        self._require_at_most(len(data), MAX_ECON_MODEL_ASSIGNMENT_RECORDS, 'data', 'records')
-        self._require_assignment_wells(data)
+        _require_assignment_delete(data, MAX_ECON_MODEL_ASSIGNMENT_RECORDS)
         url = self.get_scenario_econ_model_assignments_url(project_id, scenario_id)
         return self._delete_headers(url, data)
 
@@ -904,9 +942,7 @@ class Scenarios(APIBase):
             "successCount": 123
         }
         """
-        self._require_records(data, 'assignment record')
-        self._require_at_most(len(data), MAX_MODEL_ASSIGNMENT_RECORDS, 'data', 'records')
-        self._require_at_most(self._count_well_ids(data), MAX_ASSIGNMENT_WELL_IDS, 'data', 'wellIds')
+        _require_assignment_put(data, MAX_MODEL_ASSIGNMENT_RECORDS)
         filters: Optional[dict[str, str]] = {'addWellsToForecast': 'true'} if add_wells_to_forecast else None
         url = self.get_scenario_model_assignments_url(project_id, scenario_id, filters)
         assignments = cast('list[WriteResponse]', self._put_items(url, data))
@@ -949,9 +985,7 @@ class Scenarios(APIBase):
             }
         ]
         """
-        self._require_records(data, 'assignment record')
-        self._require_at_most(len(data), MAX_MODEL_ASSIGNMENT_RECORDS, 'data', 'records')
-        self._require_assignment_wells(data)
+        _require_assignment_delete(data, MAX_MODEL_ASSIGNMENT_RECORDS)
         url = self.get_scenario_model_assignments_url(project_id, scenario_id)
         return self._delete_headers(url, data)
 
@@ -1216,7 +1250,8 @@ class Scenarios(APIBase):
         filters = None if incremental_index is None else {'incrementalIndex': str(incremental_index)}
         url = self.get_scenario_lookup_table_assignment_by_id_url(project_id, scenario_id, lookup_table_id, filters)
         # One request, not `_delete_responses`: its body is an `ItemList` it would chunk, and this
-        # route's body is a list of id strings capped above.
+        # route's body is a list of id strings capped above. So the blank-id refusal is applied here.
+        self._refuse_delete_of_a_blank_id(url)
         response = self._request_with_retry('delete', url, json_body=well_id_list)
         response.raise_for_status()
         return response.headers

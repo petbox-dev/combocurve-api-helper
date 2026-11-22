@@ -9,6 +9,7 @@ session, so an offline run waits for one timeout, not one per test.
 
 import http.client
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -43,32 +44,54 @@ class _CollectionFetch:
 _fetch_outcome: Optional[_CollectionFetch] = None
 
 
-def _operations_in(items: list[Any]) -> list[Operation]:
-    """(item name, request) for every leaf item (an item with a `request`) under `items`."""
+class MalformedCollection(ValueError):
+    """A collection tree entry that is not what a Postman collection holds: an `item` that is not a list,
+    an entry that is not an object, or a `request` that is not an object. The same rule as
+    `scripts/generate_docstrings.py` `build_examples`, so the route tooling and the docstring generator
+    give a malformed collection the same verdict (unavailable), not a usable subset of it."""
+
+
+def _operations_in(items: object) -> list[Operation]:
+    """(item name, request) for every leaf item (an item with a `request`) under `items`; raises
+    `MalformedCollection` for a malformed entry."""
+    if not isinstance(items, list):
+        raise MalformedCollection(f'collection `item` is {type(items).__name__}, expected a list')
     operations: list[Operation] = []
     for item in items:
         if not isinstance(item, dict):
-            continue
-        if isinstance(item.get('item'), list):
+            raise MalformedCollection(f'collection `item` entry is {type(item).__name__}, expected an object')
+        if 'item' in item:
             operations.extend(_operations_in(item['item']))
-        elif isinstance(item.get('request'), dict):
+        elif 'request' in item:
+            if not isinstance(item['request'], dict):
+                raise MalformedCollection(f'operation {item.get("name")!r}: `request` is not an object')
             operations.append((str(item.get('name') or ''), item['request']))
     return operations
 
 
-def _fetch_collection() -> _CollectionFetch:
+def collection_operations(payload: Mapping[str, Any]) -> list[Operation]:
+    """(item name, request) for every operation of a collection document; empty when it has no `item` list.
+    Raises `MalformedCollection` for a malformed tree."""
+    items = payload.get('item')
+    return _operations_in(items) if isinstance(items, list) else []
+
+
+def fetch_collection() -> _CollectionFetch:
     """Fetch the collection and take its operations. A collection with no operation is unavailable,
     not empty: an empty one would fail every route test for a reason that is not theirs. The same
     rule as `scripts/generate_docstrings.py` `CollectionUnavailable`, which also counts `OSError`
-    (a broken CA bundle or certificate store raises it, not a `requests` exception)."""
+    (a broken CA bundle or certificate store raises it, not a `requests` exception). Also the fetch of
+    `scripts/generate_route_coverage.py`, which exits 2 when `operations` is None."""
     try:
         response = requests.get(COLLECTION_URL, headers={'User-Agent': 'Mozilla/5.0'}, timeout=60)
         response.raise_for_status()
         payload = response.json()
     except (requests.RequestException, http.client.HTTPException, OSError, ValueError) as error:
         return _CollectionFetch(None, str(error))
-    items = payload.get('item') if isinstance(payload, dict) else None
-    operations = _operations_in(items) if isinstance(items, list) else []
+    try:
+        operations = collection_operations(payload) if isinstance(payload, dict) else []
+    except MalformedCollection as error:
+        return _CollectionFetch(None, str(error))
     if not operations:
         return _CollectionFetch(None, 'the payload has no `item` tree with an operation in it')
     return _CollectionFetch(operations, '')
@@ -79,7 +102,7 @@ def collection_requests() -> list[Operation]:
     collection is unavailable; the first outcome, a failure included, is kept for the session."""
     global _fetch_outcome
     if _fetch_outcome is None:
-        _fetch_outcome = _fetch_collection()
+        _fetch_outcome = fetch_collection()
     if _fetch_outcome.operations is None:
         pytest.skip(f'ComboCurve Postman collection unavailable: {_fetch_outcome.unavailable_reason}')
     return list(_fetch_outcome.operations)  # a copy: a caller cannot change the session cache

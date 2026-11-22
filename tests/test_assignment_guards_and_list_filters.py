@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Union
 import pytest
 from pytest import MonkeyPatch
 
-from tests.http_fakes import FakeResponse, install_recording_transport, make_offline_api
+from tests.http_fakes import FakeResponse, install_recording_transport, make_offline_api, object_ids
 
 if TYPE_CHECKING:
     from combocurve_api_helper.base import ItemList
@@ -204,7 +204,7 @@ def test_500_model_assignment_records_go_as_one_request(
 
 def test_lookup_table_unassign_over_500_ids_keeps_its_message(monkeypatch: MonkeyPatch) -> None:
     recorder = install_recording_transport(monkeypatch)
-    well_ids = [f'{i:024x}' for i in range(1, 502)]
+    well_ids = object_ids(501)
 
     with pytest.raises(ValueError, match=r'^well_ids holds 501 ids; the route takes at most 500 per request$'):
         make_offline_api().delete_scenario_lookup_table_assignment_by_id(PROJECT_ID, SCENARIO_ID, TABLE_ID, well_ids)
@@ -272,7 +272,7 @@ def test_get_econ_run_onelines_sends_the_filters(monkeypatch: MonkeyPatch) -> No
 @pytest.mark.parametrize('method_name', ['put_scenario_model_assignments', 'put_scenario_econ_model_assignments'])
 def test_more_than_25000_well_ids_across_records_are_refused(monkeypatch: MonkeyPatch, method_name: str) -> None:
     recorder = install_recording_transport(monkeypatch)
-    well_ids = [f'{i:024x}' for i in range(1, 12_502)]
+    well_ids = object_ids(12_501)
     data: ItemList = [{'model': 'forecast', 'qualifierName': 'q', 'wellIds': well_ids}] * 2
 
     with pytest.raises(ValueError, match=r'^data holds 25002 wellIds; the route takes at most 25000 per request$'):
@@ -284,7 +284,7 @@ def test_more_than_25000_well_ids_across_records_are_refused(monkeypatch: Monkey
 @pytest.mark.parametrize('method_name', ['put_scenario_model_assignments', 'put_scenario_econ_model_assignments'])
 def test_25000_well_ids_go_as_one_request(monkeypatch: MonkeyPatch, method_name: str) -> None:
     recorder = install_recording_transport(monkeypatch, FakeResponse(207, {'results': []}))
-    well_ids = [f'{i:024x}' for i in range(1, 12_501)]
+    well_ids = object_ids(12_500)
     data: ItemList = [{'model': 'forecast', 'qualifierName': 'q', 'wellIds': well_ids}, {'allWells': True}] * 2
 
     getattr(make_offline_api(), method_name)(PROJECT_ID, SCENARIO_ID, data)
@@ -296,7 +296,7 @@ def test_25000_well_ids_go_as_one_request(monkeypatch: MonkeyPatch, method_name:
 
 
 def test_well_incrementals_split_more_than_100_well_ids(monkeypatch: MonkeyPatch) -> None:
-    well_ids = [f'{i:024x}' for i in range(1, 152)]
+    well_ids = object_ids(151)
     first: ItemList = [{'wellId': well_ids[0], 'incrementalIndexes': [1]}]
     second: ItemList = [{'wellId': well_ids[150], 'incrementalIndexes': [1]}]
     recorder = install_recording_transport(monkeypatch, FakeResponse(200, first), FakeResponse(200, second))
@@ -319,3 +319,32 @@ def test_well_incrementals_without_filters_sends_one_request_of_500(monkeypatch:
     assert make_offline_api().get_scenario_well_incrementals(PROJECT_ID, SCENARIO_ID) == []
     assert recorder.calls[0].url.endswith(f'/scenarios/{SCENARIO_ID}/well-assignments/incrementals')
     assert recorder.calls[0].params == {'take': 500}
+
+
+@pytest.mark.parametrize(
+    ('arguments', 'message'),
+    [
+        ({'qualifier_name': ''}, 'qualifier_name'),
+        ({'qualifier_name': '  '}, 'qualifier_name'),
+        ({'scenario_id': ''}, 'scenario_id'),
+    ],
+)
+def test_econ_model_unassign_refuses_a_blank_qualifier_or_scenario(
+    monkeypatch: MonkeyPatch, arguments: dict[str, str], message: str
+) -> None:
+    """A blank `qualifierName` (or `scenarioId`) the route may read as absent would widen the unassign."""
+    transport = install_recording_transport(monkeypatch)
+    call: dict[str, Any] = {'scenario_id': 'sc', 'wells': ['w1'], **arguments}
+    with pytest.raises(ValueError, match=message):
+        make_offline_api().delete_econ_model_assignments_by_type_by_id('p', 'FluidModel', 'm', **call)
+    assert transport.calls == []
+
+
+def test_the_well_id_cap_counts_a_tuple_of_well_ids(monkeypatch: MonkeyPatch) -> None:
+    """`wellIds` may be any sequence of ids (`_require_assignment_wells` accepts it), so the 25,000 cap counts
+    a tuple too."""
+    transport = install_recording_transport(monkeypatch)
+    data: Any = [{'model': 'm', 'wellIds': tuple(object_ids(25_001))}]
+    with pytest.raises(ValueError, match='wellIds'):
+        make_offline_api().put_scenario_econ_model_assignments('p', 'sc', data)
+    assert transport.calls == []

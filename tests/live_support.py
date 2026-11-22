@@ -26,9 +26,10 @@ LIVE_TEST_SKIP_REASON = 'requires CC_LIVE_TEST=1 and ~/.combocurve/dev credentia
 
 
 def live_tests_enabled() -> bool:
-    """True when `CC_LIVE_TEST` is set to a non-empty value and the dev credential download is in place.
-    The credential check uses the loader's own lookup, so the skip cannot disagree with the loader."""
+    """True when `CC_LIVE_TEST` is `1` (or `true` / `yes`; `0`, `false` or empty keep the write tests off) and
+    the dev credential download is in place. The credential check uses the loader's own lookup, so the skip
+    cannot disagree with the loader."""
     return (
-        bool(os.environ.get('CC_LIVE_TEST'))
+        os.environ.get('CC_LIVE_TEST', '').strip().lower() in ('1', 'true', 'yes')
         and find_native_credentials_directory(DEV_CREDENTIALS_DIRECTORY) is not None
     )

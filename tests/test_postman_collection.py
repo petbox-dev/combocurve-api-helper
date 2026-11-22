@@ -52,7 +52,7 @@ def test_the_collection_url_matches_the_docstring_generator() -> None:
 def test_a_collection_with_no_operation_is_unavailable(monkeypatch: MonkeyPatch, payload: Any) -> None:
     _answer_with(monkeypatch, FakeResponse(200, payload))
 
-    outcome = postman_collection._fetch_collection()
+    outcome = postman_collection.fetch_collection()
 
     assert outcome.operations is None
     assert 'operation' in outcome.unavailable_reason
@@ -65,7 +65,7 @@ def test_a_collection_with_no_operation_is_unavailable(monkeypatch: MonkeyPatch,
 def test_a_transport_or_certificate_failure_is_unavailable(monkeypatch: MonkeyPatch, error: BaseException) -> None:
     _raise_on_get(monkeypatch, error)
 
-    assert postman_collection._fetch_collection().unavailable_reason == str(error)
+    assert postman_collection.fetch_collection().unavailable_reason == str(error)
 
 
 @pytest.mark.parametrize('response', [FakeResponse(500, {'error': 'x'}), FakeResponse(200, text='<html>')])
@@ -74,13 +74,29 @@ def test_an_error_status_or_a_body_that_is_not_json_is_unavailable(
 ) -> None:
     _answer_with(monkeypatch, response)
 
-    assert postman_collection._fetch_collection().operations is None
+    assert postman_collection.fetch_collection().operations is None
 
 
 def test_operations_are_the_leaf_items_of_every_folder(monkeypatch: MonkeyPatch) -> None:
     _answer_with(monkeypatch, FakeResponse(200, {'item': [{'name': 'folder', 'item': [OPERATION]}]}))
 
-    assert postman_collection._fetch_collection().operations == [('get-sample', OPERATION['request'])]
+    assert postman_collection.fetch_collection().operations == [('get-sample', OPERATION['request'])]
+
+
+@pytest.mark.parametrize(
+    'tree',
+    [
+        [OPERATION, None],
+        [{'name': 'folder', 'item': 'not a list'}, OPERATION],
+        [OPERATION, {'name': 'bad', 'request': 'GET /x'}],
+    ],
+    ids=['entry-not-an-object', 'folder-item-not-a-list', 'request-not-an-object'],
+)
+def test_a_malformed_entry_makes_the_collection_unavailable(monkeypatch: MonkeyPatch, tree: list[Any]) -> None:
+    """As in `scripts/generate_docstrings.py`: a malformed entry gives no verdict, not the usable rest."""
+    _answer_with(monkeypatch, FakeResponse(200, {'item': tree}))
+
+    assert postman_collection.fetch_collection().operations is None
 
 
 def test_an_unavailable_collection_skips_and_is_not_fetched_again(monkeypatch: MonkeyPatch) -> None:

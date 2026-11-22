@@ -120,7 +120,7 @@ class TypeCurves(APIBase):
     # API calls
     ###########
 
-    def get_type_curves(self, project_id: str, filters: dict[str, str] | None = None) -> ItemList:
+    def get_type_curves(self, project_id: str, filters: QueryFilters | None = None) -> ItemList:
         """
         Returns the type curves of a project. Fits and normalization are not embedded (v1
         embedded `fits`); read them with `get_type_curve_fits` / `get_type_curve_normalization`.
@@ -153,7 +153,7 @@ class TypeCurves(APIBase):
         type_curves = self._get_items(url, {'take': TYPE_CURVE_LIST_GET_LIMIT})
         return self._keysort(type_curves, LIST_SORT_ORDER)
 
-    def count_type_curves(self, project_id: str, filters: dict[str, str] | None = None) -> int:
+    def count_type_curves(self, project_id: str, filters: QueryFilters | None = None) -> int:
         """
         Returns the number of type curves matching `filters`, from the HEAD route's `X-Query-Count`.
 
@@ -382,7 +382,7 @@ class TypeCurves(APIBase):
         """
         filters = self._require_any_filter({'name': name, 'id': id}, 'name or id')
         try:
-            responses = self._delete_responses(self.get_type_curves_url(project_id, filters), data=[])
+            return self._delete_headers(self.get_type_curves_url(project_id, filters))
         except requests.HTTPError as error:
             if (
                 error.response is not None
@@ -391,7 +391,6 @@ class TypeCurves(APIBase):
             ):
                 return CaseInsensitiveDict({'X-Delete-Count': '0'})
             raise
-        return responses[0].headers
 
     def delete_type_curve_by_id(self, project_id: str, type_curve_id: str) -> CaseInsensitiveDict[str]:
         """

@@ -1,7 +1,7 @@
 import warnings
 from collections.abc import Mapping
 from types import MappingProxyType
-from typing import Callable, Optional, cast
+from typing import Callable, Optional, Union, cast
 
 from more_itertools import chunked
 from requests.structures import CaseInsensitiveDict
@@ -1329,7 +1329,9 @@ class Forecasts(APIBase):
             'well',
         )
 
-    def put_forecast_daily_volumes(self, project_id: str, forecast_id: str, data: ItemList) -> list[WriteResponse]:
+    def put_forecast_daily_volumes(
+        self, project_id: str, forecast_id: str, data: Union[Item, ItemList]
+    ) -> list[WriteResponse]:
         """
         Replaces or creates daily volumes in a forecast. `data` is one well record or a list of them; each
         record has `well` and `phases`, and each phase has `phase` and `series` (`series`, `startDate`,
@@ -1395,11 +1397,13 @@ class Forecasts(APIBase):
             "failedCount": 123
         }
         """
-        self._require_records(data, 'well record')
+        records = self._records_from(data, 'well record')
         url = self.get_forecast_daily_volumes_url(project_id, forecast_id)
-        return cast('list[WriteResponse]', self._put_items(url, data))
+        return cast('list[WriteResponse]', self._put_items(url, records))
 
-    def put_forecast_monthly_volumes(self, project_id: str, forecast_id: str, data: ItemList) -> list[WriteResponse]:
+    def put_forecast_monthly_volumes(
+        self, project_id: str, forecast_id: str, data: Union[Item, ItemList]
+    ) -> list[WriteResponse]:
         """
         Replaces or creates monthly volumes in a forecast. The shape of `data` is that of
         `put_forecast_daily_volumes`. Monthly values are converted to daily rates before storage, and a
@@ -1464,9 +1468,9 @@ class Forecasts(APIBase):
             "failedCount": 123
         }
         """
-        self._require_records(data, 'well record')
+        records = self._records_from(data, 'well record')
         url = self.get_forecast_monthly_volumes_url(project_id, forecast_id)
-        return cast('list[WriteResponse]', self._put_items(url, data))
+        return cast('list[WriteResponse]', self._put_items(url, records))
 
     def post_forecast_segment_parameters(
         self, project_id: str, forecast_id: str, well_id: str, phase: str, series: str, data: ItemList

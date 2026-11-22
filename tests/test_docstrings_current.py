@@ -21,7 +21,7 @@ def test_docstring_examples_match_spec() -> None:
     except (subprocess.TimeoutExpired, OSError) as exc:
         pytest.skip(f'could not run docstring freshness check: {exc}')
     if result.returncode == 2:
-        pytest.skip('no verdict: Postman collection unreachable (offline) or no marker matched it')
+        pytest.skip(f'no verdict (offline, or no marker matched): {result.stderr.strip()}')
     assert result.returncode == 0, (
         'Docstring examples are out of sync with the Postman collection. '
         'Re-run: python scripts/generate_docstrings.py\n' + result.stdout + result.stderr

@@ -6,7 +6,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Callable, ClassVar, Optional, Union, cast
+from typing import Any, Callable, ClassVar, Optional, Union
 from urllib.parse import parse_qsl, quote, urlencode, urlsplit
 
 import requests
@@ -32,6 +32,7 @@ from ._transport import _RATE_LIMIT_DEFAULT_PAUSE_SECONDS as _RATE_LIMIT_DEFAULT
 from ._transport import _READ_ONLY_METHODS as _READ_ONLY_METHODS
 from ._transport import _REQUEST_TIMEOUT_SECONDS as _REQUEST_TIMEOUT_SECONDS
 from ._transport import _RETRYABLE_GATEWAY_STATUSES as _RETRYABLE_GATEWAY_STATUSES
+from ._transport import QueryParams as QueryParams
 from ._transport import _CallDeadlinePassed as _CallDeadlinePassed
 from ._transport import _gateway_retry_allowed as _gateway_retry_allowed
 from ._transport import _is_read_only as _is_read_only
@@ -88,6 +89,10 @@ WELL_FILTER_LIMIT = 100
 # A job in one of these statuses has not finished (`APIBase._wait_for_job`). Seen live: shapefile and
 # formations jobs go `pending` -> `running` -> `successful` (2026-11-21 and 2026-11-22).
 RUNNING_JOB_STATUSES = frozenset({'pending', 'running'})
+# The default wait of the shapefile and formations `wait_for_*` methods. Exports wait longer
+# (`exports.EXPORT_WAIT_TIMEOUT_SECONDS`).
+JOB_WAIT_TIMEOUT_SECONDS = 600.0
+JOB_POLL_SECONDS = 2.0
 
 # Paging filters that a request split by `_filter_value_batches` cannot honour: each batch request would
 # apply them on its own.
@@ -136,9 +141,7 @@ class WriteResponse(TypedDict):
     generalErrors: list[WriteError]
 
 
-def _drop_params_already_in_url(
-    url: str, params: Optional[Mapping[str, Union[str, int, float]]]
-) -> Optional[Mapping[str, Union[str, int, float]]]:
+def _drop_params_already_in_url(url: str, params: Optional[QueryParams]) -> Optional[QueryParams]:
     """Strip keys from `params` that the `url` already carries in its query string.
 
     Query parameters reach a request through two independent channels: the `filters`
@@ -245,7 +248,7 @@ class APIBase:
         method: str,
         url: str,
         *,
-        params: Optional[Mapping[str, Union[str, int, float]]] = None,
+        params: Optional[QueryParams] = None,
         json_body: Any = None,
     ) -> Response:
         """Issue a single HTTP request, refreshing auth headers each attempt and
@@ -270,9 +273,7 @@ class APIBase:
         params = _drop_params_already_in_url(url, params)
         return _send_with_status_retries(method, url, self._auth_headers, params=params, json_body=json_body)
 
-    def _request_items_pages(
-        self, method: str, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None
-    ) -> Iterator[Response]:
+    def _request_items_pages(self, method: str, url: str, params: Optional[QueryParams] = None) -> Iterator[Response]:
         """
         Generic method for dispatching GET requests for the given `url` yielding
         response of each page
@@ -303,12 +304,15 @@ class APIBase:
         url: str,
         data: ItemList,
         chunksize: Optional[int] = None,
-        params: Optional[Mapping[str, Union[str, int, float]]] = None,
+        params: Optional[QueryParams] = None,
     ) -> Iterator[Response]:
         """
         Generic method for dispatching POST/PATCH/PUT requests for the given
-        `url` yielding response of each page
+        `url` yielding response of each page. Every DELETE helper sends through here, so a delete url built
+        from a blank id is refused here (`_refuse_delete_of_a_blank_id`), before the first request.
         """
+        if method.lower() == 'delete':
+            self._refuse_delete_of_a_blank_id(url)
         if chunksize is None:
             chunksize = len(data)
 
@@ -370,7 +374,9 @@ class APIBase:
         max_workers: int = 10,
         on_progress: Optional[Callable[[BatchChunk], None]] = None,
     ) -> BatchWriteResult:
-        """Send `data` to `url` in parallel chunks, returning the stitched 207 envelope.
+        """Send `data` to `url` in parallel chunks, returning the stitched 207 envelope. A `chunksize` or
+        `max_workers` below 1 is refused with `ValueError` before any request (`chunksize=0` sent nothing and
+        reported a clean write).
 
         Each chunk is one `method` request of up to `chunksize` records, sent
         across a `max_workers` thread pool with coordinated 429 backoff. Unlike
@@ -384,6 +390,8 @@ class APIBase:
         the workers from refreshing the token concurrently. A chunk that failed with
         `may_have_applied=True` must not be sent again before checking the server.
         """
+        if chunksize < 1 or max_workers < 1:
+            raise ValueError(f'chunksize and max_workers must each be at least 1, not {chunksize} and {max_workers}')
         chunk_specs: list[ChunkSpec] = []
         offset = 0
         for index, chunk in enumerate(chunked(data, chunksize)):
@@ -450,11 +458,18 @@ class APIBase:
 
         For the routes whose body and answer are one object, not the list that `_post_items` and the
         other list helpers chunk and page: one `_request_with_retry` call, `raise_for_status`, then the
-        first object of `_extract_json`. No next page is followed.
+        first object of `_extract_json`. No next page is followed. A success with an empty body (or an empty
+        list) returns `{}`: the request went through, so raising afterwards would report a write that was
+        applied as failed.
         """
+        if method.lower() == 'delete':
+            self._refuse_delete_of_a_blank_id(url)
         response = self._request_with_retry(method, url, json_body=body)
         response.raise_for_status()
-        return self._extract_json(response)[0]
+        if not response.text.strip():
+            return {}
+        items = self._extract_json(response)
+        return items[0] if items else {}
 
     @staticmethod
     def _wait_for_job(
@@ -479,25 +494,21 @@ class APIBase:
                 raise TimeoutError(f'{description} is still {job.get("status")!r} after {timeout_seconds} seconds')
             time.sleep(poll_seconds)
 
-    def _get_responses_iterator(
-        self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None
-    ) -> Iterator[Response]:
+    def _get_responses_iterator(self, url: str, params: Optional[QueryParams] = None) -> Iterator[Response]:
         """
         Generic method for dispatching GET requests for the given `url`
         strictly returning a generator of requests.Response
         """
         yield from self._request_items_pages('get', url, params)
 
-    def _get_responses(self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None) -> list[Response]:
+    def _get_responses(self, url: str, params: Optional[QueryParams] = None) -> list[Response]:
         """
         Generic method for dispatching GET requests for the given `url`
         strictly returning a list of requests.Response
         """
         return list(self._request_items_pages('get', url, params))
 
-    def _get_items_iterator(
-        self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None
-    ) -> Iterator[ItemList]:
+    def _get_items_iterator(self, url: str, params: Optional[QueryParams] = None) -> Iterator[ItemList]:
         """
         Generic method for dispatching GET requests for the given `url`
         strictly returning a generator of JSON of type: list of objects
@@ -507,7 +518,7 @@ class APIBase:
         """
         yield from self.iter_pages(url, params)
 
-    def iter_pages(self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None) -> Iterator[ItemList]:
+    def iter_pages(self, url: str, params: Optional[QueryParams] = None) -> Iterator[ItemList]:
         """
         Yield one page of a GET list route at a time: the parsed JSON list of each response, so a
         caller can stop early and bound its memory or bytes while it reads.
@@ -535,7 +546,7 @@ class APIBase:
         for response in self._request_items_pages('get', url, params):
             yield self._extract_json(response)
 
-    def _get_items(self, url: str, params: Optional[Mapping[str, Union[str, int, float]]] = None) -> ItemList:
+    def _get_items(self, url: str, params: Optional[QueryParams] = None) -> ItemList:
         """
         Generic method for dispatching GET requests for the given `url`
         strictly returning JSON of type: list of objects
@@ -656,10 +667,21 @@ class APIBase:
         """
         yield from self._request_items_pages_chunks('delete', url, data, chunksize)
 
+    @staticmethod
+    def _refuse_delete_of_a_blank_id(url: str) -> None:
+        """Refuse a DELETE whose url path has a blank segment (empty or spaces, as a trailing `/` or a `//`) or a
+        `.` / `..` segment: a url built from a blank id. A trailing blank id would reach the collection url, an
+        unfiltered delete if the server reads it as the collection route; `requests` collapses `.` and `..`
+        into the same. No delete route of the API has such a segment."""
+        segments = urlsplit(url).path.split('/')[1:]
+        if any(segment.strip() in ('', '.', '..') for segment in segments):
+            raise ValueError(f'the delete url {url!r} names no id: an id is blank')
+
     def _delete_responses(self, url: str, data: ItemList, chunksize: Optional[int] = None) -> list[Response]:
         """
         Generic method for dispatching DELETE requests for the given `url`
-        strictly returning a list of requests.Response
+        strictly returning a list of requests.Response. A url built from a blank id is refused
+        (`_refuse_delete_of_a_blank_id`, in `_request_items_pages_chunks`).
         """
         return list(self._request_items_pages_chunks('delete', url, data, chunksize))
 
@@ -739,16 +761,6 @@ class APIBase:
             raise ValueError(f'{argument} holds {count} {noun}; the route takes at most {limit} per request')
 
     @staticmethod
-    def _count_well_ids(data: ItemList) -> int:
-        """The number of `wellIds` across the records of `data`; a record without a list `wellIds` counts 0."""
-        count = 0
-        for record in data:
-            well_ids = record.get('wellIds')
-            if isinstance(well_ids, list):
-                count += len(well_ids)
-        return count
-
-    @staticmethod
     def _split_ids(ids: Union[str, Sequence[str]], argument: str) -> list[str]:
         """
         Return `ids` as a list of ids, or raise when it names no id or holds an empty one.
@@ -766,21 +778,6 @@ class APIBase:
                 raise ValueError(f'{argument} must name at least one id, with no empty id between commas')
             return id_list
         return APIBase._require_id_sequence(ids, argument)
-
-    @staticmethod
-    def _require_assignment_wells(data: ItemList) -> None:
-        """
-        Refuse an assignment record that names no well: one without `allWells: true` whose `wellIds`
-        is absent, empty, a bare `str`, or holds an empty id (an unresolved lookup). Checked for every
-        record before any request.
-        """
-        for index, record in enumerate(data):
-            if record.get('allWells') is True:
-                continue
-            well_ids = record.get('wellIds')
-            if not isinstance(well_ids, Sequence):
-                raise ValueError(f'data[{index}] must have allWells: true or a non-empty wellIds')
-            APIBase._require_id_sequence(cast('Sequence[str]', well_ids), f'data[{index}].wellIds')
 
     @staticmethod
     def _require_any_filter(filters: Mapping[str, Optional[str]], parameters: str) -> dict[str, str]:
@@ -846,6 +843,8 @@ class APIBase:
     ) -> list[Optional[QueryFilters]]:
         """Split a repeated-key filter list longer than `limit` into filters of at most `limit` values each.
 
+        An empty list or a blank string is refused with `ValueError` (it would send no `key`, or `key=`, and may
+        widen the request to every row).
         `None`, a single string, and a list at or under the limit pass through as one batch. A longer list is
         de-duplicated first, so a repeated id does not return its rows twice, then cut with `more_itertools.chunked`
         (the same chunker the batched writes use). The batches cover disjoint values, so their rows concatenate and
@@ -860,6 +859,12 @@ class APIBase:
             return [None]
 
         values = filters.get(key)
+        if isinstance(values, str) and not values.strip():
+            raise ValueError(f'{key!r} is blank: pass at least one value, or leave {key!r} out to read all')
+        if values is not None and not isinstance(values, (str, int)) and len(values) == 0:
+            # `_build_params_string` drops an empty list, so the request would carry no `key` and read or count
+            # every row: a caller whose lookup found no ids would get the whole table.
+            raise ValueError(f'{key!r} is an empty list: pass at least one value, or leave {key!r} out to read all')
         if values is None or isinstance(values, (str, int)) or len(values) <= limit:
             return [filters]
 
@@ -897,7 +902,7 @@ class APIBase:
         build_url: Callable[[Optional[QueryFilters]], str],
         filters: Optional[QueryFilters],
         key: str,
-        params: Optional[Mapping[str, Union[str, int, float]]] = None,
+        params: Optional[QueryParams] = None,
     ) -> ItemList:
         """GET every row matching `filters`, splitting a `key` list longer than `WELL_FILTER_LIMIT` into
         requests of at most that many distinct values (`_filter_value_batches`, which also refuses `skip` and

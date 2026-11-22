@@ -16,8 +16,12 @@ This repo is public: no confidential project, model, well or fund names in any d
 |---|---|---|---|
 | [project-scoped-root-volumes-repeat-and-drop-rows](open/project-scoped-root-volumes-repeat-and-drop-rows.md) | 2026-11-20 | medium | Server defect: project-scoped root volume listing returns wrong rows above 200 rows; the helper now reads per forecast (verified on dev); open until ComboCurve fixes the route (reported 2026-11-22) |
 | [decisions-pending-from-the-route-and-todo-pass](open/decisions-pending-from-the-route-and-todo-pass.md) | 2026-11-21 | medium | Recommendations carried out and both ComboCurve requests sent; still open: time the `_get_items_iterator` deprecation |
+| [batched-write-results-can-read-clean-or-be-lost](open/batched-write-results-can-read-clean-or-be-lost.md) | 2026-11-22 | medium | A non-envelope 2xx chunk reads as ok; a non-`RequestException` in a worker drops every chunk's result after writes went through |
 | [type-curve-v1-wrappers-outlive-the-v1-api](open/type-curve-v1-wrappers-outlive-the-v1-api.md) | 2026-11-05 | low | `type_curves_v1_compatibility.py` stays until at least 2027-01-31; the file lists the removal steps |
 | [production-comment-routes-are-unverified-live](open/production-comment-routes-are-unverified-live.md) | 2026-11-21 | low | Comment routes answer `ProductionCommentsDisabledError` on dev and prod; page size 200 is a guess |
+| [write-and-filter-inputs-are-checked-at-some-sites-only](open/write-and-filter-inputs-are-checked-at-some-sites-only.md) | 2026-11-22 | low | Empty `data` refused at ~16 write sites, not ~55 others; whitespace id passes `_require_any_filter` |
+| [get-well-filters-on-some-routes-are-unverified](open/get-well-filters-on-some-routes-are-unverified.md) | 2026-11-22 | low | Repeated-key form and 100 cap unverified on four GET routes' `well`/`wells` filters |
+| [polling-and-connections-are-not-reused-or-backed-off](open/polling-and-connections-are-not-reused-or-backed-off.md) | 2026-11-22 | low | Fixed 2 s polls, sequential batch reads, no `Session`; script imports test modules |
 
 ## Done
 
@@ -35,7 +39,7 @@ This repo is public: no confidential project, model, well or fund names in any d
 | [econ-model-unassign-sends-an-empty-wells-filter](closed/econ-model-unassign-sends-an-empty-wells-filter.md) | 2026-11-21 | Blank wells refused locally; `wells` sent as repeated keys (a comma-joined value was a live 400) |
 | [model-assignment-writes-do-not-enforce-the-500-record-limit](closed/model-assignment-writes-do-not-enforce-the-500-record-limit.md) | 2026-11-21 | 500-record and 25,000-`wellIds` caps enforced locally (`_require_at_most`, `_count_well_ids`) |
 | [count-methods-and-list-methods-do-not-pair-everywhere](closed/count-methods-and-list-methods-do-not-pair-everywhere.md) | 2026-11-21 | `filters` added to the list methods whose GET documents the HEAD keys |
-| [base-py-mixes-transport-policy-with-the-client-class](closed/base-py-mixes-transport-policy-with-the-client-class.md) | 2026-11-21 | Transport moved to `_transport.py`; `base.py` re-exports the moved names |
+| [base-py-mixes-transport-policy-with-the-client-class](closed/base-py-mixes-transport-policy-with-the-client-class.md) | 2026-11-21 | Transport moved to `_transport.py`; `base.py` re-exports the moved names (not `_whole_chunk_failure`, `_LINK_HEADER_ENTRY`) |
 | [project-custom-columns-required-argument-typed-optional](closed/project-custom-columns-required-argument-typed-optional.md) | 2026-11-21 | Overloads make the argument required to type checkers |
 | [forecast-output-slope-is-now-a-sign](closed/forecast-output-slope-is-now-a-sign.md) | 2026-11-21 | Reads verified live (3,695 outputs); docstrings state the split; write side opened separately |
 | [published-routes-without-a-method](closed/published-routes-without-a-method.md) | 2026-11-21 | All 502 operations accounted for (484 wrapped, 0 gap) |
