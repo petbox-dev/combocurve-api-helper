@@ -1,6 +1,20 @@
 {
   "combocurve-api-helper": [
     {
+      "version": "3.3.0",
+      "commit": "27da620fac992a05ef16b94d5571930e1dec944c",
+      "date": "2026-11-22",
+      "target": "pypi",
+      "notes": "built from a clean tree at the pushed main commit; make publish (ruff, mypy, pytest, build, twine)"
+    },
+    {
+      "version": "3.3.0",
+      "commit": "27da620fac992a05ef16b94d5571930e1dec944c",
+      "date": "2026-11-22",
+      "target": "main",
+      "notes": "tag v3.3.0"
+    },
+    {
       "version": "3.2.0",
       "commit": "38c64ef1427d68c00926dab07f0c4d0780104aab",
       "date": "2026-11-17",
