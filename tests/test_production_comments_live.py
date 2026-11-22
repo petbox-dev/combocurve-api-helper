@@ -1,11 +1,13 @@
 """Live dev round trips for production comments, production comment types and the directional-survey batch
 upsert (skip-by-default).
 
-Production comments, per scope (company and project): POST a throwaway comment on the first well of the dev
-project, read it back (list by well, count, by id), PUT and PATCH it, DELETE it by id, then check that no
-fixture comment of the run is left. Every fixture comment is deleted in a `finally`. The tenant must have
-production comments enabled: on the dev tenant every comment route answers 404
-`ProductionCommentsDisabledError` (2026-11-21), and these tests then skip.
+Production comments, per scope: POST a throwaway comment (on the first company well for the company scope,
+which refuses a project well; on the first well of the dev project for the project scope), read it back (list
+by well, count, by id), PUT and PATCH it, then DELETE it: by well with a wider date range (deletes nothing)
+and then the exact dates, when the fixture is the well's only comment on those dates, else by id. Then check
+that no fixture comment of the run is left. Every fixture comment is deleted in a `finally`. The tenant must
+have production comments enabled (the dev tenant has them since 2026-11-22); where every comment route
+answers 404 `ProductionCommentsDisabledError`, these tests skip.
 
 Comment types: read only (the PATCH changes a company configuration that other users see).
 
@@ -47,6 +49,18 @@ def well(dev_api: ComboCurveAPI) -> dict[str, Any]:
     return dict(wells[0])
 
 
+@pytest.fixture(scope='module')
+def company_well(dev_api: ComboCurveAPI) -> dict[str, Any]:
+    """A company-scope well: the company comment routes refuse a project well (`WellNotFoundError ... in
+    company scope`, dev 2026-11-22)."""
+    response = dev_api._request_with_retry('get', dev_api.get_company_wells_url(), params={'take': 1})
+    response.raise_for_status()
+    wells = response.json()
+    if not wells:
+        pytest.skip('the dev company has no wells')
+    return dict(wells[0])
+
+
 def _skip_unless_comments_enabled(dev_api: ComboCurveAPI) -> None:
     response = dev_api._request_with_retry('get', dev_api.get_company_production_comments_url(), params={'take': 1})
     if response.status_code == 404 and 'ProductionCommentsDisabledError' in response.text:
@@ -74,9 +88,11 @@ def _fixture_comments(dev_api: ComboCurveAPI, scope: str, well_id: str, note: st
 
 
 @pytest.mark.parametrize('scope', ['company', 'project'])
-def test_production_comment_round_trip(dev_api: ComboCurveAPI, well: dict[str, Any], scope: str) -> None:
+def test_production_comment_round_trip(
+    dev_api: ComboCurveAPI, well: dict[str, Any], company_well: dict[str, Any], scope: str
+) -> None:
     _skip_unless_comments_enabled(dev_api)
-    well_id = str(well['id'])
+    well_id = str((company_well if scope == 'company' else well)['id'])
     note = f'{FIXTURE_PREFIX} {uuid.uuid4().hex[:8]}'
     record = {
         'well': well_id,
@@ -99,7 +115,22 @@ def test_production_comment_round_trip(dev_api: ComboCurveAPI, well: dict[str, A
         _method(dev_api, scope, 'patch_{scope}_production_comments')([{'id': created_id, 'note': f'{note} patch'}])
         assert _method(dev_api, scope, 'get_{scope}_production_comment_by_id')(created_id)['note'] == f'{note} patch'
 
-        _method(dev_api, scope, 'delete_{scope}_production_comment_by_id')(created_id)
+        delete = _method(dev_api, scope, 'delete_{scope}_production_comments')
+        if [
+            str(comment['id'])
+            for comment in _method(dev_api, scope, 'get_{scope}_production_comments')(
+                {'well': well_id, 'startDate': record['startDate']}
+            )
+            if comment['endDate'] == record['endDate']
+        ] == [created_id]:
+            # A delete by well matches the stored dates exactly: a wider range deletes nothing (dev, 2026-11-22).
+            # Run only when the fixture is the well's one comment on these dates, so no other comment is touched.
+            wider = delete(well_id=well_id, start_date='2019-12-31T00:00:00.000Z', end_date='2020-02-01T00:00:00.000Z')
+            assert wider['X-Delete-Count'] == '0'
+            exact = delete(well_id=well_id, start_date=record['startDate'], end_date=record['endDate'])
+            assert exact['X-Delete-Count'] == '1'
+        else:
+            _method(dev_api, scope, 'delete_{scope}_production_comment_by_id')(created_id)
     finally:
         for comment in _fixture_comments(dev_api, scope, well_id, note):
             _method(dev_api, scope, 'delete_{scope}_production_comment_by_id')(str(comment['id']))

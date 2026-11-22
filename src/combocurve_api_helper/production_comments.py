@@ -6,10 +6,13 @@ from requests.structures import CaseInsensitiveDict
 
 from .base import APIBase, Item, ItemList, WriteResponse
 
-# The page size of the production-comment list routes. NOT verified live: the dev tenant answers 404
-# `ProductionCommentsDisabledError` on every production-comment route (2026-11-21), so this is the 200 that the
-# sibling v1 list routes take, not a measured maximum.
+# The page size of the production-comment list routes. A larger `take` is accepted (1001 returned all 205 rows;
+# dev, 2026-11-22), so 200 is a choice, not the route's maximum; the next-page link reads the rest.
 GET_LIMIT = 200
+# The most records one POST, PUT or PATCH may carry: 201 records answer 400 `RecordCountError` ("split your data
+# in batches of at most 200 records") on each of the three verbs (dev, 2026-11-22). Writes are sent in batches of
+# this size.
+WRITE_LIMIT = 200
 
 # Production comments have no `name`; a comment is read per well, in date order.
 _PRODUCTION_COMMENT_SORT_ORDER: Mapping[str, int] = MappingProxyType({'well': 0, 'startDate': 1, 'id': 2})
@@ -28,9 +31,23 @@ class ProductionComments(APIBase):
     (list, HEAD, by id, in both scopes) answers 404 with the body `{"name": "ProductionCommentsDisabledError",
     "message": "Production comments are not enabled for this tenant"}`, and these methods raise
     `requests.HTTPError`; a HEAD has no body, so `count_*` shows only the 404. The comment-type routes answer
-    on such a tenant. Verified live 2026-11-21 on the dev tenant, where the feature is off, so the comment
-    routes themselves (page size, write and delete behavior) are not verified live: the method docstrings
-    restate the documentation.
+    on such a tenant.
+
+    Verified live on the dev tenant (2026-11-22, after ComboCurve enabled the feature there), in both scopes:
+    list, count, by id, POST, PUT, PATCH, and both deletes. What the documentation does not say:
+
+    - A company comment must name a company well; a project well answers `WellNotFoundError` ("No well was
+      found with id ... in company scope") in the record's 207 result.
+    - `endDate` must be strictly after `startDate` (a record with equal dates fails with `ValueError` in its
+      207 result).
+    - One write request carries at most 200 records (201 answers 400 `RecordCountError`); the write methods
+      send `data` in batches of `WRITE_LIMIT` and return one 207 envelope per batch. The batches go one after
+      another; if a later batch raises, the earlier ones stay applied and their envelopes are not returned, so
+      sending the same POST again creates those comments twice (a PUT or PATCH by id can be sent again).
+    - The list route has no `id` filter (400 `FieldNameFilterError`); read one comment with `*_by_id`.
+    - A delete by well needs `startDate` and `endDate` both, and they select the comment whose stored dates
+      equal them exactly, not a range: a wider range, or the dates without their time part, deletes nothing
+      (204 with `X-Delete-Count: 0`).
     """
 
     ######
@@ -87,7 +104,7 @@ class ProductionComments(APIBase):
         the project's when `project_id` is given; one 207 envelope per batch."""
         records = self._records_from(data, 'production comment')
         write = {'post': self._post_items, 'put': self._put_items, 'patch': self._patch_items}[verb]
-        return cast('list[WriteResponse]', write(self._comments_url(project_id), records))
+        return cast('list[WriteResponse]', write(self._comments_url(project_id), records, WRITE_LIMIT))
 
     @staticmethod
     def _comment_delete_filters(
@@ -100,11 +117,12 @@ class ProductionComments(APIBase):
         Build the query of a filtered production-comment DELETE, refusing any filter set that does not name
         a comment id or a well.
 
-        The route takes either `id`, or `well` with `startDate` and `endDate`. A DELETE with no filter is
+        The route takes either `id`, or `well` with both `startDate` and `endDate` (a delete by well with
+        either date missing answers 400 `RequiredFilterError`; dev, 2026-11-22). A DELETE with no filter is
         refused here because the documentation names no behavior for it, and the plausible one is deleting
-        every comment in scope. A date range without `well` is refused for the same reason: it would apply
-        to every well in scope. `id` and `well` together are refused too: the documentation describes them
-        as alternatives and names no behavior for the pair.
+        every comment in scope. A date without `well` is refused for the same reason: it would apply to
+        every well in scope. `id` and `well` together are refused too: the documentation describes them as
+        alternatives and names no behavior for the pair.
         """
         if production_comment_id and well_id:
             raise ValueError('pass production_comment_id or well_id, not both')
@@ -113,6 +131,8 @@ class ProductionComments(APIBase):
         )
         if not well_id and (start_date or end_date):
             raise ValueError('start_date and end_date filter a delete by well; pass well_id with them')
+        if well_id and not (start_date and end_date):
+            raise ValueError('a delete by well_id needs both start_date and end_date')
         if start_date:
             filters['startDate'] = start_date
         if end_date:
@@ -131,7 +151,7 @@ class ProductionComments(APIBase):
         `sort` filter does not change the order returned). `filters` take `well`, `commentType` (a key such as
         `prod_comment_type_0`), `startDate`, `endDate`, `updatedAt` (with the `[lt]`, `[le]`, `[gt]` and `[ge]`
         operators), `chosenID` with `dataSource` (each requires the other), `skip`, `take`, `sort` and `cursor`.
-        Pages are requested with `take=200`; that page size is not verified live (see the class docstring).
+        Pages are requested with `take=200` (the route accepts more; see `GET_LIMIT`). There is no `id` filter.
 
         https://docs.api.combocurve.com/api/get-production-comments
 
@@ -194,8 +214,9 @@ class ProductionComments(APIBase):
         `well` (the well id) or by `chosenID` with `dataSource`, and carries `commentType`, `startDate`, `endDate`
         and `note`. The response is 207 Multi-Status: a record the server refuses is reported in `results`, not
         raised. An empty list raises `ValueError` before anything is sent.
-        All of `data` is sent in one request: the documentation states no record limit, and none is verified
-        live (the dev tenant has production comments off).
+        `data` is sent in batches of 200 records (`WRITE_LIMIT`, the route's maximum per request), one 207
+        envelope per batch. If a later batch raises, the earlier batches stay applied and nothing reports them
+        (see the class docstring). `endDate` must be strictly after `startDate`.
 
         https://docs.api.combocurve.com/api/post-production-comments
 
@@ -247,8 +268,9 @@ class ProductionComments(APIBase):
         comment has that id; a record without an `id` creates a new comment. The well is named as in
         `post_company_production_comments`. The response is 207 Multi-Status: a record the server refuses is
         reported in `results`, not raised. An empty list raises `ValueError` before anything is sent.
-        All of `data` is sent in one request: the documentation states no record limit, and none is verified
-        live (the dev tenant has production comments off).
+        `data` is sent in batches of 200 records (`WRITE_LIMIT`, the route's maximum per request), one 207
+        envelope per batch. If a later batch raises, the earlier batches stay applied and nothing reports them
+        (see the class docstring). `endDate` must be strictly after `startDate`.
 
         https://docs.api.combocurve.com/api/put-production-comments
 
@@ -300,8 +322,9 @@ class ProductionComments(APIBase):
         Partially updates company production comments. Each record needs its `id` and at least one field to
         change; fields left out are kept. The response is 207 Multi-Status: a record the server refuses is
         reported in `results`, not raised. An empty list raises `ValueError` before anything is sent.
-        All of `data` is sent in one request: the documentation states no record limit, and none is verified
-        live (the dev tenant has production comments off).
+        `data` is sent in batches of 200 records (`WRITE_LIMIT`, the route's maximum per request), one 207
+        envelope per batch. If a later batch raises, the earlier batches stay applied and nothing reports them
+        (see the class docstring). `endDate` must be strictly after `startDate`.
 
         https://docs.api.combocurve.com/api/patch-production-comments
 
@@ -358,11 +381,14 @@ class ProductionComments(APIBase):
     ) -> CaseInsensitiveDict[str]:
         """
         Deletes company production comments by query filter: one comment by `production_comment_id`, or the comments of
-        `well_id`, narrowed by `start_date` and `end_date`. The filters are keyword-only.
+        `well_id` whose stored dates equal `start_date` and `end_date` exactly (both required; a range selects
+        nothing). Dates that match no comment still answer 204: check `X-Delete-Count` in the returned headers.
+        The filters are keyword-only.
 
         Refused with `ValueError` before anything is sent: no `production_comment_id` and no `well_id`
         (the documentation names no behavior for an unfiltered delete, and the plausible one deletes every
-        comment in scope), and a date without `well_id` (it would apply to every well in scope). Empty
+        comment in scope), a date without `well_id` (it would apply to every well in scope), and `well_id`
+        without both dates (the server answers 400 `RequiredFilterError`). Empty
         strings count as absent. `production_comment_id` and `well_id` together are refused as well: the
         documentation describes them as alternatives and names no behavior for the pair.
 
@@ -391,7 +417,8 @@ class ProductionComments(APIBase):
         and `id` (so a `sort` filter does not change the order returned). `filters` take `well`, `commentType` (a
         key such as `prod_comment_type_0`), `startDate`, `endDate`, `updatedAt` (with the `[lt]`, `[le]`, `[gt]`
         and `[ge]` operators), `chosenID` with `dataSource` (each requires the other), `skip`, `take`, `sort` and
-        `cursor`. Pages are requested with `take=200`; that page size is not verified live (see the class docstring).
+        `cursor`. Pages are requested with `take=200` (the route accepts more; see `GET_LIMIT`). There is no `id`
+        filter.
 
         https://docs.api.combocurve.com/api/get-project-production-comments
 
@@ -455,8 +482,9 @@ class ProductionComments(APIBase):
         well by `well` (the well id) or by `chosenID` with `dataSource`, and carries `commentType`, `startDate`,
         `endDate` and `note`. The response is 207 Multi-Status: a record the server refuses is reported in
         `results`, not raised. An empty list raises `ValueError` before anything is sent.
-        All of `data` is sent in one request: the documentation states no record limit, and none is verified
-        live (the dev tenant has production comments off).
+        `data` is sent in batches of 200 records (`WRITE_LIMIT`, the route's maximum per request), one 207
+        envelope per batch. If a later batch raises, the earlier batches stay applied and nothing reports them
+        (see the class docstring). `endDate` must be strictly after `startDate`.
 
         https://docs.api.combocurve.com/api/post-project-production-comments
 
@@ -508,8 +536,9 @@ class ProductionComments(APIBase):
         inserted when no comment has that id; a record without an `id` creates a new comment. The well is named as
         in `post_project_production_comments`. The response is 207 Multi-Status: a record the server refuses is
         reported in `results`, not raised. An empty list raises `ValueError` before anything is sent.
-        All of `data` is sent in one request: the documentation states no record limit, and none is verified
-        live (the dev tenant has production comments off).
+        `data` is sent in batches of 200 records (`WRITE_LIMIT`, the route's maximum per request), one 207
+        envelope per batch. If a later batch raises, the earlier batches stay applied and nothing reports them
+        (see the class docstring). `endDate` must be strictly after `startDate`.
 
         https://docs.api.combocurve.com/api/put-project-production-comments
 
@@ -561,8 +590,9 @@ class ProductionComments(APIBase):
         Partially updates production comments of a specific project. Each record needs its `id` and at least one
         field to change; fields left out are kept. The response is 207 Multi-Status: a record the server refuses
         is reported in `results`, not raised. An empty list raises `ValueError` before anything is sent.
-        All of `data` is sent in one request: the documentation states no record limit, and none is verified
-        live (the dev tenant has production comments off).
+        `data` is sent in batches of 200 records (`WRITE_LIMIT`, the route's maximum per request), one 207
+        envelope per batch. If a later batch raises, the earlier batches stay applied and nothing reports them
+        (see the class docstring). `endDate` must be strictly after `startDate`.
 
         https://docs.api.combocurve.com/api/patch-project-production-comments
 
@@ -620,11 +650,14 @@ class ProductionComments(APIBase):
     ) -> CaseInsensitiveDict[str]:
         """
         Deletes production comments of a specific project by query filter: one comment by `production_comment_id`,
-        or the comments of `well_id`, narrowed by `start_date` and `end_date`. The filters are keyword-only.
+        or the comments of `well_id` whose stored dates equal `start_date` and `end_date` exactly (both required;
+        a range selects nothing). Dates that match no comment still answer 204: check `X-Delete-Count` in the
+        returned headers. The filters are keyword-only.
 
         Refused with `ValueError` before anything is sent: no `production_comment_id` and no `well_id`
         (the documentation names no behavior for an unfiltered delete, and the plausible one deletes every
-        comment in scope), and a date without `well_id` (it would apply to every well in scope). Empty
+        comment in scope), a date without `well_id` (it would apply to every well in scope), and `well_id`
+        without both dates (the server answers 400 `RequiredFilterError`). Empty
         strings count as absent. `production_comment_id` and `well_id` together are refused as well: the
         documentation describes them as alternatives and names no behavior for the pair.
 

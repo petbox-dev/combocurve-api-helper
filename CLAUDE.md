@@ -198,8 +198,9 @@ production until 2026-11-21, because the dev tenant was not enrolled in Type Cur
 routes since (checked 2026-11-22), so no test writes to production any more. `test_econ_settings_live.py`, `test_formations_live.py`,
 `test_shapefiles_live.py` and `test_production_comments_live.py` also write `API Helper Fixture*` objects on
 dev and delete them; the econ-settings test also needs `CC_DEV_ECON_CATEGORY` and `CC_DEV_ECON_COLUMN_KEY`
-(a real econ column and its category, e.g. `Cash Flow` / `net_income`), and the production-comment routes
-answer `ProductionCommentsDisabledError` on dev, so that test skips its comment part. The dev credentials
+(a real econ column and its category, e.g. `Cash Flow` / `net_income`). Production comments are enabled on
+dev since 2026-11-22 (they answered `ProductionCommentsDisabledError` before); the company-scope comment needs a
+company well, not a project well. The dev credentials
 path and the fixture prefix live in `tests/live_support.py`; the session-scoped `dev_api` fixture in
 `tests/conftest.py` builds one client per run, so a run fetches at most one dev token. Put these variables in a repo-root `.env` (gitignored; copy `.env.example`):
 `tests/conftest.py` loads it with `python-dotenv` (a `dev` dependency-group entry), searching upward

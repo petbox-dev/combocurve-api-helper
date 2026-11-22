@@ -18,15 +18,16 @@ This repo is public: no confidential project, model, well or fund names in any d
 | [decisions-pending-from-the-route-and-todo-pass](open/decisions-pending-from-the-route-and-todo-pass.md) | 2026-11-21 | medium | Recommendations carried out and both ComboCurve requests sent; still open: time the `_get_items_iterator` deprecation |
 | [batched-write-results-can-read-clean-or-be-lost](open/batched-write-results-can-read-clean-or-be-lost.md) | 2026-11-22 | medium | A non-envelope 2xx chunk reads as ok; a non-`RequestException` in a worker drops every chunk's result after writes went through |
 | [type-curve-v1-wrappers-outlive-the-v1-api](open/type-curve-v1-wrappers-outlive-the-v1-api.md) | 2026-11-05 | low | `type_curves_v1_compatibility.py` stays until at least 2027-01-31; the file lists the removal steps |
-| [production-comment-routes-are-unverified-live](open/production-comment-routes-are-unverified-live.md) | 2026-11-21 | low | Comment routes answer `ProductionCommentsDisabledError` on dev and prod; page size 200 is a guess |
 | [write-and-filter-inputs-are-checked-at-some-sites-only](open/write-and-filter-inputs-are-checked-at-some-sites-only.md) | 2026-11-22 | low | Empty `data` refused at ~16 write sites, not ~55 others; whitespace id passes `_require_any_filter` |
 | [get-well-filters-on-some-routes-are-unverified](open/get-well-filters-on-some-routes-are-unverified.md) | 2026-11-22 | low | Repeated-key form and 100 cap unverified on four GET routes' `well`/`wells` filters |
 | [polling-and-connections-are-not-reused-or-backed-off](open/polling-and-connections-are-not-reused-or-backed-off.md) | 2026-11-22 | low | Fixed 2 s polls, sequential batch reads, no `Session`; script imports test modules |
+| [write-record-limits-are-unknown-for-most-routes](open/write-record-limits-are-unknown-for-most-routes.md) | 2026-11-22 | low | ~60 write sites send all records in one request; per-route caps unknown (comments: 200) |
 
 ## Done
 
 | Item | Closed | Settled by |
 |---|---|---|
+| [production-comment-routes-are-unverified-live](closed/production-comment-routes-are-unverified-live.md) | 2026-11-22 | Enabled on dev; all routes verified live; writes batched at 200; delete by well needs both exact dates |
 | [forecast-segment-parameter-slope-on-write-is-unverified](closed/forecast-segment-parameter-slope-on-write-is-unverified.md) | 2026-11-22 | `slope` on write is the value per day; `slopeValue` refused; qEnd checked |
 | [shapefile-paths-not-verified-live](closed/shapefile-paths-not-verified-live.md) | 2026-11-22 | All four paths verified live; company create without `scope` refused locally |
 | [export-jobs-have-no-wait-method](closed/export-jobs-have-no-wait-method.md) | 2026-11-22 | Four `wait_for_export_*` methods on `_wait_for_job` (statuses verified live) |

@@ -31,7 +31,7 @@ maintainer. Close it when the "Still open" list is empty.
    (`docs/local/2026-11-21-combocurve-bug-report-project-scoped-root-volumes.md`) and the request to enable
    production comments on the dev tenant (`docs/local/2026-11-21-combocurve-request-enable-production-comments.md`).
    Their follow-ups live in `project-scoped-root-volumes-repeat-and-drop-rows` and
-   `production-comment-routes-are-unverified-live`.
+   `production-comment-routes-are-unverified-live` (closed 2026-11-22: enabled on dev and verified).
 11. **Package index skill:** its dependents list now names all seven packages and the scripts that use the
    helper (edited in the skills repo; not committed).
 

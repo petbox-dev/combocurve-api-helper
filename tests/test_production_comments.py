@@ -6,7 +6,7 @@ from typing import Any, Callable
 import pytest
 import requests
 
-from combocurve_api_helper.production_comments import GET_LIMIT, ProductionComments
+from combocurve_api_helper.production_comments import GET_LIMIT, WRITE_LIMIT, ProductionComments
 from tests.http_fakes import FakeResponse, StubAuth, install_recording_transport
 
 BASE = ProductionComments.API_BASE_URL
@@ -148,6 +148,47 @@ def test_delete_without_an_id_or_a_well_is_refused_before_sending(
     with pytest.raises(ValueError):
         delete(_api(), **filters)
     assert transport.calls == []
+
+
+@pytest.mark.parametrize('delete', DELETES)
+@pytest.mark.parametrize(
+    'filters',
+    [
+        {'well_id': 'w1'},
+        {'well_id': 'w1', 'start_date': '2024-01-01T00:00:00.000Z'},
+        {'well_id': 'w1', 'end_date': '2024-02-01T00:00:00.000Z'},
+    ],
+)
+def test_delete_by_well_without_both_dates_is_refused_before_sending(
+    monkeypatch: pytest.MonkeyPatch, delete: DeleteCall, filters: dict[str, str]
+) -> None:
+    # The server answers 400 `RequiredFilterError` ("When deleting by well, required filters are: `well` +
+    # `startDate` + `endDate`"; dev, 2026-11-22).
+    transport = install_recording_transport(monkeypatch)
+    with pytest.raises(ValueError, match='start_date and end_date'):
+        delete(_api(), **filters)
+    assert transport.calls == []
+
+
+@pytest.mark.parametrize(
+    'write',
+    [
+        lambda api, records: api.post_company_production_comments(records),
+        lambda api, records: api.put_company_production_comments(records),
+        lambda api, records: api.patch_company_production_comments(records),
+        lambda api, records: api.post_project_production_comments(PROJECT_ID, records),
+        lambda api, records: api.put_project_production_comments(PROJECT_ID, records),
+        lambda api, records: api.patch_project_production_comments(PROJECT_ID, records),
+    ],
+)
+def test_writes_are_sent_in_batches_of_the_write_limit(monkeypatch: pytest.MonkeyPatch, write: Any) -> None:
+    # 201 records answer 400 `RecordCountError` on POST, PUT and PATCH (dev, 2026-11-22).
+    records: Any = [{'id': f'c{i}', 'note': 'n'} for i in range(WRITE_LIMIT + 1)]
+    transport = install_recording_transport(
+        monkeypatch, FakeResponse(207, WRITE_ENVELOPE), FakeResponse(207, WRITE_ENVELOPE)
+    )
+    assert write(_api(), records) == [WRITE_ENVELOPE, WRITE_ENVELOPE], 'one 207 envelope per batch'
+    assert [len(call.body) for call in transport.calls] == [WRITE_LIMIT, 1]
 
 
 @pytest.mark.parametrize('delete', DELETES)

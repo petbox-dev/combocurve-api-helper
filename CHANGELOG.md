@@ -18,7 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `get_scenario_well_incrementals`.
   - Forecasts: `put_forecast_daily_volumes`, `put_forecast_monthly_volumes`; forecast configurations:
     `delete_forecast_configurations` (bulk, by id); wells: `patch_project_company_wells`.
-  - Production comments (`ProductionComments`, company and project scope) and production comment types.
+  - Production comments (`ProductionComments`, company and project scope) and production comment types,
+    verified live on dev. Writes go in batches of 200 records (the route's maximum per request); a delete
+    by `well_id` needs both `start_date` and `end_date`, which must equal the comment's stored dates.
   - `post_directional_surveys_batch`.
   - Formations (`Formations`, company and project scope; the PUT is an asynchronous import, with
     `wait_for_company_formations_job` / `wait_for_project_formations_job`).
