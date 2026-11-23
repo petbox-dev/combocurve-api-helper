@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `post_scenario_wells` and `put_scenario_wells` declare `data` as `Union[Sequence[str], ItemList]`: the route takes
+  a JSON array of well-id strings, so callers no longer need to cast their ids to `ItemList` (a cast still
+  type-checks). A single string now raises `TypeError` before anything is sent, instead of being sent as one id
+  per character.
+
 ## [3.3.0] - 2026-11-22
 
 ### Added

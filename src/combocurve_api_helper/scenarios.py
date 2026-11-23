@@ -63,6 +63,16 @@ def _require_assignment_delete(data: ItemList, max_records: int) -> None:
     _require_assignment_wells(data)
 
 
+def _well_ids_for_scenario_wells_body(data: Union[Sequence[str], ItemList]) -> ItemList:
+    """
+    The scenario-wells write body as a list. The route takes id strings; the cast to `ItemList` only satisfies
+    the shared write helpers' annotation. Raises `TypeError` for a single string.
+    """
+    if isinstance(data, str):
+        raise TypeError('`data` must be a sequence of well ids, not a single string')
+    return cast('ItemList', list(data))
+
+
 class Scenarios(APIBase):
     ######
     # URLs
@@ -712,25 +722,39 @@ class Scenarios(APIBase):
         url = self.get_scenario_econ_model_assignments_url(project_id, scenario_id)
         return self._delete_headers(url, data)
 
-    def post_scenario_wells(self, project_id: str, scenario_id: str, data: ItemList) -> list[WriteResponse]:
+    def post_scenario_wells(
+        self, project_id: str, scenario_id: str, data: Union[Sequence[str], ItemList]
+    ) -> list[WriteResponse]:
         """
         Creates scenario well assignments for a specific project id and scenario id.
 
+        `data` is a sequence of well ids: the route body is a JSON array of id strings, not of objects.
+        `ItemList` is still accepted so that callers that cast their ids to it keep type-checking. A
+        single string raises `TypeError` before anything is sent; it would be sent as one id per character.
+
         https://docs.api.combocurve.com/api/post-scenario-wells-upsert
         """
+        well_ids = _well_ids_for_scenario_wells_body(data)
         url = self.get_scenario_wells_url(project_id, scenario_id)
-        scenarios = cast('list[WriteResponse]', self._post_items(url, data))
+        scenarios = cast('list[WriteResponse]', self._post_items(url, well_ids))
 
         return scenarios
 
-    def put_scenario_wells(self, project_id: str, scenario_id: str, data: ItemList) -> list[WriteResponse]:
+    def put_scenario_wells(
+        self, project_id: str, scenario_id: str, data: Union[Sequence[str], ItemList]
+    ) -> list[WriteResponse]:
         """
         Upserts scenario well assignments for a specific project id and scenario id.
 
+        `data` is a sequence of well ids: the route body is a JSON array of id strings, not of objects.
+        `ItemList` is still accepted so that callers that cast their ids to it keep type-checking. A
+        single string raises `TypeError` before anything is sent; it would be sent as one id per character.
+
         https://docs.api.combocurve.com/api/put-scenario-wells-upsert
         """
+        well_ids = _well_ids_for_scenario_wells_body(data)
         url = self.get_scenario_wells_url(project_id, scenario_id)
-        scenarios = cast('list[WriteResponse]', self._put_items(url, data))
+        scenarios = cast('list[WriteResponse]', self._put_items(url, well_ids))
 
         return scenarios
 
